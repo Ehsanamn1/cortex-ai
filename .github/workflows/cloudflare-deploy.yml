@@ -45,6 +45,9 @@ jobs:
         run: npx @vinext/cloudflare deploy --skip-build
 
       - name: Verify Worker runtime secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
         run: |
           npx wrangler secret list --name cortex-ai
           echo "Expected runtime secrets: DATABASE_URL, APP_SECRET_KEY, CORTEX_ADMIN_PASSWORD"
