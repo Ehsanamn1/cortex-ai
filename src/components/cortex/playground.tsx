@@ -59,9 +59,9 @@ function sourceDotClass(status: string): string {
 }
 
 function ProviderStatusLine() {
-  const { data } = useQuery({
+  const { data } = useQuery<Awaited<ReturnType<typeof api.getProvidersStatus>>>({
     queryKey: ["providers-status"],
-    queryFn: api.getProvidersStatus,
+    queryFn: () => api.getProvidersStatus(),
     staleTime: Infinity,
     retry: 1,
   });
