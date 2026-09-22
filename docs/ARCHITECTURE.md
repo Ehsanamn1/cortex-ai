@@ -20,13 +20,13 @@
 │  server/access    workspace-membership authorization           │
 │  knowledge/*      extract → normalize → chunk → embed → store  │
 │  rag/*            prompt sections + retrieval + generation     │
-│  providers/llm         LLMProvider   (zai | openrouter)        │
+│  providers/llm         LLMProvider   (workspace OpenAI-compatible | OpenRouter)        │
 │  providers/embeddings  EmbeddingProvider (openai | local-lex.) │
-│  providers/vector      VectorStore   (qdrant | local sqlite)   │
+│  providers/vector      VectorStore   (qdrant | local Postgres)   │
 └───────┬───────────────────────────────┬────────────────────────┘
         │ Prisma                        │ REST (only if Qdrant configured)
 ┌───────┴──────────┐          ┌─────────┴─────────┐
-│ SQLite / Postgres │          │ Qdrant (optional)  │
+│ PostgreSQL (Neon) │          │ Qdrant (optional)  │
 └──────────────────┘          └───────────────────┘
 ```
 
@@ -74,8 +74,7 @@ interface VectorStore        { upsertPoints(); search(); deleteByAgent(); delete
   `local-lexical (non-neural)` in Settings.
 - **Vector store**: `QdrantVectorStore` (creates a collection with payload indexes for
   `agentId`/`workspaceId`/`sourceId`, upserts with `wait=true`, searches with a `must`
-  filter on `agentId`, deletes by filter) and `LocalVectorStore` (SQLite persistence +
-  exact in-process cosine). Both are hard-scoped per agent.
+  filter on `agentId`, deletes by filter) and ``LocalVectorStore` (PostgreSQL `VectorPoint` persistence + exact in-process cosine). Both are hard-scoped per agent.
 
 Adding a provider = implementing the interface + registering it in the manager. Business
 logic never changes.
@@ -153,9 +152,9 @@ AppShell. View routing via Zustand (`view`, `activeAgentId`, `activeConversation
 (داشبورد، ایجنت‌ها، دانش، گفتگوها، بیشتر). Source chips render only metadata actually
 returned by the API — the UI never fabricates citations.
 
-## 8. Phase 2 readiness (not implemented)
+## 8. Current control plane
 
-The schema (WorkspaceMember roles, Message.metadata), provider registry, and channel-free
-conversation model leave clean seams for: Telegram bot channel, user allowlists,
-conversation controls, usage monitoring, and billing. None of these are present in
-Phase 1.
+Telegram integration, per-user usage limits, audit logging, admin control center, analytics,
+provider configuration/health checks, and plugin registry are implemented. Production file
+storage uses Cloudflare R2. The current public compute target is Cloudflare Workers, with
+Neon PostgreSQL as the persistent database.
