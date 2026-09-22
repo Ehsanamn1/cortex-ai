@@ -39,7 +39,7 @@ export function CortexMark({ className, size = 40 }: { className?: string; size?
   );
 }
 
-/** Logo lockup: mark + wordmark «Cortex AI» + tiny TRANOS sub-label. */
+/** Cortex AI logo lockup. */
 export function CortexLogo({
   className,
   markSize = 36,
@@ -56,9 +56,7 @@ export function CortexLogo({
         <span className="text-lg font-bold tracking-tight text-foreground">
           Cortex <span className="text-primary">AI</span>
         </span>
-        {!compact && (
-          <span className="text-[11px] font-medium text-muted-foreground">محصولی از ترانوس</span>
-        )}
+        {!compact && <span className="text-[11px] font-medium text-muted-foreground">محیط هوش و دانش</span>}
       </div>
     </div>
   );
