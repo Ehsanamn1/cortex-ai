@@ -137,33 +137,42 @@ export async function POST(req: Request, { params }: Params) {
         );
       }
 
-      if (bucket) {
-        const objectKey = makeKnowledgeObjectKey(agent.id, source.id, originalName);
-        await bucket.put(objectKey, file.stream(), {
-          httpMetadata: {
-            contentType: file.type || "application/octet-stream",
-          },
-          customMetadata: {
-            originalName,
-            agentId: agent.id,
-            workspaceId: agent.workspaceId,
+      try {
+        if (bucket) {
+          const objectKey = makeKnowledgeObjectKey(agent.id, source.id, originalName);
+          await bucket.put(objectKey, file.stream(), {
+            httpMetadata: {
+              contentType: file.type || "application/octet-stream",
+            },
+            customMetadata: {
+              originalName,
+              agentId: agent.id,
+              workspaceId: agent.workspaceId,
+            },
+          });
+          storageUrl = "r2://" + objectKey;
+        } else {
+          // Local Node.js fallback for development only.
+          await persistUpload(source.id, originalName, bytes);
+        }
+
+        await db.knowledgeDocument.create({
+          data: {
+            sourceId: source.id,
+            name: originalName,
+            mimeType: file.type || null,
+            sizeBytes: file.size,
+            url: storageUrl,
           },
         });
-        storageUrl = "r2://" + objectKey;
-      } else {
-        // Local Node.js fallback for development only.
-        await persistUpload(source.id, originalName, bytes);
+      } catch (error) {
+        const message = error instanceof Error ? error.message.slice(0, 1000) : "ذخیره فایل ناموفق بود.";
+        await db.knowledgeSource.update({
+          where: { id: source.id },
+          data: { status: "failed", error: message },
+        }).catch(() => undefined);
+        return applyCors(jsonError("ذخیره فایل ناموفق بود؛ وضعیت منبع به failed تغییر کرد.", 502), req.headers.get("origin"));
       }
-
-      await db.knowledgeDocument.create({
-        data: {
-          sourceId: source.id,
-          name: originalName,
-          mimeType: file.type || null,
-          sizeBytes: file.size,
-          url: storageUrl,
-        },
-      });
 
       after(() => processSource(source.id)); // let the route finish while Workers keeps background work alive
       const serialized = (await serializeSources(agent.id)).sources.find((s) => s.id === source.id);
