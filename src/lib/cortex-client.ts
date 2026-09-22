@@ -68,6 +68,13 @@ export interface CreateAgentInput {
   tone: AgentTone;
   customTone?: string;
   instructions?: string;
+  persona?: string;
+  systemPrompt?: string;
+  temperature?: number;
+  topP?: number;
+  maxTokens?: number;
+  memoryEnabled?: boolean;
+  citationsEnabled?: boolean;
   workspaceId?: string;
 }
 
