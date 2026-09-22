@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bot, FileUp, Globe, Library, Plus } from "lucide-react";
+import { Bot, FileUp, Globe, Library, Plus, Database, ShieldCheck, Zap } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
@@ -122,7 +122,25 @@ export function KnowledgeView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
+      <section className="cortex-panel relative overflow-hidden rounded-[28px] p-5 sm:p-7">
+        <div className="absolute -end-20 -top-24 size-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -start-16 -bottom-20 size-56 rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="cortex-kicker">مرکز دانش</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">هر داده‌ای که ایجنت برای کارش لازم دارد، این‌جا مدیریت کن.</h2>
+            <p className="mt-3 text-sm leading-8 text-muted-foreground">اسناد، متن و داده‌های ساختاریافته را وارد کن؛ سیستم آن‌ها را استخراج، قطعه‌بندی و برای بازیابی در پاسخ‌های ایجنت ایندکس می‌کند.</p>
+          </div>
+          <Button onClick={() => setAddOpen(true)} disabled={agents.length === 0}><Plus />افزودن منبع</Button>
+        </div>
+        <div className="relative mt-6 grid gap-2 sm:grid-cols-3">
+          <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3"><span className="flex size-9 items-center justify-center rounded-lg border bg-primary/10 text-primary"><Database className="size-4"/></span><div><p className="text-xs font-medium">فایل تا ۲۰۰MB</p><p className="mt-0.5 text-[10px] text-muted-foreground">بارگذاری مستقیم و امن</p></div></div>
+          <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3"><span className="flex size-9 items-center justify-center rounded-lg border bg-violet-400/10 text-violet-300"><Zap className="size-4"/></span><div><p className="text-xs font-medium">پردازش خودکار</p><p className="mt-0.5 text-[10px] text-muted-foreground">استخراج و ایندکس پس از دریافت</p></div></div>
+          <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3"><span className="flex size-9 items-center justify-center rounded-lg border bg-emerald-400/10 text-emerald-300"><ShieldCheck className="size-4"/></span><div><p className="text-xs font-medium">اسکوپ‌شده برای هر ایجنت</p><p className="mt-0.5 text-[10px] text-muted-foreground">دانش بین فضاها قاطی نمی‌شود</p></div></div>
+        </div>
+      </section>
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h2 className="text-xl font-bold text-foreground">دانش</h2>
