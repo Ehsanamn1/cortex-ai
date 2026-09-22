@@ -44,6 +44,32 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
         run: npx @vinext/cloudflare deploy --skip-build
 
+      - name: Sync Worker runtime secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+          DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
+          APP_SECRET_KEY: ${{ secrets.APP_SECRET_KEY || vars.APP_SECRET_KEY }}
+          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
+          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
+          TELEGRAM_INTERNAL_SECRET: ${{ secrets.TELEGRAM_INTERNAL_SECRET || vars.TELEGRAM_INTERNAL_SECRET }}
+        run: |
+          set -euo pipefail
+          put_secret() {
+            local name="$1"
+            local value="$2"
+            if [ -n "$value" ]; then
+              printf '%s' "$value" | npx wrangler secret put "$name" --name cortex-ai >/dev/null
+              echo "Synced Worker secret: $name"
+            else
+              echo "Worker secret not supplied in cortex1: $name (skipped)"
+            fi
+          }
+          put_secret DATABASE_URL "$DATABASE_URL"
+          put_secret APP_SECRET_KEY "$APP_SECRET_KEY"
+          put_secret CORTEX_ADMIN_PASSWORD "$CORTEX_ADMIN_PASSWORD"
+          put_secret CORTEX_ADMIN_USERNAME "$CORTEX_ADMIN_USERNAME"
+          put_secret TELEGRAM_INTERNAL_SECRET "$TELEGRAM_INTERNAL_SECRET"
       - name: Verify Worker runtime secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
