@@ -120,13 +120,40 @@ function AddFileDialogInner({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const uploadMutation = useMutation({
-    mutationFn: (selected: File) => api.uploadKnowledgeFile(agentId, selected),
+    mutationFn: async (selected: File) => {
+      setProgress(0);
+      try {
+        return await upload(
+          `knowledge/${agentId}/${Date.now()}-${selected.name}`,
+          selected,
+          {
+            access: "private",
+            handleUploadUrl: "/api/knowledge/upload",
+            clientPayload: JSON.stringify({
+              agentId,
+              originalName: selected.name,
+              size: selected.size,
+              mimeType: selected.type,
+            }),
+            multipart: selected.size > 4 * 1024 * 1024,
+            onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage)),
+          }
+        );
+      } catch (blobError) {
+        if (selected.size > 4 * 1024 * 1024) throw blobError;
+        return api.uploadKnowledgeFile(agentId, selected);
+      }
+    },
     onSuccess: () => {
       invalidateKnowledge(queryClient, agentId);
+      setProgress(100);
       onOpenChange(false);
-      toast.success("در حال پردازش دانش...");
+      toast.success("فایل دریافت شد؛ پردازش دانش در حال انجام است.");
     },
-    onError: (mutationError: Error) => toast.error(mutationError.message),
+    onError: (mutationError: Error) => {
+      setProgress(0);
+      toast.error(mutationError.message || "بارگذاری فایل ناموفق بود.");
+    },
   });
 
   function pickFile(candidate: File | null | undefined) {
