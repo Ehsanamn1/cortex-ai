@@ -32,7 +32,9 @@ Cortex AI is configured for Cloudflare Workers with vinext + the Cloudflare Vite
 
    `npm run start:vinext`
 
-6. Deploy:
+6. For GitHub auto-deploy, add repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. The workflow at `.github/workflows/cloudflare-deploy.yml` then deploys every push to `main`.
+
+7. Deploy manually when needed:
 
    `npm run deploy`
 
