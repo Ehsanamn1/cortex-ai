@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Bot, ChevronLeft, FileText, Library, MessageSquare, MessagesSquare, Plus } from "lucide-react";
+import { Activity, ArrowUpLeft, Bot, BookPlus, ChevronLeft, FileText, Library, MessageSquare, MessagesSquare, Plus, Send } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
@@ -116,7 +116,7 @@ export function DashboardView() {
     );
   }
 
-  const { stats, recentAgents, recentConversations } = data;
+  const { stats, recentAgents, recentConversations, activity = [] } = data;
   const hasAgents = stats.agents > 0;
 
   return (
@@ -160,6 +160,98 @@ export function DashboardView() {
           caption="پیام‌های رد و بدل شده"
           tint="border-amber-500/25 bg-amber-500/10 text-amber-400"
         />
+      </section>
+
+      <section aria-label="عملیات سریع و فعالیت اخیر" className="grid items-start gap-5 xl:grid-cols-[1.18fr_.82fr]">
+        <Card className="cortex-panel overflow-hidden rounded-2xl">
+          <CardHeader className="border-b border-white/[.06]">
+            <div>
+              <p className="cortex-kicker">QUICK ACTIONS</p>
+              <CardTitle className="mt-2 text-base">از این‌جا شروع کنید</CardTitle>
+            </div>
+            <p className="text-xs text-muted-foreground">عملیات مستقیم روی همین فضای کاری</p>
+          </CardHeader>
+          <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
+            {[
+              {
+                title: "ایجنت جدید",
+                description: "یک ایجنت با رفتار و لحن دلخواه بسازید.",
+                icon: Bot,
+                view: "agent-new" as const,
+              },
+              {
+                title: "افزودن دانش",
+                description: "فایل یا وب‌سایت واقعی را به دانش متصل کنید.",
+                icon: BookPlus,
+                view: "knowledge" as const,
+              },
+              {
+                title: "گفتگوها",
+                description: "آخرین مکالمات ایجنت‌ها را بررسی کنید.",
+                icon: MessagesSquare,
+                view: "conversations" as const,
+              },
+              {
+                title: "اتصال تلگرام",
+                description: "یک Bot را به ایجنت این فضا متصل کنید.",
+                icon: Send,
+                view: "telegram" as const,
+              },
+            ].map((action) => (
+              <button
+                key={action.title}
+                type="button"
+                onClick={() => setView(action.view)}
+                className="cortex-action group relative flex min-h-[116px] flex-col justify-between rounded-2xl border border-white/[.07] bg-white/[.02] p-4 text-start"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="flex size-10 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary">
+                    <action.icon className="size-[18px]" />
+                  </span>
+                  <ArrowUpLeft className="size-4 text-muted-foreground transition-transform group-hover:-translate-x-1 group-hover:-translate-y-1" />
+                </div>
+                <div className="relative z-10 mt-5">
+                  <p className="text-sm font-semibold">{action.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{action.description}</p>
+                </div>
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="cortex-panel overflow-hidden rounded-2xl">
+          <CardHeader className="border-b border-white/[.06]">
+            <div>
+              <p className="cortex-kicker">SYSTEM ACTIVITY</p>
+              <CardTitle className="mt-2 text-base">آخرین فعالیت‌ها</CardTitle>
+            </div>
+            <div className="flex size-9 items-center justify-center rounded-xl border border-emerald-400/15 bg-emerald-400/10 text-emerald-400">
+              <Activity className="size-4" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {activity.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <p className="text-sm font-medium">هنوز رخدادی ثبت نشده است.</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">ساخت ایجنت، آپلود دانش و گفتگوها در این بخش دیده می‌شوند.</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-white/[.06]">
+                {activity.slice(0, 6).map((item) => (
+                  <li key={item.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/[.07] bg-white/[.025]">
+                      <Activity className="size-3.5 text-primary" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{item.action}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{item.entityType} · {timeAgoFa(item.createdAt)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       {!hasAgents ? (
