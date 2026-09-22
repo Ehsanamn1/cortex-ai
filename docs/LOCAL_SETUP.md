@@ -35,16 +35,19 @@ Then open http://localhost:3000.
 docker compose up --build
 ```
 
-This starts Cortex and Qdrant. SQLite is persisted in `./db` for single-instance local use.
+The container uses PostgreSQL from `DATABASE_URL`. Qdrant is started locally by Compose as the optional vector backend. Set the required runtime secrets in `.env`; do not commit that file.
 
 ## Provider
 
 The preferred configuration is in the app: Settings → اتصال AI. Set provider name, base URL, model, auth mode and API key.
 
-## Validation
+## Cloudflare validation
 
 ```bash
 npm run typecheck
+npm run check:vinext
 npm run lint
-npm run build
+npm run build:vinext
 ```
+
+The production target is Cloudflare Workers. The repository also keeps a Node/Docker build as an alternate self-hosting path.
