@@ -12,7 +12,7 @@ function secret(): string {
   if (configured && configured.length >= 16) return configured;
   const g = globalThis as { __cortexAdminSecret?: string };
   if (!g.__cortexAdminSecret) g.__cortexAdminSecret = Buffer.from(randomBytes(32)).toString("hex");
-  return g.__cortexAdminSecret;
+  return g.__cortexAdminSecret as string;
 }
 
 export function adminCredentials() {
