@@ -95,10 +95,12 @@ export function DashboardView() {
   const setView = useCortexStore((s) => s.setView);
   const openAgent = useCortexStore((s) => s.openAgent);
   const openConversation = useCortexStore((s) => s.openConversation);
+  const activeWorkspaceId = useCortexStore((s) => s.activeWorkspaceId);
 
   const { data, isPending, isError, error, refetch } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: api.getDashboard,
+    queryKey: ["dashboard", activeWorkspaceId],
+    queryFn: () => api.getDashboard(activeWorkspaceId ?? undefined),
+    enabled: !!activeWorkspaceId,
   });
 
   useErrorToast(isError ? error : null);
