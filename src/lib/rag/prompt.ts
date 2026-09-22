@@ -103,13 +103,9 @@ Mandatory ground rules:
   if (personaLine) {
     messages.push({
       role: "system",
-      content: isFa ? `شخصیت و هویت رفتاری ایجنت:
-"```
-${personaLine}
-"```` : `Agent personality and behavioral identity:
-"```
-${personaLine}
-"````,
+      content: isFa
+        ? `شخصیت و هویت رفتاری ایجنت:\n---\n${personaLine}\n---`
+        : `Agent personality and behavioral identity:\n---\n${personaLine}\n---`,
     });
   }
   if (persona.systemPrompt?.trim()) {
