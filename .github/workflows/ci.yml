@@ -1,0 +1,33 @@
+name: Cortex CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:./db/ci.db
+      APP_SECRET_KEY: ci-secret-change-me-012345678901234567890123456789
+      APP_ENV: test
+      COOKIE_SECURE: false
+      LLM_PROVIDER: none
+      TELEGRAM_INTERNAL_SECRET: ci-telegram-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx prisma generate
+      - run: npx prisma validate
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
