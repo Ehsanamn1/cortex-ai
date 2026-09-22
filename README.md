@@ -45,7 +45,9 @@ The bot asks for the user’s own Telegram contact, checks the allowlist, and ma
 
 ## Production
 
-The repository includes a production Dockerfile, Docker Compose with Qdrant, and GitHub Actions CI. Railway can run the same container. For production, use PostgreSQL rather than local SQLite when running multiple application instances.
+The application is configured for PostgreSQL in production. Set a PostgreSQL connection string in `DATABASE_URL` (for example from Neon) and keep `APP_SECRET_KEY` as a long random secret. Do not commit `.env`, API keys, Telegram tokens, or database credentials.
+
+The repository includes a production Dockerfile, Docker Compose with Qdrant, and GitHub Actions CI. Railway can run the same container.
 
 ## Verification
 
