@@ -12,13 +12,15 @@ function K({title,value,detail,icon:Icon}:{title:string;value:string;detail:stri
   return <Card className="cortex-panel rounded-2xl"><CardContent className="p-5"><div className="flex items-start justify-between gap-3"><span className="cortex-icon-box"><Icon className="size-[18px]"/></span><span className="text-[10px] text-muted-foreground">{detail}</span></div><p className="mt-5 text-2xl font-bold">{value}</p><p className="mt-1 text-xs text-muted-foreground">{title}</p></CardContent></Card>;
 }
 
+type TrendPoint = { date: string; messages: number; tokens: number };
+
 export function AnalyticsView(){
   const ws=useCortexStore(s=>s.activeWorkspaceId);
   const {data,isPending,isError,error,refetch}=useQuery({queryKey:["analytics",ws],queryFn:()=>api.getAnalytics(ws??undefined),enabled:!!ws});
   const trend=useMemo(()=>{
     if(!data) return [];
     const byDate=new Map(data.trend.map(v=>[v.date,v]));
-    const days=[]; const now=new Date();
+    const days: TrendPoint[]=[]; const now=new Date();
     for(let i=13;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);const date=d.toISOString().slice(0,10);days.push(byDate.get(date)??{date,messages:0,tokens:0});}
     return days;
   },[data]);
