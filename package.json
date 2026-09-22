@@ -19,7 +19,8 @@
     "build:vinext": "vinext build",
     "start:vinext": "vinext start",
     "deploy": "npx @vinext/cloudflare deploy",
-    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "setup:cloudflare": "node scripts/cloudflare-setup.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
