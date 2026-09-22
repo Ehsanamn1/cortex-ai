@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Bot, Database, FileCog, LogOut, MessageSquare, Plug, Save, Send, Settings2, ShieldCheck, Sparkles, Users, Workflow, Puzzle, Power } from "lucide-react";
+import { Activity, Bot, Database, FileCog, LogOut, MessageSquare, Plug, Save, Send, ShieldCheck, Users, Workflow, Puzzle, Power } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
