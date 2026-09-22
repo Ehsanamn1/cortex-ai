@@ -1,8 +1,8 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { NextResponse, after } from "next/server";
-import { db } from "@/lib/db";
 import { after } from "next/server";
-import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
 import { processSource } from "@/lib/knowledge/pipeline";
 import { sanitizeFilename } from "@/lib/knowledge/extract";
