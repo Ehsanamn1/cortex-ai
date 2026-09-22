@@ -49,7 +49,7 @@ export function ControlCenter() {
   const settingsQ=useQuery<{settings:Settings}>({queryKey:["cc-settings"],queryFn:()=>fetchJson<{settings:Settings}>("/api/control-center/settings"),enabled:session.isSuccess});
   const [draftSettings,setDraftSettings]=useState<Settings>({});
   const settings:Settings={...(settingsQ.data?.settings??{}),...draftSettings};
-  const updateSetting=(key:string,value:string)=>setDraftSettings(prev=>({...prev,[key]:value});
+  const updateSetting=(key:string,value:string)=>setDraftSettings(prev=>({...prev,[key]:value}));
   const save=useMutation({mutationFn:()=>fetchJson<{settings:Settings}>("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings})}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-settings"]});toast.success("تنظیمات ذخیره شد")},onError:(e:Error)=>toast.error(e.message)});
   const logout=useMutation({mutationFn:()=>fetch("/api/admin/auth/logout",{method:"POST"}),onSuccess:()=>{qc.clear();window.location.reload()}});
   const m=summary.data?.metrics;
