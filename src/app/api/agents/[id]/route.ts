@@ -80,8 +80,10 @@ export async function PATCH(req: Request, { params }: Params) {
       requestedCustomTone = body.customTone.trim().slice(0, 80) || null;
       data.customTone = requestedCustomTone;
     }
-    if (typeof body.persona === "string") data.persona = body.persona.trim().slice(0, 2000) || null;
-    if (typeof body.systemPrompt === "string") data.systemPrompt = body.systemPrompt.trim().slice(0, 8000) || null;
+    const persona = typeof body.persona === "string" ? body.persona : null;
+    if (persona !== null) data.persona = persona.trim().slice(0, 2000) || null;
+    const systemPrompt = typeof body.systemPrompt === "string" ? body.systemPrompt : null;
+    if (systemPrompt !== null) data.systemPrompt = systemPrompt.trim().slice(0, 8000) || null;
     if (typeof body.temperature === "number" && Number.isFinite(body.temperature)) data.temperature = Math.min(2, Math.max(0, body.temperature));
     if (typeof body.topP === "number" && Number.isFinite(body.topP)) data.topP = Math.min(1, Math.max(0, body.topP));
     if (typeof body.maxTokens === "number" && Number.isInteger(body.maxTokens)) data.maxTokens = Math.min(8000, Math.max(128, body.maxTokens));
