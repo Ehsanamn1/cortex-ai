@@ -378,7 +378,7 @@ function usePageTitle(): string {
     case "learn":
       return "آموزش";
     default:
-      return "Cortex AI";
+      return siteConfig.data?.settings["site.name"] ?? "Cortex AI";
   }
 }
 
@@ -422,6 +422,7 @@ export function AppShell() {
   const activeAgentId = useCortexStore((s) => s.activeAgentId);
   const setView = useCortexStore((s) => s.setView);
   const activeWorkspaceName = useCortexStore((s) => s.workspaces.find((w) => w.id === s.activeWorkspaceId)?.name);
+  const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000 });
 
   const [moreOpen, setMoreOpen] = useState(false);
   const title = usePageTitle();
@@ -436,7 +437,7 @@ export function AppShell() {
         <div className="px-1 pt-1">
           <span className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
             <CortexMark size={34} />
-            Cortex <span className="text-primary">AI</span>
+            {siteConfig.data?.settings["site.name"] ?? "Cortex AI"}
           </span>
 
           <div aria-hidden="true" className="cortex-status-line mt-4 h-px w-full" />
