@@ -13,6 +13,7 @@ import {
   sniffKind,
   validateUrl,
 } from "@/lib/knowledge/extract";
+import { getKnowledgeBucket, createKnowledgeObjectKey as makeKnowledgeObjectKey } from "@/lib/cloudflare-storage";
 
 export const dynamic = "force-dynamic";
 
@@ -125,17 +126,39 @@ export async function POST(req: Request, { params }: Params) {
           status: "pending",
         },
       });
-      await persistUpload(source.id, originalName, bytes);
+
+      const bucket = await getKnowledgeBucket();
+      let storageUrl: string | null = null;
+
+      if (bucket) {
+        const objectKey = makeKnowledgeObjectKey(agent.id, source.id, originalName);
+        await bucket.put(objectKey, file.stream(), {
+          httpMetadata: {
+            contentType: file.type || "application/octet-stream",
+          },
+          customMetadata: {
+            originalName,
+            agentId: agent.id,
+            workspaceId: agent.workspaceId,
+          },
+        });
+        storageUrl = "r2://" + objectKey;
+      } else {
+        // Local Node.js fallback for development only.
+        await persistUpload(source.id, originalName, bytes);
+      }
+
       await db.knowledgeDocument.create({
         data: {
           sourceId: source.id,
           name: originalName,
           mimeType: file.type || null,
           sizeBytes: file.size,
+          url: storageUrl,
         },
       });
 
-      after(() => processSource(source.id)); // let the route finish while Next.js keeps background work alive
+      after(() => processSource(source.id)); // let the route finish while Workers keeps background work alive
       const serialized = (await serializeSources(agent.id)).sources.find((s) => s.id === source.id);
       return applyCors(jsonOk({ source: serialized }, 202), req.headers.get("origin"));
     }
