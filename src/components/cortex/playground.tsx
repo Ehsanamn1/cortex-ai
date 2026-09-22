@@ -59,9 +59,10 @@ function sourceDotClass(status: string): string {
 }
 
 function ProviderStatusLine() {
+  const activeWorkspaceId = useCortexStore((s) => s.activeWorkspaceId);
   const { data } = useQuery<Awaited<ReturnType<typeof api.getProvidersStatus>>>({
-    queryKey: ["providers-status"],
-    queryFn: () => api.getProvidersStatus(),
+    queryKey: ["providers-status", activeWorkspaceId],
+    queryFn: () => api.getProvidersStatus(activeWorkspaceId ?? undefined),
     staleTime: Infinity,
     retry: 1,
   });
