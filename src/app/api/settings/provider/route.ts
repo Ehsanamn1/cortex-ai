@@ -24,7 +24,10 @@ export async function PUT(req: Request) {
     const body = await readJson<Record<string, unknown>>(req);
     const workspaceId = typeof body.workspaceId === 'string' ? body.workspaceId : session.memberships[0]?.workspaceId;
     if (!workspaceId) return applyCors(jsonError('فضای کاری یافت نشد.', 400), req.headers.get('origin'));
-    assertWorkspaceAccess(session, workspaceId);
+    const membership = assertWorkspaceAccess(session, workspaceId);
+    if (!['owner', 'admin'].includes(membership.role)) {
+      return applyCors(jsonError('فقط مالک یا مدیر می‌تواند اتصال هوش مصنوعی را تغییر دهد.', 403), req.headers.get('origin'));
+    }
     const providerName = typeof body.providerName === 'string' ? body.providerName.trim().slice(0, 80) : '';
     const baseUrl = typeof body.baseUrl === 'string' ? body.baseUrl.trim().replace(/\/$/, '') : '';
     const model = typeof body.model === 'string' ? body.model.trim().slice(0, 160) : '';
