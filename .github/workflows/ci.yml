@@ -13,7 +13,7 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: file:./db/ci.db
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
       APP_SECRET_KEY: ci-secret-change-me-012345678901234567890123456789
       APP_ENV: test
       COOKIE_SECURE: false
