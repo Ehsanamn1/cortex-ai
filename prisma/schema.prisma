@@ -63,9 +63,16 @@ model Agent {
   description  String?
   language     String   @default("fa")
   tone         String   @default("professional")
-  customTone   String?
-  instructions String?
-  status       String   @default("active")
+  customTone       String?
+  instructions     String?
+  persona          String?
+  systemPrompt     String?
+  temperature      Float    @default(0.7)
+  topP             Float    @default(1.0)
+  maxTokens        Int      @default(1200)
+  memoryEnabled    Boolean  @default(true)
+  citationsEnabled Boolean  @default(true)
+  status           String   @default("active")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
