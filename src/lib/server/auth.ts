@@ -10,7 +10,10 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 export function hashPassword(password: string): string {
   const salt = Buffer.from(randomBytes(16));
-  const hash = crypto.scryptSync(password, salt, 64);
+  const scryptSync = (crypto as unknown as {
+    scryptSync(password: string, salt: Buffer, keylen: number): Buffer;
+  }).scryptSync;
+  const hash = scryptSync(password, salt, 64);
   return `scrypt:${salt.toString("hex")}:${hash.toString("hex")}`;
 }
 
@@ -20,7 +23,10 @@ export function verifyPassword(password: string, stored: string): boolean {
     if (scheme !== "scrypt" || !saltHex || !hashHex) return false;
     const salt = Buffer.from(saltHex, "hex");
     const expected = Buffer.from(hashHex, "hex");
-    const actual = crypto.scryptSync(password, salt, expected.length);
+    const scryptSync = (crypto as unknown as {
+      scryptSync(password: string, salt: Buffer, keylen: number): Buffer;
+    }).scryptSync;
+    const actual = scryptSync(password, salt, expected.length);
     return crypto.timingSafeEqual(expected, actual);
   } catch {
     return false;
