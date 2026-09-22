@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { getVectorStore } from "@/lib/providers/vector";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs, type ChunkInput } from "./chunk";
-import { extractFromUrl, extractStoredBytes, extractStoredFile, removeUploadDir, UPLOAD_ROOT, sanitizeFilename } from "./extract";
+import { extractFromUrl, extractStoredBytes, extractStoredFile, removeUploadDir, UPLOAD_ROOT } from "./extract";
 import { getKnowledgeBucket } from "@/lib/cloudflare-storage";
 import fs from "fs/promises";
 import path from "path";
