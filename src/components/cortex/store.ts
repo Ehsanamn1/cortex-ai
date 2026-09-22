@@ -14,7 +14,8 @@ export type View =
   | "settings"
   | "telegram"
   | "analytics"
-  | "admin";
+  | "admin"
+  | "learn";
 
 export type AgentTab = "overview" | "knowledge" | "playground" | "settings";
 
