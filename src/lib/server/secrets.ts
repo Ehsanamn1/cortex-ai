@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 function keyBytes(): Buffer {
   const secret = process.env.APP_SECRET_KEY;
