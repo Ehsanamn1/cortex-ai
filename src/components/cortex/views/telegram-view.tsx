@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 export function TelegramView(){
  const workspaceId=useCortexStore(s=>s.activeWorkspaceId); const qc=useQueryClient(); const [open,setOpen]=useState(false); const [selected,setSelected]=useState<TelegramBotDto|null>(null);
- const botsQ=useQuery({queryKey:['telegram-bots',workspaceId],queryFn:api.getTelegramBots,enabled:!!workspaceId}); const agentsQ=useQuery({queryKey:['agents'],queryFn:api.getAgents});
+ const botsQ=useQuery({queryKey:['telegram-bots',workspaceId],queryFn:api.getTelegramBots,enabled:!!workspaceId}); const agentsQ=useQuery({queryKey:['agents',workspaceId],queryFn:()=>api.getAgents(workspaceId??undefined),enabled:!!workspaceId});
  const bots=botsQ.data?.bots??[]; const agents=agentsQ.data?.agents??[];
  const create=useMutation({mutationFn:(v:{workspaceId?:string;agentId:string;name:string;token:string;mode:'webhook'|'polling'})=>api.createTelegramBot(v),onSuccess:()=>{toast.success('ربات اضافه شد');setOpen(false);qc.invalidateQueries({queryKey:['telegram-bots']})},onError:e=>toast.error(e.message)});
  const del=useMutation({mutationFn:api.deleteTelegramBot,onSuccess:()=>{toast.success('ربات حذف شد');qc.invalidateQueries({queryKey:['telegram-bots']})},onError:e=>toast.error(e.message)});
