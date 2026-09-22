@@ -13,6 +13,9 @@
       "bucket_name": "cortex-ai-knowledge"
     }
   ],
+  "secrets": {
+    "required": ["DATABASE_URL", "APP_SECRET_KEY", "CORTEX_ADMIN_PASSWORD"]
+  },
   "observability": {
     "enabled": true
   }
