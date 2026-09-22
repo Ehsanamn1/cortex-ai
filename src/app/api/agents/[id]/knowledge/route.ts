@@ -19,7 +19,11 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-const ENV_MAX_UPLOAD_MB = Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 20));
+const DEFAULT_MAX_UPLOAD_MB = 20;
+const ENV_MAX_UPLOAD_MB = (() => {
+  const value = Number(process.env.MAX_UPLOAD_MB);
+  return Number.isFinite(value) && value >= 1 ? Math.min(200, Math.floor(value)) : DEFAULT_MAX_UPLOAD_MB;
+})();
 
 async function serializeSources(agentId: string) {
   const sources = await db.knowledgeSource.findMany({
@@ -71,8 +75,7 @@ export async function POST(req: Request, { params }: Params) {
     const { id } = await params;
     const agent = await loadAgentForSession(session, id);
     rateLimit(req, "knowledge-upload", 20, 60_000);
-    const configuredLimit = Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 0));
-    let maxUploadMb = configuredLimit || ENV_MAX_UPLOAD_MB;
+    let maxUploadMb = ENV_MAX_UPLOAD_MB;
     try {
       const rows = await db.siteSetting.findMany({ where: { key: "site.maxUploadMb" }, take: 1 });
       const settingLimit = Number(rows[0]?.value ?? 0);
