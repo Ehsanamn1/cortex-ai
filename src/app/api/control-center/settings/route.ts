@@ -1,6 +1,14 @@
 import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireAdmin } from "@/lib/server/admin-auth";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings";
+
+export const dynamic = "force-dynamic";
+
+port { db } from "@/lib/db";
+import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
+import { requireAdmin } from "@/lib/server/admin-auth";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -40,13 +48,4 @@ export async function PUT(req: Request) {
   } catch (e) { return toErrorResponse(e); }
 }
 
-export async function getPublicSiteSettings(): Promise<Record<string, string>> {
-  const values: Record<string, string> = { ...DEFAULT_SITE_SETTINGS };
-  try {
-    const rows = await db.siteSetting.findMany({ where: { key: { in: Object.keys(DEFAULT_SITE_SETTINGS) } } });
-    for (const row of rows) values[row.key] = row.value;
-  } catch {
-    // Health of the public UI must not depend on optional SiteSetting rows.
-  }
-  return values;
-}
+/* Public-site settings are centralized in @/lib/site-settings. */
