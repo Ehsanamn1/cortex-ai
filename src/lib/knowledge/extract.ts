@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
-import { randomUUID } from "crypto";
-import fs from "fs/promises";
-import path from "path";
+import { randomUUID } from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 /**
  * Text extraction for knowledge sources. Everything here is REAL:
@@ -174,13 +174,16 @@ export function validateUrl(raw: string): URL {
 }
 
 async function assertPublicHost(hostname: string): Promise<void> {
-  const dns = await import("dns/promises").catch(() => null);
-  if (!dns) return;
   try {
-    const records = await dns.lookup(hostname, { all: true });
-    if (records.length === 0) throw new UnsafeUrlError();
-    for (const r of records) {
-      if (isPrivateIp(r.address)) throw new UnsafeUrlError();
+    const dns = await import("node:dns");
+    const resolved = await Promise.allSettled([
+      dns.promises.resolve4(hostname),
+      dns.promises.resolve6(hostname),
+    ]);
+    const addresses = resolved.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+    if (addresses.length === 0) throw new UnsafeUrlError();
+    for (const address of addresses) {
+      if (isPrivateIp(address)) throw new UnsafeUrlError();
     }
   } catch (e) {
     if (e instanceof UnsafeUrlError) throw e;
