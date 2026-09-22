@@ -53,6 +53,9 @@ export function toErrorResponse(e: unknown): NextResponse {
 
 /** Best-effort client IP behind the sandbox gateway. */
 export function clientIp(req: Request): string {
+  const cfConnectingIp = req.headers.get("cf-connecting-ip");
+  if (cfConnectingIp) return cfConnectingIp.trim();
+
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0]!.trim();
   return req.headers.get("x-real-ip") ?? "unknown";
