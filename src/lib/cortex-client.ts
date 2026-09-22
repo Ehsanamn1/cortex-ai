@@ -191,8 +191,8 @@ export interface ProviderHealthOkDto {
 export interface ProviderConfigDto { id:string; providerName:string; baseUrl:string; model:string; authMode:string; enabled:boolean; hasApiKey:boolean }
 export interface TelegramBotDto { id:string; name:string; agentId:string; agentName:string; username:string|null; status:string; mode:string; lastError:string|null; lastSeenAt:string|null; createdAt:string; updatedAt:string; allowlistCount:number; usersCount:number }
 export interface TelegramAllowlistDto { id:string; botId:string; phoneNumber:string; displayName:string|null; notes:string|null; status:string; createdAt:string; updatedAt:string }
-export interface TelegramUserDto { id:string; botId:string; telegramUserId:string; phoneNumber:string|null; username:string|null; firstName:string|null; lastName:string|null; status:string; lastSeenAt:string|null; createdAt:string; updatedAt:string; bot?:{name:string} }
-export interface AnalyticsDto { users:number; bots:number; usage:{events:number;tokens:number;inputTokens:number;outputTokens:number;estimatedCostMicros:number}; trend:Array<{date:string;messages:number;tokens:number}>; topQuestions:Array<{question:string;count:number}> }
+export interface TelegramUserDto { id:string; botId:string; telegramUserId:string; phoneNumber:string|null; username:string|null; firstName:string|null; lastName:string|null; status:string; dailyMessageLimit:number; monthlyMessageLimit:number; dailyTokenLimit:number; monthlyTokenLimit:number; lastSeenAt:string|null; createdAt:string; updatedAt:string; bot?:{name:string} }
+export interface AnalyticsDto { users:number; bots:number; usage:{events:number;tokens:number;inputTokens:number;outputTokens:number;estimatedCostMicros:number}; trend:Array<{date:string;messages:number;tokens:number}>; topQuestions:Array<{question:string;count:number}>; unanswered:number; unansweredQuestions:Array<{question:string;count:number}> }
 
 export interface SessionDto {
   user: UserDto;
@@ -389,7 +389,7 @@ export const api = {
   removeTelegramAllowlist(botId:string,entryId:string){ return request<{ok:boolean}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist?entryId=${encodeURIComponent(entryId)}`,{method:'DELETE'}); },
   getAdminOverview(workspaceId?:string){ return request<any>(`/api/admin/overview${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
   getTelegramUsers(workspaceId?:string){ return request<{users:TelegramUserDto[]}>(`/api/admin/telegram-users${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
-  updateTelegramUser(id:string,status:'pending'|'allowed'|'blocked'){ return jsonRequest<{user:TelegramUserDto}>('/api/admin/telegram-users','PATCH',{id,status}); },
+  updateTelegramUser(id:string,status:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>('/api/admin/telegram-users','PATCH',{id,status,...limits}); },
   getAnalytics(workspaceId?:string){ return request<AnalyticsDto & {note?:string}>(`/api/admin/analytics${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
 
   testProvidersHealth(workspaceId?: string): Promise<ProviderHealthOkDto> {
