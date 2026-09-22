@@ -1,5 +1,4 @@
 import { db } from "@/lib/db";
-import { randomUUID } from "node:crypto";
 
 /**
  * Text extraction for knowledge sources. Everything here is REAL:
@@ -22,7 +21,7 @@ export interface ExtractionResult {
 export const UPLOAD_ROOT = ".data/uploads";
 
 export function sanitizeFilename(name: string): string {
-  const base = path.basename(name).replace(/[\u0000-\u001f<>:"/\\|?*]+/g, "_").trim();
+  const base = (name.split(/[\\/]/).pop() ?? name).replace(/[\u0000-\u001f<>:"/\\|?*]+/g, "_").trim();
   return base.length > 0 ? base.slice(0, 180) : "file";
 }
 
@@ -31,7 +30,7 @@ export async function persistUpload(sourceId: string, originalName: string, byte
   const path = await import("node:path");
   const dir = path.join(process.cwd(), UPLOAD_ROOT, sourceId);
   await fs.mkdir(dir, { recursive: true });
-  const safe = `${randomUUID()}-${sanitizeFilename(originalName)}`;
+  const safe = `${crypto.randomUUID()}-${sanitizeFilename(originalName)}`;
   const filePath = path.join(dir, safe);
   await fs.writeFile(filePath, bytes);
   return filePath;
