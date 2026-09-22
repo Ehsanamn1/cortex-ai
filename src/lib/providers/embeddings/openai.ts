@@ -31,7 +31,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
   }
 
   isConfigured(): boolean {
-    return Boolean(this.apiKey());
+    return Boolean(this.apiKey() && this.model());
   }
 
   model(): string | null {
