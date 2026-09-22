@@ -119,6 +119,7 @@ function ConversationRowItem({ row }: { row: ConversationRow }) {
 }
 
 export function ConversationsView() {
+  const activeWorkspaceId = useCortexStore((s) => s.activeWorkspaceId);
   const {
     data: agentsData,
     isPending: agentsPending,
@@ -126,9 +127,9 @@ export function ConversationsView() {
     error: agentsErrorObject,
     refetch: refetchAgents,
   } = useQuery({
-    queryKey: ["agents", useCortexStore.getState().activeWorkspaceId],
-    queryFn: () => api.getAgents(useCortexStore.getState().activeWorkspaceId ?? undefined),
-    enabled: !!useCortexStore.getState().activeWorkspaceId,
+    queryKey: ["agents", activeWorkspaceId],
+    queryFn: () => api.getAgents(activeWorkspaceId ?? undefined),
+    enabled: !!activeWorkspaceId,
   });
 
   useErrorToast(agentsError ? agentsErrorObject : null);
