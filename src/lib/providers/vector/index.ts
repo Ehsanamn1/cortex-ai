@@ -6,7 +6,7 @@ export type { SearchResult } from "./types";
 /**
  * Picks the vector store:
  * - QDRANT_URL configured → QdrantVectorStore (with live readiness probe).
- * - otherwise → LocalVectorStore (SQLite; always ready).
+ * - otherwise → LocalVectorStore (PostgreSQL; always ready).
  */
 export function getVectorStore(): VectorStore {
   const url = process.env.QDRANT_URL?.trim();
