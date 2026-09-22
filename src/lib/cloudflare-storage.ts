@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 
 export async function getKnowledgeBucket(): Promise<R2Bucket | null> {
   try {
