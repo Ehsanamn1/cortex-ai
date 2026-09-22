@@ -48,7 +48,7 @@ export function verifyAdminSession(token: string | null): string | null {
 }
 
 export function adminCookie(token: string) {
-  const secure = process.env.COOKIE_SECURE === "true";
+  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
   return COOKIE_NAME + "=" + encodeURIComponent(token) + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=" + TTL_SECONDS + (secure ? "; Secure" : "");
 }
 
