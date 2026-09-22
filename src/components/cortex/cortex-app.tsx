@@ -9,6 +9,7 @@ import { api, ApiError } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
 import { CortexMark } from "@/components/cortex/logo";
 import { AppShell } from "@/components/cortex/app-shell";
+import { AuthScreen } from "@/components/cortex/auth-screen";
 import { Button } from "@/components/ui/button";
 
 function makeQueryClient(): QueryClient {
@@ -49,7 +50,7 @@ function Splash() {
 
 function SessionGate() {
   const hydrate = useCortexStore((s) => s.hydrate);
-  const [phase, setPhase] = useState<"checking" | "ready" | "error">("checking");
+  const [phase, setPhase] = useState<"checking" | "auth" | "ready" | "error">("checking");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
@@ -57,23 +58,14 @@ function SessionGate() {
 
     async function bootstrapSession() {
       try {
-        const response = await fetch("/api/auth/demo", {
-          method: "POST",
-          credentials: "same-origin",
-        });
-        const data = (await response.json()) as {
-          user?: Parameters<typeof hydrate>[0];
-          workspaces?: Parameters<typeof hydrate>[1];
-          error?: string;
-        };
-
-        if (!response.ok || !data.user || !data.workspaces) {
-          throw new Error(data.error || "راه‌اندازی Cortex ناموفق بود.");
-        }
-
+        const session = await api.checkSession();
         if (cancelled) return;
-        hydrate(data.user, data.workspaces);
-        setPhase("ready");
+        if (session) {
+          hydrate(session.user, session.workspaces);
+          setPhase("ready");
+        } else {
+          setPhase("auth");
+        }
       } catch (error) {
         if (cancelled) return;
         console.error("[cortex] session bootstrap failed:", error);
@@ -90,6 +82,8 @@ function SessionGate() {
   }, [hydrate]);
 
   if (phase === "checking") return <Splash />;
+
+  if (phase === "auth") return <AuthScreen />;
 
   if (phase === "error") {
     return (
