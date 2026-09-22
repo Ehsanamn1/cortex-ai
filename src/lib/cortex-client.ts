@@ -214,6 +214,8 @@ export interface SessionDto {
   workspaces: WorkspaceDto[];
 }
 
+export interface SiteConfigDto { settings: { "site.name": string; "site.description": string; "site.supportEmail": string; "site.maxUploadMb": string; "site.welcomeTitle": string } }
+
 /* ---------------- core fetch machinery ---------------- */
 
 const GENERIC_ERROR = "خطای غیرمنتظره‌ای رخ داد؛ لطفاً دوباره تلاش کنید.";
@@ -265,6 +267,7 @@ function jsonRequest<T>(path: string, method: "POST" | "PATCH" | "PUT" | "DELETE
 /* ---------------- API surface ---------------- */
 
 export const api = {
+  getSiteConfig(): Promise<SiteConfigDto> { return request("/api/site-config"); },
   /* AUTH */
 
   signup(input: { name?: string; email: string; password: string }): Promise<SessionDto> {
