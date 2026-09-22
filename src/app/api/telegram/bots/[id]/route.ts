@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { db } from "@/lib/db";
 import { applyCors, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
