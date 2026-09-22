@@ -53,8 +53,17 @@ function validateAgentInput(body: AgentInput) {
 export async function GET(req: Request) {
   try {
     const session = await requireSession(req);
+    const requestedWorkspaceId = new URL(req.url).searchParams.get("workspaceId");
+    const workspaceId = requestedWorkspaceId ?? session.memberships[0]?.workspaceId;
+    if (!workspaceId) {
+      return applyCors(jsonOk({ agents: [] }), req.headers.get("origin"));
+    }
+    const membership = session.memberships.find((m) => m.workspaceId === workspaceId);
+    if (!membership) {
+      return applyCors(jsonError("دسترسی به این فضای کاری ندارید.", 403), req.headers.get("origin"));
+    }
     const agents = await db.agent.findMany({
-      where: agentFilterForSession(session),
+      where: { workspaceId },
       include: { _count: { select: { knowledgeSources: true, conversations: true } } },
       orderBy: { createdAt: "desc" },
     });
