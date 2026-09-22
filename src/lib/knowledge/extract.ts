@@ -47,7 +47,10 @@ export async function removeUploadDir(sourceId: string): Promise<void> {
 
 /* ---------------- validation ---------------- */
 
-export const ALLOWED_EXTENSIONS = [".pdf", ".txt", ".docx"] as const;
+export const ALLOWED_EXTENSIONS = [
+  ".pdf", ".txt", ".docx", ".md", ".csv", ".json", ".xml", ".html", ".htm",
+  ".yaml", ".yml", ".log", ".tsv", ".sql"
+] as const;
 
 export function detectExtension(filename: string): string {
   return path.extname(filename).toLowerCase();
@@ -314,10 +317,17 @@ export async function extractStoredFile(
   if (ext === ".docx" && kind === "docx-zip") {
     return { pages: await extractDocx(bytes), mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", sizeBytes: bytes.length };
   }
-  if (ext === ".txt" && (kind === "text" || kind === "unknown")) {
-    return { pages: await extractTxt(bytes), mimeType: "text/plain", sizeBytes: bytes.length };
+  const textExtensions = new Set([".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".log", ".tsv", ".sql"]);
+  if (textExtensions.has(ext) && (kind === "text" || kind === "unknown")) {
+    const mimeType =
+      ext === ".json" ? "application/json" :
+      ext === ".csv" ? "text/csv" :
+      ext === ".html" || ext === ".htm" ? "text/html" :
+      ext === ".xml" ? "application/xml" :
+      "text/plain";
+    return { pages: await extractTxt(bytes), mimeType, sizeBytes: bytes.length };
   }
-  throw new Error("فایل معتبر نیست یا محتوای آن با پسوند اعلام‌شده هم‌خوانی ندارد.");
+  throw new Error("قالب فایل برای استخراج دانش متنی پشتیبانی نمی‌شود.");
 }
 
 /** Extract source-type from stored document row (used by retry). */
