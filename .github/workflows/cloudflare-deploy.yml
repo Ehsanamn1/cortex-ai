@@ -44,6 +44,12 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
         run: npx @vinext/cloudflare deploy --skip-build
 
+      - name: Smoke test live Worker
+        run: |
+          response=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors --max-time 30             "https://cortex-ai.dengxiao445.workers.dev/api/health")
+          echo "$response" | jq .
+          echo "$response" | jq -e '.ok == true and .database == "connected"'
+
       - name: Cleanup
         if: always()
         run: rm -f .cf-runtime-secrets
