@@ -36,6 +36,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
+const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((item) =>
+  ["dashboard", "agents", "knowledge", "conversations"].includes(item.view)
+);
+
 import { DashboardView } from "@/components/cortex/views/dashboard-view";
 import { AgentsView } from "@/components/cortex/views/agents-view";
 import { AgentBuilderView, AgentEditView } from "@/components/cortex/views/agent-form";
@@ -284,7 +288,7 @@ function BottomNav({ onMore }: { onMore: () => void }) {
   const view = useCortexStore((s) => s.view);
   const setView = useCortexStore((s) => s.setView);
 
-  const moreActive = view === "settings";
+  const moreActive = !MOBILE_NAV_ITEMS.some((item) => item.matches.includes(view));
 
   return (
     <nav
@@ -292,7 +296,7 @@ function BottomNav({ onMore }: { onMore: () => void }) {
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-popover/95 backdrop-blur supports-[backdrop-filter]:bg-popover/85 lg:hidden"
     >
       <div className="flex items-stretch pb-[env(safe-area-inset-bottom)]">
-        {NAV_ITEMS.map((item) => {
+        {MOBILE_NAV_ITEMS.map((item) => {
           const active = item.matches.includes(view);
           return (
             <button
@@ -419,13 +423,14 @@ export function AppShell() {
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
       {/* Sidebar — first in DOM = right side in RTL */}
-      <aside className="hidden w-64 shrink-0 flex-col gap-6 border-l bg-sidebar p-4 lg:flex">
-        <div className="px-1 pt-2">
+      <aside className="cortex-sidebar hidden w-[268px] shrink-0 flex-col gap-5 border-l p-4 lg:flex">
+        <div className="px-1 pt-1">
           <span className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
             <CortexMark size={34} />
             Cortex <span className="text-primary">AI</span>
           </span>
           <p className="mt-1 ps-[46px] text-[11px] text-muted-foreground">محصولی از ترانوس</p>
+          <div aria-hidden="true" className="cortex-status-line mt-4 h-px w-full" />
         </div>
 
         <WorkspaceSwitcher />
@@ -439,7 +444,7 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
-        <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b bg-background/80 px-4 backdrop-blur lg:px-8">
+        <header className="cortex-topbar relative flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4 backdrop-blur-xl lg:px-8">
           <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
             <CortexMark size={30} />
             <span className="truncate text-sm font-semibold text-foreground">
