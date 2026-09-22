@@ -59,6 +59,7 @@ function FieldError({ message, id }: { message?: string; id?: string }) {
 export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: AgentDto | null }) {
   const setView = useCortexStore((s) => s.setView);
   const openAgent = useCortexStore((s) => s.openAgent);
+  const activeWorkspaceId = useCortexStore((s) => s.activeWorkspaceId);
   const queryClient = useQueryClient();
 
   const form = useForm<AgentFormValues>({
@@ -101,6 +102,7 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
         description: values.description.trim() || undefined,
         customTone: values.tone === "custom" ? values.customTone.trim() : undefined,
         instructions: values.instructions.trim() || undefined,
+        workspaceId: activeWorkspaceId ?? undefined,
       };
       return api.createAgent(payload);
     },
