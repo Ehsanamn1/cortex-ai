@@ -105,7 +105,7 @@ export function tokenize(text: string): string[] {
 
 function hashFeature(feature: string): { idx: number; sign: number } {
   const h = crypto.createHash("sha1").update(feature, "utf8").digest();
-  const idx = h.readUInt32BE(0) % DIMS;
+  const idx = ((((h[0] ?? 0) << 24) >>> 0) | ((h[1] ?? 0) << 16) | ((h[2] ?? 0) << 8) | (h[3] ?? 0)) % DIMS;
   const sign = h[4] % 2 === 0 ? 1 : -1;
   return { idx, sign };
 }
