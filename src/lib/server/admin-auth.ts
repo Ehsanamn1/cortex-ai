@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { randomBytes } from "./random";
 import { NextResponse } from "next/server";
 
 const COOKIE_NAME = "cortex_admin_session";
@@ -10,7 +11,7 @@ function secret(): string {
   const configured = process.env.CORTEX_ADMIN_SESSION_SECRET || process.env.APP_SECRET_KEY;
   if (configured && configured.length >= 16) return configured;
   const g = globalThis as { __cortexAdminSecret?: string };
-  if (!g.__cortexAdminSecret) g.__cortexAdminSecret = crypto.randomBytes(32).toString("hex");
+  if (!g.__cortexAdminSecret) g.__cortexAdminSecret = Buffer.from(randomBytes(32)).toString("hex");
   return g.__cortexAdminSecret;
 }
 
