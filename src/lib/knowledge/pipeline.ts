@@ -4,10 +4,8 @@ import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs, type ChunkInput } from "./chunk";
 import { extractFromUrl, extractStoredBytes, extractStoredFile, removeUploadDir, UPLOAD_ROOT } from "./extract";
 import { getKnowledgeBucket } from "@/lib/cloudflare-storage";
-import fs from "fs/promises";
-import path from "path";
-import { createWriteStream } from "fs";
-import { randomUUID } from "crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 /**
  * Knowledge processing pipeline (real, no simulation):
