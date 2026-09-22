@@ -233,7 +233,6 @@ export function AuthScreen() {
             </ul>
           </div>
 
-          <p className="relative text-xs text-muted-foreground">TRANOS — Cortex AI</p>
         </aside>
 
         {/* Auth card */}
@@ -274,7 +273,7 @@ export function AuthScreen() {
       {/* Sticky mini footer */}
       <footer className="mt-auto border-t bg-background">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 py-4 text-xs text-muted-foreground">
-          <span>© TRANOS — Cortex AI</span>
+          <span>© Cortex AI</span>
           <span>نسخه ۱.۰</span>
         </div>
       </footer>
