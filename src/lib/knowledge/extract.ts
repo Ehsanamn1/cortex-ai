@@ -54,7 +54,9 @@ export const ALLOWED_EXTENSIONS = [
 ] as const;
 
 export function detectExtension(filename: string): string {
-  return path.extname(filename).toLowerCase();
+  const base = filename.split(/[\\/]/).pop() ?? filename;
+  const dot = base.lastIndexOf(".");
+  return dot > 0 ? base.slice(dot).toLowerCase() : "";
 }
 
 /** Magic-byte sniffing so a renamed binary can't pose as a document. */
