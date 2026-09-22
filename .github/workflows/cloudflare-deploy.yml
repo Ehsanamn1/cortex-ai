@@ -26,6 +26,21 @@ jobs:
       - name: Build Worker
         run: npx vinext build
 
+      - name: Inspect Cloudflare credential wiring
+        env:
+          SECRET_KEYS: ${{ toJson(secrets) }}
+          VARIABLE_KEYS: ${{ toJson(vars) }}
+        run: |
+          python - <<'PY'
+          import json, os
+          for label, raw in (("secrets", os.environ.get("SECRET_KEYS", "{}")), ("vars", os.environ.get("VARIABLE_KEYS", "{}"))):
+              try:
+                  keys = sorted(json.loads(raw).keys())
+              except Exception:
+                  keys = []
+              print(f"{label} keys visible to this job: {keys}")
+          PY
+
       - name: Verify Cloudflare credentials
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
