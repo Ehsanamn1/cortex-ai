@@ -1,13 +1,12 @@
 "use client";
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Link2, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi } from 'lucide-react';
+import { Bot, Link2, Plus, ShieldCheck, Trash2, Users, Wifi } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, type TelegramBotDto } from '@/lib/cortex-client';
 import { useCortexStore } from '@/components/cortex/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
