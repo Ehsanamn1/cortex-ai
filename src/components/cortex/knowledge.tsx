@@ -158,13 +158,8 @@ function AddFileDialogInner({
 
   function pickFile(candidate: File | null | undefined) {
     if (!candidate) return;
-    if (!ACCEPTED_EXTENSIONS.test(candidate.name)) {
-      setError("فقط فایل‌های PDF، TXT و DOCX پذیرفته می‌شوند.");
-      setFile(null);
-      return;
-    }
     if (candidate.size > MAX_FILE_SIZE) {
-      setError("حجم فایل نباید بیشتر از ۱۰ مگابایت باشد.");
+      setError("حجم فایل نباید بیشتر از ۲۰۰ مگابایت باشد.");
       setFile(null);
       return;
     }
@@ -175,8 +170,8 @@ function AddFileDialogInner({
   return (
     <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-right sm:text-right">
-          <DialogTitle>افزودن فایل دانش</DialogTitle>
-          <DialogDescription>فایل PDF، TXT یا DOCX (حداکثر ۱۰ مگابایت) را اضافه کنید.</DialogDescription>
+          <DialogTitle>افزودن فایل به دانش</DialogTitle>
+          <DialogDescription>هر فایل تا ۲۰۰ مگابایت قابل دریافت است و بعد از بارگذاری به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
         </DialogHeader>
 
         <div
@@ -256,6 +251,19 @@ function AddFileDialogInner({
             <AlertCircle />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
+        )}
+
+        {uploadMutation.isPending && (
+          <div className="space-y-2 rounded-xl border bg-muted/30 p-3">
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>بارگذاری امن فایل…</span>
+              <span>{faNum(progress)}٪</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: progress + "%" }} />
+            </div>
+            <p className="text-[10px] text-muted-foreground">فایل‌های بزرگ مستقیماً به Storage ارسال می‌شوند.</p>
+          </div>
         )}
 
         <DialogFooter className="gap-2 sm:gap-0">
