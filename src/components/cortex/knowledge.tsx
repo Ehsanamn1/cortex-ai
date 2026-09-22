@@ -48,7 +48,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // server default; server-side SiteSetting remains authoritative
 
 /* ---------------- hooks ---------------- */
 
@@ -151,7 +151,7 @@ function AddFileDialogInner({
     <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-right sm:text-right">
           <DialogTitle>افزودن فایل به دانش</DialogTitle>
-          <DialogDescription>هر فایل تا ۲۰ مگابایت قابل دریافت است و بعد از بارگذاری به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
+          <DialogDescription>هر فایل تا ۲۰ مگابایت قابل دریافت است؛ سقف نهایی از تنظیمات سرور اعمال می‌شود و بعد از بارگذاری به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
         </DialogHeader>
 
         <div
