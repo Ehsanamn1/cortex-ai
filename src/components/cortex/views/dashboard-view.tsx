@@ -19,7 +19,7 @@ function CortexCore(){return <motion.div initial={{opacity:0,scale:.85}} animate
   <motion.div animate={{scale:[1,1.04,1],rotate:[0,-8,0]}} transition={{duration:4,repeat:Infinity,ease:'easeInOut'}} className="cortex-core-sphere absolute inset-[21%] rounded-full">
     <div className="absolute inset-6 rounded-full border border-white/10 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,.35),transparent_14%),radial-gradient(circle_at_55%_48%,rgba(59,130,255,.95),transparent_38%),radial-gradient(circle_at_70%_75%,rgba(139,92,246,.95),transparent_48%),#08111f] shadow-[0_0_90px_rgba(59,130,255,.35),inset_0_1px_0_rgba(255,255,255,.14)]"/>
   </motion.div>
-  <div className="absolute inset-x-0 bottom-0 text-center"><p className="text-[10px] font-semibold tracking-[.28em] text-primary/80">CORTEX CORE</p><p className="mt-1 text-xs text-muted-foreground">هوش در حال سازمان‌دهی</p></div>
+  <div className="absolute inset-x-0 bottom-0 text-center"><p className="text-[10px] font-semibold tracking-[.28em] text-primary/80">هسته Cortex</p><p className="mt-1 text-xs text-muted-foreground">هوش در حال سازمان‌دهی</p></div>
 </motion.div>}
 
 function DashboardEmptyIllustration() {
@@ -124,11 +124,11 @@ export function DashboardView() {
       <section className="relative overflow-hidden rounded-[28px] border border-white/[.07] bg-[radial-gradient(circle_at_75%_15%,rgba(59,130,255,.13),transparent_25%),radial-gradient(circle_at_20%_80%,rgba(139,92,246,.10),transparent_22%),linear-gradient(145deg,#0f141d,#080b10)] px-5 py-6 sm:px-8">
         <div className="relative z-10 grid items-center gap-6 lg:grid-cols-[1.05fr_.95fr]">
           <div className="max-w-xl">
-            <p className="cortex-kicker">INTELLIGENCE OPERATING SYSTEM</p>
+            <p className="cortex-kicker">سیستم‌عامل هوش</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Cortex را مثل یک سیستم زنده بساز.</h2>
             <p className="mt-4 text-sm leading-7 text-slate-400">از دانش واقعی کسب‌وکار تا پاسخ‌گویی، تلگرام و تحلیل استفاده؛ همه‌چیز حول یک هسته‌ی قابل کنترل و قابل توسعه.</p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className="rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs text-primary">RAG واقعی</span><span className="rounded-full border border-violet-400/15 bg-violet-400/5 px-3 py-1.5 text-xs text-violet-300">Provider مستقل</span><span className="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs text-slate-300">Multi-tenant</span>
+              <span className="rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs text-primary">RAG واقعی</span><span className="rounded-full border border-violet-400/15 bg-violet-400/5 px-3 py-1.5 text-xs text-violet-300">اتصال مستقل</span><span className="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs text-slate-300">چندفضایی</span>
             </div>
           </div>
           <CortexCore/>
@@ -166,7 +166,7 @@ export function DashboardView() {
         <Card className="cortex-panel overflow-hidden rounded-2xl">
           <CardHeader className="border-b border-white/[.06]">
             <div>
-              <p className="cortex-kicker">QUICK ACTIONS</p>
+              <p className="cortex-kicker">عملیات سریع</p>
               <CardTitle className="mt-2 text-base">از این‌جا شروع کنید</CardTitle>
             </div>
             <p className="text-xs text-muted-foreground">عملیات مستقیم روی همین فضای کاری</p>
@@ -222,7 +222,7 @@ export function DashboardView() {
         <Card className="cortex-panel overflow-hidden rounded-2xl">
           <CardHeader className="border-b border-white/[.06]">
             <div>
-              <p className="cortex-kicker">SYSTEM ACTIVITY</p>
+              <p className="cortex-kicker">فعالیت سیستم</p>
               <CardTitle className="mt-2 text-base">آخرین فعالیت‌ها</CardTitle>
             </div>
             <div className="flex size-9 items-center justify-center rounded-xl border border-emerald-400/15 bg-emerald-400/10 text-emerald-400">
