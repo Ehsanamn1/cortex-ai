@@ -48,69 +48,63 @@ function Splash() {
 }
 
 function SessionGate() {
-  const user = useCortexStore((s) => s.user);
   const hydrate = useCortexStore((s) => s.hydrate);
-  const [phase, setPhase] = useState<"checking" | "signed-out" | "error">("checking");
+  const [phase, setPhase] = useState<"checking" | "ready" | "error">("checking");
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    void api
-      .checkSession()
-      .then((session) => {
+
+    async function bootstrapDemo() {
+      try {
+        const response = await fetch("/api/auth/demo", {
+          method: "POST",
+          credentials: "same-origin",
+        });
+        const data = (await response.json()) as {
+          user?: Parameters<typeof hydrate>[0];
+          workspaces?: Parameters<typeof hydrate>[1];
+          error?: string;
+        };
+
+        if (!response.ok || !data.user || !data.workspaces) {
+          throw new Error(data.error || "راه‌اندازی Cortex ناموفق بود.");
+        }
+
         if (cancelled) return;
-        if (session) hydrate(session.user, session.workspaces);
-        else setPhase("signed-out");
-      })
-      .catch((error: unknown) => {
+        hydrate(data.user, data.workspaces);
+        setPhase("ready");
+      } catch (error) {
         if (cancelled) return;
-        // A stale/invalid session or a temporary session-check failure must not
-        // brick the whole application. Let the user reach the auth screen.
-        console.error("[cortex] session check failed:", error);
-        setErrorMessage(error instanceof Error ? error.message : "خطای بررسی نشست");
-        setPhase("signed-out");
-      });
+        console.error("[cortex] demo bootstrap failed:", error);
+        setErrorMessage(error instanceof Error ? error.message : "راه‌اندازی Cortex ناموفق بود.");
+        setPhase("error");
+      }
+    }
+
+    void bootstrapDemo();
+
     return () => {
       cancelled = true;
     };
-  }, [hydrate, attempts]);
-
-  // Signing out (store user → null) must return to the auth screen even though
-  // the initial session check already resolved. Store subscription keeps this
-  // reactive without calling setState directly inside the effect body.
-  useEffect(() => {
-    const unsubscribe = useCortexStore.subscribe((state, prev) => {
-      if (prev.user !== null && state.user === null) {
-        setPhase("signed-out");
-      }
-    });
-    return unsubscribe;
-  }, []);
-
-  if (user) return <AppShell />;
+  }, [hydrate]);
 
   if (phase === "checking") return <Splash />;
 
-  if (phase === "signed-out") return <AuthScreen />;
-
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 text-center">
-      <CortexMark size={48} />
-      <div className="space-y-2">
-        <p className="font-semibold text-foreground">اتصال به Cortex AI برقرار نشد</p>
-        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{errorMessage}</p>
+  if (phase === "error") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 text-center">
+        <CortexMark size={48} />
+        <div className="space-y-2">
+          <p className="font-semibold text-foreground">راه‌اندازی Cortex انجام نشد</p>
+          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{errorMessage}</p>
+        </div>
+        <Button onClick={() => window.location.reload()}>تلاش مجدد</Button>
       </div>
-      <Button
-        onClick={() => {
-          setPhase("checking");
-          setAttempts((a) => a + 1);
-        }}
-      >
-        تلاش مجدد
-      </Button>
-    </div>
-  );
+    );
+  }
+
+  return <AppShell />;
 }
 
 export function CortexApp() {
