@@ -240,7 +240,6 @@ function AssistantContent({ content }: { content: string }) {
   return (
     <div dir="auto" className="text-sm leading-[1.9] text-foreground">
       <ReactMarkdown
-        breaks
         components={{
           p: ({ children }) => <p className="whitespace-pre-wrap [&:not(:first-child)]:mt-3">{children}</p>,
           strong: ({ children }) => <strong className="font-bold">{children}</strong>,
