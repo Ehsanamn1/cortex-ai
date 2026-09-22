@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const loginSchema = z.object({
   email: z.email({ message: "یک ایمیل معتبر وارد کنید." }),
-  password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر باشد." }),
+  password: z.string().min(8, { message: "رمز عبور باید حداقل ۸ کاراکتر باشد." }),
 });
 type LoginValues = z.infer<typeof loginSchema>;
 
@@ -175,7 +175,7 @@ function SignupForm() {
           type="password"
           dir="ltr"
           autoComplete="new-password"
-          placeholder="حداقل ۶ کاراکتر"
+          placeholder="حداقل ۸ کاراکتر"
           className="text-left"
           aria-invalid={!!form.formState.errors.password}
           {...form.register("password")}
