@@ -10,4 +10,8 @@ export async function GET(req:Request){try{const s=await requireSession(req);con
  db.conversation.findMany({where:{agent:{workspaceId}},select:{id:true,title:true,channel:true,updatedAt:true,agent:{select:{name:true}}},orderBy:{updatedAt:'desc'},take:100}),
  db.usageEvent.findMany({where:{workspaceId},select:{id:true,channel:true,provider:true,model:true,totalTokens:true,createdAt:true,agent:{select:{name:true}}},orderBy:{createdAt:'desc'},take:100}),
  db.auditLog.findMany({where:{workspaceId},select:{id:true,action:true,entityType:true,entityId:true,createdAt:true},orderBy:{createdAt:'desc'},take:100})
-]);return applyCors(jsonOk({role:role.role,bots,users,agents,knowledge,conversations,events,logs}),req.headers.get('origin'));}catch(e){return toErrorResponse(e)}}
+]);
+const telegramUserIds=users.map((u:any)=>u.id);
+const usageRows=telegramUserIds.length?await db.usageEvent.groupBy({by:['telegramUserId'],where:{workspaceId,telegramUserId:{in:telegramUserIds}},_sum:{totalTokens:true,inputTokens:true,outputTokens:true},_count:{_all:true}}):[];
+const usageMap=new Map(usageRows.map((row:any)=>[row.telegramUserId,{events:row._count._all,tokens:row._sum.totalTokens??0,inputTokens:row._sum.inputTokens??0,outputTokens:row._sum.outputTokens??0}]));
+const usersWithUsage=users.map((u:any)=>({...u,usage:usageMap.get(u.id)||{events:0,tokens:0,inputTokens:0,outputTokens:0}}));return applyCors(jsonOk({role:role.role,bots,users:usersWithUsage,agents,knowledge,conversations,events,logs}),req.headers.get('origin'));}catch(e){return toErrorResponse(e)}}
