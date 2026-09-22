@@ -239,7 +239,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return parsed as T;
 }
 
-function jsonRequest<T>(path: string, method: "POST" | "PATCH" | "DELETE", body?: unknown): Promise<T> {
+function jsonRequest<T>(path: string, method: "POST" | "PATCH" | "PUT" | "DELETE", body?: unknown): Promise<T> {
   return request<T>(path, {
     method,
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
