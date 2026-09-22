@@ -97,6 +97,12 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
       tone: agent?.tone ?? "professional",
       customTone: agent?.customTone ?? "",
       instructions: agent?.instructions ?? "",
+      persona: agent?.persona ?? "",
+      systemPrompt: agent?.systemPrompt ?? "",
+      temperature: agent?.temperature ?? 0.7,
+      maxTokens: agent?.maxTokens ?? 1200,
+      memoryEnabled: agent?.memoryEnabled ?? true,
+      citationsEnabled: agent?.citationsEnabled ?? true,
     });
   }, [agent, form]);
 
