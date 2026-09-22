@@ -4,64 +4,81 @@ import { stdin as input, stdout as output } from "node:process";
 
 const bucketName = "cortex-ai-knowledge";
 
-function run(command, args, options = {}) {
+function run(command, args, { inputData = null, interactive = false } = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: "inherit", shell: process.platform === "win32", ...options });
+    const child = spawn(command, args, {
+      shell: process.platform === "win32",
+      stdio: interactive ? "inherit" : ["pipe", "inherit", "inherit"],
+    });
+
     child.on("error", reject);
-    child.on("close", (code) => code === 0 ? resolve(code) : reject(new Error(command + " exited with code " + code)));
+    child.on("close", (code) => {
+      if (code === 0) resolve(code);
+      else reject(new Error(command + " exited with code " + code));
+    });
+
+    if (inputData !== null && child.stdin) {
+      child.stdin.write(inputData);
+      child.stdin.end();
+    }
   });
 }
 
-async function secret(name, rl, required = true) {
-  const label = required ? name + " (required)" : name + " (optional, Enter to skip)";
-  const value = await rl.question(label + ": ");
-  if (!value.trim() && !required) return;
-  if (!value.trim()) throw new Error(name + " is required.");
-  await run("npx", ["wrangler", "secret", "put", name], { input: value });
+async function putSecret(name, value) {
+  await run("npx", ["wrangler", "secret", "put", name], {
+    inputData: value.trim() + "\n",
+  });
+}
+
+async function promptSecret(rl, name, required = true) {
+  const suffix = required ? " (required)" : " (optional; Enter to skip)";
+  const value = await rl.question(name + suffix + ": ");
+  if (!value.trim()) {
+    if (required) throw new Error(name + " is required.");
+    return;
+  }
+  await putSecret(name, value);
 }
 
 async function main() {
   console.log("\nCortex AI → Cloudflare Workers setup\n");
 
   console.log("1) Opening Cloudflare login...");
-  await run("npx", ["wrangler", "login"]);
+  await run("npx", ["wrangler", "login"], { interactive: true });
 
   console.log("2) Verifying Cloudflare access...");
-  await run("npx", ["wrangler", "whoami"]);
+  await run("npx", ["wrangler", "whoami"], { interactive: true });
 
-  console.log("3) Creating/checking R2 bucket: " + bucketName);
+  console.log("3) Ensuring R2 bucket exists: " + bucketName);
+  const listCode = await run("npx", ["wrangler", "r2", "bucket", "list"], { interactive: true });
+  if (listCode !== 0) throw new Error("Could not access Cloudflare R2.");
+
   try {
-    await run("npx", ["wrangler", "r2", "bucket", "list"]);
-  } catch {
-    throw new Error("Could not access Cloudflare R2.");
-  }
-  try {
-    await run("npx", ["wrangler", "r2", "bucket", "create", bucketName]);
+    await run("npx", ["wrangler", "r2", "bucket", "create", bucketName], { interactive: true });
     console.log("R2 bucket created.");
   } catch {
-    console.log("R2 bucket may already exist; continuing.");
+    console.log("R2 bucket already exists or could not be created; continuing.");
   }
 
   const rl = createInterface({ input, output });
-
   try {
-    await secret("DATABASE_URL", rl, true);
-    await secret("APP_SECRET_KEY", rl, true);
-    await secret("CORTEX_ADMIN_PASSWORD", rl, true);
-    await secret("CORTEX_ADMIN_SESSION_SECRET", rl, true);
-    await secret("OPENAI_API_KEY", rl, false);
-    await secret("EMBEDDINGS_MODEL", rl, false);
-    await secret("EMBEDDINGS_BASE_URL", rl, false);
-    await secret("QDRANT_URL", rl, false);
-    await secret("QDRANT_API_KEY", rl, false);
-    const publicUrl = await rl.question("APP_PUBLIC_URL (optional, e.g. https://cortex-ai.example.com): ");
-    if (publicUrl.trim()) await secret("APP_PUBLIC_URL", { question: async () => publicUrl }, false);
+    console.log("\nEnter the runtime secrets. They are sent directly to Cloudflare and are not written to Git.\n");
+    await promptSecret(rl, "DATABASE_URL");
+    await promptSecret(rl, "APP_SECRET_KEY");
+    await promptSecret(rl, "CORTEX_ADMIN_PASSWORD");
+    await promptSecret(rl, "CORTEX_ADMIN_SESSION_SECRET");
+    await promptSecret(rl, "OPENAI_API_KEY", false);
+    await promptSecret(rl, "EMBEDDINGS_MODEL", false);
+    await promptSecret(rl, "EMBEDDINGS_BASE_URL", false);
+    await promptSecret(rl, "QDRANT_URL", false);
+    await promptSecret(rl, "QDRANT_API_KEY", false);
+    await promptSecret(rl, "APP_PUBLIC_URL", false);
   } finally {
     rl.close();
   }
 
-  console.log("4) Deploying Cortex AI...");
-  await run("npx", ["@vinext/cloudflare", "deploy"]);
+  console.log("\n4) Building and deploying Cortex AI...");
+  await run("npx", ["@vinext/cloudflare", "deploy"], { interactive: true });
 
   console.log("\nCortex AI deployment finished.");
 }
