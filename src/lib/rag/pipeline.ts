@@ -44,6 +44,12 @@ export async function answerWithKnowledge(params: {
     tone: string;
     customTone?: string | null;
     instructions?: string | null;
+    persona?: string | null;
+    systemPrompt?: string | null;
+    temperature?: number;
+    maxTokens?: number;
+    memoryEnabled?: boolean;
+    citationsEnabled?: boolean;
   };
   history: Array<{ role: "user" | "assistant"; content: string }>;
   question: string;
@@ -144,11 +150,16 @@ export async function answerWithKnowledge(params: {
   }));
 
   // 3) Prompt + generation
-  const messages: ChatTurn[] = buildRagMessages({ persona, retrieved, history, question });
+  const effectiveHistory = persona.memoryEnabled === false ? [] : history;
+  const messages: ChatTurn[] = buildRagMessages({ persona, retrieved, history: effectiveHistory, question });
   const started = Date.now();
   let completion;
   try {
-    completion = await llm.generateResponse({ messages, temperature: 0.3, maxTokens: 900 });
+    completion = await llm.generateResponse({
+      messages,
+      temperature: typeof persona.temperature === "number" ? persona.temperature : 0.3,
+      maxTokens: typeof persona.maxTokens === "number" ? persona.maxTokens : 900,
+    });
   } catch (e) {
     if (e instanceof ProviderNotConfiguredError) {
       throw new RagConfigError(
