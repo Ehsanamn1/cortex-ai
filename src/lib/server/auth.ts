@@ -143,7 +143,7 @@ export function assertWorkspaceAccess(
 }
 
 export function sessionCookieHeader(token: string): string {
-  const secure = process.env.COOKIE_SECURE === "true";
+  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
   return `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}${secure ? "; Secure" : ""}`;
 }
 
