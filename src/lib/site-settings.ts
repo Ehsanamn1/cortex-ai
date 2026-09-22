@@ -5,7 +5,7 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "site.description": "ساخت و مدیریت ایجنت‌های هوش مصنوعی با دانش واقعی کسب‌وکار.",
   "site.supportEmail": "",
   "site.maxUploadMb": "20",
-  "site.welcomeTitle": "ایجنت هوشمند خودت را بساز.",
+  "site.welcomeTitle": "هوش کسب‌وکار را از یک داشبورد کنترل کن.",
 };
 
 export async function getPublicSiteSettings(): Promise<Record<string, string>> {
