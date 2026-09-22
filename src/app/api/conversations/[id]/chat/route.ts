@@ -34,6 +34,10 @@ export async function POST(req: Request, { params }: Params) {
     }
     const agent = await loadAgentForSession(session, conversation.agentId);
 
+    if (conversation.channel === "web" && conversation.userId !== session.user.id) {
+      return applyCors(jsonError("دسترسی به این گفتگو مجاز نیست.", 403), req.headers.get("origin"));
+    }
+
     const body = await readJson<{ content?: unknown }>(req);
     const content = typeof body.content === "string" ? body.content.trim() : "";
     if (content.length === 0) {
