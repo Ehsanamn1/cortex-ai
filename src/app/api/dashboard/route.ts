@@ -1,7 +1,6 @@
 import { db } from '@/lib/db';
 import { applyCors, jsonOk, toErrorResponse } from '@/lib/server/http';
 import { requireSession } from '@/lib/server/auth';
-import { agentFilterForSession } from '@/lib/server/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,10 +34,10 @@ export async function GET(req: Request) {
       db.conversation.count({ where: { agent: agentFilter } }),
       db.message.count({ where: { conversation: { agent: agentFilter } } }),
       db.usageEvent.aggregate({ where: { workspaceId }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
-      db.telegramBot.count({ where: { workspaceId: { in: session.memberships.map(m => m.workspaceId) } } }),
+      db.telegramBot.count({ where: { workspaceId } }),
       db.agent.findMany({ where: agentFilter, select: { id: true, name: true, updatedAt: true }, orderBy: { updatedAt: 'desc' }, take: 5 }),
       db.conversation.findMany({ where: { agent: agentFilter }, select: { id: true, title: true, updatedAt: true, agent: { select: { id: true, name: true } } }, orderBy: { updatedAt: 'desc' }, take: 5 }),
-      db.auditLog.findMany({ where: { workspaceId: { in: session.memberships.map(m => m.workspaceId) } }, select: { id: true, action: true, entityType: true, createdAt: true }, orderBy: { createdAt: 'desc' }, take: 6 })
+      db.auditLog.findMany({ where: { workspaceId }, select: { id: true, action: true, entityType: true, createdAt: true }, orderBy: { createdAt: 'desc' }, take: 6 })
     ]);
     const todayUsage = await db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: dayStart() } }, _sum: { totalTokens: true }, _count: { _all: true } });
     return applyCors(jsonOk({
