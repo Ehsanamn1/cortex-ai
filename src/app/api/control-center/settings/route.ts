@@ -8,7 +8,7 @@ const DEFAULTS: Record<string,string> = {
   "site.name": "Cortex AI",
   "site.description": "ساخت و مدیریت ایجنت‌های هوش مصنوعی با دانش واقعی کسب‌وکار.",
   "site.supportEmail": "",
-  "site.maxUploadMb": "200",
+  "site.maxUploadMb": "20",
   "site.welcomeTitle": "ایجنت هوشمند خودت را بساز.",
 };
 
