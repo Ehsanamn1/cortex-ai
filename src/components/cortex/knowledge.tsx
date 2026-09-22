@@ -15,8 +15,6 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { upload } from "@vercel/blob/client";
-
 import {
   api,
   type KnowledgeSourceDto,
@@ -121,28 +119,10 @@ function AddFileDialogInner({
 
   const uploadMutation = useMutation({
     mutationFn: async (selected: File) => {
-      setProgress(0);
-      try {
-        return await upload(
-          `knowledge/${agentId}/${Date.now()}-${selected.name}`,
-          selected,
-          {
-            access: "private",
-            handleUploadUrl: "/api/knowledge/upload",
-            clientPayload: JSON.stringify({
-              agentId,
-              originalName: selected.name,
-              size: selected.size,
-              mimeType: selected.type,
-            }),
-            multipart: selected.size > 4 * 1024 * 1024,
-            onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage)),
-          }
-        );
-      } catch (blobError) {
-        if (selected.size > 4 * 1024 * 1024) throw blobError;
-        return api.uploadKnowledgeFile(agentId, selected);
-      }
+      setProgress(8);
+      const result = await api.uploadKnowledgeFile(agentId, selected);
+      setProgress(100);
+      return result;
     },
     onSuccess: () => {
       invalidateKnowledge(queryClient, agentId);
