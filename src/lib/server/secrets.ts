@@ -9,7 +9,14 @@ function keyBytes(): Buffer {
 
 export function encryptSecret(value: string): string {
   const iv = Buffer.from(randomBytes(12));
-  const cipher = crypto.createCipheriv('aes-256-gcm', keyBytes(), iv);
+  const createCipheriv = (crypto as unknown as {
+    createCipheriv(algorithm: string, key: Buffer, iv: Buffer): {
+      update(data: string, inputEncoding: "utf8"): Buffer;
+      final(): Buffer;
+      getAuthTag(): Buffer;
+    };
+  }).createCipheriv;
+  const cipher = createCipheriv('aes-256-gcm', keyBytes(), iv);
   const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
   return `v1:${iv.toString('base64url')}:${cipher.getAuthTag().toString('base64url')}:${encrypted.toString('base64url')}`;
 }
@@ -17,7 +24,14 @@ export function encryptSecret(value: string): string {
 export function decryptSecret(payload: string): string {
   const [version, ivRaw, tagRaw, dataRaw] = payload.split(':');
   if (version !== 'v1' || !ivRaw || !tagRaw || !dataRaw) throw new Error('Secret رمزنگاری‌شده معتبر نیست.');
-  const decipher = crypto.createDecipheriv('aes-256-gcm', keyBytes(), Buffer.from(ivRaw, 'base64url'));
+  const createDecipheriv = (crypto as unknown as {
+    createDecipheriv(algorithm: string, key: Buffer, iv: Buffer): {
+      setAuthTag(tag: Buffer): void;
+      update(data: Buffer): Buffer;
+      final(): Buffer;
+    };
+  }).createDecipheriv;
+  const decipher = createDecipheriv('aes-256-gcm', keyBytes(), Buffer.from(ivRaw, 'base64url'));
   decipher.setAuthTag(Buffer.from(tagRaw, 'base64url'));
   return Buffer.concat([decipher.update(Buffer.from(dataRaw, 'base64url')), decipher.final()]).toString('utf8');
 }
