@@ -26,7 +26,7 @@ export async function POST(req: Request) {
           id: membership.workspace.id,
           name: membership.workspace.name,
           role: membership.role,
-          createdAt: membership.workspace ? membership.createdAt.toISOString() : new Date().toISOString(),
+          createdAt: membership.createdAt.toISOString(),
         })),
       });
     }
