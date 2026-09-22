@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { db } from "@/lib/db";
 import type { User, WorkspaceMember } from "@prisma/client";
 
