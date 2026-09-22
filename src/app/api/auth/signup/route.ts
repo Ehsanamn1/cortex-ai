@@ -43,22 +43,25 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = await db.user.create({
-      data: {
-        email,
-        name: name.length > 0 ? name : null,
-        passwordHash: hashPassword(password),
-      },
-    });
+    const passwordHash = hashPassword(password);
+    const { user, workspace } = await db.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email,
+          name: name.length > 0 ? name : null,
+          passwordHash,
+        },
+      });
 
-    // Default workspace, created automatically after signup (Phase 1 spec).
-    const workspace = await db.workspace.create({
-      data: {
-        name: "فضای کاری من",
-        ownerId: user.id,
-        members: { create: { userId: user.id, role: "owner" } },
-      },
-      include: { members: true },
+      const workspace = await tx.workspace.create({
+        data: {
+          name: "فضای کاری من",
+          ownerId: user.id,
+          members: { create: { userId: user.id, role: "owner" } },
+        },
+      });
+
+      return { user, workspace };
     });
 
     const token = signSessionToken(user.id);
