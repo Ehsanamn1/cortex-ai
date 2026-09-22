@@ -133,7 +133,7 @@ export function ConversationsView() {
   const agentIds = useMemo(() => agents.map((a) => a.id).join(","), [agents]);
 
   const {
-    data: conversations,
+    data: conversations = [],
     isPending: conversationsPending,
     isError: conversationsError,
     error: conversationsErrorObject,
