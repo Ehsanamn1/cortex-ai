@@ -133,3 +133,26 @@ Work Log:
 
 Stage Summary:
 - Phase 1 complete: PASS WITH WARNINGS. All DoD items verified live except live-Qdrant exercise (adapter fully implemented, no Qdrant service in sandbox) and executable test suite (environment policy — verified scenarios documented instead). Stack adaptations (Next.js API routes for FastAPI, SQLite for PostgreSQL, built-in ZAI provider alongside OpenRouter) are honest equivalents preserving the required abstractions; no fake functionality anywhere.
+
+
+---
+## Completion pass — Phase 2 + Phase 3 hardening
+
+### Phase 2 — Telegram + Usage
+- Real Telegram Bot API integration supports bot creation, connection status, webhook mode and polling mode.
+- First interaction requests the user's own Telegram contact; mismatched Telegram contact ownership is rejected.
+- Workspace allowlist controls access; users can be pending, allowed or blocked.
+- Telegram conversations are isolated per bot/user pair and `/newchat` creates a fresh session.
+- Workspace-level message/token limits are enforced.
+- Per-Telegram-user message/token usage is now recorded on `UsageEvent.telegramUserId`.
+- Admin can see per-user event/token usage alongside Telegram identity/status.
+
+### Phase 3 — SaaS Control Plane
+- Admin overview exposes bots, Telegram users, agents, knowledge sources, conversations, usage events and audit logs.
+- Analytics tracks real usage totals, 14-day activity, common questions and knowledge-gap/unanswered-response signals.
+- Provider status and live health checks are real and never represented as connected when no provider is configured.
+- Provider credentials and Telegram secrets remain encrypted at rest.
+- Workspace/agent/conversation authorization remains server-side and tenant-scoped.
+- GitHub Actions CI now runs Prisma generate/validate, strict TypeScript, ESLint and a production Next.js build.
+- Latest full CI validation passed after the final TypeScript/lint/build fixes.
+- Production deployment is Docker-ready. Railway deployment was attempted but the connected Railway workspace is currently restricted by Railway, so no public production URL was created from this environment.
