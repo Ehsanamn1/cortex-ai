@@ -1,7 +1,5 @@
 import { db } from "@/lib/db";
 import { randomUUID } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
 
 /**
  * Text extraction for knowledge sources. Everything here is REAL:
@@ -21,7 +19,7 @@ export interface ExtractionResult {
   sizeBytes?: number;
 }
 
-export const UPLOAD_ROOT = path.join(process.cwd(), ".data", "uploads");
+export const UPLOAD_ROOT = ".data/uploads";
 
 export function sanitizeFilename(name: string): string {
   const base = path.basename(name).replace(/[\u0000-\u001f<>:"/\\|?*]+/g, "_").trim();
@@ -29,7 +27,9 @@ export function sanitizeFilename(name: string): string {
 }
 
 export async function persistUpload(sourceId: string, originalName: string, bytes: Uint8Array): Promise<string> {
-  const dir = path.join(UPLOAD_ROOT, sourceId);
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+  const dir = path.join(process.cwd(), UPLOAD_ROOT, sourceId);
   await fs.mkdir(dir, { recursive: true });
   const safe = `${randomUUID()}-${sanitizeFilename(originalName)}`;
   const filePath = path.join(dir, safe);
@@ -39,7 +39,9 @@ export async function persistUpload(sourceId: string, originalName: string, byte
 
 export async function removeUploadDir(sourceId: string): Promise<void> {
   try {
-    await fs.rm(path.join(UPLOAD_ROOT, sourceId), { recursive: true, force: true });
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    await fs.rm(path.join(process.cwd(), UPLOAD_ROOT, sourceId), { recursive: true, force: true });
   } catch {
     /* best effort */
   }
@@ -185,10 +187,36 @@ async function assertPublicHost(hostname: string): Promise<void> {
     for (const address of addresses) {
       if (isPrivateIp(address)) throw new UnsafeUrlError();
     }
+    return;
   } catch (e) {
-    if (e instanceof UnsafeUrlError) throw e;
-    throw new UnsafeUrlError();
+    if (e instanceof UnsafeUrlError && e.message.includes("مجاز")) throw e;
+    // Cloudflare Workers do not expose node:dns. Fall back to DNS-over-HTTPS.
   }
+
+  const lookups = await Promise.all(
+    ["A", "AAAA"].map(async (type) => {
+      const endpoint =
+        "https://cloudflare-dns.com/dns-query?name=" +
+        encodeURIComponent(hostname) +
+        "&type=" +
+        type;
+      const response = await fetch(endpoint, {
+        headers: { accept: "application/dns-json" },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) throw new UnsafeUrlError();
+      const payload = (await response.json()) as {
+        Status?: number;
+        Answer?: Array<{ type?: number; data?: string }>;
+      };
+      if ((payload.Status ?? 2) !== 0) return [];
+      return (payload.Answer ?? [])
+        .filter((record) => record.type === (type === "A" ? 1 : 28) && typeof record.data === "string")
+        .map((record) => record.data as string);
+    })
+  );
+  const addresses = lookups.flat();
+  if (addresses.length === 0 || addresses.some(isPrivateIp)) throw new UnsafeUrlError();
 }
 
 const MAX_DOWNLOAD_BYTES = 5 * 1024 * 1024;
@@ -333,6 +361,7 @@ export async function extractStoredFile(
   filePath: string,
   originalName: string
 ): Promise<ExtractionResult> {
+  const fs = await import("node:fs/promises");
   const bytes = new Uint8Array(await fs.readFile(filePath));
   return extractStoredBytes(bytes, originalName);
 }
