@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Bot, Database, FileCog, LogOut, MessageSquare, Plug, Save, Send, Settings2, ShieldCheck, Sparkles, Users, Workflow } from "lucide-react";
+import { Activity, Bot, Database, FileCog, LogOut, MessageSquare, Plug, Save, Send, Settings2, ShieldCheck, Sparkles, Users, Workflow, Puzzle, Power } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +45,8 @@ export function ControlCenter() {
   const save=useMutation({mutationFn:()=>fetch("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings})}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"ذخیره ناموفق بود");return j}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-settings"]});toast.success("تنظیمات ذخیره شد")},onError:(e:Error)=>toast.error(e.message)});
   const logout=useMutation({mutationFn:()=>fetch("/api/admin/auth/logout",{method:"POST"}),onSuccess:()=>{qc.clear();window.location.reload()}});
   const m=summary.data?.metrics;
+  const pluginsQ=useQuery<{plugins:Array<{id:string;key:string;name:string;description:string|null;version:string;enabled:boolean}>}>({queryKey:["cc-plugins"],queryFn:()=>fetch("/api/control-center/plugins").then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"دریافت افزونه‌ها ناموفق بود.");return j}),enabled:session.isSuccess});
+  const pluginToggle=useMutation({mutationFn:(v:{id:string;enabled:boolean})=>fetch("/api/control-center/plugins",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"تغییر افزونه ناموفق بود.");return j}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-plugins"]});toast.success("وضعیت افزونه تغییر کرد")},onError:(e:Error)=>toast.error(e.message)});
 
   if(session.isPending)return <div className="min-h-screen bg-background p-8"><Skeleton className="mx-auto h-40 max-w-6xl rounded-3xl"/></div>;
   if(session.isError)return <LoginCard onDone={()=>void session.refetch()}/>;
@@ -72,6 +74,22 @@ export function ControlCenter() {
         <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">جدیدترین ایجنت‌ها</CardTitle></CardHeader><CardContent className="p-0"><div className="divide-y divide-white/[.06]">{(summary.data?.recentAgents??[]).map(a=><div key={a.id} className="flex items-center gap-3 p-4"><span className="cortex-icon-box"><Bot/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{a.name}</p><p className="mt-1 text-xs text-muted-foreground">{a.workspace.name} · {a.status}</p></div><span className="text-[11px] text-muted-foreground">{new Date(a.createdAt).toLocaleDateString("fa-IR")}</span></div>)}</div></CardContent></Card>
         <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">کاربران جدید</CardTitle></CardHeader><CardContent className="p-0"><div className="divide-y divide-white/[.06]">{(summary.data?.recentUsers??[]).map(u=><div key={u.id} className="flex items-center gap-3 p-4"><span className="flex size-10 items-center justify-center rounded-xl border bg-primary/10 text-primary"><Users/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{u.name||"بدون نام"}</p><p dir="ltr" className="truncate text-xs text-muted-foreground">{u.email}</p></div></div>)}</div></CardContent></Card>
       </section>
+
+      <section className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]">
+        <Card className="cortex-panel rounded-2xl">
+          <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Puzzle className="size-4 text-primary"/>افزونه‌های فعال</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {(pluginsQ.data?.plugins??[]).length===0
+              ? <p className="py-10 text-center text-sm text-muted-foreground">هنوز افزونه‌ای ثبت نشده است.</p>
+              : (pluginsQ.data?.plugins??[]).map(plugin=><div key={plugin.id} className="flex items-center gap-3 rounded-xl border border-white/[.06] p-3">
+                  <span className="flex size-9 items-center justify-center rounded-lg border bg-primary/10 text-primary"><Puzzle/></span>
+                  <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{plugin.name}</p><p className="mt-1 truncate text-[11px] text-muted-foreground">{plugin.key} · v{plugin.version}</p></div>
+                  <Button size="icon" variant="ghost" title={plugin.enabled?"غیرفعال کردن":"فعال کردن"} onClick={()=>pluginToggle.mutate({id:plugin.id,enabled:!plugin.enabled})}><Power className={plugin.enabled?"text-emerald-400":"text-muted-foreground"}/></Button>
+                </div>)
+            }
+            <p className="text-[10px] leading-5 text-muted-foreground">این بخش رجیستری و فعال/غیرفعال‌سازی افزونه‌ها را مدیریت می‌کند؛ اجرای کد دلخواه از داخل پنل عمداً مستقیم و بدون sandbox انجام نمی‌شود.</p>
+          </CardContent>
+        </Card>
 
       <section className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]">
         <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">گفتگوهای اخیر</CardTitle></CardHeader><CardContent className="p-0"><div className="divide-y divide-white/[.06]">{(summary.data?.recentConversations??[]).map(c=><div key={c.id} className="p-4"><p className="truncate text-sm font-semibold">{c.title}</p><p className="mt-1 text-xs text-muted-foreground">{c.agent.name} · {c.channel} · {new Date(c.updatedAt).toLocaleString("fa-IR")}</p></div>)}</div></CardContent></Card>
