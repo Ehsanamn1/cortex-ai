@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { after } from "next/server";
 import { applyCors, jsonError, jsonOk, toErrorResponse } from "@/lib/server/http";
 import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
@@ -28,7 +29,7 @@ export async function POST(req: Request, { params }: Params) {
       data: { status: "pending", error: null },
     });
 
-    void processSource(source.id);
+    after(() => processSource(source.id));
     const updated = await db.knowledgeSource.findUnique({ where: { id: source.id } });
     return applyCors(
       jsonOk(
