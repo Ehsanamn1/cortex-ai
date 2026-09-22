@@ -1,59 +1,67 @@
 # Cortex AI → Cloudflare Workers
 
-Cortex AI is configured for Cloudflare Workers with vinext + the Cloudflare Vite plugin.
+Cortex uses Vinext + the Cloudflare Vite plugin on Workers, Neon PostgreSQL through Prisma, and private R2 storage.
 
-## Required Cloudflare setup
+## 1. Create R2
 
-1. Authenticate Wrangler:
+```bash
+npx wrangler r2 bucket create cortex-ai-knowledge
+```
 
-   `npx wrangler login`
+## 2. Set Worker secrets
 
-2. Create the knowledge bucket once:
+```bash
+npx wrangler secret put DATABASE_URL
+npx wrangler secret put APP_SECRET_KEY
+npx wrangler secret put CORTEX_ADMIN_PASSWORD
+```
 
-   `npx wrangler r2 bucket create cortex-ai-knowledge`
+Optional:
 
-3. Put the production secrets into Workers. At minimum:
+```bash
+npx wrangler secret put CORTEX_ADMIN_USERNAME
+npx wrangler secret put CORTEX_ADMIN_SESSION_SECRET
+npx wrangler secret put OPENAI_API_KEY
+npx wrangler secret put TELEGRAM_INTERNAL_SECRET
+```
 
-   `npx wrangler secret put DATABASE_URL`
+Keep API keys and database URLs out of GitHub source.
 
-   `npx wrangler secret put APP_SECRET_KEY`
+## 3. Validate locally
 
-   `npx wrangler secret put CORTEX_ADMIN_PASSWORD`
+```bash
+npm run check:vinext
+npm run build:vinext
+npm run start:vinext
+```
 
-   `npx wrangler secret put CORTEX_ADMIN_SESSION_SECRET`
+## 4. GitHub auto-deploy
 
-4. Generate Cloudflare types if needed:
+`.github/workflows/cloudflare-deploy.yml` runs on pushes to `main`.
 
-   `npm run cf:typegen`
+GitHub Environment `cortex1` supplies:
 
-5. Test the Workers runtime locally:
+```
+CLOUDFLARE_API_TOKEN
+CLOUDFLARE_ACCOUNT_ID
+```
 
-   `npm run build:vinext`
+The workflow does not copy application secrets through GitHub. Wrangler checks the Worker-side required secrets at deployment.
 
-   `npm run start:vinext`
+## 5. Fresh-machine setup
 
-6. One-command setup (recommended for a fresh machine):
+```bash
+npm run setup:cloudflare
+```
 
-   `npm run setup:cloudflare`
+This authenticates Wrangler, verifies Cloudflare access, handles R2 setup, prompts for Worker secrets and deploys locally.
 
-   This opens Cloudflare login, checks access, ensures the R2 bucket, asks for the runtime secrets, and deploys the Worker.
+## Production database
 
-7. For GitHub auto-deploy, add repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. The workflow at `.github/workflows/cloudflare-deploy.yml` then deploys every push to `main`.
+The existing Neon PostgreSQL database remains the production database and is used through `@prisma/adapter-neon`.
 
-7. Deploy manually when needed:
+## Telegram
 
-   `npm run deploy`
+Webhook mode requires a public `APP_PUBLIC_URL`. Polling mode uses the internal polling route and should be invoked by a trusted scheduler.
 
-## Database
-
-The application keeps using the existing Neon PostgreSQL database. Prisma is configured with the engine-less JS client and the Neon driver adapter so it can run in an edge/Workers runtime.
-
-## Knowledge uploads
-
-The upload API is limited to 20MB and stores uploaded knowledge files in the private R2 bucket. The file is then processed into chunks/embeddings and persisted in PostgreSQL + the configured vector store.
-
-Do not expose the R2 bucket publicly. The Worker accesses it through the private binding.
-
-## Important
-
-The Cloudflare account itself must be connected/authenticated before the first deploy. This repository contains the deployment configuration, but account credentials and the R2 bucket belong to the Cloudflare account.
+Cloudflare Workers currently support the Node `crypto` APIs Cortex uses, including `scryptSync`; Workers also expose Web Crypto. citeturn176292search0turn176292search9
