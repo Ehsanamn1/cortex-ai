@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cortex-ai",
+  "main": "vinext/server/app-router-entry",
+  "compatibility_date": "2026-09-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "r2_buckets": [
+    {
+      "binding": "CORTEX_KNOWLEDGE_BUCKET",
+      "bucket_name": "cortex-ai-knowledge"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
