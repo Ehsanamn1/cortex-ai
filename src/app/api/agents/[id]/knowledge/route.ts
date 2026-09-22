@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-const MAX_UPLOAD_MB = Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 200));
+const MAX_UPLOAD_MB = Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 20));
 const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
 
 async function serializeSources(agentId: string) {
@@ -99,7 +99,7 @@ export async function POST(req: Request, { params }: Params) {
       const ext = detectExtension(originalName);
       if (!ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])) {
         return applyCors(
-          jsonError("فقط فایل‌های PDF، TXT و DOCX پذیرفته می‌شوند.", 400),
+          jsonError("فقط فایل‌های دارای فرمت پشتیبانی‌شده پذیرفته می‌شوند.", 400),
           req.headers.get("origin")
         );
       }
