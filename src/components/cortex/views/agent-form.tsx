@@ -31,6 +31,12 @@ const agentSchema = z
     tone: z.enum(["professional", "friendly", "concise", "formal", "custom"]),
     customTone: z.string().max(120, { message: "لحن سفارشی حداکثر ۱۲۰ کاراکتر است." }),
     instructions: z.string(),
+    persona: z.string().max(2000, { message: "شخصیت حداکثر ۲۰۰۰ کاراکتر است." }),
+    systemPrompt: z.string().max(8000, { message: "پرامپت سیستم حداکثر ۸۰۰۰ کاراکتر است." }),
+    temperature: z.number().min(0).max(2),
+    maxTokens: z.number().int().min(128).max(8000),
+    memoryEnabled: z.boolean(),
+    citationsEnabled: z.boolean(),
   })
   .refine((values) => values.tone !== "custom" || values.customTone.trim().length > 0, {
     message: "برای لحن سفارشی، توضیح لحن را وارد کنید.",
@@ -72,6 +78,12 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
       tone: agent?.tone ?? "professional",
       customTone: agent?.customTone ?? "",
       instructions: agent?.instructions ?? "",
+      persona: agent?.persona ?? "",
+      systemPrompt: agent?.systemPrompt ?? "",
+      temperature: agent?.temperature ?? 0.7,
+      maxTokens: agent?.maxTokens ?? 1200,
+      memoryEnabled: agent?.memoryEnabled ?? true,
+      citationsEnabled: agent?.citationsEnabled ?? true,
     },
   });
 
@@ -102,6 +114,12 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
         description: values.description.trim() || undefined,
         customTone: values.tone === "custom" ? values.customTone.trim() : undefined,
         instructions: values.instructions.trim() || undefined,
+        persona: values.persona.trim() || undefined,
+        systemPrompt: values.systemPrompt.trim() || undefined,
+        temperature: values.temperature,
+        maxTokens: values.maxTokens,
+        memoryEnabled: values.memoryEnabled,
+        citationsEnabled: values.citationsEnabled,
         workspaceId: activeWorkspaceId ?? undefined,
       };
       return api.createAgent(payload);
@@ -126,6 +144,12 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
         description: values.description.trim(),
         customTone: values.tone === "custom" ? values.customTone.trim() : "",
         instructions: values.instructions.trim(),
+        persona: values.persona.trim(),
+        systemPrompt: values.systemPrompt.trim(),
+        temperature: values.temperature,
+        maxTokens: values.maxTokens,
+        memoryEnabled: values.memoryEnabled,
+        citationsEnabled: values.citationsEnabled,
       };
       return api.updateAgent(agent.id, payload);
     },
@@ -298,6 +322,54 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
               <p id="agent-instructions-hint" className="text-xs leading-relaxed text-muted-foreground">
                 مثلاً: «فقط بر اساس دانش موجود پاسخ بده. اگر پاسخ را نمی‌دانی صادقانه بگو. پاسخ‌ها کوتاه و مشخص باشد.»
               </p>
+            </div>
+
+            {/* شخصیت و تنظیمات پیشرفته */}
+            <div className="space-y-5 rounded-2xl border border-primary/15 bg-primary/[.035] p-5">
+              <div>
+                <p className="text-sm font-semibold text-foreground">شخصیت و رفتار پیشرفته</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">هویت، قوانین رفتاری و میزان خلاقیت ایجنت را بدون نیاز به کدنویسی تنظیم کنید.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="agent-persona">شخصیت ایجنت</Label>
+                <Textarea id="agent-persona" rows={5} placeholder="مثلاً: یک مشاور فروش بااعتمادبه‌نفس، صبور و صمیمی؛ قبل از پیشنهاد محصول نیاز مشتری را کشف کن..." {...form.register("persona")} />
+                <FieldError message={form.formState.errors.persona?.message} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="agent-system-prompt">دستور سیستم سفارشی</Label>
+                <Textarea id="agent-system-prompt" rows={6} placeholder="قوانین دقیق‌تری که می‌خواهید مدل همیشه رعایت کند..." {...form.register("systemPrompt")} />
+                <FieldError message={form.formState.errors.systemPrompt?.message} />
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <Label htmlFor="agent-temperature">خلاقیت پاسخ</Label>
+                    <span className="text-[11px] text-muted-foreground">{form.watch("temperature").toFixed(2)}</span>
+                  </div>
+                  <input id="agent-temperature" type="range" min="0" max="2" step="0.05" className="w-full accent-primary" {...form.register("temperature", { valueAsNumber: true })} />
+                  <div className="flex justify-between text-[10px] text-muted-foreground"><span>دقیق</span><span>خلاق</span></div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="agent-max-tokens">حداکثر طول پاسخ</Label>
+                  <Input id="agent-max-tokens" type="number" min={128} max={8000} step={128} {...form.register("maxTokens", { valueAsNumber: true })} />
+                  <p className="text-[10px] text-muted-foreground">بین ۱۲۸ تا ۸۰۰۰ توکن.</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/10 p-4">
+                  <span><span className="block text-sm font-medium">حافظه مکالمه</span><span className="mt-1 block text-xs text-muted-foreground">آخرین پیام‌های گفتگو در پاسخ بعدی استفاده شوند.</span></span>
+                  <input type="checkbox" className="size-4 accent-[#3b82ff]" {...form.register("memoryEnabled")} />
+                </label>
+                <label className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/10 p-4">
+                  <span><span className="block text-sm font-medium">ارجاع به منابع</span><span className="mt-1 block text-xs text-muted-foreground">منبع و استناد بازیابی‌شده همراه پاسخ ثبت شود.</span></span>
+                  <input type="checkbox" className="size-4 accent-[#3b82ff]" {...form.register("citationsEnabled")} />
+                </label>
+              </div>
             </div>
 
             {/* Actions */}
