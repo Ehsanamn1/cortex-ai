@@ -65,8 +65,11 @@ function SessionGate() {
       })
       .catch((error: unknown) => {
         if (cancelled) return;
-        setErrorMessage(error instanceof Error ? error.message : "خطای غیرمنتظره‌ای رخ داد.");
-        setPhase("error");
+        // A stale/invalid session or a temporary session-check failure must not
+        // brick the whole application. Let the user reach the auth screen.
+        console.error("[cortex] session check failed:", error);
+        setErrorMessage(error instanceof Error ? error.message : "خطای بررسی نشست");
+        setPhase("signed-out");
       });
     return () => {
       cancelled = true;
