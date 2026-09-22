@@ -27,10 +27,12 @@ function AgentsSkeleton() {
 export function AgentsView() {
   const openAgent = useCortexStore((s) => s.openAgent);
   const setView = useCortexStore((s) => s.setView);
+  const activeWorkspaceId = useCortexStore((s) => s.activeWorkspaceId);
 
   const { data, isPending, isError, error, refetch } = useQuery({
-    queryKey: ["agents"],
-    queryFn: api.getAgents,
+    queryKey: ["agents", activeWorkspaceId],
+    queryFn: () => api.getAgents(activeWorkspaceId ?? undefined),
+    enabled: !!activeWorkspaceId,
   });
 
   useErrorToast(isError ? error : null);
