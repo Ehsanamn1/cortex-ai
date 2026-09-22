@@ -90,6 +90,7 @@ export function ControlCenter() {
             <p className="text-[10px] leading-5 text-muted-foreground">این بخش رجیستری و فعال/غیرفعال‌سازی افزونه‌ها را مدیریت می‌کند؛ اجرای کد دلخواه از داخل پنل عمداً مستقیم و بدون sandbox انجام نمی‌شود.</p>
           </CardContent>
         </Card>
+      </section>
 
       <section className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]">
         <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">گفتگوهای اخیر</CardTitle></CardHeader><CardContent className="p-0"><div className="divide-y divide-white/[.06]">{(summary.data?.recentConversations??[]).map(c=><div key={c.id} className="p-4"><p className="truncate text-sm font-semibold">{c.title}</p><p className="mt-1 text-xs text-muted-foreground">{c.agent.name} · {c.channel} · {new Date(c.updatedAt).toLocaleString("fa-IR")}</p></div>)}</div></CardContent></Card>
