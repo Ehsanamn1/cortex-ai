@@ -5,6 +5,8 @@ import { chunkInputs, type ChunkInput } from "./chunk";
 import { extractFromUrl, extractStoredFile, removeUploadDir, UPLOAD_ROOT } from "./extract";
 import fs from "fs/promises";
 import path from "path";
+import { createWriteStream } from "fs";
+import { randomUUID } from "crypto";
 
 /**
  * Knowledge processing pipeline (real, no simulation):
@@ -205,9 +207,50 @@ async function extractStoredFileForSource(
 ): Promise<{ pages: Array<{ text: string; page?: number; section?: string | null }>; mimeType?: string; sizeBytes?: number }> {
   const dir = path.join(UPLOAD_ROOT, sourceId);
   const entries = await fs.readdir(dir).catch(() => [] as string[]);
-  if (entries.length === 0) {
+  if (entries.length > 0) {
+    const filePath = path.join(dir, entries[0]!);
+    return extractStoredFile(filePath, documentName);
+  }
+
+  const document = await db.knowledgeDocument.findFirst({ where: { sourceId } });
+  const storagePath = document?.url;
+  if (!storagePath || !storagePath.startsWith("knowledge/")) {
     throw new Error("فایل بارگذاری‌شده برای این منبع در سرور یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
   }
-  const filePath = path.join(dir, entries[0]!);
-  return extractStoredFile(filePath, documentName);
+
+  let blobResult: { stream: ReadableStream<Uint8Array> };
+  try {
+    const { get } = await import("@vercel/blob");
+    blobResult = await get(storagePath, { access: "private" });
+  } catch {
+    throw new Error("فایل ذخیره‌شده در Storage در دسترس نیست؛ اتصال Storage را بررسی کنید.");
+  }
+
+  await fs.mkdir(dir, { recursive: true });
+  const tempPath = path.join(dir, `${randomUUID()}-${sanitizeFilename(documentName)}`);
+  const output = createWriteStream(tempPath);
+  const reader = blobResult.stream.getReader();
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        if (!output.write(Buffer.from(value))) {
+          await new Promise<void>((resolve, reject) => {
+            output.once("drain", resolve);
+            output.once("error", reject);
+          });
+        }
+      }
+    }
+    await new Promise<void>((resolve, reject) => {
+      output.end(() => resolve());
+      output.once("error", reject);
+    });
+    return await extractStoredFile(tempPath, documentName);
+  } finally {
+    await reader.cancel().catch(() => undefined);
+    await fs.rm(tempPath, { force: true }).catch(() => undefined);
+  }
 }
