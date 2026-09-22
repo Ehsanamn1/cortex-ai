@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 export async function getKnowledgeBucket(): Promise<R2Bucket | null> {
   try {
     const mod = (await import("cloudflare:workers")) as {
@@ -13,5 +11,5 @@ export async function getKnowledgeBucket(): Promise<R2Bucket | null> {
 
 export function createKnowledgeObjectKey(agentId: string, sourceId: string, filename: string): string {
   const safe = filename.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 160) || "file";
-  return "knowledge/" + agentId + "/" + sourceId + "/" + randomUUID() + "-" + safe;
+  return "knowledge/" + agentId + "/" + sourceId + "/" + crypto.randomUUID() + "-" + safe;
 }
