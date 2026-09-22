@@ -1,0 +1,202 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-vazirmatn), "Vazirmatn", "Segoe UI", Tahoma, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Cortex identity — always dark (light values are intentionally identical). */
+:root {
+  --radius: 0.75rem;
+  --background: #07090d;
+  --foreground: #f8fafc;
+  --card: #11151c;
+  --card-foreground: #f8fafc;
+  --popover: #11151c;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82ff;
+  --primary-foreground: #ffffff;
+  --secondary: #8b5cf6;
+  --secondary-foreground: #ffffff;
+  --muted: #161b24;
+  --muted-foreground: #94a3b8;
+  --accent: #181e29;
+  --accent-foreground: #f8fafc;
+  --destructive: #ef4444;
+  --border: rgba(148, 163, 184, 0.12);
+  --input: rgba(148, 163, 184, 0.14);
+  --ring: #3b82ff;
+  --chart-1: #3b82ff;
+  --chart-2: #8b5cf6;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --sidebar: #0a0d13;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #161b24;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: rgba(148, 163, 184, 0.12);
+  --sidebar-ring: #3b82ff;
+  --surface-glow: rgba(59, 130, 255, 0.15);
+  --surface-2: #161b24;
+}
+
+.dark {
+  --radius: 0.75rem;
+  --background: #07090d;
+  --foreground: #f8fafc;
+  --card: #11151c;
+  --card-foreground: #f8fafc;
+  --popover: #11151c;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82ff;
+  --primary-foreground: #ffffff;
+  --secondary: #8b5cf6;
+  --secondary-foreground: #ffffff;
+  --muted: #161b24;
+  --muted-foreground: #94a3b8;
+  --accent: #181e29;
+  --accent-foreground: #f8fafc;
+  --destructive: #ef4444;
+  --border: rgba(148, 163, 184, 0.12);
+  --input: rgba(148, 163, 184, 0.14);
+  --ring: #3b82ff;
+  --chart-1: #3b82ff;
+  --chart-2: #8b5cf6;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --sidebar: #0a0d13;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #161b24;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: rgba(148, 163, 184, 0.12);
+  --sidebar-ring: #3b82ff;
+  --surface-glow: rgba(59, 130, 255, 0.15);
+  --surface-2: #161b24;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: rgba(59, 130, 255, 0.32);
+    color: #f8fafc;
+  }
+}
+
+/* ---- Cortex utilities ---- */
+
+/* Soft controlled glow for primary CTAs on hover/focus. */
+.cortex-glow {
+  box-shadow: 0 0 24px rgba(59, 130, 255, 0.25);
+}
+
+/* Faint blueprint grid for the auth brand panel. */
+.cortex-grid-bg {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Custom scrollbars for raw overflow containers. */
+.cortex-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.22) transparent;
+}
+.cortex-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.cortex-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cortex-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.22);
+  border-radius: 9999px;
+}
+.cortex-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.34);
+}
+
+/* Typing indicator dots. */
+.cortex-dot {
+  animation: cortex-dot-bounce 1.2s ease-in-out infinite;
+}
+.cortex-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.cortex-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes cortex-dot-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.cortex-panel{background:linear-gradient(145deg,rgba(17,21,28,.95),rgba(10,13,19,.92));border:1px solid rgba(148,163,184,.11);box-shadow:0 18px 60px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.025)}
+.cortex-icon-box{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:15px;border:1px solid rgba(59,130,255,.16);background:radial-gradient(circle at 30% 25%,rgba(59,130,255,.28),transparent 55%),rgba(59,130,255,.07);color:#8db8ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 26px rgba(59,130,255,.08)}
+.cortex-kicker{font-size:10px;letter-spacing:.22em;color:#6f86a6;font-weight:700}
+.cortex-shell-glow::before{content:"";position:absolute;inset:-18%;background:radial-gradient(circle at 70% 20%,rgba(59,130,255,.13),transparent 28%),radial-gradient(circle at 20% 60%,rgba(139,92,246,.09),transparent 24%);filter:blur(18px);pointer-events:none}
+
+.cortex-core-orbit{position:absolute;inset:11%;border:1px solid rgba(59,130,255,.16);border-radius:50%;transform-style:preserve-3d}.cortex-orbit-a{transform:rotateX(66deg) rotateY(18deg);animation:cortexOrbit1 14s linear infinite}.cortex-orbit-b{inset:7%;transform:rotateX(12deg) rotateY(68deg);border-color:rgba(139,92,246,.18);animation:cortexOrbit2 18s linear infinite}.cortex-orbit-c{inset:15%;transform:rotateX(42deg) rotateY(50deg);border-color:rgba(255,255,255,.08);animation:cortexOrbit3 11s linear infinite}@keyframes cortexOrbit1{to{transform:rotateX(66deg) rotateY(18deg) rotateZ(360deg)}}@keyframes cortexOrbit2{to{transform:rotateX(12deg) rotateY(68deg) rotateZ(-360deg)}}@keyframes cortexOrbit3{to{transform:rotateX(42deg) rotateY(50deg) rotateZ(360deg)}}.cortex-core-sphere{filter:drop-shadow(0 20px 55px rgba(59,130,255,.18))}@media(prefers-reduced-motion:reduce){.cortex-core-orbit{animation:none!important}}

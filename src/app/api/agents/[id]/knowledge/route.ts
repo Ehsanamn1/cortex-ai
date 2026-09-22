@@ -1,0 +1,176 @@
+import { db } from "@/lib/db";
+import { applyCors, jsonError, jsonOk, toErrorResponse } from "@/lib/server/http";
+import { requireSession } from "@/lib/server/auth";
+import { loadAgentForSession } from "@/lib/server/access";
+import { rateLimit } from "@/lib/server/rate-limit";
+import { processSource } from "@/lib/knowledge/pipeline";
+import {
+  ALLOWED_EXTENSIONS,
+  detectExtension,
+  persistUpload,
+  sanitizeFilename,
+  sniffKind,
+  validateUrl,
+} from "@/lib/knowledge/extract";
+
+export const dynamic = "force-dynamic";
+
+type Params = { params: Promise<{ id: string }> };
+
+const MAX_UPLOAD_MB = Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 10));
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
+
+async function serializeSources(agentId: string) {
+  const sources = await db.knowledgeSource.findMany({
+    where: { agentId },
+    include: { documents: { select: { id: true, name: true, status: true, url: true, _count: { select: { chunks: true } } } } },
+    orderBy: { createdAt: "desc" },
+  });
+  const chunkTotals = await db.knowledgeChunk.groupBy({
+    by: ["sourceId"],
+    where: { agentId },
+    _count: { _all: true },
+  });
+  const totalBySource = new Map(chunkTotals.map((c) => [c.sourceId, c._count._all]));
+  return {
+    sources: sources.map((s) => ({
+      id: s.id,
+      name: s.name,
+      type: s.type as "file" | "url",
+      status: s.status as "pending" | "processing" | "ready" | "failed",
+      error: s.error,
+      chunkCount: totalBySource.get(s.id) ?? 0,
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+      documents: s.documents.map((d) => ({
+        id: d.id,
+        name: d.name,
+        status: d.status,
+        chunkCount: d._count.chunks,
+        url: d.url,
+      })),
+    })),
+  };
+}
+
+export async function GET(req: Request, { params }: Params) {
+  try {
+    const session = await requireSession(req);
+    const { id } = await params;
+    const agent = await loadAgentForSession(session, id);
+    return applyCors(jsonOk(await serializeSources(agent.id)), req.headers.get("origin"));
+  } catch (e) {
+    return toErrorResponse(e);
+  }
+}
+
+export async function POST(req: Request, { params }: Params) {
+  try {
+    const session = await requireSession(req);
+    const { id } = await params;
+    const agent = await loadAgentForSession(session, id);
+    rateLimit(req, "knowledge-upload", 20, 60_000);
+
+    const contentType = req.headers.get("content-type") ?? "";
+
+    /* ---------- Mode A: multipart file upload (PDF / TXT / DOCX) ---------- */
+    if (contentType.includes("multipart/form-data")) {
+      let form: FormData;
+      try {
+        form = await req.formData();
+      } catch {
+        return applyCors(jsonError("بدنه بارگذاری فایل معتبر نیست.", 400), req.headers.get("origin"));
+      }
+      const file = form.get("file");
+      if (!(file instanceof File)) {
+        return applyCors(jsonError("فایلی برای بارگذاری ارسال نشده است.", 400), req.headers.get("origin"));
+      }
+      if (file.size === 0) {
+        return applyCors(jsonError("فایل ارسالی خالی است.", 400), req.headers.get("origin"));
+      }
+      if (file.size > MAX_UPLOAD_BYTES) {
+        return applyCors(
+          jsonError(`حجم فایل بیش از حد مجاز است (حداکثر ${MAX_UPLOAD_MB} مگابایت).`, 413),
+          req.headers.get("origin")
+        );
+      }
+      const originalName = sanitizeFilename(file.name || "file");
+      const ext = detectExtension(originalName);
+      if (!ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])) {
+        return applyCors(
+          jsonError("فقط فایل‌های PDF، TXT و DOCX پذیرفته می‌شوند.", 400),
+          req.headers.get("origin")
+        );
+      }
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const kind = sniffKind(bytes);
+      if (
+        (ext === ".pdf" && kind !== "pdf") ||
+        (ext === ".docx" && kind !== "docx-zip") ||
+        (ext === ".txt" && kind === "unknown")
+      ) {
+        return applyCors(
+          jsonError("محتوای فایل با پسوند اعلام‌شده هم‌خوانی ندارد.", 400),
+          req.headers.get("origin")
+        );
+      }
+
+      // Persist metadata first; processing runs async and updates statuses.
+      const source = await db.knowledgeSource.create({
+        data: {
+          agentId: agent.id,
+          name: originalName,
+          type: "file",
+          status: "pending",
+        },
+      });
+      await persistUpload(source.id, originalName, bytes);
+      await db.knowledgeDocument.create({
+        data: {
+          sourceId: source.id,
+          name: originalName,
+          mimeType: file.type || null,
+          sizeBytes: file.size,
+        },
+      });
+
+      void processSource(source.id); // real async processing; UI polls status
+      const serialized = (await serializeSources(agent.id)).sources.find((s) => s.id === source.id);
+      return applyCors(jsonOk({ source: serialized }, 202), req.headers.get("origin"));
+    }
+
+    /* ---------- Mode B: website URL ingestion ---------- */
+    let body: { url?: unknown };
+    try {
+      body = (await req.json()) as { url?: unknown };
+    } catch {
+      return applyCors(jsonError("بدنه درخواست معتبر نیست.", 400), req.headers.get("origin"));
+    }
+    const rawUrl = typeof body.url === "string" ? body.url.trim() : "";
+    if (!rawUrl) {
+      return applyCors(jsonError("نشانی وب‌سایت را وارد کنید.", 400), req.headers.get("origin"));
+    }
+    let parsed: URL;
+    try {
+      parsed = validateUrl(rawUrl);
+    } catch {
+      return applyCors(
+        jsonError("این آدرس مجاز نیست. تنها آدرس‌های عمومی http/https قابل افزودن هستند.", 400),
+        req.headers.get("origin")
+      );
+    }
+
+    const source = await db.knowledgeSource.create({
+      data: { agentId: agent.id, name: parsed.hostname, type: "url", status: "pending" },
+    });
+    await db.knowledgeDocument.create({
+      data: { sourceId: source.id, name: parsed.hostname, url: parsed.toString() },
+    });
+
+    void processSource(source.id); // fetch → extract → chunk → embed → store (async)
+    const serialized = (await serializeSources(agent.id)).sources.find((s) => s.id === source.id);
+    return applyCors(jsonOk({ source: serialized }, 202), req.headers.get("origin"));
+  } catch (e) {
+    return toErrorResponse(e);
+  }
+}

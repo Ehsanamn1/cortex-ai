@@ -1,0 +1,59 @@
+import { NextResponse } from "next/server";
+
+/** Standard JSON error body: { error: "<Persian message>" }. */
+export function jsonError(message: string, status: number): NextResponse {
+  return NextResponse.json({ error: message }, { status });
+}
+
+export function jsonOk<T>(body: T, status = 200): NextResponse {
+  return NextResponse.json(body, { status });
+}
+
+/** Apply CORS from CORS_ORIGINS env (comma-separated). Same-origin by default. */
+export function applyCors(response: NextResponse, origin: string | null): NextResponse {
+  const allowed = (process.env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (origin && (allowed.includes(origin) || allowed.includes("*"))) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+    response.headers.set("Vary", "Origin");
+  }
+  return response;
+}
+
+export async function readJson<T = Record<string, unknown>>(req: Request): Promise<T> {
+  try {
+    return (await req.json()) as T;
+  } catch {
+    throw new HttpError(400, "بدنه درخواست معتبر نیست.");
+  }
+}
+
+export class HttpError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+export function toErrorResponse(e: unknown): NextResponse {
+  if (e instanceof HttpError) {
+    return jsonError(e.message, e.status);
+  }
+  if (e instanceof Error && typeof (e as Error & { status?: number }).status === "number") {
+    return jsonError(e.message, (e as Error & { status: number }).status);
+  }
+  // Technical diagnostics stay in server logs only — users get a safe Persian message.
+  console.error("[cortex] unhandled error:", e instanceof Error ? e.stack ?? e.message : e);
+  return jsonError("خطای غیرمنتظره‌ای در سرور رخ داد. لطفاً دوباره تلاش کنید.", 500);
+}
+
+/** Best-effort client IP behind the sandbox gateway. */
+export function clientIp(req: Request): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0]!.trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
