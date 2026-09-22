@@ -46,7 +46,7 @@ export async function processTelegramUpdate(botId:string, update:any){
   }
   if(typeof msg.text!=='string' || !msg.text.trim()) return;
   if(user.status!=='allowed') return requestContact(token,msg.chat.id);
-  await assertUsageWithinLimits(bot.workspaceId,1,estimateTokens(msg.text));
+  await assertUsageWithinLimits(bot.workspaceId, 1, estimateTokens(msg.text), user.id);
   let conversation=await db.conversation.findFirst({where:{agentId:bot.agentId,telegramBotId:bot.id,externalUserId:tgId,channel:'telegram'},orderBy:{updatedAt:'desc'}});
   if(!conversation) conversation=await db.conversation.create({data:{agentId:bot.agentId,userId:null,title:'گفتگوی تلگرام',channel:'telegram',externalUserId:tgId,telegramBotId:bot.id}});
   const history=await db.message.findMany({where:{conversationId:conversation.id},orderBy:{createdAt:'asc'},take:24});
@@ -56,7 +56,7 @@ export async function processTelegramUpdate(botId:string, update:any){
   await db.message.create({data:{conversationId:conversation.id,role:'assistant',content:answer.content,metadata:JSON.stringify(metadata)}});
   await db.conversation.update({where:{id:conversation.id},data:{updatedAt:new Date()}});
   const inputTokens=estimateTokens(msg.text)+history.reduce((n,m)=>n+estimateTokens(m.content),0), outputTokens=estimateTokens(answer.content);
-  await db.usageEvent.create({data:{workspaceId:bot.workspaceId,agentId:bot.agentId,telegramBotId:bot.id,channel:'telegram',provider:answer.provider,model:answer.model,inputTokens,outputTokens,totalTokens:inputTokens+outputTokens}});
+  await db.usageEvent.create({data:{workspaceId:bot.workspaceId,agentId:bot.agentId,telegramBotId:bot.id,telegramUserId:user.id,channel:'telegram',provider:answer.provider,model:answer.model,inputTokens,outputTokens,totalTokens:inputTokens+outputTokens}});
   await db.telegramBot.update({where:{id:bot.id},data:{status:'connected',lastSeenAt:new Date(),lastError:null}});
   await sendMessage(token,msg.chat.id,answer.content);
 }
