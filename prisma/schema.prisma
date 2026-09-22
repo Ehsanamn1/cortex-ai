@@ -268,11 +268,16 @@ model TelegramUser {
   firstName      String?
   lastName       String?
   status         String   @default("pending")
+  dailyMessageLimit   Int   @default(0)
+  monthlyMessageLimit Int   @default(0)
+  dailyTokenLimit     Int   @default(0)
+  monthlyTokenLimit   Int   @default(0)
   lastSeenAt     DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   bot TelegramBot @relation(fields: [botId], references: [id], onDelete: Cascade)
+  usageEvents UsageEvent[]
 
   @@unique([botId, telegramUserId])
   @@index([botId, status])
@@ -284,6 +289,7 @@ model UsageEvent {
   agentId            String?
   userId             String?
   telegramBotId      String?
+  telegramUserId     String?
   channel            String   @default("web")
   provider           String?
   model              String?
@@ -297,11 +303,13 @@ model UsageEvent {
   agent       Agent?       @relation(fields: [agentId], references: [id], onDelete: SetNull)
   user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   telegramBot TelegramBot? @relation(fields: [telegramBotId], references: [id], onDelete: SetNull)
+  telegramUser TelegramUser? @relation(fields: [telegramUserId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, createdAt])
   @@index([agentId, createdAt])
   @@index([userId, createdAt])
   @@index([telegramBotId, createdAt])
+  @@index([telegramUserId, createdAt])
   @@index([channel, createdAt])
 }
 
