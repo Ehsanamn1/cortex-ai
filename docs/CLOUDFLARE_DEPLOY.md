@@ -1,12 +1,10 @@
 # Cortex AI → Cloudflare Workers
 
-Cortex uses Vinext + the Cloudflare Vite plugin on Workers, Neon PostgreSQL through Prisma, and private R2 storage.
+Cortex uses Vinext + the Cloudflare Vite plugin on Workers and Neon PostgreSQL through Prisma. R2 is optional; when R2 is unavailable, uploaded knowledge files use a temporary database-backed processing fallback.
 
-## 1. Create R2
+## 1. Optional R2
 
-```bash
-npx wrangler r2 bucket create cortex-ai-knowledge
-```
+R2 can be enabled later for large-file object storage. The application can deploy without R2; knowledge uploads fall back to temporary database storage during processing.
 
 ## 2. Set Worker secrets
 
