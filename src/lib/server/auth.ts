@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { randomBytes } from "./random";
 import { db } from "@/lib/db";
 import type { User, WorkspaceMember } from "@prisma/client";
 
@@ -8,7 +9,7 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 /* ---------------- password hashing (scrypt, timing-safe) ---------------- */
 
 export function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(16);
+  const salt = Buffer.from(randomBytes(16));
   const hash = crypto.scryptSync(password, salt, 64);
   return `scrypt:${salt.toString("hex")}:${hash.toString("hex")}`;
 }
@@ -39,7 +40,7 @@ function secret(): string {
   // (sessions then reset on restart). Configured in this environment.
   const g = globalThis as { __cortexEphemeralSecret?: string };
   if (!g.__cortexEphemeralSecret) {
-    g.__cortexEphemeralSecret = crypto.randomBytes(32).toString("hex");
+    g.__cortexEphemeralSecret = Buffer.from(randomBytes(32)).toString("hex");
     console.warn("[cortex] APP_SECRET_KEY is not set; using an ephemeral session secret.");
   }
   return g.__cortexEphemeralSecret!;
