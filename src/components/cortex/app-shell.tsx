@@ -340,7 +340,7 @@ function BottomNav({ onMore }: { onMore: () => void }) {
 
 /* ---------------- page title ---------------- */
 
-function usePageTitle(): string {
+function usePageTitle(siteName?: string): string {
   const view = useCortexStore((s) => s.view);
   const activeAgentId = useCortexStore((s) => s.activeAgentId);
 
@@ -378,7 +378,7 @@ function usePageTitle(): string {
     case "learn":
       return "آموزش";
     default:
-      return siteConfig.data?.settings["site.name"] ?? "Cortex AI";
+      return siteName ?? "Cortex AI";
   }
 }
 
@@ -425,7 +425,7 @@ export function AppShell() {
   const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000 });
 
   const [moreOpen, setMoreOpen] = useState(false);
-  const title = usePageTitle();
+  const title = usePageTitle(siteConfig.data?.settings["site.name"]);
 
   const viewKey = view.startsWith("agent") && activeAgentId ? `${view}-${activeAgentId}` : view;
   const showCta = view === "dashboard" || view === "agents";
