@@ -61,6 +61,7 @@ export interface CreateAgentInput {
   tone: AgentTone;
   customTone?: string;
   instructions?: string;
+  workspaceId?: string;
 }
 
 export type UpdateAgentInput = Partial<CreateAgentInput>;
@@ -292,8 +293,9 @@ export const api = {
 
   /* AGENTS */
 
-  getAgents(): Promise<{ agents: AgentDto[] }> {
-    return request("/api/agents");
+  getAgents(workspaceId?: string): Promise<{ agents: AgentDto[] }> {
+    const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
+    return request(`/api/agents${query}`);
   },
 
   createAgent(input: CreateAgentInput): Promise<{ agent: AgentDto }> {
@@ -363,8 +365,9 @@ export const api = {
 
   /* DASHBOARD */
 
-  getDashboard(): Promise<DashboardDto> {
-    return request("/api/dashboard");
+  getDashboard(workspaceId?: string): Promise<DashboardDto> {
+    const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
+    return request(`/api/dashboard${query}`);
   },
 
   /* PROVIDERS */
