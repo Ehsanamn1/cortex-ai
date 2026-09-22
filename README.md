@@ -23,7 +23,7 @@ Cortex AI is an AI knowledge-agent platform: build an agent from your own busine
 - **LLM:** workspace-level OpenAI-compatible providers with optional OpenRouter environment fallback
 - **Embeddings:** OpenAI embeddings when configured, otherwise the built-in lexical engine
 
-The Worker is configured with the current Cloudflare compatibility date and Node.js compatibility required by the Prisma/Neon runtime. Cloudflare documents Prisma + PostgreSQL on Workers with Node.js compatibility and edge-compatible adapters. 
+The Worker uses Vinext on Cloudflare Workers with the PostgreSQL Neon adapter and current Workers Node.js compatibility.
 
 ## Local development
 
@@ -53,14 +53,14 @@ APP_SECRET_KEY
 CORTEX_ADMIN_PASSWORD
 ```
 
-Keep these values in Cloudflare Worker Secrets, not in the repository. The deployment workflow also expects Cloudflare CI credentials:
+Keep these values in Cloudflare Worker Secrets, not in the repository. The deployment workflow expects Cloudflare CI credentials:
 
 ```text
 CLOUDFLARE_API_TOKEN
 CLOUDFLARE_ACCOUNT_ID
 ```
 
-The deployment workflow reads the Cloudflare credentials and application secrets from the GitHub Actions Environment `cortex1`, then deploys with Wrangler.
+These are read from the GitHub Actions Environment `cortex1`. The Worker runtime secrets are separate Cloudflare Worker secrets and must exist on the target Worker before a successful production deployment.
 
 ## Cloudflare storage
 
