@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireSession } from "@/lib/server/auth";
-import { agentFilterForSession, serializeAgent } from "@/lib/server/access";
+import { serializeAgent } from "@/lib/server/access";
 
 export const dynamic = "force-dynamic";
 
