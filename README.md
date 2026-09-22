@@ -1,6 +1,6 @@
 # Cortex AI
 
-Cortex AI is TRANOS’ AI knowledge-agent platform: build an agent from your own business knowledge, connect a real LLM provider, test it in a persistent playground, and expose the same agent through Telegram.
+Cortex AI is an AI knowledge-agent platform: build an agent from your own business knowledge, connect a real LLM provider, test it in a persistent playground, and expose the same agent through Telegram.
 
 ## Product
 
