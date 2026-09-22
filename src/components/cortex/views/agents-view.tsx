@@ -55,12 +55,7 @@ export function AgentsView() {
 
   useErrorToast(isError ? error : null);
 
-  if (isPending) return <AgentsSkeleton />;
-  if (isError || !data) {
-    return <ErrorState message={error instanceof Error ? error.message : "دریافت فهرست ایجنت‌ها ناموفق بود."} onRetry={() => void refetch()} />;
-  }
-
-  const agents = data.agents;
+  const agents = data?.agents ?? [];
   const filtered = useMemo(() => {
     const q = search.trim().toLocaleLowerCase();
     return agents
@@ -73,6 +68,11 @@ export function AgentsView() {
         return new Date(bk).getTime() - new Date(ak).getTime();
       });
   }, [agents, filter, search, sort]);
+
+  if (isPending) return <AgentsSkeleton />;
+  if (isError || !data) {
+    return <ErrorState message={error instanceof Error ? error.message : "دریافت فهرست ایجنت‌ها ناموفق بود."} onRetry={() => void refetch()} />;
+  }
 
   const knowledgeTotal = agents.reduce((n, a) => n + a._count.knowledgeSources, 0);
   const conversationTotal = agents.reduce((n, a) => n + a._count.conversations, 0);
