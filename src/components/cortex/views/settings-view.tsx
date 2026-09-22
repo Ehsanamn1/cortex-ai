@@ -374,7 +374,7 @@ function WorkspaceSection() {
             <Label htmlFor="workspace-name">نام فضای کاری</Label>
             <Input
               id="workspace-name"
-              placeholder="مثلاً تیم فروش ترانوس"
+              placeholder="مثلاً تیم فروش"
               value={name}
               onChange={(event) => setName(event.target.value)}
               onKeyDown={(event) => {
