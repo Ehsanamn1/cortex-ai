@@ -1,21 +1,22 @@
 import { db } from '@/lib/db';
 import { applyCors, jsonOk, toErrorResponse } from '@/lib/server/http';
-import { requireSession } from '@/lib/server/auth';
-import { agentFilterForSession } from '@/lib/server/access';
+import { requireSession, assertWorkspaceAccess } from '@/lib/server/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
     const session = await requireSession(req);
-    const workspaces = session.memberships.map(m => m.workspaceId);
-    const agents = await db.agent.findMany({ where: agentFilterForSession(session), select: { id:true, name:true } });
+    const workspaceId = new URL(req.url).searchParams.get('workspaceId') || session.memberships[0]?.workspaceId;
+    if (!workspaceId) throw Object.assign(new Error('فضای کاری یافت نشد.'), { status: 400 });
+    assertWorkspaceAccess(session, workspaceId);
+    const agents = await db.agent.findMany({ where: { workspaceId }, select: { id:true, name:true } });
     const agentIds = agents.map(a=>a.id);
     const [users, bots, usage, recentUsage, unanswered] = await Promise.all([
-      db.telegramUser.count({ where: { bot: { workspaceId: { in: workspaces } } } }),
-      db.telegramBot.count({ where: { workspaceId: { in: workspaces } } }),
-      db.usageEvent.aggregate({ where: { workspaceId: { in: workspaces } }, _sum: { totalTokens:true, inputTokens:true, outputTokens:true, estimatedCostMicros:true }, _count:{_all:true} }),
-      db.usageEvent.findMany({ where: { workspaceId: { in: workspaces } }, select:{createdAt:true,totalTokens:true,channel:true}, orderBy:{createdAt:'desc'}, take:300 }),
+      db.telegramUser.count({ where: { bot: { workspaceId } } }),
+      db.telegramBot.count({ where: { workspaceId } }),
+      db.usageEvent.aggregate({ where: { workspaceId }, _sum: { totalTokens:true, inputTokens:true, outputTokens:true, estimatedCostMicros:true }, _count:{_all:true} }),
+      db.usageEvent.findMany({ where: { workspaceId }, select:{createdAt:true,totalTokens:true,channel:true}, orderBy:{createdAt:'desc'}, take:300 }),
       db.message.findMany({ where:{ conversation:{ agentId:{ in:agentIds } }, role:'assistant' }, select:{conversationId:true,content:true,metadata:true}, orderBy:{createdAt:'desc'}, take:3000 })
     ]);
     const recent = new Map<string,{date:string;messages:number;tokens:number}>();
