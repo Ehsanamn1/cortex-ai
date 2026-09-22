@@ -211,7 +211,7 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
               </div>
               <Input
                 id="agent-name"
-                placeholder="مثلاً دستیار فروش ترانوس"
+                placeholder="مثلاً دستیار فروش"
                 maxLength={80}
                 aria-invalid={!!form.formState.errors.name}
                 aria-describedby={form.formState.errors.name ? "agent-name-error" : undefined}
