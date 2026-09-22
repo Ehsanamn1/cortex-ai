@@ -10,7 +10,7 @@ import { sanitizeFilename } from "@/lib/knowledge/extract";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
-const MAX_FILE_SIZE = 200 * 1024 * 1024;
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 type ClientPayload = {
   agentId?: unknown;
@@ -42,7 +42,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         const mimeType = typeof payload.mimeType === "string" ? payload.mimeType.slice(0, 120) : "";
 
         if (!agentId || size <= 0 || size > MAX_FILE_SIZE) {
-          throw new Error("حجم یا اطلاعات فایل معتبر نیست. سقف فایل ۲۰۰ مگابایت است.");
+          throw new Error("حجم یا اطلاعات فایل معتبر نیست. سقف فایل ۲۰ مگابایت است.");
         }
 
         await loadAgentForSession(session, agentId);
