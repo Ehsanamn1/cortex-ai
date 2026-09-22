@@ -162,9 +162,8 @@ export function DashboardView() {
                 <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.8)]" />فضای کاری فعال
               </span>
             </div>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[42px] lg:leading-[1.15]">
-              {siteConfigQuery.data?.settings["site.welcomeTitle"] ?? "هوش کسب‌وکار را"}
-              <span className="block bg-gradient-to-l from-primary via-cyan-300 to-violet-400 bg-clip-text text-transparent">از یک داشبورد کنترل کن.</span>
+            <h2 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[42px] lg:leading-[1.15]">
+              {siteConfigQuery.data?.settings["site.welcomeTitle"] ?? "هوش کسب‌وکار را از یک داشبورد کنترل کن."}
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-8 text-slate-300">ایجنت‌ها، دانش، گفتگوها، اتصال‌ها و مصرف منابع از همین‌جا مدیریت می‌شوند؛ آمار این صفحه از فضای کاری فعلی خوانده می‌شود.</p>
             <div className="mt-6 flex flex-wrap gap-2">
