@@ -177,21 +177,23 @@ export function validateUrl(raw: string): URL {
 }
 
 async function assertPublicHost(hostname: string): Promise<void> {
-  try {
-    const dns = await import("node:dns");
-    const resolved = await Promise.allSettled([
-      dns.promises.resolve4(hostname),
-      dns.promises.resolve6(hostname),
-    ]);
-    const addresses = resolved.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
-    if (addresses.length === 0) throw new UnsafeUrlError();
-    for (const address of addresses) {
-      if (isPrivateIp(address)) throw new UnsafeUrlError();
+  // Local Node development can use the native resolver; production Workers use
+  // DNS-over-HTTPS so we never depend on a partially-polyfilled node:dns API.
+  if (process.env.NODE_ENV !== "production") {
+    try {
+      const dns = await import("node:dns");
+      const resolved = await Promise.allSettled([
+        dns.promises.resolve4(hostname),
+        dns.promises.resolve6(hostname),
+      ]);
+      const addresses = resolved.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+      if (addresses.length === 0) throw new UnsafeUrlError();
+      if (addresses.some(isPrivateIp)) throw new UnsafeUrlError();
+      return;
+    } catch (e) {
+      if (e instanceof UnsafeUrlError) throw e;
+      // Fall through to DNS-over-HTTPS if the local runtime has no DNS module.
     }
-    return;
-  } catch (e) {
-    if (e instanceof UnsafeUrlError && e.message.includes("مجاز")) throw e;
-    // Cloudflare Workers do not expose node:dns. Fall back to DNS-over-HTTPS.
   }
 
   const lookups = await Promise.all(
