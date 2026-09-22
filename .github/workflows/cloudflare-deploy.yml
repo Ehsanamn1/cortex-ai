@@ -30,21 +30,6 @@ jobs:
       - name: Build Worker
         run: npx vinext build
 
-      - name: Inspect Cloudflare credential wiring
-        env:
-          SECRET_KEYS: ${{ toJson(secrets) }}
-          VARIABLE_KEYS: ${{ toJson(vars) }}
-        run: |
-          python - <<'PY'
-          import json, os
-          for label, raw in (("secrets", os.environ.get("SECRET_KEYS", "{}")), ("vars", os.environ.get("VARIABLE_KEYS", "{}"))):
-              try:
-                  keys = sorted(json.loads(raw).keys())
-              except Exception:
-                  keys = []
-              print(f"{label} keys visible to this job: {keys}")
-          PY
-
       - name: Verify Cloudflare credentials
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
@@ -52,36 +37,7 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "CLOUDFLARE_API_TOKEN is missing from cortex1 secrets/variables"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "CLOUDFLARE_ACCOUNT_ID is missing from cortex1 secrets/variables"; exit 1; }
-          echo "Cloudflare credentials are available to this job."
-
-      - name: Verify application runtime secrets
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          APP_SECRET_KEY: ${{ secrets.APP_SECRET_KEY }}
-          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD }}
-        run: |
-          test -n "$DATABASE_URL" || { echo "DATABASE_URL is missing from cortex1 environment secrets"; exit 1; }
-          test -n "$APP_SECRET_KEY" || { echo "APP_SECRET_KEY is missing from cortex1 environment secrets"; exit 1; }
-          test -n "$CORTEX_ADMIN_PASSWORD" || { echo "CORTEX_ADMIN_PASSWORD is missing from cortex1 environment secrets"; exit 1; }
-          test "${#APP_SECRET_KEY}" -ge 32 || { echo "APP_SECRET_KEY must be at least 32 characters"; exit 1; }
-          echo "Required application runtime secrets are available."
-
-      - name: Prepare Worker runtime secrets
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          APP_SECRET_KEY: ${{ secrets.APP_SECRET_KEY }}
-          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD }}
-          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME }}
-          CORTEX_ADMIN_SESSION_SECRET: ${{ secrets.CORTEX_ADMIN_SESSION_SECRET }}
-        run: |
-          umask 077
-          : > .cf-runtime-secrets
-          printf '%s\n' "DATABASE_URL=$DATABASE_URL" >> .cf-runtime-secrets
-          printf '%s\n' "APP_SECRET_KEY=$APP_SECRET_KEY" >> .cf-runtime-secrets
-          printf '%s\n' "CORTEX_ADMIN_PASSWORD=$CORTEX_ADMIN_PASSWORD" >> .cf-runtime-secrets
-          [ -z "$CORTEX_ADMIN_USERNAME" ] || printf '%s\n' "CORTEX_ADMIN_USERNAME=$CORTEX_ADMIN_USERNAME" >> .cf-runtime-secrets
-          [ -z "$CORTEX_ADMIN_SESSION_SECRET" ] || printf '%s\n' "CORTEX_ADMIN_SESSION_SECRET=$CORTEX_ADMIN_SESSION_SECRET" >> .cf-runtime-secrets
-          echo "Prepared Worker runtime secret bundle."
+          echo "Cloudflare CI credentials are available."
 
       - name: Verify R2 bucket
         env:
@@ -99,8 +55,8 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx @vinext/cloudflare deploy --skip-build --secrets-file .cf-runtime-secrets
+        run: npx @vinext/cloudflare deploy --skip-build
 
-      - name: Remove runtime secret file
+      - name: Cleanup
         if: always()
         run: rm -f .cf-runtime-secrets
