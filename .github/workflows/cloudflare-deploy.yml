@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: cortex-cloudflare-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     environment: cortex1
