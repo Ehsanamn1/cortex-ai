@@ -2,7 +2,8 @@ import { db } from "@/lib/db";
 import { getVectorStore } from "@/lib/providers/vector";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs, type ChunkInput } from "./chunk";
-import { extractFromUrl, extractStoredFile, removeUploadDir, UPLOAD_ROOT } from "./extract";
+import { extractFromUrl, extractStoredBytes, extractStoredFile, removeUploadDir, UPLOAD_ROOT, sanitizeFilename } from "./extract";
+import { getKnowledgeBucket } from "@/lib/cloudflare-storage";
 import fs from "fs/promises";
 import path from "path";
 import { createWriteStream } from "fs";
@@ -185,10 +186,23 @@ async function purgeSourceVectors(agentId: string, sourceId: string): Promise<vo
   await db.knowledgeChunk.deleteMany({ where: { sourceId } });
 }
 
-/** Full removal of a source: rows cascade in the DB, vectors purged, upload dir cleared. */
+/** Full removal of a source: DB rows, vectors, local fallback files, and R2 object are cleared. */
 export async function deleteSourceCompletely(sourceId: string): Promise<void> {
-  const source = await db.knowledgeSource.findUnique({ where: { id: sourceId } });
+  const source = await db.knowledgeSource.findUnique({
+    where: { id: sourceId },
+    include: { documents: true },
+  });
   if (!source) return;
+
+  if (source.type === "file") {
+    const bucket = await getKnowledgeBucket();
+    for (const document of source.documents) {
+      if (bucket && document.url?.startsWith("r2://")) {
+        await bucket.delete(document.url.slice("r2://".length)).catch(() => undefined);
+      }
+    }
+  }
+
   await purgeSourceVectors(source.agentId, sourceId);
   await db.knowledgeSource.delete({ where: { id: sourceId } }); // cascades documents
   if (source.type === "file") await removeUploadDir(sourceId);
@@ -213,44 +227,16 @@ async function extractStoredFileForSource(
   }
 
   const document = await db.knowledgeDocument.findFirst({ where: { sourceId } });
-  const storagePath = document?.url;
-  if (!storagePath || !storagePath.startsWith("knowledge/")) {
-    throw new Error("فایل بارگذاری‌شده برای این منبع در سرور یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
+  const storagePath = document?.url ?? null;
+  if (storagePath?.startsWith("r2://")) {
+    const bucket = await getKnowledgeBucket();
+    if (!bucket) throw new Error("Storage فایل دانش روی Cloudflare R2 پیکربندی نشده است.");
+    const objectKey = storagePath.slice("r2://".length);
+    const object = await bucket.get(objectKey);
+    if (!object) throw new Error("فایل بارگذاری‌شده در Cloudflare R2 یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
+    const bytes = new Uint8Array(await object.arrayBuffer());
+    return extractStoredBytes(bytes, documentName);
   }
 
-  let blobResult: { stream: ReadableStream<Uint8Array> };
-  try {
-    const { get } = await import("@vercel/blob");
-    blobResult = await get(storagePath, { access: "private" });
-  } catch {
-    throw new Error("فایل ذخیره‌شده در Storage در دسترس نیست؛ اتصال Storage را بررسی کنید.");
-  }
-
-  await fs.mkdir(dir, { recursive: true });
-  const tempPath = path.join(dir, `${randomUUID()}-${sanitizeFilename(documentName)}`);
-  const output = createWriteStream(tempPath);
-  const reader = blobResult.stream.getReader();
-
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (value) {
-        if (!output.write(Buffer.from(value))) {
-          await new Promise<void>((resolve, reject) => {
-            output.once("drain", resolve);
-            output.once("error", reject);
-          });
-        }
-      }
-    }
-    await new Promise<void>((resolve, reject) => {
-      output.end(() => resolve());
-      output.once("error", reject);
-    });
-    return await extractStoredFile(tempPath, documentName);
-  } finally {
-    await reader.cancel().catch(() => undefined);
-    await fs.rm(tempPath, { force: true }).catch(() => undefined);
-  }
+  throw new Error("فایل بارگذاری‌شده برای این منبع در Storage یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
 }
