@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,7 +8,6 @@ import { motion } from "framer-motion";
 import { api, ApiError } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
 import { CortexMark } from "@/components/cortex/logo";
-import { AuthScreen } from "@/components/cortex/auth-screen";
 import { AppShell } from "@/components/cortex/app-shell";
 import { Button } from "@/components/ui/button";
 
@@ -41,7 +41,7 @@ function Splash() {
       </motion.div>
       <div className="flex flex-col items-center gap-1">
         <span className="text-sm font-bold tracking-tight text-foreground">Cortex AI</span>
-        <span className="text-xs text-muted-foreground">محصولی از ترانوس</span>
+        <span className="text-xs text-muted-foreground">محیط مدیریت ایجنت‌ها</span>
       </div>
     </div>
   );
@@ -55,7 +55,7 @@ function SessionGate() {
   useEffect(() => {
     let cancelled = false;
 
-    async function bootstrapDemo() {
+    async function bootstrapSession() {
       try {
         const response = await fetch("/api/auth/demo", {
           method: "POST",
@@ -76,13 +76,13 @@ function SessionGate() {
         setPhase("ready");
       } catch (error) {
         if (cancelled) return;
-        console.error("[cortex] demo bootstrap failed:", error);
+        console.error("[cortex] session bootstrap failed:", error);
         setErrorMessage(error instanceof Error ? error.message : "راه‌اندازی Cortex ناموفق بود.");
         setPhase("error");
       }
     }
 
-    void bootstrapDemo();
+    void bootstrapSession();
 
     return () => {
       cancelled = true;
