@@ -126,9 +126,14 @@
     color-scheme: dark;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-sans);
+    @apply min-h-screen bg-background text-foreground;
+    font-family: var(--font-vazirmatn), "Vazir", "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
     text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
+      radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%);
+    background-attachment: fixed;
   }
   ::selection {
     background: rgba(59, 130, 255, 0.32);
@@ -200,3 +205,44 @@
 .cortex-shell-glow::before{content:"";position:absolute;inset:-18%;background:radial-gradient(circle at 70% 20%,rgba(59,130,255,.13),transparent 28%),radial-gradient(circle at 20% 60%,rgba(139,92,246,.09),transparent 24%);filter:blur(18px);pointer-events:none}
 
 .cortex-core-orbit{position:absolute;inset:11%;border:1px solid rgba(59,130,255,.16);border-radius:50%;transform-style:preserve-3d}.cortex-orbit-a{transform:rotateX(66deg) rotateY(18deg);animation:cortexOrbit1 14s linear infinite}.cortex-orbit-b{inset:7%;transform:rotateX(12deg) rotateY(68deg);border-color:rgba(139,92,246,.18);animation:cortexOrbit2 18s linear infinite}.cortex-orbit-c{inset:15%;transform:rotateX(42deg) rotateY(50deg);border-color:rgba(255,255,255,.08);animation:cortexOrbit3 11s linear infinite}@keyframes cortexOrbit1{to{transform:rotateX(66deg) rotateY(18deg) rotateZ(360deg)}}@keyframes cortexOrbit2{to{transform:rotateX(12deg) rotateY(68deg) rotateZ(-360deg)}}@keyframes cortexOrbit3{to{transform:rotateX(42deg) rotateY(50deg) rotateZ(360deg)}}.cortex-core-sphere{filter:drop-shadow(0 20px 55px rgba(59,130,255,.18))}@media(prefers-reduced-motion:reduce){.cortex-core-orbit{animation:none!important}}
+
+
+.cortex-sidebar {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(59,130,255,.08), transparent 24%),
+    linear-gradient(180deg, rgba(10,13,19,.98), rgba(7,9,13,.96));
+}
+.cortex-topbar {
+  background: rgba(7,9,13,.72);
+  box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 14px 34px rgba(0,0,0,.10);
+}
+.cortex-surface {
+  background: linear-gradient(145deg, rgba(17,21,28,.90), rgba(10,13,19,.82));
+  border: 1px solid rgba(148,163,184,.10);
+}
+.cortex-action {
+  position: relative;
+  overflow: hidden;
+  transition: transform .18s ease, border-color .18s ease, background-color .18s ease;
+}
+.cortex-action::after {
+  content: "";
+  position: absolute;
+  inset: auto -18% -60% 25%;
+  height: 120px;
+  background: radial-gradient(circle, rgba(59,130,255,.13), transparent 68%);
+  pointer-events: none;
+}
+.cortex-action:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59,130,255,.28);
+  background-color: rgba(255,255,255,.025);
+}
+.cortex-status-line {
+  background: linear-gradient(90deg, transparent, rgba(59,130,255,.35), transparent);
+}
+@media (max-width: 1023px) {
+  .cortex-sidebar {
+    display: none;
+  }
+}
