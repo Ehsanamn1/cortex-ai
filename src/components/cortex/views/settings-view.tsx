@@ -175,13 +175,13 @@ function ProvidersSection() {
             <div className="space-y-2">
               <ProviderRow
                 label="نوع"
-                value={data.vectorStore.provider === "qdrant" ? "Qdrant" : "محلی (SQLite)"}
+                value={data.vectorStore.provider === "qdrant" ? "Qdrant" : "محلی (PostgreSQL)"}
               />
             </div>
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               {data.vectorStore.provider === "qdrant"
                 ? "بردارها در پایگاه داده برداری اختصاصی Qdrant ذخیره می‌شوند."
-                : "بردارها روی همان پایگاه داده محصول ذخیره و با شباهت کسینوسی جستجو می‌شوند."}
+                : "بردارها روی همان PostgreSQL محصول ذخیره و با شباهت کسینوسی جستجو می‌شوند."}
             </p>
           </CardContent>
         </Card>
