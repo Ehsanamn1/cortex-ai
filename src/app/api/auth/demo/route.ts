@@ -1,6 +1,8 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
+  getSession,
   hashPassword,
   publicUser,
   sessionCookieHeader,
@@ -9,64 +11,60 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const DEMO_EMAIL = "demo@cortex.local";
-const DEMO_NAME = "Cortex Demo";
-
-export async function POST() {
+/**
+ * Direct-access bootstrap used by the current no-login UI.
+ * Existing authenticated sessions are preserved; a new browser gets an isolated
+ * guest account and workspace instead of sharing a global demo account.
+ */
+export async function POST(req: Request) {
   try {
-    let user = await db.user.findUnique({ where: { email: DEMO_EMAIL } });
-
-    if (!user) {
-      user = await db.user.create({
-        data: {
-          email: DEMO_EMAIL,
-          name: DEMO_NAME,
-          passwordHash: hashPassword("cortex-demo"),
-        },
+    const existing = await getSession(req);
+    if (existing) {
+      return NextResponse.json({
+        user: publicUser(existing.user),
+        workspaces: existing.memberships.map((membership) => ({
+          id: membership.workspace.id,
+          name: membership.workspace.name,
+          role: membership.role,
+          createdAt: membership.workspace ? membership.createdAt.toISOString() : new Date().toISOString(),
+        })),
       });
     }
 
-    let workspace = await db.workspace.findFirst({
-      where: { ownerId: user.id },
-      orderBy: { createdAt: "asc" },
+    const guestId = crypto.randomUUID();
+    const user = await db.user.create({
+      data: {
+        email: `guest-${guestId}@cortex.local`,
+        name: "کاربر Cortex",
+        passwordHash: hashPassword(crypto.randomBytes(32).toString("hex")),
+      },
     });
 
-    if (!workspace) {
-      workspace = await db.workspace.create({
-        data: {
-          name: "فضای کاری Demo",
-          ownerId: user.id,
-          members: { create: { userId: user.id, role: "owner" } },
-        },
-      });
-    } else {
-      const membership = await db.workspaceMember.findUnique({
-        where: {
-          workspaceId_userId: {
-            workspaceId: workspace.id,
-            userId: user.id,
-          },
-        },
-      });
-      if (!membership) {
-        await db.workspaceMember.create({
-          data: { workspaceId: workspace.id, userId: user.id, role: "owner" },
-        });
-      }
-    }
+    const workspace = await db.workspace.create({
+      data: {
+        name: "فضای کاری من",
+        ownerId: user.id,
+        members: { create: { userId: user.id, role: "owner" } },
+      },
+    });
 
     const token = signSessionToken(user.id);
     const response = NextResponse.json({
       user: publicUser(user),
-      workspaces: [{ id: workspace.id, name: workspace.name, role: "owner", createdAt: workspace.createdAt.toISOString() }],
-      demo: true,
+      workspaces: [{
+        id: workspace.id,
+        name: workspace.name,
+        role: "owner",
+        createdAt: workspace.createdAt.toISOString(),
+      }],
+      guest: true,
     });
     response.headers.set("Set-Cookie", sessionCookieHeader(token));
     return response;
-  } catch (e) {
-    console.error("[cortex] demo session bootstrap failed:", e);
+  } catch (error) {
+    console.error("[cortex] session bootstrap failed:", error);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "راه‌اندازی حساب Demo ناموفق بود." },
+      { error: error instanceof Error ? error.message : "راه‌اندازی Cortex ناموفق بود." },
       { status: 500 }
     );
   }
