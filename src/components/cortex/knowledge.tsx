@@ -48,8 +48,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // server default; server-side SiteSetting remains authoritative
-
 /* ---------------- hooks ---------------- */
 
 /** Knowledge query with live polling while any source is pending/processing. */
@@ -111,6 +109,16 @@ function AddFileDialogInner({
   onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
+  const siteConfigQuery = useQuery({
+    queryKey: ["site-config"],
+    queryFn: api.getSiteConfig,
+    staleTime: 60_000,
+  });
+  const configuredMaxMb = Math.max(
+    1,
+    Math.min(200, Math.floor(Number(siteConfigQuery.data?.settings["site.maxUploadMb"] ?? 20)))
+  );
+  const maxFileSize = configuredMaxMb * 1024 * 1024;
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -138,8 +146,8 @@ function AddFileDialogInner({
 
   function pickFile(candidate: File | null | undefined) {
     if (!candidate) return;
-    if (candidate.size > MAX_FILE_SIZE) {
-      setError("حجم فایل نباید بیشتر از ۲۰ مگابایت باشد.");
+    if (candidate.size > maxFileSize) {
+      setError("حجم فایل نباید بیشتر از ${configuredMaxMb} مگابایت باشد.");
       setFile(null);
       return;
     }
@@ -151,7 +159,7 @@ function AddFileDialogInner({
     <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-right sm:text-right">
           <DialogTitle>افزودن فایل به دانش</DialogTitle>
-          <DialogDescription>هر فایل تا ۲۰ مگابایت قابل دریافت است؛ سقف نهایی از تنظیمات سرور اعمال می‌شود و بعد از بارگذاری به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
+          <DialogDescription>هر فایل تا {configuredMaxMb} مگابایت قابل دریافت است؛ سقف نهایی از تنظیمات سرور اعمال می‌شود و بعد از بارگذاری به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
         </DialogHeader>
 
         <div
