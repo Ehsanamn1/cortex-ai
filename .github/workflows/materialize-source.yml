@@ -19,7 +19,7 @@ jobs:
 
       - name: Reassemble archive
         env:
-          SOURCE_SHA256: dc3448dfa807ff79d3e49961869ee4479b1d56ec7ae26e58011a3ee079639903
+          SOURCE_SHA256: 0d1f00a85f97c24c8e6a85598a93270d06e0e603fc3a59f8f530456eb4e01d6c
         run: |
           mkdir -p /tmp/cortex-source
           cat bootstrap/source.* > /tmp/cortex-source.b64
