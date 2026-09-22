@@ -4,6 +4,10 @@ import { db } from "@/lib/db";
 import type { User, WorkspaceMember } from "@prisma/client";
 
 const COOKIE_NAME = "cortex_session";
+
+function encodeBuffer(value: Buffer, encoding: "hex"): string {
+  return (value as unknown as { toString(encoding: "hex"): string }).toString(encoding);
+}
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 /* ---------------- password hashing (scrypt, timing-safe) ---------------- */
@@ -14,7 +18,7 @@ export function hashPassword(password: string): string {
     scryptSync(password: string, salt: Buffer, keylen: number): Buffer;
   }).scryptSync;
   const hash = scryptSync(password, salt, 64);
-  return `scrypt:${salt.toString("hex")}:${hash.toString("hex")}`;
+  return `scrypt:${encodeBuffer(salt, "hex")}:${encodeBuffer(hash, "hex")}`;
 }
 
 export function verifyPassword(password: string, stored: string): boolean {
