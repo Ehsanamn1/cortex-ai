@@ -147,7 +147,7 @@ function AddFileDialogInner({
   function pickFile(candidate: File | null | undefined) {
     if (!candidate) return;
     if (candidate.size > maxFileSize) {
-      setError("حجم فایل نباید بیشتر از ${configuredMaxMb} مگابایت باشد.");
+      setError(`حجم فایل نباید بیشتر از ${configuredMaxMb} مگابایت باشد.`);
       setFile(null);
       return;
     }
