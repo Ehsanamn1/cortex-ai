@@ -4,8 +4,6 @@ import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs, type ChunkInput } from "./chunk";
 import { extractFromUrl, extractStoredBytes, extractStoredFile, removeUploadDir, UPLOAD_ROOT } from "./extract";
 import { getKnowledgeBucket } from "@/lib/cloudflare-storage";
-import fs from "node:fs/promises";
-import path from "node:path";
 
 /**
  * Knowledge processing pipeline (real, no simulation):
@@ -217,7 +215,9 @@ async function extractStoredFileForSource(
   sourceId: string,
   documentName: string
 ): Promise<{ pages: Array<{ text: string; page?: number; section?: string | null }>; mimeType?: string; sizeBytes?: number }> {
-  const dir = path.join(UPLOAD_ROOT, sourceId);
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+  const dir = path.join(process.cwd(), UPLOAD_ROOT, sourceId);
   const entries = await fs.readdir(dir).catch(() => [] as string[]);
   if (entries.length > 0) {
     const filePath = path.join(dir, entries[0]!);
