@@ -7,11 +7,38 @@ import { answerWithKnowledge, toRetrievalDebug, toSourceRefs } from '@/lib/rag/p
 
 const API = 'https://api.telegram.org';
 const normalizePhone=(v:string)=>{ const digits=v.replace(/\D/g,''); if(!digits) return ''; return `+${digits.startsWith('00')?digits.slice(2):digits}`; };
-async function telegramCall(token:string, method:string, body:Record<string,unknown>){ const res=await fetch(`${API}/bot${token}/${method}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20_000)}); const data=await res.json() as {ok?:boolean;result?:any;description?:string}; if(!res.ok||!data.ok) throw new Error(data.description||`Telegram API ${res.status}`); return data.result; }
+async function telegramCall(token:string, method:string, body:Record<string,unknown>){
+  let lastError: Error | null = null;
+  for(let attempt=0; attempt<3; attempt++){
+    try{
+      const res=await fetch(`${API}/bot${token}/${method}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20_000)});
+      const data=await res.json() as {ok?:boolean;result?:any;description?:string;parameters?:{retry_after?:number}};
+      if(res.ok && data.ok) return data.result;
+      const retryAfter=Number(data.parameters?.retry_after ?? 0);
+      const retryable=res.status===429 || res.status>=500;
+      lastError=new Error(data.description||`Telegram API ${res.status}`);
+      if(!retryable || attempt===2) throw lastError;
+      const delay=Math.min(8000,Math.max(500,retryAfter*1000||750*(attempt+1)));
+      await new Promise(resolve=>setTimeout(resolve,delay));
+    }catch(error){
+      lastError=error instanceof Error?error:new Error(String(error));
+      if(attempt===2) throw lastError;
+      await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
+    }
+  }
+  throw lastError??new Error('Telegram API unavailable');
+}
 export async function getBotInfo(token:string){ return telegramCall(token,'getMe',{}); }
 export async function setWebhook(token:string,url:string,secret:string){ return telegramCall(token,'setWebhook',{url,secret_token:secret,allowed_updates:['message']}); }
 export async function deleteWebhook(token:string){ return telegramCall(token,'deleteWebhook',{drop_pending_updates:false}); }
-export async function sendMessage(token:string,chatId:string|number,text:string){ return telegramCall(token,'sendMessage',{chat_id:chatId,text,disable_web_page_preview:true}); }
+export async function sendMessage(token:string,chatId:string|number,text:string){
+  const value=text.trim();
+  const chunks:string[]=[];
+  for(let i=0;i<value.length;i+=4096) chunks.push(value.slice(i,i+4096));
+  const results=[];
+  for(const chunk of chunks.length?chunks:['']) results.push(await telegramCall(token,'sendMessage',{chat_id:chatId,text:chunk,disable_web_page_preview:true}));
+  return results.at(-1);
+}
 export async function requestContact(token:string,chatId:string|number){ return telegramCall(token,'sendMessage',{chat_id:chatId,text:'برای شناسایی و بررسی دسترسی، شماره موبایل خود را از طریق دکمه زیر ارسال کنید.',reply_markup:{keyboard:[[{text:'📱 ارسال شماره موبایل',request_contact:true}]],resize_keyboard:true,one_time_keyboard:true}}); }
 export async function processTelegramUpdate(botId:string, update:any){
   const bot=await db.telegramBot.findUnique({where:{id:botId}}); if(!bot) return;
