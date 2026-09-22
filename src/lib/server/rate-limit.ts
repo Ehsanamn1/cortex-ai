@@ -2,7 +2,7 @@ import { clientIp } from "./http";
 
 /**
  * In-memory sliding-window rate limiter (Phase 1 foundation).
- * Suitable for a single node; swap for Redis in production.
+ * Best-effort per Worker isolate; global distributed rate limiting can be added at the edge/provider layer.
  */
 interface Bucket {
   hits: number[];
