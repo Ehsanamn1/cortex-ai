@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { rateLimit } from "@/lib/server/rate-limit";
 import { getKnowledgeBucket } from "@/lib/cloudflare-storage";
 import { llmManager } from "@/lib/providers/llm/manager";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
@@ -14,11 +15,11 @@ function safeError(e: unknown) {
     .slice(0, 800);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  rateLimit(req, "public-health", 30, 60_000);
   try {
-    const [userCount, workspaceCount, knowledgeBucket] = await Promise.all([
-      db.user.count(),
-      db.workspace.count(),
+    const [databaseCheck, knowledgeBucket] = await Promise.all([
+      db.$queryRaw`SELECT 1`,
       getKnowledgeBucket(),
     ]);
     const llm = llmManager.status();
@@ -26,7 +27,7 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true,
-      database: "connected",
+      database: databaseCheck ? "connected" : "error",
       storage: knowledgeBucket ? "r2" : "missing",
       llm: {
         provider: llm.provider,
@@ -39,8 +40,6 @@ export async function GET() {
         model: embeddings.model,
         mode: embeddings.mode,
       },
-      userCount,
-      workspaceCount,
       env: {
         DATABASE_URL: process.env.DATABASE_URL ? "set" : "missing",
         APP_SECRET_KEY: process.env.APP_SECRET_KEY ? "set" : "missing",
