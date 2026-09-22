@@ -203,7 +203,7 @@ function AddFileDialogInner({
           <input
             ref={inputRef}
             type="file"
-            accept=".pdf,.txt,.docx"
+            accept=".pdf,.txt,.docx,.md,.csv,.json,.xml,.html,.htm,.yaml,.yml,.log,.tsv,.sql"
             className="sr-only"
             tabIndex={-1}
             onChange={(event) => {
@@ -240,7 +240,7 @@ function AddFileDialogInner({
               </span>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">فایل را این‌جا رها کنید</p>
-                <p className="text-xs text-muted-foreground">یا برای انتخاب از دستگاه کلیک کنید</p>
+                <p className="text-xs text-muted-foreground">یا برای انتخاب از دستگاه کلیک کنید · PDF، DOCX، TXT، MD، CSV، JSON، XML، HTML و داده‌های متنی</p>
               </div>
             </>
           )}
