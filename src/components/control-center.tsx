@@ -20,6 +20,13 @@ type Summary = {
 };
 type Settings = Record<string,string>;
 
+async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, init);
+  const payload = (await response.json()) as T & { error?: string };
+  if (!response.ok) throw new Error(payload.error || "خطا");
+  return payload as T;
+}
+
 function Kpi({icon:Icon,label,value,detail}:{icon:typeof Bot;label:string;value:number;detail:string}) {
   return <Card className="cortex-panel rounded-2xl"><CardContent className="p-5"><div className="flex items-start justify-between gap-4"><span className="cortex-icon-box"><Icon className="size-[18px]"/></span><span className="text-xs text-muted-foreground">{detail}</span></div><p className="mt-5 text-3xl font-bold">{value.toLocaleString("fa-IR")}</p><p className="mt-1 text-xs text-muted-foreground">{label}</p></CardContent></Card>;
 }
@@ -28,7 +35,7 @@ function LoginCard({onDone}:{onDone:()=>void}) {
   const [username,setUsername]=useState("admin");
   const [password,setPassword]=useState("");
   const login=useMutation({
-    mutationFn:()=>fetch("/api/admin/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"ورود ناموفق بود.");return j}),
+    mutationFn:()=>fetchJson<{ok:boolean}>("/api/admin/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})}),
     onSuccess:()=>{onDone();toast.success("ورود مدیر انجام شد");},
     onError:(e:Error)=>toast.error(e.message)
   });
@@ -37,16 +44,16 @@ function LoginCard({onDone}:{onDone:()=>void}) {
 
 export function ControlCenter() {
   const qc=useQueryClient();
-  const session=useQuery({queryKey:["cc-auth"],queryFn:()=>fetch("/api/admin/auth/me").then(async r=>{if(!r.ok)throw new Error();return r.json()}),retry:false});
-  const summary=useQuery<Summary>({queryKey:["cc-summary"],queryFn:()=>fetch("/api/control-center").then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"خطا");return j}),enabled:session.isSuccess});
-  const settingsQ=useQuery<{settings:Settings}>({queryKey:["cc-settings"],queryFn:()=>fetch("/api/control-center/settings").then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"خطا");return j}),enabled:session.isSuccess});
+  const session=useQuery<{username:string}>({queryKey:["cc-auth"],queryFn:()=>fetchJson<{username:string}>("/api/admin/auth/me"),retry:false});
+  const summary=useQuery<Summary>({queryKey:["cc-summary"],queryFn:()=>fetchJson<Summary>("/api/control-center"),enabled:session.isSuccess});
+  const settingsQ=useQuery<{settings:Settings}>({queryKey:["cc-settings"],queryFn:()=>fetchJson<{settings:Settings}>("/api/control-center/settings"),enabled:session.isSuccess});
   const [settings,setSettings]=useState<Settings>({});
   useEffect(()=>{if(settingsQ.data?.settings)setSettings(settingsQ.data.settings)},[settingsQ.data]);
-  const save=useMutation({mutationFn:()=>fetch("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings})}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"ذخیره ناموفق بود");return j}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-settings"]});toast.success("تنظیمات ذخیره شد")},onError:(e:Error)=>toast.error(e.message)});
+  const save=useMutation({mutationFn:()=>fetchJson<{settings:Settings}>("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings})}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-settings"]});toast.success("تنظیمات ذخیره شد")},onError:(e:Error)=>toast.error(e.message)});
   const logout=useMutation({mutationFn:()=>fetch("/api/admin/auth/logout",{method:"POST"}),onSuccess:()=>{qc.clear();window.location.reload()}});
   const m=summary.data?.metrics;
-  const pluginsQ=useQuery<{plugins:Array<{id:string;key:string;name:string;description:string|null;version:string;enabled:boolean}>}>({queryKey:["cc-plugins"],queryFn:()=>fetch("/api/control-center/plugins").then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"دریافت افزونه‌ها ناموفق بود.");return j}),enabled:session.isSuccess});
-  const pluginToggle=useMutation({mutationFn:(v:{id:string;enabled:boolean})=>fetch("/api/control-center/plugins",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||"تغییر افزونه ناموفق بود.");return j}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-plugins"]});toast.success("وضعیت افزونه تغییر کرد")},onError:(e:Error)=>toast.error(e.message)});
+  const pluginsQ=useQuery<{plugins:Array<{id:string;key:string;name:string;description:string|null;version:string;enabled:boolean}>}>({queryKey:["cc-plugins"],queryFn:()=>fetchJson<{plugins:Array<{id:string;key:string;name:string;description:string|null;version:string;enabled:boolean}>}>("/api/control-center/plugins"),enabled:session.isSuccess});
+  const pluginToggle=useMutation({mutationFn:(v:{id:string;enabled:boolean})=>fetchJson<{plugin:unknown}>("/api/control-center/plugins",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-plugins"]});toast.success("وضعیت افزونه تغییر کرد")},onError:(e:Error)=>toast.error(e.message)});
 
   if(session.isPending)return <div className="min-h-screen bg-background p-8"><Skeleton className="mx-auto h-40 max-w-6xl rounded-3xl"/></div>;
   if(session.isError)return <LoginCard onDone={()=>void session.refetch()}/>;
