@@ -359,3 +359,17 @@ model SiteSetting {
 
   @@index([key])
 }
+
+model Plugin {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  version     String   @default("1.0.0")
+  enabled     Boolean  @default(true)
+  manifest    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled])
+}
