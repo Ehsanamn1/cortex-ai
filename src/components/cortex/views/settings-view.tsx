@@ -211,7 +211,9 @@ function ProviderConfigSection(){
   const qc=useQueryClient();
   const q=useQuery({queryKey:['provider-config',workspaceId],queryFn:()=>api.getProviderConfig(workspaceId??undefined),enabled:!!workspaceId});
   const [providerName,setProviderName]=useState('AI Gateway'); const [baseUrl,setBaseUrl]=useState(''); const [model,setModel]=useState(''); const [authMode,setAuthMode]=useState('bearer'); const [apiKey,setApiKey]=useState(''); const [enabled,setEnabled]=useState(true);
-  // Form state intentionally mirrors the server-loaded provider configuration once it arrives.\n  // eslint-disable-next-line react-hooks/set-state-in-effect\n  useEffect(()=>{const c=q.data?.config;if(c){setProviderName(c.providerName);setBaseUrl(c.baseUrl);setModel(c.model);setAuthMode(c.authMode);setEnabled(c.enabled)}},[q.data]);
+  // Form state intentionally mirrors the server-loaded provider configuration once it arrives.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(()=>{const c=q.data?.config;if(c){setProviderName(c.providerName);setBaseUrl(c.baseUrl);setModel(c.model);setAuthMode(c.authMode);setEnabled(c.enabled)}},[q.data]);
   const save=useMutation({mutationFn:()=>api.saveProviderConfig({workspaceId:workspaceId??undefined,providerName,baseUrl,model,authMode,apiKey,enabled}),onSuccess:()=>{setApiKey('');qc.invalidateQueries({queryKey:['provider-config',workspaceId]});qc.invalidateQueries({queryKey:['providers-status']});toast.success('اتصال هوش مصنوعی ذخیره شد')},onError:e=>toast.error(e.message)});
   return <Card className="cortex-panel"><CardHeader><CardTitle className="text-base">اتصال اختصاصی هوش مصنوعی</CardTitle><CardDescription>هر فضای کاری می‌تواند Gateway مستقل داشته باشد؛ کلید فقط به‌صورت رمزنگاری‌شده سمت سرور نگهداری می‌شود.</CardDescription></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">
     <div><Label>نام سرویس</Label><Input className="mt-2" value={providerName} onChange={e=>setProviderName(e.target.value)} placeholder="مثلاً AIHubMix"/></div>
@@ -226,7 +228,9 @@ function ProviderConfigSection(){
 
 function LimitsSection(){
  const ws=useCortexStore(s=>s.activeWorkspaceId); const qc=useQueryClient(); const q=useQuery({queryKey:['limits',ws],queryFn:()=>api.getLimits(ws??undefined),enabled:!!ws}); const [dailyMessageLimit,setD]=useState(0);const [monthlyMessageLimit,setM]=useState(0);const [dailyTokenLimit,setDT]=useState(0);const [monthlyTokenLimit,setMT]=useState(0);
- // Form state intentionally mirrors the server-loaded policy once it arrives.\n // eslint-disable-next-line react-hooks/set-state-in-effect\n useEffect(()=>{const p=q.data?.policy;if(p){setD(p.dailyMessageLimit);setM(p.monthlyMessageLimit);setDT(p.dailyTokenLimit);setMT(p.monthlyTokenLimit)}},[q.data]);
+ // Form state intentionally mirrors the server-loaded policy once it arrives.
+ // eslint-disable-next-line react-hooks/set-state-in-effect
+ useEffect(()=>{const p=q.data?.policy;if(p){setD(p.dailyMessageLimit);setM(p.monthlyMessageLimit);setDT(p.dailyTokenLimit);setMT(p.monthlyTokenLimit)}},[q.data]);
  const save=useMutation({mutationFn:()=>api.saveLimits({workspaceId:ws??undefined,dailyMessageLimit,monthlyMessageLimit,dailyTokenLimit,monthlyTokenLimit}),onSuccess:()=>{qc.invalidateQueries({queryKey:['limits',ws]});toast.success('محدودیت‌ها ذخیره شد')},onError:e=>toast.error(e.message)});
  return <Card className="cortex-panel"><CardHeader><CardTitle className="text-base">سقف مصرف</CardTitle><CardDescription>عدد ۰ یعنی بدون سقف. این محدودیت‌ها برای وب و تلگرام مشترک هستند.</CardDescription></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2"><LimitField label="پیام روزانه" value={dailyMessageLimit} setValue={setD}/><LimitField label="پیام ماهانه" value={monthlyMessageLimit} setValue={setM}/><LimitField label="توکن روزانه" value={dailyTokenLimit} setValue={setDT}/><LimitField label="توکن ماهانه" value={monthlyTokenLimit} setValue={setMT}/><div className="sm:col-span-2 flex justify-end"><Button variant="outline" disabled={save.isPending} onClick={()=>save.mutate()}>{save.isPending?'در حال ذخیره…':'ذخیره محدودیت‌ها'}</Button></div></CardContent></Card>
 }
