@@ -30,6 +30,7 @@ interface KnowledgeGroup {
 
 export function KnowledgeView() {
   const setView = useCortexStore((s) => s.setView);
+  const activeWorkspaceId = useCortexStore((s) => s.activeWorkspaceId);
 
   const [addOpen, setAddOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState("");
@@ -42,7 +43,11 @@ export function KnowledgeView() {
     isError: agentsError,
     error: agentsErrorObject,
     refetch: refetchAgents,
-  } = useQuery({ queryKey: ["agents"], queryFn: api.getAgents });
+  } = useQuery({
+    queryKey: ["agents", activeWorkspaceId],
+    queryFn: () => api.getAgents(activeWorkspaceId ?? undefined),
+    enabled: !!activeWorkspaceId,
+  });
 
   useErrorToast(agentsError ? agentsErrorObject : null);
 
