@@ -42,6 +42,13 @@ export interface AgentDto {
   tone: AgentTone;
   customTone: string | null;
   instructions: string | null;
+  persona: string | null;
+  systemPrompt: string | null;
+  temperature: number;
+  topP: number;
+  maxTokens: number;
+  memoryEnabled: boolean;
+  citationsEnabled: boolean;
   status: string;
   createdAt: string;
   updatedAt: string;
