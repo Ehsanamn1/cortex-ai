@@ -130,6 +130,13 @@ export async function POST(req: Request, { params }: Params) {
       const bucket = await getKnowledgeBucket();
       let storageUrl: string | null = null;
 
+      if (!bucket && process.env.NODE_ENV === "production") {
+        return applyCors(
+          jsonError("ذخیره‌سازی Cloudflare R2 برای محیط تولید پیکربندی نشده است.", 503),
+          req.headers.get("origin")
+        );
+      }
+
       if (bucket) {
         const objectKey = makeKnowledgeObjectKey(agent.id, source.id, originalName);
         await bucket.put(objectKey, file.stream(), {
