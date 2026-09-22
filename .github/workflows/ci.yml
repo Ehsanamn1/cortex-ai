@@ -33,6 +33,5 @@ jobs:
       - run: npx prisma validate
       - run: npm run check:vinext
       - run: npm run typecheck
-      - run: npm run check:vinext
       - run: npm run lint
       - run: npm run build:vinext
