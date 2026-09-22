@@ -50,7 +50,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
 /* ---------------- hooks ---------------- */
 
@@ -159,7 +159,7 @@ function AddFileDialogInner({
   function pickFile(candidate: File | null | undefined) {
     if (!candidate) return;
     if (candidate.size > MAX_FILE_SIZE) {
-      setError("حجم فایل نباید بیشتر از ۲۰۰ مگابایت باشد.");
+      setError("حجم فایل نباید بیشتر از ۲۰ مگابایت باشد.");
       setFile(null);
       return;
     }
@@ -171,7 +171,7 @@ function AddFileDialogInner({
     <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-right sm:text-right">
           <DialogTitle>افزودن فایل به دانش</DialogTitle>
-          <DialogDescription>هر فایل تا ۲۰۰ مگابایت قابل دریافت است و بعد از بارگذاری به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
+          <DialogDescription>هر فایل تا ۲۰ مگابایت قابل دریافت است و بعد از بارگذاری به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
         </DialogHeader>
 
         <div
