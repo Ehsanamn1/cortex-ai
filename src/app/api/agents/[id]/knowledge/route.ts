@@ -19,8 +19,7 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-const MAX_UPLOAD_MB = Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 20));
-const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
+const ENV_MAX_UPLOAD_MB = Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 20));
 
 async function serializeSources(agentId: string) {
   const sources = await db.knowledgeSource.findMany({
@@ -72,6 +71,16 @@ export async function POST(req: Request, { params }: Params) {
     const { id } = await params;
     const agent = await loadAgentForSession(session, id);
     rateLimit(req, "knowledge-upload", 20, 60_000);
+    const configuredLimit = Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 0));
+    let maxUploadMb = configuredLimit || ENV_MAX_UPLOAD_MB;
+    try {
+      const rows = await db.siteSetting.findMany({ where: { key: "site.maxUploadMb" }, take: 1 });
+      const settingLimit = Number(rows[0]?.value ?? 0);
+      if (Number.isFinite(settingLimit) && settingLimit >= 1) maxUploadMb = Math.min(200, Math.floor(settingLimit));
+    } catch {
+      // Fall back to the environment/default limit when optional settings are unavailable.
+    }
+    const maxUploadBytes = maxUploadMb * 1024 * 1024;
 
     const contentType = req.headers.get("content-type") ?? "";
 
@@ -90,9 +99,9 @@ export async function POST(req: Request, { params }: Params) {
       if (file.size === 0) {
         return applyCors(jsonError("فایل ارسالی خالی است.", 400), req.headers.get("origin"));
       }
-      if (file.size > MAX_UPLOAD_BYTES) {
+      if (file.size > maxUploadBytes) {
         return applyCors(
-          jsonError(`حجم فایل بیش از حد مجاز است (حداکثر ${MAX_UPLOAD_MB} مگابایت).`, 413),
+          jsonError(`حجم فایل بیش از حد مجاز است (حداکثر ${maxUploadMb} مگابایت).`, 413),
           req.headers.get("origin")
         );
       }
