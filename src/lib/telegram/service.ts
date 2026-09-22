@@ -35,7 +35,7 @@ export async function sendMessage(token:string,chatId:string|number,text:string)
   const value=text.trim();
   const chunks:string[]=[];
   for(let i=0;i<value.length;i+=4096) chunks.push(value.slice(i,i+4096));
-  const results=[];
+  const results: unknown[]=[];
   for(const chunk of chunks.length?chunks:['']) results.push(await telegramCall(token,'sendMessage',{chat_id:chatId,text:chunk,disable_web_page_preview:true}));
   return results.at(-1);
 }
