@@ -47,6 +47,10 @@ The bot asks for the user’s own Telegram contact, checks the allowlist, and ma
 
 The repository includes a production Dockerfile, Docker Compose with Qdrant, and GitHub Actions CI. Railway can run the same container. For production, use PostgreSQL rather than local SQLite when running multiple application instances.
 
+## Verification
+
+GitHub Actions validates Prisma schema, TypeScript, ESLint and the production Next.js build on every push to `main`.
+
 ## Security
 
 Provider keys, Telegram tokens and webhook secrets are encrypted at rest using `APP_SECRET_KEY`. Never commit `.env`, database files or real API keys.
