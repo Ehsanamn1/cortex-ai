@@ -88,13 +88,21 @@ export async function processSource(sourceId: string): Promise<void> {
       await purgeSourceVectors(source.agentId, sourceId);
 
       const document = source.documents[0]!;
+      const storedUrl = document.url ?? "";
+      const persistedUrl =
+        source.type === "url"
+          ? documentUrl ?? document.url
+          : storedUrl.startsWith("r2://")
+            ? storedUrl
+            : null;
+
       await db.knowledgeDocument.update({
         where: { id: document.id },
         data: {
           status: "processing",
           mimeType: mimeType ?? document.mimeType,
           sizeBytes: sizeBytes ?? document.sizeBytes,
-          url: documentUrl ?? document.url,
+          url: persistedUrl,
           error: null,
         },
       });
@@ -215,6 +223,29 @@ async function extractStoredFileForSource(
   sourceId: string,
   documentName: string
 ): Promise<{ pages: Array<{ text: string; page?: number; section?: string | null }>; mimeType?: string; sizeBytes?: number }> {
+  const document = await db.knowledgeDocument.findFirst({ where: { sourceId } });
+  const storagePath = document?.url ?? null;
+
+  // Portable production fallback: bytes are held in Postgres only while processing.
+  if (storagePath?.startsWith("db64://")) {
+    const raw = storagePath.slice("db64://".length);
+    if (!raw) throw new Error("داده فایل ذخیره‌شده معتبر نیست.");
+    const bytes = new Uint8Array(Buffer.from(raw, "base64"));
+    return extractStoredBytes(bytes, documentName);
+  }
+
+  // Preferred storage when an R2 binding is available.
+  if (storagePath?.startsWith("r2://")) {
+    const bucket = await getKnowledgeBucket();
+    if (!bucket) throw new Error("Storage فایل دانش روی Cloudflare R2 در دسترس نیست.");
+    const objectKey = storagePath.slice("r2://".length);
+    const object = await bucket.get(objectKey);
+    if (!object) throw new Error("فایل بارگذاری‌شده در Cloudflare R2 یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
+    const bytes = new Uint8Array(await object.arrayBuffer());
+    return extractStoredBytes(bytes, documentName);
+  }
+
+  // Local development fallback.
   const fs = await import("node:fs/promises");
   const path = await import("node:path");
   const dir = path.join(process.cwd(), UPLOAD_ROOT, sourceId);
@@ -222,18 +253,6 @@ async function extractStoredFileForSource(
   if (entries.length > 0) {
     const filePath = path.join(dir, entries[0]!);
     return extractStoredFile(filePath, documentName);
-  }
-
-  const document = await db.knowledgeDocument.findFirst({ where: { sourceId } });
-  const storagePath = document?.url ?? null;
-  if (storagePath?.startsWith("r2://")) {
-    const bucket = await getKnowledgeBucket();
-    if (!bucket) throw new Error("Storage فایل دانش روی Cloudflare R2 پیکربندی نشده است.");
-    const objectKey = storagePath.slice("r2://".length);
-    const object = await bucket.get(objectKey);
-    if (!object) throw new Error("فایل بارگذاری‌شده در Cloudflare R2 یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
-    const bytes = new Uint8Array(await object.arrayBuffer());
-    return extractStoredBytes(bytes, documentName);
   }
 
   throw new Error("فایل بارگذاری‌شده برای این منبع در Storage یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
