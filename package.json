@@ -92,7 +92,7 @@
     "zod": "^4.0.2",
     "zustand": "^5.0.6",
     "vinext": "^1.0.0-beta.10",
-    "@vinext/cloudflare": "^1.0.0-beta.10",
+    "@vinext/cloudflare": "^1.0.0-beta.8",
     "react-server-dom-webpack": "^19.2.8",
     "@prisma/adapter-neon": "^6.19.3"
   },
