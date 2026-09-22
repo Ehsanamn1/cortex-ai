@@ -52,7 +52,8 @@ async function serializeSources(agentId: string) {
         name: d.name,
         status: d.status,
         chunkCount: d._count.chunks,
-        url: d.url,
+        // Never expose internal storage payloads to the client.
+        url: s.type === "url" ? d.url : null,
       })),
     })),
   };
@@ -142,13 +143,6 @@ export async function POST(req: Request, { params }: Params) {
       const bucket = await getKnowledgeBucket();
       let storageUrl: string | null = null;
 
-      if (!bucket && process.env.NODE_ENV === "production") {
-        return applyCors(
-          jsonError("ذخیره‌سازی Cloudflare R2 برای محیط تولید پیکربندی نشده است.", 503),
-          req.headers.get("origin")
-        );
-      }
-
       try {
         if (bucket) {
           const objectKey = makeKnowledgeObjectKey(agent.id, source.id, originalName);
@@ -163,8 +157,11 @@ export async function POST(req: Request, { params }: Params) {
             },
           });
           storageUrl = "r2://" + objectKey;
+        } else if (process.env.NODE_ENV === "production") {
+          // Portable production fallback when R2 is not enabled.
+          // The raw bytes are cleared after successful processing.
+          storageUrl = "db64://" + Buffer.from(bytes).toString("base64");
         } else {
-          // Local Node.js fallback for development only.
           await persistUpload(source.id, originalName, bytes);
         }
 
