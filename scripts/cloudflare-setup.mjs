@@ -49,16 +49,7 @@ async function main() {
   console.log("2) Verifying Cloudflare access...");
   await run("npx", ["wrangler", "whoami"], { interactive: true });
 
-  console.log("3) Ensuring R2 bucket exists: " + bucketName);
-  const listCode = await run("npx", ["wrangler", "r2", "bucket", "list"], { interactive: true });
-  if (listCode !== 0) throw new Error("Could not access Cloudflare R2.");
-
-  try {
-    await run("npx", ["wrangler", "r2", "bucket", "create", bucketName], { interactive: true });
-    console.log("R2 bucket created.");
-  } catch {
-    console.log("R2 bucket already exists or could not be created; continuing.");
-  }
+  console.log("3) R2 is optional. If your account has R2 enabled, you can create " + bucketName + " later and bind it to the Worker.");
 
   const rl = createInterface({ input, output });
   try {
