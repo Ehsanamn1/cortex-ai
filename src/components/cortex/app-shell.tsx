@@ -36,10 +36,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((item) =>
-  ["dashboard", "agents", "knowledge", "conversations"].includes(item.view)
-);
-
 import { DashboardView } from "@/components/cortex/views/dashboard-view";
 import { AgentsView } from "@/components/cortex/views/agents-view";
 import { AgentBuilderView, AgentEditView } from "@/components/cortex/views/agent-form";
@@ -54,9 +50,11 @@ import { AdminView } from "@/components/cortex/views/admin-view";
 /* ---------------- provider status pill ---------------- */
 
 function ProviderPill() {
+  const activeWorkspaceId = useCortexStore((s) => s.activeWorkspaceId);
   const { data, isLoading } = useQuery<Awaited<ReturnType<typeof api.getProvidersStatus>>>({
-    queryKey: ["providers-status"],
-    queryFn: () => api.getProvidersStatus(),
+    queryKey: ["providers-status", activeWorkspaceId],
+    queryFn: () => api.getProvidersStatus(activeWorkspaceId ?? undefined),
+    enabled: !!activeWorkspaceId,
     staleTime: Infinity,
     retry: 1,
   });
@@ -231,6 +229,10 @@ const NAV_ITEMS: NavItem[] = [
   { view: "analytics", label: "تحلیل", icon: BarChart3, matches: ["analytics"] },
   { view: "admin", label: "مدیریت", icon: ShieldCheck, matches: ["admin"] },
 ];
+
+const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((item) =>
+  ["dashboard", "agents", "knowledge", "conversations"].includes(item.view)
+);
 
 function SidebarNav() {
   const view = useCortexStore((s) => s.view);
