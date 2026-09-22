@@ -16,6 +16,13 @@ interface AgentInput {
   tone?: unknown;
   customTone?: unknown;
   instructions?: unknown;
+  persona?: unknown;
+  systemPrompt?: unknown;
+  temperature?: unknown;
+  topP?: unknown;
+  maxTokens?: unknown;
+  memoryEnabled?: unknown;
+  citationsEnabled?: unknown;
   workspaceId?: unknown;
 }
 
@@ -37,6 +44,13 @@ function validateAgentInput(body: AgentInput) {
     typeof body.description === "string" ? body.description.trim().slice(0, 500) : "";
   const instructions =
     typeof body.instructions === "string" ? body.instructions.trim().slice(0, 4000) : "";
+  const persona = typeof body.persona === "string" ? body.persona.trim().slice(0, 2000) : "";
+  const systemPrompt = typeof body.systemPrompt === "string" ? body.systemPrompt.trim().slice(0, 8000) : "";
+  const temperature = typeof body.temperature === "number" && Number.isFinite(body.temperature) ? Math.min(2, Math.max(0, body.temperature)) : 0.7;
+  const topP = typeof body.topP === "number" && Number.isFinite(body.topP) ? Math.min(1, Math.max(0, body.topP)) : 1;
+  const maxTokens = typeof body.maxTokens === "number" && Number.isInteger(body.maxTokens) ? Math.min(8000, Math.max(128, body.maxTokens)) : 1200;
+  const memoryEnabled = body.memoryEnabled !== false;
+  const citationsEnabled = body.citationsEnabled !== false;
   return {
     data: {
       name,
@@ -46,6 +60,13 @@ function validateAgentInput(body: AgentInput) {
       tone,
       customTone: tone === "custom" ? customTone : null,
       instructions: instructions || null,
+      persona: persona || null,
+      systemPrompt: systemPrompt || null,
+      temperature,
+      topP,
+      maxTokens,
+      memoryEnabled,
+      citationsEnabled,
     },
   };
 }
