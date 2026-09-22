@@ -15,6 +15,7 @@ import {
   Bot,
   ShieldCheck,
   BarChart3,
+  GraduationCap,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
@@ -46,6 +47,7 @@ import { SettingsView } from "@/components/cortex/views/settings-view";
 import { TelegramView } from "@/components/cortex/views/telegram-view";
 import { AnalyticsView } from "@/components/cortex/views/analytics-view";
 import { AdminView } from "@/components/cortex/views/admin-view";
+import { LearnView } from "@/components/cortex/views/learn-view";
 
 /* ---------------- provider status pill ---------------- */
 
@@ -228,6 +230,7 @@ const NAV_ITEMS: NavItem[] = [
   { view: "telegram", label: "تلگرام", icon: ShieldCheck, matches: ["telegram"] },
   { view: "analytics", label: "تحلیل", icon: BarChart3, matches: ["analytics"] },
   { view: "admin", label: "مدیریت", icon: ShieldCheck, matches: ["admin"] },
+  { view: "learn", label: "آموزش", icon: GraduationCap, matches: ["learn"] },
 ];
 
 const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((item) =>
@@ -372,6 +375,8 @@ function usePageTitle(): string {
       return "تحلیل و بینش";
     case "admin":
       return "مدیریت";
+    case "learn":
+      return "آموزش";
     default:
       return "Cortex AI";
   }
@@ -403,6 +408,8 @@ function renderView(view: View) {
       return <AnalyticsView />;
     case "admin":
       return <AdminView />;
+    case "learn":
+      return <LearnView />;
     default:
       return <DashboardView />;
   }
