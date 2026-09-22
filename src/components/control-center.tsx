@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Bot, Database, FileCog, LogOut, MessageSquare, Plug, Save, Send, ShieldCheck, Users, Workflow, Puzzle, Power } from "lucide-react";
 import { toast } from "sonner";
@@ -47,8 +47,9 @@ export function ControlCenter() {
   const session=useQuery<{username:string}>({queryKey:["cc-auth"],queryFn:()=>fetchJson<{username:string}>("/api/admin/auth/me"),retry:false});
   const summary=useQuery<Summary>({queryKey:["cc-summary"],queryFn:()=>fetchJson<Summary>("/api/control-center"),enabled:session.isSuccess});
   const settingsQ=useQuery<{settings:Settings}>({queryKey:["cc-settings"],queryFn:()=>fetchJson<{settings:Settings}>("/api/control-center/settings"),enabled:session.isSuccess});
-  const [settings,setSettings]=useState<Settings>({});
-  useEffect(()=>{if(settingsQ.data?.settings)setSettings(settingsQ.data.settings)},[settingsQ.data]);
+  const [draftSettings,setDraftSettings]=useState<Settings>({});
+  const settings:Settings={...(settingsQ.data?.settings??{}),...draftSettings};
+  const updateSetting=(key:string,value:string)=>setDraftSettings(prev=>({...prev,[key]:value});
   const save=useMutation({mutationFn:()=>fetchJson<{settings:Settings}>("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings})}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-settings"]});toast.success("تنظیمات ذخیره شد")},onError:(e:Error)=>toast.error(e.message)});
   const logout=useMutation({mutationFn:()=>fetch("/api/admin/auth/logout",{method:"POST"}),onSuccess:()=>{qc.clear();window.location.reload()}});
   const m=summary.data?.metrics;
@@ -102,11 +103,11 @@ export function ControlCenter() {
       <section className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]">
         <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">گفتگوهای اخیر</CardTitle></CardHeader><CardContent className="p-0"><div className="divide-y divide-white/[.06]">{(summary.data?.recentConversations??[]).map(c=><div key={c.id} className="p-4"><p className="truncate text-sm font-semibold">{c.title}</p><p className="mt-1 text-xs text-muted-foreground">{c.agent.name} · {c.channel} · {new Date(c.updatedAt).toLocaleString("fa-IR")}</p></div>)}</div></CardContent></Card>
         <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">تنظیمات قابل ویرایش محصول</CardTitle></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2">
-          <div><Label>نام محصول</Label><Input className="mt-2" value={settings["site.name"]||""} onChange={e=>setSettings({...settings,"site.name":e.target.value})}/></div>
-          <div><Label>حداکثر فایل دانش (MB)</Label><Input type="number" className="mt-2" value={settings["site.maxUploadMb"]||"20"} onChange={e=>setSettings({...settings,"site.maxUploadMb":e.target.value})}/></div>
-          <div className="sm:col-span-2"><Label>عنوان خوش‌آمدگویی</Label><Input className="mt-2" value={settings["site.welcomeTitle"]||""} onChange={e=>setSettings({...settings,"site.welcomeTitle":e.target.value})}/></div>
-          <div className="sm:col-span-2"><Label>توضیحات محصول</Label><Input className="mt-2" value={settings["site.description"]||""} onChange={e=>setSettings({...settings,"site.description":e.target.value})}/></div>
-          <div className="sm:col-span-2"><Label>ایمیل پشتیبانی</Label><Input dir="ltr" className="mt-2 text-left" value={settings["site.supportEmail"]||""} onChange={e=>setSettings({...settings,"site.supportEmail":e.target.value})}/></div>
+          <div><Label>نام محصول</Label><Input className="mt-2" value={settings["site.name"]||""} onChange={e=>updateSetting("site.name",e.target.value)}/></div>
+          <div><Label>حداکثر فایل دانش (MB)</Label><Input type="number" className="mt-2" value={settings["site.maxUploadMb"]||"20"} onChange={e=>updateSetting("site.maxUploadMb",e.target.value)}/></div>
+          <div className="sm:col-span-2"><Label>عنوان خوش‌آمدگویی</Label><Input className="mt-2" value={settings["site.welcomeTitle"]||""} onChange={e=>updateSetting("site.welcomeTitle",e.target.value)}/></div>
+          <div className="sm:col-span-2"><Label>توضیحات محصول</Label><Input className="mt-2" value={settings["site.description"]||""} onChange={e=>updateSetting("site.description",e.target.value)}/></div>
+          <div className="sm:col-span-2"><Label>ایمیل پشتیبانی</Label><Input dir="ltr" className="mt-2 text-left" value={settings["site.supportEmail"]||""} onChange={e=>updateSetting("site.supportEmail",e.target.value)}/></div>
           <div className="sm:col-span-2 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save/>{save.isPending?"در حال ذخیره…":"ذخیره تنظیمات"}</Button></div>
         </CardContent></Card>
       </section>
