@@ -111,7 +111,8 @@
     "@vitejs/plugin-rsc": "^0.5.35",
     "@cloudflare/vite-plugin": "^1.57.1",
     "wrangler": "^4.136.1",
-    "@cloudflare/workers-types": "^5.20260922.1"
+    "@cloudflare/workers-types": "^5.20260922.1",
+    "@types/node": "^22"
   },
   "engines": {
     "node": ">=20.18.0"
