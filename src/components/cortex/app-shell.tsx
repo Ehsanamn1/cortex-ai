@@ -50,9 +50,9 @@ import { AdminView } from "@/components/cortex/views/admin-view";
 /* ---------------- provider status pill ---------------- */
 
 function ProviderPill() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<Awaited<ReturnType<typeof api.getProvidersStatus>>>({
     queryKey: ["providers-status"],
-    queryFn: api.getProvidersStatus,
+    queryFn: () => api.getProvidersStatus(),
     staleTime: Infinity,
     retry: 1,
   });
