@@ -1,157 +1,114 @@
-# Cortex AI — API Reference (Phase 1)
+# Cortex AI — API reference
 
-Base URL: same origin (`/api/...`). All bodies/responses are JSON unless noted.
-Authentication: `cortex_session` HttpOnly cookie (set by signup/login).
+Base URL: same origin at `/api`. Normal SaaS sessions use `cortex_session`; the admin control center uses `cortex_admin_session`.
 
-**Errors** — every non-2xx response is `{ "error": "<Persian message>" }` with an
-appropriate status: `400` validation · `401` unauthenticated · `403` no workspace access ·
-`404` not found (or foreign tenant) · `409` conflict · `413` upload too large ·
-`429` rate limited · `500` server error · `502` provider unavailable ·
-`503` provider not configured.
+## Health
+
+`GET /api/health` — public dependency health: PostgreSQL, R2 binding, LLM/embedding status and required environment presence.
+
+`GET /api` — lightweight service status.
+
+`GET /api/site-config` — public editable product settings.
 
 ## Auth
 
-### POST /api/auth/signup
-`{ name?, email, password }` → `201 { user, workspaces }` + session cookie.
-Creates the default workspace («فضای کاری من»). Email format + password ≥ 8 chars
-validated; duplicate email → `409`.
+`POST /api/auth/signup` — `{ name?, email, password }`; creates the user and default workspace atomically.
 
-### POST /api/auth/login
-`{ email, password }` → `200 { user, workspaces }` + cookie. Wrong credentials →
-`401` «ایمیل یا رمز عبور نادرست است.» Rate limit: 12/min/IP.
+`POST /api/auth/login` — `{ email, password }`; rate-limited.
 
-### POST /api/auth/logout
-→ `200 { ok: true }` (clears cookie).
+`POST /api/auth/logout` — clears the session.
 
-### GET /api/auth/me
-→ `200 { user: {id,name,email}, workspaces: [{id,name,role,createdAt}] }` | `401`.
+`GET /api/auth/me` — current user and workspace memberships.
 
 ## Workspaces
 
-### GET /api/workspaces
-→ `200 { workspaces: [{id, name, role, createdAt, _count: {agents}}] }`
+`GET /api/workspaces` — current memberships.
 
-### POST /api/workspaces
-`{ name }` (2–80 chars) → `201 { workspace }`
+`POST /api/workspaces` — creates a workspace.
 
-## Agents (all scoped to the caller's memberships)
+## Agents
 
-### GET /api/agents
-→ `200 { agents: AgentDto[] }` — `AgentDto = { id, name, orgName, description, language,
-tone, customTone, instructions, status, createdAt, updatedAt, _count:
-{ knowledgeSources, conversations } }`
+`GET /api/agents` — lists agents for the user's accessible workspace.
 
-### POST /api/agents
-`{ name, orgName?, description?, language: "fa"|"en", tone:
-"professional"|"friendly"|"concise"|"formal"|"custom", customTone?, instructions?,
-workspaceId? }` → `201 { agent }`. `customTone` required when `tone="custom"`.
-`workspaceId` must be one of the caller's workspaces (server-verified).
+`POST /api/agents` supports:
+- `name`, `orgName`, `description`
+- `language`, `tone`, `customTone`, `instructions`
+- `persona`, `systemPrompt`
+- `temperature`, `topP`, `maxTokens`
+- `memoryEnabled`, `citationsEnabled`, `workspaceId`
 
-### GET /api/agents/:id
-→ `200 { agent: AgentDto & { _count: {…, messages}, knowledgeReady }, knowledgeReady }`
-(`knowledgeReady` = at least one `ready` knowledge source — real only) | `404`.
+`GET /api/agents/:id` — agent details and knowledge readiness.
 
-### PATCH /api/agents/:id
-Partial agent fields → `200 { agent }`.
+`PATCH /api/agents/:id` — updates allowed Agent fields.
 
-### DELETE /api/agents/:id
-→ `200 { ok: true }`. Removes the agent's knowledge sources, documents, chunks,
-**vectors**, and conversations.
+`DELETE /api/agents/:id` — removes the Agent, conversations, knowledge and vectors.
 
 ## Knowledge
 
-### GET /api/agents/:id/knowledge
-→ `200 { sources: [{ id, name, type: "file"|"url", status:
-"pending"|"processing"|"ready"|"failed", error, chunkCount, createdAt, updatedAt,
-documents: [{ id, name, status, chunkCount, url }] }] }`
+`GET /api/agents/:id/knowledge`
 
-### POST /api/agents/:id/knowledge
-Two modes:
+`POST /api/agents/:id/knowledge` — multipart file upload or JSON URL ingestion; validates size/type and protects against SSRF.
 
-- **File** — `multipart/form-data` with `file` (`.pdf`, `.txt`, `.docx`; ≤
-  `MAX_UPLOAD_MB`; magic bytes validated) → `202 { source }`.
-- **URL** — `{ url }` (public http/https only; SSRF-guarded) → `202 { source }`.
+`DELETE /api/knowledge/:id` — deletes stored object/chunks/vectors and the source.
 
-Processing runs asynchronously; poll GET until `ready`/`failed`. Rate limit: 20/min/IP.
+`POST /api/knowledge/:id/retry` — retries processing.
 
-### DELETE /api/knowledge/:sourceId
-→ `200 { ok: true }`. Deletes chunks + vectors + stored upload file.
+## Conversations / RAG
 
-### POST /api/knowledge/:sourceId/retry
-→ `202 { source }` (status → pending; pipeline re-runs). `409` if already processing.
+`GET /api/agents/:id/conversations`
 
-## Conversations
+`POST /api/agents/:id/conversations` — New Chat.
 
-### GET /api/agents/:id/conversations
-→ `200 { conversations: [{ id, title, createdAt, updatedAt, messageCount }] }`
+`GET /api/conversations/:id`
 
-### POST /api/agents/:id/conversations
-→ `201 { conversation }` — **New Chat**. Previous conversations are preserved.
+`DELETE /api/conversations/:id`
 
-### GET /api/conversations/:id
-→ `200 { conversation, agent: AgentDto, messages: [{ id, role, content, createdAt,
-metadata }] }` | `404`. `metadata` (assistant messages): `{ sources:
-[{index, documentName, page?, sourceUrl?}], retrieval: [{index, score, documentName,
-page?, sourceUrl?, snippet}], provider, model, latencyMs }`.
+`POST /api/conversations/:id/chat` — tenant-scoped retrieval + grounded real-provider generation. Provider-not-configured returns 503; provider transport errors return 502.
 
-### DELETE /api/conversations/:id
-→ `200 { ok: true }`
+## Providers
 
-### POST /api/conversations/:id/chat  ← the RAG endpoint
-`{ content }` (1–4000 chars) → `200 { userMessage, assistantMessage }`.
+`GET /api/providers/status`
 
-Pipeline: persist user message → embed question → tenant-scoped vector search (top-K
-`RETRIEVAL_TOP_K`, min score `MIN_SIMILARITY_SCORE`, DB re-verification) → optional
-bilingual query expansion on weak scores → bounded 5-section prompt (system rules, agent
-instructions, retrieved knowledge with source labels, last 12 turns, question) → LLM →
-persist assistant message with real source metadata.
+`POST /api/providers/health`
 
-- `503` — LLM/embeddings not configured (honest error, no fake answer).
-- `502` — provider transport failure.
-- `429` — rate limit (30/min/IP).
+`GET /api/settings/provider`
 
-The assistant **never** invents citations; `sources` contains only chunks actually
-retrieved. Insufficient knowledge → the mandated Persian fallback sentence.
+`PUT /api/settings/provider` — owner/admin; encrypts API key at rest.
 
-## Dashboard & providers
+`GET /api/settings/limits`
 
-### GET /api/dashboard
-→ `200 { stats: { agents, activeAgents, knowledgeSources, knowledgeReady,
-conversations, messages }, recentAgents: [...], recentConversations: [...] }`
-Real counts only — zeros stay zeros.
+`PUT /api/settings/limits` — owner/admin.
 
-### GET /api/providers/status
-→ `200 { llm: { provider, status, model }, embeddings: { provider, status, model,
-mode: "neural"|"lexical"|null }, vectorStore: { provider: "local"|"qdrant", status } }`
-Reflects live configuration — never claims a service is up when it is not.
+## Telegram
 
-### POST /api/providers/health
-→ `200 { ok: true, llm: { provider, model, latencyMs, sample } }` — a real minimal
-completion round-trip. `503`/`502` on failure.
+`GET/POST /api/telegram/bots`
 
-## Verified test plan (executed against this build)
+`GET/PATCH/DELETE /api/telegram/bots/:id` — Agent reassignment is restricted to the same workspace.
 
-- **Signup/login/logout/me**: success paths, duplicate email `409`, wrong password `401`,
-  unauthenticated `401`, rate limit `429` after 12 rapid logins.
-- **Workspace bootstrap**: default workspace auto-created; lists scoped per user.
-- **Tenant isolation (critical)**: user B receives `403` on user A's agent,
-  conversation, and knowledge-source deletion; B's lists are empty; **B's agent cannot
-  retrieve A's vectors** (cross-tenant RAG query returns the honest not-found fallback,
-  sources show only B's documents).
-- **Agent CRUD**: create → redirect target verified; PATCH tone; DELETE cascades and
-  purges vectors (orphan checks return 0).
-- **Knowledge upload**: TXT/PDF/DOCX processed to `ready` with real chunk counts
-  (3-page PDF → 3 page-numbered chunks); renamed binary rejected `400`; URL ingestion
-  (example.com) → `ready`; SSRF attempts (127.0.0.1, 169.254.169.254) rejected.
-- **RAG**: grounded answers with correct numbers from knowledge; page-aware citations;
-  out-of-knowledge question → exact fallback sentence; short-term memory across turns;
-  cross-language retrieval via query expansion; provider metadata recorded.
-- **Missing-provider behavior**: provider resolution returns `not_configured` and chat
-  returns a real `503` configuration error when no provider is available (verified via
-  the provider-resolution unit of the manager; no fake content path exists in code).
-- **Deletion integrity**: after source deletion, `VectorPoint`/`KnowledgeChunk` orphan
-  counts are zero.
+`GET/POST/DELETE /api/telegram/bots/:id/allowlist`
 
-> Note: this environment's policy excludes an executable test suite from the repository;
-  the behaviors above were verified live (curl + headless browser) and are documented as
-  the regression checklist for the future suite.
+`POST /api/telegram/webhook/:botId` — requires the configured Telegram secret token.
+
+`POST /api/telegram/internal/poll` — protected by `TELEGRAM_INTERNAL_SECRET`.
+
+## Admin / control center
+
+`POST /api/admin/auth/login`
+
+`GET /api/admin/auth/me`
+
+`POST /api/admin/auth/logout`
+
+`GET /api/control-center`
+
+`GET/PUT /api/control-center/settings`
+
+`GET/POST/PATCH/DELETE /api/control-center/plugins`
+
+`GET /api/admin/overview`
+
+`GET/PATCH /api/admin/telegram-users`
+
+`GET /api/admin/analytics`
+
+All workspace-scoped operations enforce server-side membership/role checks. Secrets are never returned through provider configuration endpoints.
