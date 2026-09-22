@@ -18,8 +18,9 @@
     "dev:vinext": "vinext dev --port 3001",
     "build:vinext": "vinext build",
     "start:vinext": "wrangler dev --config dist/cortex-ai/wrangler.json",
-    "deploy": "vinext-cloudflare deploy --config wrangler.jsonc",
-    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "deploy": "npx @vinext/cloudflare deploy",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "preview:workers": "npx vinext build && npx wrangler dev dist --local"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -110,7 +111,8 @@
     "@vitejs/plugin-react": "^6.1.1",
     "@vitejs/plugin-rsc": "^1.0.0",
     "@cloudflare/vite-plugin": "^1.57.1",
-    "wrangler": "^4.136.1"
+    "wrangler": "^4.136.1",
+    "@cloudflare/workers-types": "^5.20260914.1"
   },
   "engines": {
     "node": ">=20.18.0"
