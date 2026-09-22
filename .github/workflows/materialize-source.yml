@@ -19,12 +19,14 @@ jobs:
 
       - name: Reassemble archive
         env:
-          SOURCE_SHA256: 6a778ae637f81511601880cfbdca538676f295eaaedd7454ffefdd3768f40a32
+          SOURCE_SHA256: dc3448dfa807ff79d3e49961869ee4479b1d56ec7ae26e58011a3ee079639903
         run: |
           mkdir -p /tmp/cortex-source
           cat bootstrap/source.* > /tmp/cortex-source.b64
           base64 -d /tmp/cortex-source.b64 > /tmp/cortex-source.tar.gz
-          test `sha256sum /tmp/cortex-source.tar.gz | cut -d' ' -f1` = "${SOURCE_SHA256}"
+          test "$(sha256sum /tmp/cortex-source.tar.gz | cut -d' ' -f1)" = "$SOURCE_SHA256"
+
+      - name: Materialize source
         run: |
           tar -xzf /tmp/cortex-source.tar.gz -C /tmp/cortex-source
           cp -a /tmp/cortex-source/. .
