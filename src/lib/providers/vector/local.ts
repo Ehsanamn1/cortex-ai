@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { cosineSimilarity, type SearchResult, type UpsertPoint, type VectorStore } from "./types";
 
 /**
- * LocalVectorStore — real vector persistence in SQLite + exact cosine
+ * LocalVectorStore — real vector persistence in PostgreSQL + exact cosine
  * similarity search performed in the query layer. Used automatically when
  * QDRANT_URL is not configured. Every operation is hard-scoped to the
  * owning agent (and workspace) — cross-tenant retrieval is impossible.
