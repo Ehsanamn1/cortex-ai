@@ -431,7 +431,7 @@ export function AppShell() {
             <CortexMark size={34} />
             Cortex <span className="text-primary">AI</span>
           </span>
-          <p className="mt-1 ps-[46px] text-[11px] text-muted-foreground">محصولی از ترانوس</p>
+
           <div aria-hidden="true" className="cortex-status-line mt-4 h-px w-full" />
         </div>
 
