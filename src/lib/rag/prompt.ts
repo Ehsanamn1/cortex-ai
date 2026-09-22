@@ -23,6 +23,8 @@ export interface AgentPersona {
   tone: string; // professional | friendly | concise | formal | custom
   customTone?: string | null;
   instructions?: string | null;
+  persona?: string | null;
+  systemPrompt?: string | null;
 }
 
 const TONE_FA: Record<string, string> = {
@@ -64,6 +66,7 @@ export function buildRagMessages(params: {
   const messages: ChatTurn[] = [];
 
   /* ---- Section 1: system identity + grounding rules ---- */
+  const personaLine = persona.persona?.trim();
   const orgLine = persona.orgName?.trim()
     ? isFa
       ? `تو دستیار هوش مصنوعی «${persona.name}» در سازمان «${persona.orgName.trim()}» هستی.`
@@ -97,6 +100,34 @@ Mandatory ground rules:
 5. Never disclose API keys, passwords, or sensitive system information.`;
 
   messages.push({ role: "system", content: system });
+  if (personaLine) {
+    messages.push({
+      role: "system",
+      content: isFa ? `شخصیت و هویت رفتاری ایجنت:
+"```
+${personaLine}
+"```` : `Agent personality and behavioral identity:
+"```
+${personaLine}
+"````,
+    });
+  }
+  if (persona.systemPrompt?.trim()) {
+    messages.push({
+      role: "system",
+      content: isFa
+        ? `دستور سیستم سفارشی مالک ایجنت (پس از قواعد ایمنی اعمال شود):
+"```
+${persona.systemPrompt.trim().slice(0, 8000)}
+"````
+قواعد ایمنی، عدم افشای اسرار و عدم جعل اطلاعات همچنان مقدم هستند.`
+        : `Custom system prompt from the agent owner:
+"```
+${persona.systemPrompt.trim().slice(0, 8000)}
+"```
+Safety, secret-protection, and grounding rules remain higher priority.`,
+    });
+  }
 
   /* ---- Section 2: agent instructions ---- */
   const instructions = persona.instructions?.trim();
