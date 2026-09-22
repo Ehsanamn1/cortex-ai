@@ -1,6 +1,6 @@
 # Cortex AI — Phase 1 Worklog
 
-Project: Cortex AI (A TRANOS Product) — multi-tenant AI Agent SaaS, Phase 1.
+Project: Cortex AI — multi-tenant AI Agent SaaS, Phase 1.
 Goal: signup/login → workspace → agent builder → knowledge (PDF/TXT/DOCX/URL) → real chunking/embedding/vector search → RAG chat playground with sessions and source citations.
 
 ---
