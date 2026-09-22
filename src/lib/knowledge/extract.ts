@@ -303,11 +303,36 @@ export async function extractReadableHtml(html: string): Promise<ExtractedPage[]
 
 /* ---------------- dispatch for stored uploads ---------------- */
 
+export async function extractStoredBytes(bytes: Uint8Array, originalName: string): Promise<ExtractionResult> {
+  const ext = detectExtension(originalName);
+  const kind = sniffKind(bytes);
+
+  if (ext === ".pdf" && kind === "pdf") {
+    return { pages: await extractPdf(bytes), mimeType: "application/pdf", sizeBytes: bytes.length };
+  }
+  if (ext === ".docx" && kind === "docx-zip") {
+    return { pages: await extractDocx(bytes), mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", sizeBytes: bytes.length };
+  }
+  const textExtensions = new Set([".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".log", ".tsv", ".sql"]);
+  if (textExtensions.has(ext) && (kind === "text" || kind === "unknown")) {
+    const mimeType =
+      ext === ".json" ? "application/json" :
+      ext === ".csv" ? "text/csv" :
+      ext === ".html" || ext === ".htm" ? "text/html" :
+      ext === ".xml" ? "application/xml" :
+      "text/plain";
+    return { pages: await extractTxt(bytes), mimeType, sizeBytes: bytes.length };
+  }
+  throw new Error("قالب فایل برای استخراج دانش متنی پشتیبانی نمی‌شود.");
+}
+
 export async function extractStoredFile(
   filePath: string,
   originalName: string
 ): Promise<ExtractionResult> {
   const bytes = new Uint8Array(await fs.readFile(filePath));
+  return extractStoredBytes(bytes, originalName);
+}
   const ext = detectExtension(originalName);
   const kind = sniffKind(bytes);
 
