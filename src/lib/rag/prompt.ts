@@ -113,14 +113,14 @@ Mandatory ground rules:
       role: "system",
       content: isFa
         ? `دستور سیستم سفارشی مالک ایجنت (پس از قواعد ایمنی اعمال شود):
-"```
+--- BEGIN CUSTOM SYSTEM PROMPT ---
 ${persona.systemPrompt.trim().slice(0, 8000)}
-"````
+--- END CUSTOM SYSTEM PROMPT ---
 قواعد ایمنی، عدم افشای اسرار و عدم جعل اطلاعات همچنان مقدم هستند.`
         : `Custom system prompt from the agent owner:
-"```
+--- BEGIN CUSTOM SYSTEM PROMPT ---
 ${persona.systemPrompt.trim().slice(0, 8000)}
-"```
+--- END CUSTOM SYSTEM PROMPT ---
 Safety, secret-protection, and grounding rules remain higher priority.`,
     });
   }
