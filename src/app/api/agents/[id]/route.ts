@@ -49,7 +49,7 @@ export async function PATCH(req: Request, { params }: Params) {
     const agent = await loadAgentForSession(session, id);
     const body = await readJson<Record<string, unknown>>(req);
 
-    const data: Record<string, string | null> = {};
+    const data: Record<string, unknown> = {};
     if (typeof body.name === "string") {
       const name = body.name.trim();
       if (name.length < 2 || name.length > 80) {
@@ -73,6 +73,13 @@ export async function PATCH(req: Request, { params }: Params) {
       data.tone = body.tone;
     }
     if (typeof body.customTone === "string") data.customTone = body.customTone.trim().slice(0, 80) || null;
+    if (typeof body.persona === "string") data.persona = body.persona.trim().slice(0, 2000) || null;
+    if (typeof body.systemPrompt === "string") data.systemPrompt = body.systemPrompt.trim().slice(0, 8000) || null;
+    if (typeof body.temperature === "number" && Number.isFinite(body.temperature)) data.temperature = Math.min(2, Math.max(0, body.temperature));
+    if (typeof body.topP === "number" && Number.isFinite(body.topP)) data.topP = Math.min(1, Math.max(0, body.topP));
+    if (typeof body.maxTokens === "number" && Number.isInteger(body.maxTokens)) data.maxTokens = Math.min(8000, Math.max(128, body.maxTokens));
+    if (typeof body.memoryEnabled === "boolean") data.memoryEnabled = body.memoryEnabled;
+    if (typeof body.citationsEnabled === "boolean") data.citationsEnabled = body.citationsEnabled;
     if (data.tone === "custom" && !(data.customTone ?? "").trim() && !agent.customTone) {
       return applyCors(jsonError("برای لحن سفارشی، توضیح لحن را وارد کنید.", 400), req.headers.get("origin"));
     }
