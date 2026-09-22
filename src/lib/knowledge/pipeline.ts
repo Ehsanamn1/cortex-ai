@@ -106,6 +106,7 @@ export async function processSource(sourceId: string): Promise<void> {
         const vector = vectors[i]!;
         const created = await db.knowledgeChunk.create({
           data: {
+            id: crypto.randomUUID(),
             documentId: document.id,
             sourceId: source.id,
             agentId: source.agentId,
