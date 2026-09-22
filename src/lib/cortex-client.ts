@@ -392,7 +392,8 @@ export const api = {
   updateTelegramUser(id:string,status:'pending'|'allowed'|'blocked'){ return jsonRequest<{user:TelegramUserDto}>('/api/admin/telegram-users','PATCH',{id,status}); },
   getAnalytics(workspaceId?:string){ return request<AnalyticsDto & {note?:string}>(`/api/admin/analytics${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
 
-  testProvidersHealth(): Promise<ProviderHealthOkDto> {
-    return request("/api/providers/health", { method: "POST" });
+  testProvidersHealth(workspaceId?: string): Promise<ProviderHealthOkDto> {
+    const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
+    return request(`/api/providers/health${query}`, { method: "POST" });
   },
 };
