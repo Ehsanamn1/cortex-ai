@@ -55,3 +55,7 @@ server.log
 
 # Cortex uploaded knowledge files (never web-served)
 /.data/
+
+# Cloudflare Workers
+/.wrangler/
+/dist/
