@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { randomBytes } from './random';
 
 function keyBytes(): Buffer {
   const secret = process.env.APP_SECRET_KEY;
@@ -7,7 +8,7 @@ function keyBytes(): Buffer {
 }
 
 export function encryptSecret(value: string): string {
-  const iv = crypto.randomBytes(12);
+  const iv = Buffer.from(randomBytes(12));
   const cipher = crypto.createCipheriv('aes-256-gcm', keyBytes(), iv);
   const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
   return `v1:${iv.toString('base64url')}:${cipher.getAuthTag().toString('base64url')}:${encrypted.toString('base64url')}`;
