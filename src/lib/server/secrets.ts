@@ -1,6 +1,10 @@
 import crypto from 'node:crypto';
 import { randomBytes } from './random';
 
+function encodeBuffer(value: Buffer, encoding: "base64url"): string {
+  return (value as unknown as { toString(encoding: "base64url"): string }).toString(encoding);
+}
+
 function keyBytes(): Buffer {
   const secret = process.env.APP_SECRET_KEY;
   if (!secret || secret.length < 32) throw new Error('APP_SECRET_KEY باید حداقل ۳۲ کاراکتر باشد.');
@@ -18,7 +22,7 @@ export function encryptSecret(value: string): string {
   }).createCipheriv;
   const cipher = createCipheriv('aes-256-gcm', keyBytes(), iv);
   const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
-  return `v1:${iv.toString('base64url')}:${cipher.getAuthTag().toString('base64url')}:${encrypted.toString('base64url')}`;
+  return `v1:${encodeBuffer(iv, 'base64url')}:${encodeBuffer(cipher.getAuthTag(), 'base64url')}:${encodeBuffer(encrypted, 'base64url')}`;
 }
 
 export function decryptSecret(payload: string): string {
