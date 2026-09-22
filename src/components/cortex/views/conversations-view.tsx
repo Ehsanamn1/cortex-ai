@@ -125,7 +125,11 @@ export function ConversationsView() {
     isError: agentsError,
     error: agentsErrorObject,
     refetch: refetchAgents,
-  } = useQuery({ queryKey: ["agents"], queryFn: api.getAgents });
+  } = useQuery({
+    queryKey: ["agents", useCortexStore.getState().activeWorkspaceId],
+    queryFn: () => api.getAgents(useCortexStore.getState().activeWorkspaceId ?? undefined),
+    enabled: !!useCortexStore.getState().activeWorkspaceId,
+  });
 
   useErrorToast(agentsError ? agentsErrorObject : null);
 
