@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { upload } from "@vercel/blob/client";
 
 import {
   api,
@@ -49,8 +50,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ACCEPTED_EXTENSIONS = /\.(pdf|txt|docx)$/i;
+const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
 
 /* ---------------- hooks ---------------- */
 
