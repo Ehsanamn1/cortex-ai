@@ -16,8 +16,8 @@ function safeError(e: unknown) {
 }
 
 export async function GET(req: Request) {
-  rateLimit(req, "public-health", 30, 60_000);
   try {
+    rateLimit(req, "public-health", 30, 60_000);
     const [databaseCheck, knowledgeBucket] = await Promise.all([
       db.$queryRaw`SELECT 1`,
       getKnowledgeBucket(),
