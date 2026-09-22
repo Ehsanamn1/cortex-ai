@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { after } from "next/server";
 import { applyCors, jsonError, jsonOk, toErrorResponse } from "@/lib/server/http";
 import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
@@ -134,7 +135,7 @@ export async function POST(req: Request, { params }: Params) {
         },
       });
 
-      void processSource(source.id); // real async processing; UI polls status
+      after(() => processSource(source.id)); // let the route finish while Next.js keeps background work alive
       const serialized = (await serializeSources(agent.id)).sources.find((s) => s.id === source.id);
       return applyCors(jsonOk({ source: serialized }, 202), req.headers.get("origin"));
     }
@@ -167,7 +168,7 @@ export async function POST(req: Request, { params }: Params) {
       data: { sourceId: source.id, name: parsed.hostname, url: parsed.toString() },
     });
 
-    void processSource(source.id); // fetch → extract → chunk → embed → store (async)
+    after(() => processSource(source.id)); // fetch → extract → chunk → embed → store (async)
     const serialized = (await serializeSources(agent.id)).sources.find((s) => s.id === source.id);
     return applyCors(jsonOk({ source: serialized }, 202), req.headers.get("origin"));
   } catch (e) {
