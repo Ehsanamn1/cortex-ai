@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession, serializeAgent } from "@/lib/server/access";
@@ -49,7 +50,7 @@ export async function PATCH(req: Request, { params }: Params) {
     const agent = await loadAgentForSession(session, id);
     const body = await readJson<Record<string, unknown>>(req);
 
-    const data: Record<string, unknown> = {};
+    const data: Prisma.AgentUpdateInput = {};
     if (typeof body.name === "string") {
       const name = body.name.trim();
       if (name.length < 2 || name.length > 80) {
