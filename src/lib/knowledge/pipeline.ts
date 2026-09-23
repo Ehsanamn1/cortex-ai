@@ -115,12 +115,13 @@ export async function processSource(sourceId: string): Promise<void> {
           "سرویس جاسازی متن (Embedding) پیکربندی نشده است؛ پردازش دانش ممکن نیست. تنظیمات سرویس‌دهنده را بررسی کنید."
         );
       }
-      const vectors = await embedder.embedDocuments(chunks.map((c) => c.text));
-
-      // 4) STORE — chunks in the DB, vectors in the vector store
+      // 3) EMBED + 4) STORE — process in bounded batches so very large
+      // documents do not require all vectors to sit in memory at once.
       await purgeSourceVectors(source.agentId, sourceId);
 
       const document = source.documents[0]!;
+      const vectorStore = getVectorStore();
+      const EMBED_BATCH = 32;
       const persistedUrl = source.type === "url" ? documentUrl ?? document.url : null;
 
       await db.knowledgeDocument.update({
@@ -134,31 +135,39 @@ export async function processSource(sourceId: string): Promise<void> {
         },
       });
 
-      const vectorStore = getVectorStore();
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i]!;
-        const vector = vectors[i]!;
-        const created = await db.knowledgeChunk.create({
-          data: {
-            id: crypto.randomUUID(),
-            documentId: document.id,
-            sourceId: source.id,
-            agentId: source.agentId,
-            workspaceId: source.agent.workspaceId,
-            seq: i,
-            text: chunk.text,
-            page: chunk.page,
-            section: chunk.section,
-            sourceUrl: documentUrl ?? null,
-            metadata: JSON.stringify({
-              documentName: document.name,
-              sourceType: source.type,
-              sourceName: source.name,
-            }),
-          },
-        });
-        await vectorStore.upsertPoints(source.agentId, source.agent.workspaceId, [
-          {
+      for (let start = 0; start < chunks.length; start += EMBED_BATCH) {
+        const batch = chunks.slice(start, start + EMBED_BATCH);
+        const vectors = await embedder.embedDocuments(batch.map((item) => item.text));
+        const points: Array<{
+          id: string;
+          vector: number[];
+          payload: Record<string, unknown>;
+        }> = [];
+
+        for (let offset = 0; offset < batch.length; offset++) {
+          const index = start + offset;
+          const chunk = batch[offset]!;
+          const vector = vectors[offset]!;
+          const created = await db.knowledgeChunk.create({
+            data: {
+              id: crypto.randomUUID(),
+              documentId: document.id,
+              sourceId: source.id,
+              agentId: source.agentId,
+              workspaceId: source.agent.workspaceId,
+              seq: index,
+              text: chunk.text,
+              page: chunk.page,
+              section: chunk.section,
+              sourceUrl: documentUrl ?? null,
+              metadata: JSON.stringify({
+                documentName: document.name,
+                sourceType: source.type,
+                sourceName: source.name,
+              }),
+            },
+          });
+          points.push({
             id: created.id,
             vector,
             payload: {
@@ -168,13 +177,15 @@ export async function processSource(sourceId: string): Promise<void> {
               page: chunk.page,
               section: chunk.section,
               sourceUrl: documentUrl ?? null,
-              seq: i,
+              seq: index,
               sourceId: source.id,
               documentId: document.id,
               workspaceId: source.agent.workspaceId,
             },
-          },
-        ]);
+          });
+        }
+
+        await vectorStore.upsertPoints(source.agentId, source.agent.workspaceId, points);
       }
 
       // 5) READY — only now, after vectors are truly stored
