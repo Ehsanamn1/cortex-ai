@@ -10,6 +10,7 @@ import { z } from "zod";
 
 import { api, ApiError } from "@/lib/cortex-client";
 import { CORTEX_UI_CONFIG } from "@/config/cortex-ui";
+import { cn } from "@/lib/utils";
 import { useCortexStore } from "@/components/cortex/store";
 import { zodResolver } from "@/components/cortex/zod-resolver";
 import { CortexLogo } from "@/components/cortex/logo";
@@ -197,7 +198,7 @@ export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "s
   const showBrandPanel = settings?.["feature.authBrandPanel"] === undefined ? true : settings["feature.authBrandPanel"] !== "false";
   return (
     <div className="cortex-auth flex min-h-screen flex-col bg-background">
-      <div className="relative grid flex-1 overflow-hidden lg:grid-cols-[1.18fr_.82fr]">
+      <div className={cn("relative grid flex-1 overflow-hidden", showBrandPanel ? "lg:grid-cols-[1.18fr_.82fr]" : "lg:grid-cols-1")}>
         {/* Brand panel — right side in RTL */}
         <aside className="relative hidden min-h-full flex-col justify-between overflow-hidden border-l border-white/10 bg-[#080b11] p-10 lg:flex xl:p-14">
           <div aria-hidden="true" className="cortex-grid-bg absolute inset-0 opacity-70" />
