@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, CheckCircle2, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi, XCircle } from "lucide-react";
+import { BarChart3, Bot, CheckCircle2, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { api, type AgentDto, type TelegramBotDto } from "@/lib/cortex-client";
@@ -164,6 +164,14 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
     onError: (error: Error) => toast.error(error.message),
   });
   const { data: allowlistData } = useQuery({ queryKey: ["allowlist", bot.id], queryFn: () => api.getTelegramAllowlist(bot.id), enabled: !!bot.id });
+  const workspaceId = useCortexStore((s) => s.activeWorkspaceId);
+  const usersQuery = useQuery({
+    queryKey: ["telegram-users-admin", workspaceId],
+    queryFn: () => api.getTelegramUsers(workspaceId ?? undefined),
+    enabled: !!workspaceId,
+    staleTime: 15_000,
+  });
+  const botUsers = (usersQuery.data?.users ?? []).filter((item) => item.botId === bot.id).sort((a, b) => (b.usage?.tokens ?? 0) - (a.usage?.tokens ?? 0));
   const [phone, setPhone] = useState("");
   const [displayName, setDisplayName] = useState("");
   const addAllow = useMutation({
@@ -215,10 +223,25 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
           </Card>
 
           <Card className="border-white/[.06] bg-white/[.02]">
-            <CardHeader><CardTitle className="text-sm">دسترسی کاربران</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />دسترسی کاربران</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"><Input dir="ltr" placeholder="+98912..." value={phone} onChange={(event) => setPhone(event.target.value)} /><Input placeholder="نام نمایشی" value={displayName} onChange={(event) => setDisplayName(event.target.value)} /><Button className="sm:self-stretch" disabled={!phone.trim() || addAllow.isPending} onClick={() => addAllow.mutate()}><ShieldCheck />افزودن</Button></div>
               {allowlistData?.entries?.length ? <div className="space-y-2">{allowlistData.entries.map((entry) => <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[.06] p-3"><div className="min-w-0"><p className="truncate text-sm">{entry.displayName || "بدون نام"}</p><p dir="ltr" className="truncate text-xs text-muted-foreground">{entry.phoneNumber}</p></div><Button size="icon" variant="ghost" className="shrink-0 text-destructive" onClick={() => removeAllow.mutate(entry.id)} aria-label="حذف دسترسی"><Trash2 /></Button></div>)}</div> : <p className="rounded-xl border border-dashed border-white/[.08] p-5 text-center text-xs text-muted-foreground">هنوز کاربری در allowlist نیست.</p>}
+              <div className="border-t border-white/[.06] pt-4">
+                <div className="flex items-center justify-between gap-3"><p className="flex items-center gap-2 text-xs font-semibold"><BarChart3 className="size-4 text-primary" />مانیتورینگ مصرف همین ربات</p><span className="text-[10px] text-muted-foreground">{botUsers.length} کاربر شناخته‌شده</span></div>
+                <div className="mt-3 space-y-2">
+                  {botUsers.slice(0, 5).map((user) => (
+                    <div key={user.id} className="rounded-xl border border-white/[.06] bg-black/10 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0"><p className="truncate text-xs font-medium">{[user.firstName,user.lastName].filter(Boolean).join(" ") || user.username || user.telegramUserId}</p><p dir="ltr" className="truncate text-[10px] text-muted-foreground">{user.phoneNumber || "بدون شماره"}</p></div>
+                        <span className="shrink-0 text-xs font-semibold text-primary">{faNum(user.usage?.tokens ?? 0)} توکن</span>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-muted-foreground"><span>امروز: {faNum(user.dailyUsage?.tokens ?? 0)}</span><span>ماه: {faNum(user.monthlyUsage?.tokens ?? 0)}</span><span>سقف روزانه: {user.dailyTokenLimit > 0 ? faNum(user.dailyTokenLimit) : "∞"}</span><span>سقف ماهانه: {user.monthlyTokenLimit > 0 ? faNum(user.monthlyTokenLimit) : "∞"}</span></div>
+                    </div>
+                  ))}
+                  {botUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">هنوز مصرفی از این ربات ثبت نشده است.</p>}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
