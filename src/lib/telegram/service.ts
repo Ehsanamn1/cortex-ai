@@ -468,9 +468,20 @@ export async function processTelegramUpdate(botId: string, update: any) {
 
     const history = await db.message.findMany({
       where: { conversationId: conversation.id },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: 24,
-    });
+    }).then((rows) => rows.reverse());
+
+    const promptHistory = history
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .slice(-12);
+
+    const estimatedPromptTokens =
+      promptHistory.reduce((sum, item) => sum + estimateTokens(item.content), 0) +
+      estimateTokens(rawText);
+
+    // Enforce the user's token budget before any LLM call.
+    await assertUsageWithinLimits(bot.workspaceId, 1, estimatedPromptTokens, user.id);
 
     await db.message.create({
       data: {
@@ -484,13 +495,10 @@ export async function processTelegramUpdate(botId: string, update: any) {
       agentId: bot.agentId,
       workspaceId: bot.workspaceId,
       persona: botAgent,
-      history: history
-        .filter((m) => m.role === 'user' || m.role === 'assistant')
-        .slice(-12)
-        .map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })),
+      history: promptHistory.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
       question: rawText,
     });
 
@@ -516,8 +524,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
       data: { updatedAt: new Date() },
     });
 
-    const inputTokens = estimateTokens(rawText) + history.reduce((sum, item) => sum + estimateTokens(item.content), 0);
-    await assertUsageWithinLimits(bot.workspaceId, 1, inputTokens, user.id);
+    const inputTokens = estimatedPromptTokens;
     const outputTokens = estimateTokens(answer.content);
 
     await db.usageEvent.create({
