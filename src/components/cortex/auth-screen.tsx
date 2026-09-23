@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { api, ApiError } from "@/lib/cortex-client";
+import { CORTEX_UI_CONFIG } from "@/config/cortex-ui";
 import { useCortexStore } from "@/components/cortex/store";
 import { zodResolver } from "@/components/cortex/zod-resolver";
 import { CortexLogo } from "@/components/cortex/logo";
@@ -250,7 +251,7 @@ export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "s
 
             <div className="cortex-auth-card rounded-[28px] border border-white/[.09] bg-white/[.035] p-6 shadow-[0_28px_90px_rgba(0,0,0,.32)] backdrop-blur-2xl sm:p-8 lg:p-9">
               <div className="mb-7 space-y-2 text-center">
-                <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold tracking-[.15em] text-primary">CORTEX AI <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.75)]" /></div><h2 className="text-2xl font-bold tracking-tight text-foreground">به Cortex AI خوش آمدید</h2>
+                <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold tracking-[.15em] text-primary">CORTEX AI <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.75)]" /></div><h2 className="text-2xl font-bold tracking-tight text-foreground">{CORTEX_UI_CONFIG.copy.authTitle}</h2>
                 <p className="text-sm text-muted-foreground">برای ادامه، وارد حساب خود شوید یا حساب جدید بسازید.</p>
               </div>
 

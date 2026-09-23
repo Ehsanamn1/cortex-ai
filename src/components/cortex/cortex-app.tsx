@@ -11,6 +11,7 @@ import { CortexMark } from "@/components/cortex/logo";
 import { AppShell } from "@/components/cortex/app-shell";
 import { AuthScreen } from "@/components/cortex/auth-screen";
 import { Button } from "@/components/ui/button";
+import { CortexThemeRuntime } from "@/components/cortex/theme-runtime";
 
 function makeQueryClient(): QueryClient {
   return new QueryClient({

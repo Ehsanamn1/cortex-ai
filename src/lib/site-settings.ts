@@ -1,11 +1,18 @@
 import { db } from "@/lib/db";
+import { CORTEX_UI_CONFIG } from "@/config/cortex-ui";
 
 export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
-  "site.name": "Cortex AI",
+  "site.name": CORTEX_UI_CONFIG.brand.name,
   "site.description": "ساخت و مدیریت ایجنت‌های هوش مصنوعی با دانش واقعی کسب‌وکار.",
   "site.supportEmail": "",
-  "site.maxUploadMb": "200",
-  "site.welcomeTitle": "هوش کسب‌وکار را از یک داشبورد کنترل کن.",
+  "site.maxUploadMb": String(CORTEX_UI_CONFIG.limits.maxKnowledgeUploadMb),
+  "site.welcomeTitle": CORTEX_UI_CONFIG.copy.welcomeTitle,
+  "site.primaryColor": CORTEX_UI_CONFIG.theme.primary,
+  "site.secondaryColor": CORTEX_UI_CONFIG.theme.secondary,
+  "site.radius": "0.75",
+  "site.sidebarColor": CORTEX_UI_CONFIG.theme.sidebar,
+  "site.authTitle": CORTEX_UI_CONFIG.copy.authTitle,
+  "site.authDescription": CORTEX_UI_CONFIG.copy.authDescription,
 };
 
 export async function getPublicSiteSettings(): Promise<Record<string, string>> {

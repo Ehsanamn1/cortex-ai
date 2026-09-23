@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
+import { CORTEX_UI_CONFIG } from "@/config/cortex-ui";
 import { useCortexStore, type View } from "@/components/cortex/store";
 import { CortexMark } from "@/components/cortex/logo";
 import { SignOutConfirm, useSignOut } from "@/components/cortex/bits";
@@ -217,25 +218,20 @@ interface NavItem {
   matches: View[];
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { view: "dashboard", label: "داشبورد", icon: LayoutDashboard, matches: ["dashboard"] },
-  {
-    view: "agents",
-    label: "ایجنت‌ها",
-    icon: Bot,
-    matches: ["agents", "agent-new", "agent-detail", "agent-edit"],
-  },
-  { view: "knowledge", label: "دانش", icon: BookOpen, matches: ["knowledge"] },
-  { view: "conversations", label: "گفتگوها", icon: MessagesSquare, matches: ["conversations"] },
-  { view: "telegram", label: "تلگرام", icon: ShieldCheck, matches: ["telegram"] },
-  { view: "analytics", label: "تحلیل", icon: BarChart3, matches: ["analytics"] },
-  { view: "admin", label: "مدیریت", icon: ShieldCheck, matches: ["admin"] },
-  { view: "learn", label: "آموزش", icon: GraduationCap, matches: ["learn"] },
-];
+const NAV_ITEMS: NavItem[] = CORTEX_UI_CONFIG.navigation.map((item) => ({
+  ...item,
+  icon: item.view === "dashboard" ? LayoutDashboard
+    : item.view === "agents" ? Bot
+    : item.view === "knowledge" ? BookOpen
+    : item.view === "conversations" ? MessagesSquare
+    : item.view === "telegram" ? ShieldCheck
+    : item.view === "analytics" ? BarChart3
+    : item.view === "admin" ? ShieldCheck
+    : GraduationCap,
+  matches: item.view === "agents" ? ["agents", "agent-new", "agent-detail", "agent-edit"] : [item.view],
+}));
 
-const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((item) =>
-  ["dashboard", "agents", "knowledge", "conversations"].includes(item.view)
-);
+const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((item) => CORTEX_UI_CONFIG.navigation.find((nav) => nav.view === item.view)?.mobile);
 
 function SidebarNav() {
   const view = useCortexStore((s) => s.view);
