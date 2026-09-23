@@ -30,7 +30,9 @@ export async function POST(req: Request, { params }: Params) {
     if (message.length > 8000) return applyCors(jsonError("پیام بیش از حد طولانی است (حداکثر ۸۰۰۰ کاراکتر).", 400), req.headers.get("origin"));
 
     const clientId = (req.headers.get("x-cortex-client-id") ?? (typeof body.clientId === "string" ? body.clientId : "api-client")).trim().slice(0, 120) || "api-client";
-    const requestedConversationId = typeof body.conversationId === "string" ? body.conversationId : "";
+    const requestedConversationId =
+      req.headers.get("x-cortex-conversation-id") ??
+      (typeof body.conversationId === "string" ? body.conversationId : "");
     const startNewChat = body.newChat === true;
     let conversation = !startNewChat && requestedConversationId
       ? await db.conversation.findFirst({ where: { id: requestedConversationId, agentId, channel: "api", externalUserId: clientId } })
