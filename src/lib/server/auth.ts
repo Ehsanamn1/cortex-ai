@@ -106,7 +106,7 @@ class SessionConfigError extends Error {
 function secret(): string {
   const s = process.env.APP_SECRET_KEY;
   if (s && s.length >= 32) return s;
-  if (process.env.NODE_ENV === "production") throw new SessionConfigError();
+  if ((process.env.NODE_ENV === "production" || process.env.APP_ENV === "production")) throw new SessionConfigError();
   const g = globalThis as { __cortexEphemeralSecret?: string };
   if (!g.__cortexEphemeralSecret) {
     g.__cortexEphemeralSecret = Buffer.from(randomBytes(32)).toString("hex");
