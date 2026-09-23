@@ -156,7 +156,7 @@ export async function processSource(sourceId: string): Promise<void> {
               page: chunk.page,
               section: chunk.section,
               sourceUrl: documentUrl ?? null,
-              seq: chunk.seq,
+              seq: i,
               sourceId: source.id,
               documentId: document.id,
               workspaceId: source.agent.workspaceId,
