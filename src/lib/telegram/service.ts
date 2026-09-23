@@ -288,15 +288,6 @@ export async function processTelegramUpdate(botId: string, update: any) {
   const bot = await db.telegramBot.findUnique({ where: { id: botId } });
   if (!bot) return;
 
-  const updateId = Number(update?.update_id);
-  if (Number.isInteger(updateId)) {
-    const claimed = await db.telegramBot.updateMany({
-      where: { id: botId, lastUpdateId: { lt: updateId } },
-      data: { lastUpdateId: updateId },
-    });
-    if (claimed.count === 0) return;
-  }
-
   const token = decryptSecret(bot.tokenEncrypted);
   const callback = update?.callback_query;
 
@@ -575,5 +566,9 @@ export async function processTelegramUpdate(botId: string, update: any) {
       msg.chat.id,
       '⚠️ در پردازش این پیام مشکلی پیش آمد. لطفاً چند لحظه بعد دوباره تلاش کنید.',
     ).catch(() => undefined);
+
+    // Bubble the failure to the webhook retry wrapper. The update marker is
+    // intentionally written only after the full handler succeeds.
+    throw error;
   }
 }
