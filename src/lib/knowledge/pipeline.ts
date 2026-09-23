@@ -40,38 +40,60 @@ export async function processSource(sourceId: string): Promise<void> {
     });
 
     try {
-      // 1) EXTRACT — real text extraction
-      let pages: Array<{ text: string; page?: number; section?: string | null }>;
+      // 1) EXTRACT / RESTORE
+      // New file uploads carry an internal db64:// payload. Once processing
+      // succeeds the raw payload is cleared; retries then rebuild vectors from
+      // the durable KnowledgeChunk rows instead of needing file storage.
       let mimeType: string | undefined;
       let sizeBytes: number | undefined;
       let documentUrl: string | undefined;
+      let chunks: ChunkInput[];
 
       if (source.type === "url") {
         const document = source.documents[0];
         documentUrl = document?.url ?? undefined;
         if (!documentUrl) throw new Error("آدرس وب‌سایت برای این منبع ثبت نشده است.");
         const result = await extractFromUrl(documentUrl);
-        pages = result.pages;
+        if (!result.pages || result.pages.length === 0 || result.pages.every((p) => p.text.trim().length === 0)) {
+          throw new Error("محتوای متنی قابل استخراجی در این منبع یافت نشد.");
+        }
         mimeType = result.mimeType;
         documentUrl = result.finalUrl;
+        chunks = chunkInputs(result.pages as ChunkInput[]);
       } else {
         const document = source.documents[0];
         if (!document) throw new Error("فایل این منبع یافت نشد.");
-        // Upload bytes are persisted as an internal db64:// payload in Postgres.
-        const result = await extractStoredFileForSource(sourceId, document.name);
-        pages = result.pages;
-        mimeType = result.mimeType;
-        sizeBytes = result.sizeBytes;
-      }
 
-      if (!pages || pages.length === 0 || pages.every((p) => p.text.trim().length === 0)) {
-        throw new Error("محتوای متنی قابل استخراجی در این منبع یافت نشد.");
-      }
-
-      // 2) CHUNK — with page/section identity preserved
-      const chunks = chunkInputs(pages as ChunkInput[]);
-      if (chunks.length === 0) {
-        throw new Error("پس از پردازش، هیچ بخش متنی معتبری به دست نیامد.");
+        const storagePath = document.url ?? "";
+        if (storagePath.startsWith("db64://")) {
+          const raw = storagePath.slice("db64://".length);
+          if (!raw) throw new Error("داده فایل ذخیره‌شده معتبر نیست.");
+          const bytes = new Uint8Array(Buffer.from(raw, "base64"));
+          const result = await extractStoredBytes(bytes, document.name);
+          if (!result.pages || result.pages.length === 0 || result.pages.every((p) => p.text.trim().length === 0)) {
+            throw new Error("محتوای متنی قابل استخراجی در این فایل یافت نشد.");
+          }
+          mimeType = result.mimeType;
+          sizeBytes = result.sizeBytes;
+          chunks = chunkInputs(result.pages as ChunkInput[]);
+        } else {
+          const existing = await db.knowledgeChunk.findMany({
+            where: { sourceId: source.id, documentId: document.id },
+            orderBy: { seq: "asc" },
+            select: { text: true, page: true, section: true, seq: true },
+          });
+          if (existing.length === 0) {
+            throw new Error("فایل اصلی این منبع دیگر در Storage داخلی موجود نیست؛ لطفاً فایل را دوباره اضافه کنید.");
+          }
+          mimeType = document.mimeType ?? undefined;
+          sizeBytes = document.sizeBytes ?? undefined;
+          chunks = existing.map((item) => ({
+            text: item.text,
+            page: item.page ?? undefined,
+            section: item.section,
+            seq: item.seq,
+          }));
+        }
       }
 
       // 3) EMBED — real vectors via the configured provider
@@ -87,13 +109,7 @@ export async function processSource(sourceId: string): Promise<void> {
       await purgeSourceVectors(source.agentId, sourceId);
 
       const document = source.documents[0]!;
-      const storedUrl = document.url ?? "";
-      const persistedUrl =
-        source.type === "url"
-          ? documentUrl ?? document.url
-          : storedUrl.startsWith("r2://")
-            ? storedUrl
-            : null;
+      const persistedUrl = source.type === "url" ? documentUrl ?? document.url : null;
 
       await db.knowledgeDocument.update({
         where: { id: document.id },
@@ -206,21 +222,4 @@ export async function purgeAgentKnowledge(agentId: string): Promise<void> {
   const vectorStore = getVectorStore();
   await vectorStore.deleteByAgent(agentId);
   await db.knowledgeChunk.deleteMany({ where: { agentId } });
-}
-
-async function extractStoredFileForSource(
-  sourceId: string,
-  documentName: string
-): Promise<{ pages: Array<{ text: string; page?: number; section?: string | null }>; mimeType?: string; sizeBytes?: number }> {
-  const document = await db.knowledgeDocument.findFirst({ where: { sourceId } });
-  const storagePath = document?.url ?? null;
-
-  if (storagePath?.startsWith("db64://")) {
-    const raw = storagePath.slice("db64://".length);
-    if (!raw) throw new Error("داده فایل ذخیره‌شده معتبر نیست.");
-    const bytes = new Uint8Array(Buffer.from(raw, "base64"));
-    return extractStoredBytes(bytes, documentName);
-  }
-
-  throw new Error("فایل بارگذاری‌شده در Storage داخلی یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
 }
