@@ -270,27 +270,33 @@ export async function extractFromUrl(rawUrl: string): Promise<{
   const contentType = (res.headers.get("content-type") ?? "").split(";")[0]!.trim().toLowerCase();
   const finalUrl = res.url || url.toString();
 
-  if (contentType === "application/pdf") return { pages: await extractPdf(buffer), finalUrl, mimeType: contentType };
-  if (contentType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
-    const result = await extractStoredBytes(buffer, url.pathname.split("/").pop() || "sheet.xlsx");
+  const pathName = url.pathname.toLowerCase();
+  const extensionFromUrl = detectExtension(pathName);
+
+  if (contentType === "application/pdf" || extensionFromUrl === ".pdf") {
+    return { pages: await extractPdf(buffer), finalUrl, mimeType: "application/pdf" };
+  }
+
+  const officeExts = new Set([".docx", ".docm", ".xlsx", ".pptx"]);
+  if (officeExts.has(extensionFromUrl)) {
+    const result = await extractStoredBytes(buffer, "download" + extensionFromUrl);
     return { pages: result.pages, finalUrl, mimeType: result.mimeType ?? contentType };
   }
-  if (contentType === "application/vnd.openxmlformats-officedocument.presentationml.presentation") {
-    const result = await extractStoredBytes(buffer, url.pathname.split("/").pop() || "slides.pptx");
-    return { pages: result.pages, finalUrl, mimeType: result.mimeType ?? contentType };
-  }
-  if (contentType.startsWith("text/plain")) {
+
+  if (contentType.startsWith("text/plain") || contentType === "application/json" || contentType === "text/csv") {
     const normalized = normalizeText(new TextDecoder("utf-8", { fatal: false }).decode(buffer));
     return {
       pages: normalized.length > 0 ? [{ text: normalized, section: null }] : [],
       finalUrl,
-      mimeType: contentType,
+      mimeType: contentType || "text/plain",
     };
   }
-  if (contentType.includes("html") || contentType.includes("xml") || contentType === "") {
+
+  if (contentType.includes("html") || contentType.includes("xml") || contentType === "" || extensionFromUrl === ".html" || extensionFromUrl === ".htm" || extensionFromUrl === ".xml") {
     const pages = await extractReadableHtml(new TextDecoder("utf-8", { fatal: false }).decode(buffer));
     return { pages, finalUrl, mimeType: contentType || "text/html" };
   }
+
   throw new Error(`نوع محتوای پشتیبانی‌نشده: ${contentType || "نامشخص"}`);
 }
 
@@ -470,7 +476,7 @@ export async function extractStoredBytes(bytes: Uint8Array, originalName: string
   }
 
   const textExtensions = new Set([
-    ".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".log", ".tsv",
+    ".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".log", ".tsv", ".rtf", ".tex",
     ".sql", ".jsonl", ".ndjson", ".rst", ".toml", ".ini", ".conf", ".env", ".css", ".js", ".mjs",
     ".cjs", ".ts", ".tsx", ".jsx", ".py", ".java", ".go", ".rs", ".php", ".rb", ".sh", ".bat",
     ".ps1", ".graphql", ".gql",

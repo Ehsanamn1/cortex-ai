@@ -26,10 +26,16 @@ export async function POST(req: Request, { params }: Params) {
 
     const clientId = (req.headers.get("x-cortex-client-id") ?? (typeof body.clientId === "string" ? body.clientId : "api-client")).trim().slice(0, 120) || "api-client";
     const requestedConversationId = typeof body.conversationId === "string" ? body.conversationId : "";
-    let conversation = requestedConversationId
+    const startNewChat = body.newChat === true;
+    let conversation = !startNewChat && requestedConversationId
       ? await db.conversation.findFirst({ where: { id: requestedConversationId, agentId, channel: "api", externalUserId: clientId } })
       : null;
-    if (!conversation) conversation = await db.conversation.findFirst({ where: { agentId, channel: "api", externalUserId: clientId }, orderBy: { updatedAt: "desc" } });
+    if (!conversation && !startNewChat) {
+      conversation = await db.conversation.findFirst({
+        where: { agentId, channel: "api", externalUserId: clientId },
+        orderBy: { updatedAt: "desc" },
+      });
+    }
     if (!conversation) conversation = await db.conversation.create({ data: { agentId, userId: null, title: "گفتگوی API", channel: "api", externalUserId: clientId } });
 
     const existing = await db.message.findMany({ where: { conversationId: conversation.id, role: { in: ["user", "assistant"] } }, orderBy: { createdAt: "asc" }, take: 24 });

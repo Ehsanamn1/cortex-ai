@@ -506,7 +506,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
         conversationId: conversation.id,
         role: 'assistant',
         content: answer.content,
-        metadata: JSON.stringify(metadata),
+        metadata: JSON.stringify({ ...metadata, conversationId: conversation.id }),
       },
     });
 

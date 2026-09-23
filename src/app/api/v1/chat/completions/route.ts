@@ -24,8 +24,16 @@ export async function POST(req: Request) {
 
     const clientId = (req.headers.get("x-cortex-client-id") || "openai-client").slice(0, 120);
     const conversationId = req.headers.get("x-cortex-conversation-id") || "";
-    let conversation = conversationId ? await db.conversation.findFirst({ where: { id: conversationId, agentId: auth.agentId, channel: "api", externalUserId: clientId } }) : null;
-    if (!conversation) conversation = await db.conversation.findFirst({ where: { agentId: auth.agentId, channel: "api", externalUserId: clientId }, orderBy: { updatedAt: "desc" } });
+    const startNewChat = body.newChat === true;
+    let conversation = !startNewChat && conversationId
+      ? await db.conversation.findFirst({ where: { id: conversationId, agentId: auth.agentId, channel: "api", externalUserId: clientId } })
+      : null;
+    if (!conversation && !startNewChat) {
+      conversation = await db.conversation.findFirst({
+        where: { agentId: auth.agentId, channel: "api", externalUserId: clientId },
+        orderBy: { updatedAt: "desc" },
+      });
+    }
     if (!conversation) conversation = await db.conversation.create({ data: { agentId: auth.agentId, userId: null, title: "گفتگوی API", channel: "api", externalUserId: clientId } });
 
     const existing = await db.message.findMany({ where: { conversationId: conversation.id, role: { in: ["user", "assistant"] } }, orderBy: { createdAt: "asc" }, take: 24 });
