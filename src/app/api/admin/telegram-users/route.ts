@@ -1,10 +1,10 @@
 import { db } from '@/lib/db';
 import { applyCors, jsonOk, jsonError, readJson, toErrorResponse } from '@/lib/server/http';
 import { requireAdmin } from '@/lib/server/admin-auth';
+import { normalizeTelegramPhone } from '@/lib/telegram/phone';
 
 export const dynamic='force-dynamic';
 
-function normalizePhone(value:string){const digits=value.replace(/\D/g,'');return digits ? '+'+(digits.startsWith('00')?digits.slice(2):digits) : '';}
 function safeLimit(value:unknown){const n=Number(value);return Number.isFinite(n)&&n>=0?Math.min(10_000_000,Math.floor(n)):undefined;}
 function startOfDay(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function startOfMonth(){const d=new Date();return new Date(d.getFullYear(),d.getMonth(),1);}
@@ -41,7 +41,7 @@ export async function POST(req:Request){
     requireAdmin(req);
     const b=await readJson<Record<string,unknown>>(req);
     const botId=typeof b.botId==='string'?b.botId:'';
-    const phone=normalizePhone(typeof b.phoneNumber==='string'?b.phoneNumber:'');
+    const phone=normalizeTelegramPhone(typeof b.phoneNumber==='string'?b.phoneNumber:'');
     if(!botId||phone.length<8)return applyCors(jsonError('ربات و شماره موبایل معتبر لازم است.',400),req.headers.get('origin'));
     const bot=await db.telegramBot.findUnique({where:{id:botId}});
     if(!bot)return applyCors(jsonError('ربات تلگرام یافت نشد.',404),req.headers.get('origin'));
