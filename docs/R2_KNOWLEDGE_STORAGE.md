@@ -10,6 +10,8 @@ Required Worker secrets:
 
 The GitHub deployment workflow syncs these values automatically from the `cortex1` Environment when they are present.
 
+In production, R2 is required for file uploads. Cortex does not silently fall back to storing upload bytes inside PostgreSQL in production. A small DB-inline fallback remains available only for local/development operation.
+
 The upload flow is:
 1. Cortex authenticates the user and creates a pending knowledge source.
 2. The Worker issues a short-lived S3-compatible presigned PUT URL.
@@ -21,3 +23,5 @@ Supported extraction currently includes PDF, DOCX, and a broad set of text/data/
 R2 CORS must allow the Cortex web origin to perform PUT requests to the bucket. Keep the CORS rule scoped to the production Worker/site origin rather than using a wildcard for credentials.
 
 For very large binary documents, extraction is constrained by the Worker runtime memory available to the document parser; the 200 MB limit is a storage/upload limit, not a guarantee that every binary format can be parsed in one Worker invocation.
+
+Direct upload validates the filename extension before creating an R2 upload target. After upload, Cortex HEAD-checks the object and only then starts ingestion. Failed sources remain marked failed and can be retried.
