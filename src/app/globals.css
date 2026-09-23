@@ -268,3 +268,21 @@
     linear-gradient(120deg, rgba(255,255,255,.04), transparent 34%),
     linear-gradient(300deg, rgba(59,130,255,.035), transparent 38%);
 }
+
+
+@media (max-width: 640px) {
+  [data-slot="dialog-content"] {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+    overflow-y: auto;
+  }
+
+  .cortex-panel {
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 1023px) {
+  body { overscroll-behavior-y: contain; }
+}

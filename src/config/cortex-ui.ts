@@ -18,7 +18,7 @@ export const CORTEX_UI_CONFIG = {
   navigation: [
     { view: "dashboard" as CortexView, label: "داشبورد", mobile: true },
     { view: "agents" as CortexView, label: "ایجنت‌ها", mobile: true },
-    { view: "knowledge" as CortexView, label: "دانش", mobile: true },
+    { view: "knowledge" as CortexView, label: "مغز شرکت", mobile: true },
     { view: "conversations" as CortexView, label: "گفتگوها", mobile: true },
     { view: "telegram" as CortexView, label: "تلگرام", mobile: false },
     { view: "analytics" as CortexView, label: "تحلیل", mobile: false },

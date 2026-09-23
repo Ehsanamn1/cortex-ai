@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { FileSearch, GraduationCap, Loader2, MessagesSquare } from "lucide-react";
+import { FileSearch, GraduationCap, Loader2, MessagesSquare, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -194,7 +194,7 @@ function SignupForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
   );
 }
 
-export function AuthScreen({ defaultTab = "login", onAuthenticated }: { defaultTab?: "login" | "signup"; onAuthenticated?: () => void }) {
+export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }: { defaultTab?: "login" | "signup"; onAuthenticated?: () => void; bootNotice?: string }) {
   const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
   const settings = siteConfig.data?.settings;
   const showBrandPanel = settings?.["feature.authBrandPanel"] === undefined ? true : settings["feature.authBrandPanel"] !== "false";
@@ -260,6 +260,13 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated }: { defaultT
                 <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold tracking-[.15em] text-primary">{settings?.["site.name"] || CORTEX_UI_CONFIG.brand.name} <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.75)]" /></div><h2 className="text-2xl font-bold tracking-tight text-foreground">{settings?.["site.authTitle"] || CORTEX_UI_CONFIG.copy.authTitle}</h2>
                 <p className="text-sm text-muted-foreground">{settings?.["site.authDescription"] || CORTEX_UI_CONFIG.copy.authDescription}</p>
               </div>
+
+              {bootNotice && (
+                <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-amber-300/15 bg-amber-300/[.05] p-3 text-xs leading-6 text-amber-100/85">
+                  <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-300" />
+                  <p>نشست قبلی قابل بازیابی نبود و Cortex آن را پاک کرد. می‌توانید دوباره وارد شوید.</p>
+                </div>
+              )}
 
               <Tabs defaultValue={defaultTab}>
                 <TabsList className="mb-7 grid h-12 w-full grid-cols-2 rounded-xl border border-white/[.07] bg-black/20 p-1">

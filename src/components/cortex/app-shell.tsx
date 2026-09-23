@@ -525,12 +525,13 @@ export function AppShell() {
       </div>
 
       {/* Mobile «بیشتر» sheet */}
-      <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} />
+      <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} items={navItems} />
     </div>
   );
 }
 
-function MoreSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+function MoreSheet({ open, onOpenChange, items }: { open: boolean; onOpenChange: (open: boolean) => void; items: NavItem[] }) {
+  const hiddenItems = items.filter((item) => !item.mobile);
   const setView = useCortexStore((s) => s.setView);
   const signOutNow = useSignOut();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -545,23 +546,23 @@ function MoreSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open:
           </SheetHeader>
           <div className="space-y-5 px-2">
             <WorkspaceSwitcher />
+            {hiddenItems.length > 0 && (
+              <div className="grid gap-2">
+                <p className="px-1 text-[11px] font-medium text-muted-foreground">بخش‌های بیشتر</p>
+                {hiddenItems.map((item) => (
+                  <Button key={item.view} variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView(item.view); }}>
+                    <item.icon aria-hidden="true" className="size-4" />
+                    {item.label}
+                  </Button>
+                ))}
+              </div>
+            )}
             <div className="flex flex-col gap-2">
-              <Button
-                variant="outline"
-                className="h-12 w-full justify-start gap-3"
-                onClick={() => {
-                  onOpenChange(false);
-                  setView("settings");
-                }}
-              >
+              <Button variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView("settings"); }}>
                 <Settings aria-hidden="true" className="size-4" />
                 تنظیمات
               </Button>
-              <Button
-                variant="outline"
-                className="h-12 w-full justify-start gap-3 text-destructive hover:text-destructive"
-                onClick={() => setConfirmOpen(true)}
-              >
+              <Button variant="outline" className="h-12 w-full justify-start gap-3 text-destructive hover:text-destructive" onClick={() => setConfirmOpen(true)}>
                 <LogOut aria-hidden="true" className="size-4" />
                 خروج از حساب کاربری
               </Button>

@@ -133,6 +133,8 @@ function ControlCenterContent() {
           <div className="sm:col-span-2"><Label>عنوان خوش‌آمدگویی</Label><Input className="mt-2" value={settings["site.welcomeTitle"]||""} onChange={e=>updateSetting("site.welcomeTitle",e.target.value)}/></div>
           <div className="sm:col-span-2"><Label>توضیحات محصول</Label><Input className="mt-2" value={settings["site.description"]||""} onChange={e=>updateSetting("site.description",e.target.value)}/></div>
           <div className="sm:col-span-2"><Label>ایمیل پشتیبانی</Label><Input dir="ltr" className="mt-2 text-left" value={settings["site.supportEmail"]||""} onChange={e=>updateSetting("site.supportEmail",e.target.value)}/></div>
+          <div><Label>عنوان صفحه ورود</Label><Input className="mt-2" value={settings["site.authTitle"]||""} onChange={e=>updateSetting("site.authTitle",e.target.value)}/></div>
+          <div><Label>توضیحات صفحه ورود</Label><Input className="mt-2" value={settings["site.authDescription"]||""} onChange={e=>updateSetting("site.authDescription",e.target.value)}/></div>
           <div className="sm:col-span-2 border-t border-white/[.06] pt-5"><p className="text-sm font-semibold">پوسته و ظاهر</p><p className="mt-1 text-xs text-muted-foreground">این چهار مقدار برای کل رابط کاربری Cortex استفاده می‌شوند.</p></div>
           <div><Label>رنگ اصلی</Label><Input dir="ltr" className="mt-2 text-left" placeholder="#3B82FF" value={settings["site.primaryColor"]||"#3B82FF"} onChange={e=>updateSetting("site.primaryColor",e.target.value)}/></div>
           <div><Label>رنگ ثانویه</Label><Input dir="ltr" className="mt-2 text-left" placeholder="#8B5CF6" value={settings["site.secondaryColor"]||"#8B5CF6"} onChange={e=>updateSetting("site.secondaryColor",e.target.value)}/></div>

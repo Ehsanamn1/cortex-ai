@@ -19,7 +19,7 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "nav.agents.enabled": "true",
   "nav.agents.label": "ایجنت‌ها",
   "nav.knowledge.enabled": "true",
-  "nav.knowledge.label": "دانش",
+  "nav.knowledge.label": "مغز شرکت",
   "nav.conversations.enabled": "true",
   "nav.conversations.label": "گفتگوها",
   "nav.telegram.enabled": "true",

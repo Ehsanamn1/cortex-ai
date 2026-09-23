@@ -6,22 +6,41 @@ import { audit } from '@/lib/server/audit';
 import { answerWithKnowledge, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
 
 const API = 'https://api.telegram.org';
-const normalizePhone=(v:string)=>{ const digits=v.replace(/\D/g,''); if(!digits) return ''; return `+${digits.startsWith('00')?digits.slice(2):digits}`; };
+
+class TelegramApiError extends Error {
+  retryable: boolean;
+  retryAfterMs: number;
+  constructor(message: string, retryable: boolean, retryAfterMs = 0) {
+    super(message);
+    this.name = "TelegramApiError";
+    this.retryable = retryable;
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+const normalizePhone=(v:string)=>{ const digits=v.replace(/\D/g,''); if(!digits) return ''; return '+' + (digits.startsWith('00')?digits.slice(2):digits); };
+
 async function telegramCall(token:string, method:string, body:Record<string,unknown>){
   let lastError: Error | null = null;
   for(let attempt=0; attempt<3; attempt++){
     try{
-      const res=await fetch(`${API}/bot${token}/${method}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20_000)});
+      const res=await fetch(API + '/bot' + token + '/' + method,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20_000)});
       const data=await res.json() as {ok?:boolean;result?:any;description?:string;parameters?:{retry_after?:number}};
       if(res.ok && data.ok) return data.result;
       const retryAfter=Number(data.parameters?.retry_after ?? 0);
       const retryable=res.status===429 || res.status>=500;
-      lastError=new Error(data.description||`Telegram API ${res.status}`);
-      if(!retryable || attempt===2) throw lastError;
-      const delay=Math.min(8000,Math.max(500,retryAfter*1000||750*(attempt+1)));
+      const error=new TelegramApiError(data.description||('Telegram API ' + res.status),retryable,retryAfter*1000);
+      if(!retryable || attempt===2) throw error;
+      const delay=Math.min(8000,Math.max(500,error.retryAfterMs||750*(attempt+1)));
       await new Promise(resolve=>setTimeout(resolve,delay));
     }catch(error){
       lastError=error instanceof Error?error:new Error(String(error));
+      if(error instanceof TelegramApiError){
+        if(!error.retryable || attempt===2) throw error;
+        const delay=Math.min(8000,Math.max(500,error.retryAfterMs||750*(attempt+1)));
+        await new Promise(resolve=>setTimeout(resolve,delay));
+        continue;
+      }
       if(attempt===2) throw lastError;
       await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
     }

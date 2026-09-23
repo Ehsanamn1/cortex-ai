@@ -10,7 +10,6 @@ import { useCortexStore } from "@/components/cortex/store";
 import { CortexMark } from "@/components/cortex/logo";
 import { AppShell } from "@/components/cortex/app-shell";
 import { AuthScreen } from "@/components/cortex/auth-screen";
-import { Button } from "@/components/ui/button";
 import { CortexThemeRuntime } from "@/components/cortex/theme-runtime";
 
 function makeQueryClient(): QueryClient {
@@ -51,8 +50,8 @@ function Splash() {
 
 function SessionGate() {
   const hydrate = useCortexStore((s) => s.hydrate);
-  const [phase, setPhase] = useState<"checking" | "auth" | "ready" | "error">("checking");
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [phase, setPhase] = useState<"checking" | "auth" | "ready">("checking");
+  const [recoveryNotice, setRecoveryNotice] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -63,50 +62,40 @@ function SessionGate() {
         if (cancelled) return;
         if (session) {
           hydrate(session.user, session.workspaces);
+          setRecoveryNotice("");
           setPhase("ready");
         } else {
           setPhase("auth");
         }
       } catch (error) {
-        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "بازیابی جلسه Cortex ناموفق بود.";
         console.error("[cortex] session bootstrap failed:", error);
-        setErrorMessage(error instanceof Error ? error.message : "راه‌اندازی Cortex ناموفق بود.");
-        setPhase("error");
+        try {
+          await api.logout();
+        } catch {
+          // Best-effort cookie recovery.
+        }
+        if (cancelled) return;
+        setRecoveryNotice(message);
+        setPhase("auth");
       }
     }
 
     void bootstrapSession();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [hydrate]);
 
   if (phase === "checking") return <Splash />;
-
-  if (phase === "auth") return <AuthScreen onAuthenticated={() => setPhase("ready")} />;
-
-  if (phase === "error") {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 text-center">
-        <CortexMark size={48} />
-        <div className="space-y-2">
-          <p className="font-semibold text-foreground">راه‌اندازی Cortex انجام نشد</p>
-          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{errorMessage}</p>
-        </div>
-        <Button onClick={() => window.location.reload()}>تلاش مجدد</Button>
-      </div>
-    );
-  }
-
+  if (phase === "auth") return <AuthScreen onAuthenticated={() => setPhase("ready")} bootNotice={recoveryNotice} />;
   return <AppShell />;
 }
 
 export function CortexApp() {
   const [queryClient] = useState(makeQueryClient);
-
   return (
     <QueryClientProvider client={queryClient}>
+      <CortexThemeRuntime />
       <SessionGate />
     </QueryClientProvider>
   );

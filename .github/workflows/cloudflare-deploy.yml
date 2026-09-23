@@ -166,19 +166,28 @@ jobs:
           smoke_email="cortex-smoke-${GITHUB_RUN_ID}@example.invalid"
           smoke_password="$(openssl rand -hex 18)"
           smoke_response="$(mktemp)"
+          smoke_cookie="$(mktemp)"
           smoke_body="$(jq -nc --arg name "Cortex Smoke" --arg email "$smoke_email" --arg password "$smoke_password" '{name:$name,email:$email,password:$password}')"
-          smoke_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 60             -H "Content-Type: application/json"             -d "$smoke_body"             -o "$smoke_response"             -w "%{http_code}"             "$base/api/auth/signup")"
+          smoke_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 60             -H "Content-Type: application/json"             -d "$smoke_body"             -c "$smoke_cookie"             -o "$smoke_response"             -w "%{http_code}"             "$base/api/auth/signup")"
           echo "POST $base/api/auth/signup -> HTTP $smoke_status"
           cat "$smoke_response" | jq . || cat "$smoke_response"
           test "$smoke_status" = "201"
           smoke_user_id="$(jq -r '.user.id // empty' "$smoke_response")"
           test -n "$smoke_user_id"
 
+          session_response="$(mktemp)"
+          session_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30             -b "$smoke_cookie"             -o "$session_response"             -w "%{http_code}"             "$base/api/auth/me")"
+          echo "GET $base/api/auth/me with smoke cookie -> HTTP $session_status"
+          cat "$session_response" | jq . || cat "$session_response"
+          test "$session_status" = "200"
+          returned_user_id="$(jq -r '.user.id // empty' "$session_response")"
+          test "$returned_user_id" = "$smoke_user_id"
+
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "Postgres URL missing for smoke cleanup"; exit 1; }
           [[ "$smoke_user_id" =~ ^[A-Za-z0-9]+$ ]] || { echo "Unexpected smoke user id format"; exit 1; }
           printf 'DELETE FROM "User" WHERE "id" = %s;' "'$smoke_user_id'"             | npx prisma db execute --url "$db_url" --stdin
-          rm -f "$smoke_response"
+          rm -f "$smoke_response" "$session_response" "$smoke_cookie"
 
       - name: Smoke test live Worker
         run: |

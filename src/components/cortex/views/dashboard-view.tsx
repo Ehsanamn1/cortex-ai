@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Capabilities } from "@/components/cortex/capabilities";
 
 function CortexCore() {
   return (
@@ -198,6 +199,8 @@ export function DashboardView() {
         <StatCard icon={MessagesSquare} label="گفتگوها" value={faNum(stats.conversations)} caption={faNum(stats.messages) + " پیام در مجموع"} tint="border-emerald-400/25 bg-emerald-400/10 text-emerald-300" />
         <StatCard icon={Activity} label="امروز" value={faNum(stats.todayMessages ?? 0)} caption={faNum(stats.todayTokens ?? 0) + " توکن امروز"} tint="border-amber-400/25 bg-amber-400/10 text-amber-300" />
       </section>
+
+      <Capabilities onOpen={setView} />
 
       {settingEnabled("feature.dashboardQuickActions") && (
       <section aria-label="عملیات و وضعیت" className="grid items-start gap-5 xl:grid-cols-[1.2fr_.8fr]">
