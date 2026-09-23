@@ -59,7 +59,8 @@ export function verifyAdminSession(token: string | null): string | null {
     const body = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { sub?: string; exp?: number };
     if (!body.sub || !body.exp || Date.now() / 1000 > body.exp) return null;
     return body.sub;
-  } catch {
+  } catch (error) {
+    if (error instanceof AdminConfigError) throw error;
     return null;
   }
 }
