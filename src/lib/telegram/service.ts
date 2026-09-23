@@ -190,13 +190,13 @@ async function sendWelcome(token: string, chatId: string | number, allowed: bool
     {
       parse_mode: 'HTML',
       reply_markup: {
-        inline_keyboard: [
-          [
-            { text: '💬 گفتگوی جدید', callback_data: 'new_chat' },
-            { text: '📊 مصرف من', callback_data: 'usage' },
-          ],
-          [{ text: '❓ راهنما', callback_data: 'help' }],
+        keyboard: [
+          [{ text: '💬 گفتگوی جدید' }, { text: '📊 مصرف من' }],
+          [{ text: '❓ راهنما' }],
         ],
+        resize_keyboard: true,
+        is_persistent: true,
+        input_field_placeholder: 'پیامتان را بنویسید…',
       },
     },
   );
@@ -428,6 +428,15 @@ export async function processTelegramUpdate(botId: string, update: any) {
   }
 
   if (!rawText) return;
+
+  const quickAction = rawText.toLowerCase();
+  if (user.status === 'allowed' && (quickAction === '💬 گفتگوی جدید' || quickAction === '📊 مصرف من' || quickAction === '❓ راهنما')) {
+    if (quickAction === '📊 مصرف من') return sendUsage(token, msg.chat.id, user.id);
+    if (quickAction === '❓ راهنما') return sendHelp(token, msg.chat.id);
+    await createTelegramConversation(bot.id, bot.agentId, tgId);
+    await sendMessage(token, msg.chat.id, '✅ گفتگوی جدید آماده است. پیام بعدی‌تان را بفرستید.');
+    return;
+  }
 
   if (user.status !== 'allowed') return sendWelcome(token, msg.chat.id, false);
 
