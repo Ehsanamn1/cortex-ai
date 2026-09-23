@@ -56,7 +56,7 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs leading-relaxed text-destructive">{message}</p>;
 }
 
-function LoginForm() {
+function LoginForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
   const hydrate = useCortexStore((s) => s.hydrate);
   const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
@@ -119,7 +119,7 @@ function LoginForm() {
   );
 }
 
-function SignupForm() {
+function SignupForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
   const hydrate = useCortexStore((s) => s.hydrate);
   const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
@@ -267,10 +267,10 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated }: { defaultT
                   <TabsTrigger className="rounded-lg text-sm" value="signup">ثبت‌نام</TabsTrigger>
                 </TabsList>
                 <TabsContent value="login">
-                  <LoginForm />
+                  <LoginForm onAuthenticated={onAuthenticated} />
                 </TabsContent>
                 <TabsContent value="signup">
-                  <SignupForm />
+                  <SignupForm onAuthenticated={onAuthenticated} />
                 </TabsContent>
               </Tabs>
             </div>
