@@ -261,7 +261,7 @@ export async function extractFromUrl(rawUrl: string): Promise<{
   }
   const declaredLength = Number(res.headers.get("content-length") ?? "0");
   if (declaredLength > MAX_DOWNLOAD_BYTES) {
-    throw new Error("حجم محتوای وب‌سایت بیش از حد مجاز (۵ مگابایت) است.");
+    throw new Error(`حجم محتوای وب‌سایت بیش از حد مجاز (${Math.floor(MAX_DOWNLOAD_BYTES / 1024 / 1024)} مگابایت) است.`);
   }
   const buffer = new Uint8Array(await res.arrayBuffer());
   if (buffer.length > MAX_DOWNLOAD_BYTES) {
@@ -270,8 +270,10 @@ export async function extractFromUrl(rawUrl: string): Promise<{
   const contentType = (res.headers.get("content-type") ?? "").split(";")[0]!.trim().toLowerCase();
   const finalUrl = res.url || url.toString();
 
-  const pathName = url.pathname.toLowerCase();
-  const extensionFromUrl = detectExtension(pathName);
+  const finalPathName = (() => {
+    try { return new URL(finalUrl).pathname.toLowerCase(); } catch { return url.pathname.toLowerCase(); }
+  })();
+  const extensionFromUrl = detectExtension(finalPathName);
 
   if (contentType === "application/pdf" || extensionFromUrl === ".pdf") {
     return { pages: await extractPdf(buffer), finalUrl, mimeType: "application/pdf" };
