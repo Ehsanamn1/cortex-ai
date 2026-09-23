@@ -10,31 +10,123 @@ function encodeBuffer(value: Buffer, encoding: "hex"): string {
 }
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
-/* ---------------- password hashing (scrypt, timing-safe) ---------------- */
+/* ---------------- password hashing ---------------- */
 
-export function hashPassword(password: string): string {
-  const salt = Buffer.from(randomBytes(16));
-  const scryptSync = (crypto as unknown as {
-    scryptSync(password: string, salt: Buffer, keylen: number): Buffer;
-  }).scryptSync;
-  const hash = scryptSync(password, salt, 64);
-  return `scrypt:${encodeBuffer(salt, "hex")}:${encodeBuffer(hash, "hex")}`;
+const PASSWORD_ITERATIONS = 600_000;
+
+function toBase64Url(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString("base64url");
 }
 
-export function verifyPassword(password: string, stored: string): boolean {
+function fromBase64Url(value: string): Uint8Array {
+  return new Uint8Array(Buffer.from(value, "base64url"));
+}
+
+/**
+ * New accounts use PBKDF2 through Workers Web Crypto so the Worker is not
+ * blocked by synchronous CPU-heavy password derivation.
+ *
+ * Stored format:
+ * pbkdf2-sha256-v1:<iterations>:<salt-base64url>:<hash-base64url>
+ *
+ * Existing scrypt hashes remain supported during migration.
+ */
+export async function hashPassword(password: string): Promise<string> {
+  const salt = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(salt);
+  const keyMaterial = await globalThis.crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
+  const derived = await globalThis.crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: PASSWORD_ITERATIONS,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256,
+  );
+
+  return [
+    "pbkdf2-sha256-v1",
+    String(PASSWORD_ITERATIONS),
+    toBase64Url(salt),
+    toBase64Url(new Uint8Array(derived)),
+  ].join(":");
+}
+
+async function verifyPbkdf2Password(password: string, stored: string): Promise<boolean> {
   try {
-    const [scheme, saltHex, hashHex] = stored.split(":");
-    if (scheme !== "scrypt" || !saltHex || !hashHex) return false;
-    const salt = Buffer.from(saltHex, "hex");
-    const expected = Buffer.from(hashHex, "hex");
-    const scryptSync = (crypto as unknown as {
-      scryptSync(password: string, salt: Buffer, keylen: number): Buffer;
-    }).scryptSync;
-    const actual = scryptSync(password, salt, expected.length);
-    return crypto.timingSafeEqual(expected, actual);
+    const [scheme, iterationsRaw, saltRaw, hashRaw] = stored.split(":");
+    if (scheme !== "pbkdf2-sha256-v1" || !iterationsRaw || !saltRaw || !hashRaw) return false;
+
+    const iterations = Number(iterationsRaw);
+    if (!Number.isInteger(iterations) || iterations < 100_000 || iterations > 2_000_000) return false;
+
+    const salt = fromBase64Url(saltRaw);
+    const expected = Buffer.from(fromBase64Url(hashRaw));
+    const keyMaterial = await globalThis.crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"],
+    );
+    const derived = await globalThis.crypto.subtle.deriveBits(
+      { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
+      keyMaterial,
+      expected.length * 8,
+    );
+    const actual = Buffer.from(new Uint8Array(derived));
+    return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
   } catch {
     return false;
   }
+}
+
+async function verifyLegacyScryptPassword(password: string, stored: string): Promise<boolean> {
+  try {
+    const [scheme, saltHex, hashHex] = stored.split(":");
+    if (scheme !== "scrypt" || !saltHex || !hashHex) return false;
+
+    const salt = Buffer.from(saltHex, "hex");
+    const expected = Buffer.from(hashHex);
+    const scrypt = (crypto as unknown as {
+      scrypt(
+        password: string,
+        salt: Buffer,
+        keylen: number,
+        callback: (error: Error | null, derivedKey: Buffer) => void,
+      ): void;
+    }).scrypt;
+
+    return await new Promise<boolean>((resolve) => {
+      scrypt(password, salt, expected.length, (error, derivedKey) => {
+        if (error) {
+          resolve(false);
+          return;
+        }
+        resolve(expected.length === derivedKey.length && crypto.timingSafeEqual(expected, derivedKey));
+      });
+    });
+  } catch {
+    return false;
+  }
+}
+
+export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  if (stored.startsWith("pbkdf2-sha256-v1:")) {
+    return verifyPbkdf2Password(password, stored);
+  }
+  if (stored.startsWith("scrypt:")) {
+    return verifyLegacyScryptPassword(password, stored);
+  }
+  return false;
 }
 
 /* ---------------- session token (compact JWT, HS256) ---------------- */

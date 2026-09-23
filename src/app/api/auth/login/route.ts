@@ -31,8 +31,14 @@ export async function POST(req: Request) {
       include: { memberships: { include: { workspace: { select: { id: true, name: true } } } } },
     });
     // Constant-ish flow: same error regardless of which factor failed.
-    if (!user || !verifyPassword(password, user.passwordHash)) {
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return applyCors(jsonError("ایمیل یا رمز عبور نادرست است.", 401), req.headers.get("origin"));
+    }
+
+    if (user.passwordHash.startsWith("scrypt:")) {
+      void hashPassword(password).then((migratedHash) =>
+        db.user.update({ where: { id: user.id }, data: { passwordHash: migratedHash } }).catch(() => undefined),
+      );
     }
 
     const token = signSessionToken(user.id);

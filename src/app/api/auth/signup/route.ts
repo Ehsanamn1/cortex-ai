@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const passwordHash = hashPassword(password);
+    const passwordHash = await hashPassword(password);
     const { user, workspace } = await db.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
