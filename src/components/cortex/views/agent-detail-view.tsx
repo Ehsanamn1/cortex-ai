@@ -43,6 +43,7 @@ const AGENT_TABS: Array<{ value: AgentTab; label: string }> = [
   { value: "overview", label: "نمای کلی" },
   { value: "knowledge", label: "دانش" },
   { value: "playground", label: "پلی‌گراند" },
+  { value: "api", label: "API" },
   { value: "settings", label: "تنظیمات" },
 ];
 
@@ -247,8 +248,6 @@ function SettingsTab({ agentId }: { agentId: string }) {
     <div className="space-y-6">
       <AgentForm mode="edit" agent={data?.agent ?? null} />
 
-      <AgentApiAccess agentId={agentId} />
-
       <Card className="rounded-xl border-destructive/30">
         <CardHeader className="border-b [.border-b]:pb-4">
           <CardTitle className="text-base text-destructive">منطقه خطر</CardTitle>
@@ -418,6 +417,9 @@ export function AgentDetailView() {
         </TabsContent>
         <TabsContent value="playground" className="mt-4">
           <Playground agentId={agentId} />
+        </TabsContent>
+        <TabsContent value="api" className="mt-6">
+          <AgentApiAccess agentId={agentId} />
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
           <SettingsTab agentId={agentId} />

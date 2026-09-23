@@ -17,7 +17,7 @@ export type View =
   | "admin"
   | "learn";
 
-export type AgentTab = "overview" | "knowledge" | "playground" | "settings";
+export type AgentTab = "overview" | "knowledge" | "playground" | "api" | "settings";
 
 interface CortexState {
   user: UserDto | null;
