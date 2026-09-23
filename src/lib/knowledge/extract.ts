@@ -21,7 +21,7 @@ export interface ExtractionResult {
 export const UPLOAD_ROOT = ".data/uploads";
 
 export function sanitizeFilename(name: string): string {
-  const base = (name.split(/[\\/]/).pop() ?? name).replace(/[\u0000-\u001f<>:"/\\|?*]+/g, "_").trim();
+  const base = (name.split(/[\//]/).pop() ?? name).replace(/[\u0000-\u001f<>:"/\/|?*]+/g, "_").trim();
   return base.length > 0 ? base.slice(0, 180) : "file";
 }
 
@@ -54,7 +54,7 @@ export const ALLOWED_EXTENSIONS = [
 ] as const;
 
 export function detectExtension(filename: string): string {
-  const base = filename.split(/[\\/]/).pop() ?? filename;
+  const base = filename.split(/[\//]/).pop() ?? filename;
   const dot = base.lastIndexOf(".");
   return dot > 0 ? base.slice(dot).toLowerCase() : "";
 }
@@ -342,9 +342,9 @@ function xmlText(xml: string): string {
     .replace(/<[^>]+>/g, " ")
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
-    .replace(/&#(\\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
     .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n,16)))
-    .replace(/\\s+/g, " ");
+    .replace(/\s+/g, " ");
 }
 
 async function extractXlsx(bytes: Uint8Array): Promise<ExtractedPage[]> {
@@ -352,30 +352,30 @@ async function extractXlsx(bytes: Uint8Array): Promise<ExtractedPage[]> {
   const files = unzipSync(bytes);
   const shared: string[] = [];
   const sharedXml = files["xl/sharedStrings.xml"] ? strFromU8(files["xl/sharedStrings.xml"]) : "";
-  for (const match of sharedXml.matchAll(/<si>([\\s\\S]*?)<\\/si>/g)) {
-    const value = [...match[1]!.matchAll(/<t[^>]*>([\\s\\S]*?)<\\/t>/g)].map(m => xmlText(m[1]!)).join("");
+  for (const match of sharedXml.matchAll(/<si>([\s\/S]*?)<\//si>/g)) {
+    const value = [...match[1]!.matchAll(/<t[^>]*>([\s\/S]*?)<\//t>/g)].map(m => xmlText(m[1]!)).join("");
     shared.push(normalizeText(value));
   }
 
-  const sheetNames = Object.keys(files).filter(k => /^xl\\/worksheets\\/sheet\\d+\\.xml$/.test(k)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
+  const sheetNames = Object.keys(files).filter(k => /^xl\//worksheets\//sheet\d+\/.xml$/.test(k)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
   const pages: ExtractedPage[] = [];
   sheetNames.forEach((name, sheetIndex) => {
     const xml = strFromU8(files[name]!);
     const rows: string[] = [];
-    for (const rowMatch of xml.matchAll(/<row[^>]*>([\\s\\S]*?)<\\/row>/g)) {
+    for (const rowMatch of xml.matchAll(/<row[^>]*>([\s\/S]*?)<\//row>/g)) {
       const cells: string[] = [];
-      for (const cell of rowMatch[1]!.matchAll(/<c([^>]*)>([\\s\\S]*?)<\\/c>/g)) {
+      for (const cell of rowMatch[1]!.matchAll(/<c([^>]*)>([\s\/S]*?)<\//c>/g)) {
         const attrs = cell[1]!;
         const body = cell[2]!;
-        const type = attrs.match(/(?:^|\\s)t="([^"]+)"/)?.[1] ?? "";
-        const v = body.match(/<v>([\\s\\S]*?)<\\/v>/)?.[1] ?? "";
-        const inline = [...body.matchAll(/<t[^>]*>([\\s\\S]*?)<\\/t>/g)].map(m => xmlText(m[1]!)).join("");
+        const type = attrs.match(/(?:^|\s)t="([^"]+)"/)?.[1] ?? "";
+        const v = body.match(/<v>([\s\/S]*?)<\//v>/)?.[1] ?? "";
+        const inline = [...body.matchAll(/<t[^>]*>([\s\/S]*?)<\//t>/g)].map(m => xmlText(m[1]!)).join("");
         const value = type === "s" ? (shared[Number(v)] ?? v) : type === "inlineStr" ? inline : xmlText(v);
         if (value.trim()) cells.push(normalizeText(value));
       }
       if (cells.length) rows.push(cells.join(" | "));
     }
-    if (rows.length) pages.push({ text: normalizeText("برگه " + (sheetIndex + 1) + "\\n" + rows.join("\\n")) , section: "Sheet " + (sheetIndex + 1) });
+    if (rows.length) pages.push({ text: normalizeText("برگه " + (sheetIndex + 1) + "\/n" + rows.join("\/n")) , section: "Sheet " + (sheetIndex + 1) });
   });
   return pages;
 }
@@ -383,10 +383,10 @@ async function extractXlsx(bytes: Uint8Array): Promise<ExtractedPage[]> {
 async function extractPptx(bytes: Uint8Array): Promise<ExtractedPage[]> {
   const { unzipSync, strFromU8 } = await import("fflate");
   const files = unzipSync(bytes);
-  const slides = Object.keys(files).filter(k => /^ppt\\/slides\\/slide\\d+\\.xml$/.test(k)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
+  const slides = Object.keys(files).filter(k => /^ppt\//slides\//slide\d+\/.xml$/.test(k)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
   return slides.map((name,index) => {
     const xml = strFromU8(files[name]!);
-    const texts = [...xml.matchAll(/<a:t[^>]*>([\\s\\S]*?)<\\/a:t>/g)].map(m => xmlText(m[1]!)).filter(Boolean);
+    const texts = [...xml.matchAll(/<a:t[^>]*>([\s\/S]*?)<\//a:t>/g)].map(m => xmlText(m[1]!)).filter(Boolean);
     return { text: normalizeText(texts.join(" ")) , page:index+1, section:"Slide " + (index+1) };
   }).filter(p => p.text.length > 0);
 }
