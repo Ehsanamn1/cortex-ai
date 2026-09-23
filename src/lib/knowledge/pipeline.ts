@@ -2,8 +2,7 @@ import { db } from "@/lib/db";
 import { getVectorStore } from "@/lib/providers/vector";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs, type ChunkInput } from "./chunk";
-import { extractFromUrl, extractStoredBytes, extractStoredFile, removeUploadDir, UPLOAD_ROOT } from "./extract";
-import { getKnowledgeBucket } from "@/lib/cloudflare-storage";
+import { extractFromUrl, extractStoredBytes } from "./extract";
 
 /**
  * Knowledge processing pipeline (real, no simulation):
@@ -58,7 +57,7 @@ export async function processSource(sourceId: string): Promise<void> {
       } else {
         const document = source.documents[0];
         if (!document) throw new Error("فایل این منبع یافت نشد.");
-        // The upload was persisted server-side at request time under .data/uploads/<sourceId>
+        // Upload bytes are persisted as an internal db64:// payload in Postgres.
         const result = await extractStoredFileForSource(sourceId, document.name);
         pages = result.pages;
         mimeType = result.mimeType;
@@ -190,7 +189,7 @@ async function purgeSourceVectors(agentId: string, sourceId: string): Promise<vo
   await db.knowledgeChunk.deleteMany({ where: { sourceId } });
 }
 
-/** Full removal of a source: DB rows, vectors, local fallback files, and R2 object are cleared. */
+/** Full removal of a source: DB rows/chunks and the inline upload payload are cleared by cascade. */
 export async function deleteSourceCompletely(sourceId: string): Promise<void> {
   const source = await db.knowledgeSource.findUnique({
     where: { id: sourceId },
@@ -198,18 +197,8 @@ export async function deleteSourceCompletely(sourceId: string): Promise<void> {
   });
   if (!source) return;
 
-  if (source.type === "file") {
-    const bucket = await getKnowledgeBucket();
-    for (const document of source.documents) {
-      if (bucket && document.url?.startsWith("r2://")) {
-        await bucket.delete(document.url.slice("r2://".length)).catch(() => undefined);
-      }
-    }
-  }
-
   await purgeSourceVectors(source.agentId, sourceId);
   await db.knowledgeSource.delete({ where: { id: sourceId } }); // cascades documents
-  if (source.type === "file") await removeUploadDir(sourceId);
 }
 
 /** Full removal of an agent's knowledge (used on agent deletion). */
@@ -226,7 +215,6 @@ async function extractStoredFileForSource(
   const document = await db.knowledgeDocument.findFirst({ where: { sourceId } });
   const storagePath = document?.url ?? null;
 
-  // Portable production fallback: bytes are held in Postgres only while processing.
   if (storagePath?.startsWith("db64://")) {
     const raw = storagePath.slice("db64://".length);
     if (!raw) throw new Error("داده فایل ذخیره‌شده معتبر نیست.");
@@ -234,26 +222,5 @@ async function extractStoredFileForSource(
     return extractStoredBytes(bytes, documentName);
   }
 
-  // Preferred storage when an R2 binding is available.
-  if (storagePath?.startsWith("r2://")) {
-    const bucket = await getKnowledgeBucket();
-    if (!bucket) throw new Error("Storage فایل دانش روی Cloudflare R2 در دسترس نیست.");
-    const objectKey = storagePath.slice("r2://".length);
-    const object = await bucket.get(objectKey);
-    if (!object) throw new Error("فایل بارگذاری‌شده در Cloudflare R2 یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
-    const bytes = new Uint8Array(await object.arrayBuffer());
-    return extractStoredBytes(bytes, documentName);
-  }
-
-  // Local development fallback.
-  const fs = await import("node:fs/promises");
-  const path = await import("node:path");
-  const dir = path.join(process.cwd(), UPLOAD_ROOT, sourceId);
-  const entries = await fs.readdir(dir).catch(() => [] as string[]);
-  if (entries.length > 0) {
-    const filePath = path.join(dir, entries[0]!);
-    return extractStoredFile(filePath, documentName);
-  }
-
-  throw new Error("فایل بارگذاری‌شده برای این منبع در Storage یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
+  throw new Error("فایل بارگذاری‌شده در Storage داخلی یافت نشد؛ لطفاً منبع را دوباره اضافه کنید.");
 }
