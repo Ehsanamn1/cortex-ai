@@ -85,6 +85,18 @@ jobs:
           put_secret R2_BUCKET_NAME "$R2_BUCKET_NAME"
           put_secret R2_ACCESS_KEY_ID "$R2_ACCESS_KEY_ID"
           put_secret R2_SECRET_ACCESS_KEY "$R2_SECRET_ACCESS_KEY"
+      - name: Ensure password crypto extension
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
+          POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
+        run: |
+          set -euo pipefail
+          db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
+          test -n "$db_url" || { echo "Postgres URL missing"; exit 1; }
+          printf '%s' 'CREATE EXTENSION IF NOT EXISTS pgcrypto;' | npx prisma db execute --url "$db_url" --stdin
+          echo "PostgreSQL pgcrypto is ready."
+
       - name: Ensure required Worker database secret
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
@@ -113,6 +125,10 @@ jobs:
           echo "Expected runtime secrets: Postgres + APP_SECRET_KEY; R2_ACCOUNT_ID/R2_BUCKET_NAME/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY enable 200MB direct uploads; admin/Telegram secrets are optional."
 
       - name: Smoke test admin and public routes
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
+          POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
         run: |
           set -euo pipefail
           base="https://cortex-ai.dengxiao445.workers.dev"
@@ -146,6 +162,22 @@ jobs:
           check_html "$base/control-center"
           check_html "$base/admin"
           check_json "$base/api/admin/auth/me" "401"
+
+          smoke_email="cortex-smoke-${GITHUB_RUN_ID}@example.invalid"
+          smoke_password="$(openssl rand -hex 18)"
+          smoke_response="$(mktemp)"
+          smoke_body="$(jq -nc --arg name "Cortex Smoke" --arg email "$smoke_email" --arg password "$smoke_password" '{name:$name,email:$email,password:$password}')"
+          smoke_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 60             -H "Content-Type: application/json"             -d "$smoke_body"             -o "$smoke_response"             -w "%{http_code}"             "$base/api/auth/signup")"
+          echo "POST $base/api/auth/signup -> HTTP $smoke_status"
+          cat "$smoke_response" | jq . || cat "$smoke_response"
+          test "$smoke_status" = "201"
+          smoke_user_id="$(jq -r '.user.id // empty' "$smoke_response")"
+          test -n "$smoke_user_id"
+
+          db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
+          test -n "$db_url" || { echo "Postgres URL missing for smoke cleanup"; exit 1; }
+          printf 'DELETE FROM "User" WHERE "id" = %s;' "$(printf '%s' "$smoke_user_id" | jq -Rr '@sql')"             | npx prisma db execute --url "$db_url" --stdin
+          rm -f "$smoke_response"
 
       - name: Smoke test live Worker
         run: |
