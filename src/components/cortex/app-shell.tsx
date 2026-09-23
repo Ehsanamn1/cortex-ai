@@ -221,6 +221,7 @@ interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
   matches: View[];
+  mobile: boolean;
 }
 
 const ICONS = {
@@ -243,7 +244,7 @@ function buildNavItems(settings: Record<string, string> | undefined): NavItem[] 
   const order = (settings?.["site.navOrder"] ?? defaultOrder.join(","))
     .split(",")
     .map((value) => value.trim())
-    .filter((value): value is View => value in ICONS);
+    .filter((value): value is keyof typeof ICONS => value in ICONS);
   const base = new Map(CORTEX_UI_CONFIG.navigation.map((item) => [item.view, item]));
   const uniqueOrder = [...new Set(order)];
   const ordered = [
@@ -256,7 +257,8 @@ function buildNavItems(settings: Record<string, string> | undefined): NavItem[] 
       ...item,
       label: settings?.["nav." + item.view + ".label"] || item.label,
       icon: ICONS[item.view],
-      matches: item.view === "agents" ? (["agents", "agent-new", "agent-detail", "agent-edit"] as View[]) : [item.view],
+      matches: item.view === "agents" ? (["agents", "agent-new", "agent-detail", "agent-edit"] as View[]) : [item.view] as View[],
+      mobile: item.mobile,
     }));
 }
 
