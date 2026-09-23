@@ -86,5 +86,5 @@ export async function POST(req: Request, { params }: Params) {
       if (e instanceof RagConfigError) return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
       throw e;
     }
-  } catch (e) { await releaseUsageReservation(reservationId); reservationId = null; return toErrorResponse(e); }
+  } catch (e) { await releaseUsageReservation(reservationId); reservationId = null; return toErrorResponse(e, req.headers.get("origin")); }
 }
