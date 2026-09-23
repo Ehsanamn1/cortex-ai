@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Bot, Database, FileCog, LogOut, MessageSquare, Plug, Save, Send, ShieldCheck, Users, Workflow, Puzzle, Power } from "lucide-react";
 import { toast } from "sonner";
@@ -42,7 +43,7 @@ function LoginCard({onDone}:{onDone:()=>void}) {
   return <div className="min-h-screen flex items-center justify-center bg-background px-6"><Card className="cortex-panel w-full max-w-md rounded-[28px]"><CardHeader className="p-7"><div className="flex items-center gap-3"><ShieldCheck className="size-6 text-primary"/><div><CardTitle>مرکز مدیریت</CardTitle><p className="mt-1 text-xs text-muted-foreground">ورود اختصاصی مدیر محصول</p></div></div></CardHeader><CardContent className="space-y-5 p-7 pt-0"><div className="space-y-2"><Label>نام کاربری</Label><Input dir="ltr" value={username} onChange={e=>setUsername(e.target.value)}/></div><div className="space-y-2"><Label>رمز عبور</Label><Input dir="ltr" type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login.mutate()}/></div><Button className="w-full" disabled={!username||!password||login.isPending} onClick={()=>login.mutate()}>{login.isPending?"در حال ورود…":"ورود به پنل"}</Button><p className="text-[11px] leading-5 text-muted-foreground">برای محیط واقعی، رمز پیش‌فرض را با متغیر CORTEX_ADMIN_PASSWORD در تنظیمات محیط تغییر دهید.</p></CardContent></Card></div>;
 }
 
-export function ControlCenter() {
+function ControlCenterContent() {
   const qc=useQueryClient();
   const session=useQuery<{username:string}>({queryKey:["cc-auth"],queryFn:()=>fetchJson<{username:string}>("/api/admin/auth/me"),retry:false});
   const summary=useQuery<Summary>({queryKey:["cc-summary"],queryFn:()=>fetchJson<Summary>("/api/control-center"),enabled:session.isSuccess});
@@ -113,4 +114,14 @@ export function ControlCenter() {
       </section>
     </main>
   </div>;
+}
+
+
+export function ControlCenter() {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: { staleTime: 15_000, refetchOnWindowFocus: false, retry: 1 },
+    },
+  }));
+  return <QueryClientProvider client={queryClient}><ControlCenterContent /></QueryClientProvider>;
 }
