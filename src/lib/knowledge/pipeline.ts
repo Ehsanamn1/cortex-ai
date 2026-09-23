@@ -133,7 +133,7 @@ export async function processSource(sourceId: string): Promise<void> {
             sourceId: source.id,
             agentId: source.agentId,
             workspaceId: source.agent.workspaceId,
-            seq: chunk.seq,
+            seq: i,
             text: chunk.text,
             page: chunk.page,
             section: chunk.section,
