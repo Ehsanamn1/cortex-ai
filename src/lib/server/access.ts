@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { Agent } from "@prisma/client";
+import type { Agent } from "@/generated/prisma/client";
 import { assertWorkspaceAccess, type SessionContext } from "./auth";
 
 /**
