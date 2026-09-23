@@ -82,6 +82,10 @@ export async function processTelegramUpdate(botId:string, update:any){
     else await sendMessage(token,msg.chat.id,'این شماره در فهرست دسترسی ربات ثبت نشده است. لطفاً با مدیر سامانه تماس بگیرید.');
     return;
   }
+  if(user.status==='blocked'){
+    if(msg.chat?.id) await sendMessage(token,msg.chat.id,'دسترسی این شماره به ربات مسدود شده است. برای فعال‌سازی با مدیر سامانه تماس بگیرید.');
+    return;
+  }
   if(msg.text==='/start' || msg.text==='/newchat'){
     if(user.status!=='allowed') return requestContact(token,msg.chat.id);
     if(msg.text==='/newchat'){

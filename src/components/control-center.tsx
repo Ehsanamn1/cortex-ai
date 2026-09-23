@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Bot, Database, FileCog, LogOut, MessageSquare, Plug, Save, Send, ShieldCheck, Users, Workflow, Puzzle, Power } from "lucide-react";
+import { OperationsCenter } from "@/components/operations-center";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,6 +80,8 @@ function ControlCenterContent() {
 
       {m && <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Kpi icon={Users} label="کاربران" value={m.users} detail="حساب‌های ثبت‌شده"/><Kpi icon={Workflow} label="فضاهای کاری" value={m.workspaces} detail="Workspace"/><Kpi icon={Bot} label="ایجنت‌ها" value={m.agents} detail="Agent"/><Kpi icon={Database} label="منابع دانش" value={m.knowledge} detail="Knowledge"/></section>}
       {m && <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Kpi icon={MessageSquare} label="گفتگوها" value={m.conversations} detail="Conversation"/><Kpi icon={Activity} label="پیام‌ها" value={m.messages} detail="Message"/><Kpi icon={Send} label="ربات‌ها" value={m.bots} detail="Telegram"/><Kpi icon={Plug} label="اتصال مدل" value={m.providers} detail="Provider config"/><Kpi icon={FileCog} label="رخدادها" value={m.events} detail="Usage"/></section>}
+
+      <OperationsCenter />
 
       <section className="grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
         <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">جدیدترین ایجنت‌ها</CardTitle></CardHeader><CardContent className="p-0"><div className="divide-y divide-white/[.06]">{(summary.data?.recentAgents??[]).map(a=><div key={a.id} className="flex items-center gap-3 p-4"><span className="cortex-icon-box"><Bot/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{a.name}</p><p className="mt-1 text-xs text-muted-foreground">{a.workspace.name} · {a.status}</p></div><span className="text-[11px] text-muted-foreground">{new Date(a.createdAt).toLocaleDateString("fa-IR")}</span></div>)}</div></CardContent></Card>
