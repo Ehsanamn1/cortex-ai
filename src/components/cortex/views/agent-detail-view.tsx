@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AgentApiAccess } from "@/components/cortex/agent-api-access";
 
 const AGENT_TABS: Array<{ value: AgentTab; label: string }> = [
   { value: "overview", label: "نمای کلی" },
@@ -245,6 +246,8 @@ function SettingsTab({ agentId }: { agentId: string }) {
   return (
     <div className="space-y-6">
       <AgentForm mode="edit" agent={data?.agent ?? null} />
+
+      <AgentApiAccess agentId={agentId} />
 
       <Card className="rounded-xl border-destructive/30">
         <CardHeader className="border-b [.border-b]:pb-4">

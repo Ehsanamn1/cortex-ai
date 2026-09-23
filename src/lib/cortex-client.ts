@@ -215,6 +215,8 @@ export interface SessionDto {
 }
 
 export interface SiteConfigDto { settings: Record<string, string> }
+export interface AgentApiKeyDto { id:string; name:string; keyPrefix:string; active:boolean; lastUsedAt:string|null; createdAt:string }
+export interface AgentApiAccessDto { keys:AgentApiKeyDto[]; baseUrl:string; endpoint:string; openAiEndpoint:string }
 
 /* ---------------- core fetch machinery ---------------- */
 
@@ -329,6 +331,16 @@ export const api = {
 
   deleteAgent(agentId: string): Promise<{ ok: boolean }> {
     return jsonRequest(`/api/agents/${encodeURIComponent(agentId)}`, "DELETE");
+  },
+
+  getAgentApiAccess(agentId: string): Promise<AgentApiAccessDto> {
+    return request("/api/agents/" + encodeURIComponent(agentId) + "/api-keys");
+  },
+  createAgentApiKey(agentId: string, name = "کلید API"): Promise<{key:string; keyMeta:AgentApiKeyDto; warning:string}> {
+    return jsonRequest("/api/agents/" + encodeURIComponent(agentId) + "/api-keys", "POST", { name });
+  },
+  revokeAgentApiKey(agentId: string, keyId: string): Promise<{ok:boolean}> {
+    return request("/api/agents/" + encodeURIComponent(agentId) + "/api-keys?keyId=" + encodeURIComponent(keyId), { method:"DELETE" });
   },
 
   /* KNOWLEDGE */

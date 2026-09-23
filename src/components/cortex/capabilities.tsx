@@ -43,10 +43,10 @@ export function Capabilities({ onOpen }: { onOpen: (view: View) => void }) {
           const active = item.status === "active";
           return (
             <motion.div key={item.title} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, delay: Math.min(index * 0.025, 0.18) }} className="h-full">
-              <button type="button" disabled={!active} onClick={() => item.view && onOpen(item.view)} className={cn("group relative flex h-full min-h-[178px] w-full flex-col rounded-2xl border p-4 text-start transition-all", active ? "border-white/[.08] bg-white/[.018] hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/[.025]" : "cursor-default border-white/[.06] bg-white/[.012] opacity-80")}>
+              <button type="button" disabled={!active} onClick={() => item.view && onOpen(item.view)} className={cn("group relative flex h-full min-h-[178px] w-full flex-col rounded-2xl border p-4 text-start transition-all", active ? "border-primary/20 bg-primary/[.045] shadow-[0_0_28px_rgba(59,130,255,.05)] hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/[.065]" : "cursor-default border-white/[.045] bg-white/[.006] opacity-35 saturate-0")}>
                 <div className="flex items-start justify-between gap-3">
-                  <span className={cn("cortex-icon-box", active ? "" : "border-white/[.07] bg-white/[.02] text-muted-foreground shadow-none")}><Icon className="size-[18px]" /></span>
-                  <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-medium", active ? "border-emerald-400/15 bg-emerald-400/10 text-emerald-300" : "border-amber-400/15 bg-amber-400/10 text-amber-200")}>{active ? "فعال" : "به‌زودی"}</span>
+                  <span className={cn("cortex-icon-box", active ? "border-primary/20 bg-primary/10 text-primary" : "border-white/[.045] bg-transparent text-muted-foreground/60 shadow-none")}><Icon className="size-[18px]" /></span>
+                  <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-medium", active ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" : "border-white/[.06] bg-white/[.025] text-muted-foreground")}>{active ? "فعال" : "به‌زودی"}</span>
                 </div>
                 <div className="mt-5">
                   <p className="text-[10px] font-bold tracking-[.18em] text-primary/70">{item.eyebrow}</p>
