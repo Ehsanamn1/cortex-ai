@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { getVectorStore, type UpsertPoint } from "@/lib/providers/vector";
+import { getVectorStore } from "@/lib/providers/vector";
+import type { UpsertPoint } from "@/lib/providers/vector/types";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs, type ChunkInput } from "./chunk";
 import { extractFromUrl, extractStoredBytes } from "./extract";
