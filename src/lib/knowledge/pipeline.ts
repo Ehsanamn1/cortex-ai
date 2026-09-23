@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getVectorStore } from "@/lib/providers/vector";
+import { getVectorStore, type UpsertPoint } from "@/lib/providers/vector";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs, type ChunkInput } from "./chunk";
 import { extractFromUrl, extractStoredBytes } from "./extract";
@@ -138,11 +138,7 @@ export async function processSource(sourceId: string): Promise<void> {
       for (let start = 0; start < chunks.length; start += EMBED_BATCH) {
         const batch = chunks.slice(start, start + EMBED_BATCH);
         const vectors = await embedder.embedDocuments(batch.map((item) => item.text));
-        const points: Array<{
-          id: string;
-          vector: number[];
-          payload: Record<string, unknown>;
-        }> = [];
+        const points: UpsertPoint[] = [];
 
         for (let offset = 0; offset < batch.length; offset++) {
           const index = start + offset;
