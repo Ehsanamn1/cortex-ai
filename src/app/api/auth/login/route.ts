@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import {
-  hashPassword,
+  hashPasswordWithDb,
   publicUser,
   sessionCookieHeader,
   signSessionToken,

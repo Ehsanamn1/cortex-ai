@@ -12,111 +12,49 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 /* ---------------- password hashing ---------------- */
 
-const PASSWORD_ITERATIONS = 600_000;
+let pgcryptoReady = false;
 
-function toBase64Url(bytes: Uint8Array): string {
-  return Buffer.from(bytes).toString("base64url");
-}
-
-function toExactArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  const copy = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(copy).set(bytes);
-  return copy;
-}
-
-function fromBase64Url(value: string): Uint8Array {
-  return new Uint8Array(Buffer.from(value, "base64url"));
+async function ensurePgcrypto(): Promise<void> {
+  if (pgcryptoReady) return;
+  await db.$executeRaw`CREATE EXTENSION IF NOT EXISTS pgcrypto`;
+  pgcryptoReady = true;
 }
 
 /**
- * New accounts use PBKDF2 through Workers Web Crypto so the Worker is not
- * blocked by synchronous CPU-heavy password derivation.
- *
- * Stored format:
- * pbkdf2-sha256-v1:<iterations>:<salt-base64url>:<hash-base64url>
- *
- * Existing scrypt hashes remain supported during migration.
+ * New passwords are hashed in PostgreSQL with pgcrypto instead of consuming
+ * Cloudflare Worker CPU. Existing password formats remain supported below.
  */
-export async function hashPassword(password: string): Promise<string> {
-  const saltBuffer = new ArrayBuffer(16);
-  globalThis.crypto.getRandomValues(new Uint8Array(saltBuffer));
-  const keyMaterial = await globalThis.crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const derived = await globalThis.crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: saltBuffer,
-      iterations: PASSWORD_ITERATIONS,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    256,
-  );
-
-  return [
-    "pbkdf2-sha256-v1",
-    String(PASSWORD_ITERATIONS),
-    toBase64Url(new Uint8Array(saltBuffer)),
-    toBase64Url(new Uint8Array(derived)),
-  ].join(":");
+export async function hashPasswordWithDb(password: string): Promise<string> {
+  await ensurePgcrypto();
+  const rows = await db.$queryRaw<Array<{ hash: string }>>`
+    SELECT crypt(encode(digest(${password}, 'sha256'), 'hex'), gen_salt('bf', 12)) AS hash
+  `;
+  const hash = rows[0]?.hash;
+  if (!hash) throw new Error("Password hashing failed.");
+  return hash;
 }
 
-async function verifyPbkdf2Password(password: string, stored: string): Promise<boolean> {
-  try {
-    const [scheme, iterationsRaw, saltRaw, hashRaw] = stored.split(":");
-    if (scheme !== "pbkdf2-sha256-v1" || !iterationsRaw || !saltRaw || !hashRaw) return false;
-
-    const iterations = Number(iterationsRaw);
-    if (!Number.isInteger(iterations) || iterations < 100_000 || iterations > 2_000_000) return false;
-
-    const salt = toExactArrayBuffer(fromBase64Url(saltRaw));
-    const expected = Buffer.from(fromBase64Url(hashRaw));
-    const keyMaterial = await globalThis.crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(password),
-      "PBKDF2",
-      false,
-      ["deriveBits"],
-    );
-    const derived = await globalThis.crypto.subtle.deriveBits(
-      { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
-      keyMaterial,
-      expected.length * 8,
-    );
-    const actual = Buffer.from(new Uint8Array(derived));
-    return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
-  } catch {
-    return false;
-  }
+export async function verifyPasswordWithDb(password: string, storedHash: string): Promise<boolean> {
+  await ensurePgcrypto();
+  const rows = await db.$queryRaw<Array<{ ok: boolean }>>`
+    SELECT stored_hash = crypt(encode(digest(${password}, 'sha256'), 'hex'), stored_hash) AS ok
+    FROM (SELECT ${storedHash}::text AS stored_hash) AS candidate
+  `;
+  return rows[0]?.ok === true;
 }
 
 async function verifyLegacyScryptPassword(password: string, stored: string): Promise<boolean> {
   try {
     const [scheme, saltHex, hashHex] = stored.split(":");
     if (scheme !== "scrypt" || !saltHex || !hashHex) return false;
-
     const salt = Buffer.from(saltHex, "hex");
     const expected = Buffer.from(hashHex);
     const scrypt = (crypto as unknown as {
-      scrypt(
-        password: string,
-        salt: Buffer,
-        keylen: number,
-        callback: (error: Error | null, derivedKey: Buffer) => void,
-      ): void;
+      scrypt(password: string, salt: Buffer, keylen: number, callback: (error: Error | null, derivedKey: Buffer) => void): void;
     }).scrypt;
-
     return await new Promise<boolean>((resolve) => {
       scrypt(password, salt, expected.length, (error, derivedKey) => {
-        if (error) {
-          resolve(false);
-          return;
-        }
+        if (error) return resolve(false);
         resolve(expected.length === derivedKey.length && crypto.timingSafeEqual(expected, derivedKey));
       });
     });
@@ -125,13 +63,29 @@ async function verifyLegacyScryptPassword(password: string, stored: string): Pro
   }
 }
 
+async function verifyPbkdf2Password(password: string, stored: string): Promise<boolean> {
+  try {
+    const [scheme, iterationsRaw, saltRaw, hashRaw] = stored.split(":");
+    if (scheme !== "pbkdf2-sha256-v1" || !iterationsRaw || !saltRaw || !hashRaw) return false;
+    const iterations = Number(iterationsRaw);
+    if (!Number.isInteger(iterations) || iterations < 100_000 || iterations > 2_000_000) return false;
+    const saltBytes = Buffer.from(saltRaw, "base64url");
+    const salt = new ArrayBuffer(saltBytes.byteLength);
+    new Uint8Array(salt).set(saltBytes);
+    const expected = Buffer.from(hashRaw, "base64url");
+    const keyMaterial = await globalThis.crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+    const derived = await globalThis.crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations, hash: "SHA-256" }, keyMaterial, expected.length * 8);
+    const actual = Buffer.from(new Uint8Array(derived));
+    return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+  } catch {
+    return false;
+  }
+}
+
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  if (stored.startsWith("pbkdf2-sha256-v1:")) {
-    return verifyPbkdf2Password(password, stored);
-  }
-  if (stored.startsWith("scrypt:")) {
-    return verifyLegacyScryptPassword(password, stored);
-  }
+  if (stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")) return verifyPasswordWithDb(password, stored);
+  if (stored.startsWith("pbkdf2-sha256-v1:")) return verifyPbkdf2Password(password, stored);
+  if (stored.startsWith("scrypt:")) return verifyLegacyScryptPassword(password, stored);
   return false;
 }
 

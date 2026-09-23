@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import {
-  hashPassword,
+  hashPasswordWithDb,
   publicUser,
   sessionCookieHeader,
   signSessionToken,
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const passwordHash = await hashPassword(password);
+    const passwordHash = await hashPasswordWithDb(password);
     const { user, workspace } = await db.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
