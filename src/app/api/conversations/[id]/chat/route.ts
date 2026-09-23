@@ -7,6 +7,7 @@ import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/
 import { estimateTokens } from '@/lib/server/audit';
 import {
   answerWithKnowledge,
+  RAG_QUERY_EXPANSION_RESERVE_TOKENS,
   toRetrievalDebug,
   toSourceRefs,
   RagConfigError,
@@ -66,7 +67,12 @@ export async function POST(req: Request, { params }: Params) {
       historyForPrompt.reduce((sum, item) => sum + estimateTokens(item.content), 0) +
       estimateTokens(content);
 
-    reservationId = await reserveUsageWithinLimits(agent.workspaceId, 1, estimatedPromptTokens, agent.maxTokens);
+    reservationId = await reserveUsageWithinLimits(
+      agent.workspaceId,
+      1,
+      estimatedPromptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS,
+      agent.maxTokens,
+    );
 
     // Persist the user message first (honest history even if generation fails).
     const userMessage = await db.message.create({
@@ -126,7 +132,7 @@ export async function POST(req: Request, { params }: Params) {
         where: { id: conversation.id },
         data: { updatedAt: new Date() },
       });
-      const inputTokens = estimatedPromptTokens;
+      const inputTokens = estimatedPromptTokens + (answer.auxiliaryInputTokens ?? 0);
       const outputTokens = estimateTokens(answer.content) + (answer.auxiliaryOutputTokens ?? 0);
       await db.$transaction([
         db.usageEvent.create({ data: { workspaceId: agent.workspaceId, agentId: agent.id, userId: session.user.id, channel: "web", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens } }),
@@ -165,6 +171,6 @@ export async function POST(req: Request, { params }: Params) {
   } catch (e) {
     await releaseUsageReservation(reservationId);
     reservationId = null;
-    return toErrorResponse(e);
+    return toErrorResponse(e, req.headers.get("origin"));
   }
 }
