@@ -5,7 +5,7 @@ import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { createR2PresignedPut, isR2Configured, r2MaxUploadBytes } from "@/lib/storage/r2";
-import { sanitizeFilename } from "@/lib/knowledge/extract";
+import { ALLOWED_EXTENSIONS, detectExtension, sanitizeFilename } from "@/lib/knowledge/extract";
 
 export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ id: string }> };
@@ -25,9 +25,13 @@ export async function POST(req: Request, { params }: Params) {
     const name = typeof body.name === "string" ? sanitizeFilename(body.name) : "file";
     const size = typeof body.size === "number" && Number.isFinite(body.size) ? Math.floor(body.size) : 0;
     const mimeType = typeof body.mimeType === "string" ? body.mimeType.slice(0, 180) : "application/octet-stream";
+    const ext = detectExtension(name);
 
     if (size < 1) return applyCors(jsonError("حجم فایل معتبر نیست.", 400), req.headers.get("origin"));
     if (size > r2MaxUploadBytes()) return applyCors(jsonError("حجم فایل بیش از حد مجاز است (حداکثر ۲۰۰ مگابایت).", 413), req.headers.get("origin"));
+    if (!ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])) {
+      return applyCors(jsonError("فرمت این فایل برای دانش Cortex پشتیبانی نمی‌شود.", 400), req.headers.get("origin"));
+    }
 
     const source = await db.knowledgeSource.create({
       data: { agentId: agent.id, name, type: "file", status: "pending" },
