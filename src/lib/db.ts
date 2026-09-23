@@ -6,8 +6,13 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrisma(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL?.trim();
-  if (!connectionString) throw new Error("DATABASE_URL is not configured.");
+  const connectionString =
+    process.env.DATABASE_URL?.trim() ||
+    process.env.POSTGRES_PRISMA_URL?.trim() ||
+    process.env.POSTGRES_URL?.trim();
+  if (!connectionString) {
+    throw new Error("A Postgres connection string is not configured.");
+  }
   const adapter = new PrismaNeon({ connectionString });
   return new PrismaClient({ adapter });
 }
