@@ -165,7 +165,6 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
     onError: (error: Error) => toast.error(error.message),
   });
   const { data: allowlistData } = useQuery({ queryKey: ["allowlist", bot.id], queryFn: () => api.getTelegramAllowlist(bot.id), enabled: !!bot.id });
-  const workspaceId = useCortexStore((s) => s.activeWorkspaceId);
   const usersQuery = useQuery({
     queryKey: ["telegram-bot-users", bot.id],
     queryFn: () => api.getTelegramBotUsers(bot.id),
@@ -249,6 +248,95 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function TelegramUserMonitorCard({ botId, user, onChanged }: { botId: string; user: TelegramUserDto; onChanged: () => void }) {
+  const [dailyMessages, setDailyMessages] = useState(String(user.dailyMessageLimit));
+  const [monthlyMessages, setMonthlyMessages] = useState(String(user.monthlyMessageLimit));
+  const [dailyTokens, setDailyTokens] = useState(String(user.dailyTokenLimit));
+  const [monthlyTokens, setMonthlyTokens] = useState(String(user.monthlyTokenLimit));
+
+  const mutation = useMutation({
+    mutationFn: (payload: {
+      status?: "pending" | "allowed" | "blocked";
+      dailyMessageLimit?: number;
+      monthlyMessageLimit?: number;
+      dailyTokenLimit?: number;
+      monthlyTokenLimit?: number;
+    }) => api.updateTelegramBotUser(botId, user.id, payload.status, {
+      dailyMessageLimit: payload.dailyMessageLimit,
+      monthlyMessageLimit: payload.monthlyMessageLimit,
+      dailyTokenLimit: payload.dailyTokenLimit,
+      monthlyTokenLimit: payload.monthlyTokenLimit,
+    }),
+    onSuccess: () => { onChanged(); toast.success("دسترسی و سقف مصرف کاربر به‌روز شد."); },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  function numberValue(value: string) {
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0 ? Math.min(10_000_000, Math.floor(number)) : 0;
+  }
+
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username || user.telegramUserId;
+  return (
+    <div className="rounded-xl border border-white/[.06] bg-black/10 p-3">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate text-xs font-medium">{displayName}</p>
+              <Badge className={cn(
+                "font-normal",
+                user.status === "allowed"
+                  ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
+                  : user.status === "blocked"
+                    ? "border-destructive/20 bg-destructive/10 text-destructive"
+                    : "border-amber-400/20 bg-amber-400/10 text-amber-200"
+              )}>{user.status === "allowed" ? "مجاز" : user.status === "blocked" ? "مسدود" : "در انتظار"}</Badge>
+            </div>
+            <p dir="ltr" className="mt-1 truncate text-[10px] text-muted-foreground">
+              {user.phoneNumber || "بدون شماره"} · TG {user.telegramUserId}
+            </p>
+          </div>
+          <span className="shrink-0 text-xs font-semibold text-primary">{faNum(user.usage?.tokens ?? 0)} توکن کل</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+          <span>امروز: {faNum(user.dailyUsage?.tokens ?? 0)} توکن</span>
+          <span>ماه: {faNum(user.monthlyUsage?.tokens ?? 0)} توکن</span>
+          <span>پیام امروز: {faNum(user.dailyUsage?.events ?? 0)}</span>
+          <span>پیام ماه: {faNum(user.monthlyUsage?.events ?? 0)}</span>
+          <span>آخرین فعالیت: {user.lastSeenAt ? new Date(user.lastSeenAt).toLocaleString("fa-IR") : "—"}</span>
+          <span>هزینه برآوردی: {faNum(user.usage?.estimatedCostMicros ?? 0)}</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Input inputMode="numeric" value={dailyMessages} onChange={(e) => setDailyMessages(e.target.value)} placeholder="پیام/روز" aria-label="سقف پیام روزانه" />
+          <Input inputMode="numeric" value={monthlyMessages} onChange={(e) => setMonthlyMessages(e.target.value)} placeholder="پیام/ماه" aria-label="سقف پیام ماهانه" />
+          <Input inputMode="numeric" value={dailyTokens} onChange={(e) => setDailyTokens(e.target.value)} placeholder="توکن/روز" aria-label="سقف توکن روزانه" />
+          <Input inputMode="numeric" value={monthlyTokens} onChange={(e) => setMonthlyTokens(e.target.value)} placeholder="توکن/ماه" aria-label="سقف توکن ماهانه" />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate({
+            status: "allowed",
+            dailyMessageLimit: numberValue(dailyMessages),
+            monthlyMessageLimit: numberValue(monthlyMessages),
+            dailyTokenLimit: numberValue(dailyTokens),
+            monthlyTokenLimit: numberValue(monthlyTokens),
+          })}><ShieldCheck />اجازه و ذخیره</Button>
+          <Button size="sm" variant="ghost" className="text-destructive" disabled={mutation.isPending} onClick={() => mutation.mutate({
+            status: "blocked",
+            dailyMessageLimit: numberValue(dailyMessages),
+            monthlyMessageLimit: numberValue(monthlyMessages),
+            dailyTokenLimit: numberValue(dailyTokens),
+            monthlyTokenLimit: numberValue(monthlyTokens),
+          })}><XCircle />مسدود کردن</Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
