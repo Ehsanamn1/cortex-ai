@@ -51,7 +51,7 @@ export async function GET(req: Request) {
         database: "error",
         error: safeError(e),
         env: {
-          DATABASE_URL: process.env.DATABASE_URL ? "set" : "missing",
+          DATABASE_URL: (process.env.DATABASE_URL || process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL) ? "set" : "missing",
           APP_SECRET_KEY: process.env.APP_SECRET_KEY ? "set" : "missing",
           CORTEX_ADMIN_PASSWORD: process.env.CORTEX_ADMIN_PASSWORD ? "set" : "missing",
           NODE_ENV: process.env.NODE_ENV ?? null,
