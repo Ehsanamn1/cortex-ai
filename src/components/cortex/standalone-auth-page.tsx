@@ -14,7 +14,7 @@ export function StandaloneAuthPage({ defaultTab }: { defaultTab: "login" | "sign
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthScreen defaultTab={defaultTab} />
+      <AuthScreen defaultTab={defaultTab} onAuthenticated={() => window.location.assign("/")} />
     </QueryClientProvider>
   );
 }

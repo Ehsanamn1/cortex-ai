@@ -84,7 +84,7 @@ function SessionGate() {
 
   if (phase === "checking") return <Splash />;
 
-  if (phase === "auth") return <AuthScreen />;
+  if (phase === "auth") return <AuthScreen onAuthenticated={() => setPhase("ready")} />;
 
   if (phase === "error") {
     return (

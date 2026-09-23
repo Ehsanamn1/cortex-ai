@@ -74,6 +74,7 @@ function LoginForm() {
       hydrate(session.user, session.workspaces);
       const first = firstNameOf(session.user.name);
       toast.success(first ? `${first} عزیز، خوش آمدید!` : "خوش آمدید!");
+      onAuthenticated?.();
     } catch (error) {
       toast.error(error instanceof ApiError || error instanceof Error ? error.message : "ورود ناموفق بود.");
       setSubmitting(false);
@@ -136,6 +137,7 @@ function SignupForm() {
       hydrate(session.user, session.workspaces);
       const first = firstNameOf(session.user.name);
       toast.success(first ? `${first} عزیز، حساب شما ساخته شد!` : "حساب شما ساخته شد!");
+      onAuthenticated?.();
     } catch (error) {
       toast.error(error instanceof ApiError || error instanceof Error ? error.message : "ثبت‌نام ناموفق بود.");
       setSubmitting(false);
@@ -192,7 +194,7 @@ function SignupForm() {
   );
 }
 
-export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "signup" }) {
+export function AuthScreen({ defaultTab = "login", onAuthenticated }: { defaultTab?: "login" | "signup"; onAuthenticated?: () => void }) {
   const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
   const settings = siteConfig.data?.settings;
   const showBrandPanel = settings?.["feature.authBrandPanel"] === undefined ? true : settings["feature.authBrandPanel"] !== "false";
