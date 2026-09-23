@@ -41,7 +41,7 @@ function requireConfig() {
 function presignedUrl(method: "GET" | "PUT" | "HEAD" | "DELETE", key: string, expiresIn = DEFAULT_EXPIRES): string {
   const { accountId, bucket, accessKeyId, secretAccessKey } = requireConfig();
   const host = accountId + ".r2.cloudflarestorage.com";
-  const amzDate = new Date().toISOString().replace(/[:-]|.d{3}/g, "");
+  const amzDate = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const dateStamp = amzDate.slice(0, 8);
   const scope = dateStamp + "/" + REGION + "/s3/aws4_request";
   const query: Record<string, string> = {
