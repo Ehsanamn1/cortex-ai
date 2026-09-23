@@ -4,6 +4,7 @@ import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { llmManager } from "@/lib/providers/llm/manager";
 import { ProviderNotConfiguredError, type ChatTurn } from "@/lib/providers/llm/types";
 import { buildRagMessages, type RetrievedChunk } from "./prompt";
+import { estimateTokens } from "@/lib/server/audit";
 
 export interface RagAnswer {
   content: string;
@@ -12,6 +13,8 @@ export interface RagAnswer {
   latencyMs: number;
   retrieval: RetrievedChunk[];
 }
+
+export const RAG_QUERY_EXPANSION_RESERVE_TOKENS = 384;
 
 export class RagConfigError extends Error {
   status = 503;
@@ -69,6 +72,8 @@ export async function answerWithKnowledge(params: {
     where: { agentId, source: { status: "ready" } },
   });
   let searchResults: SearchResult[] = [];
+  let auxiliaryInputTokens = 0;
+  let auxiliaryOutputTokens = 0;
   if (chunkCount > 0) {
     const embedder = embeddingManager.resolve();
     if (embedder) {
@@ -106,18 +111,21 @@ export async function answerWithKnowledge(params: {
         const best = searchResults[0]?.score ?? 0;
         if (best < 0.3) {
           try {
+            const expansionMessages: ChatTurn[] = [
+              {
+                role: "system",
+                content:
+                  "You rewrite search queries for a keyword-based knowledge search. Output ONLY one line: the query rewritten in English, then the character |, then the query rewritten in Persian. Keep key terms and numbers. No explanations.",
+              },
+              { role: "user", content: question.slice(0, 500) },
+            ];
             const expansion = await llm.generateResponse({
-              messages: [
-                {
-                  role: "system",
-                  content:
-                    "You rewrite search queries for a keyword-based knowledge search. Output ONLY one line: the query rewritten in English, then the character |, then the query rewritten in Persian. Keep key terms and numbers. No explanations.",
-                },
-                { role: "user", content: question.slice(0, 500) },
-              ],
+              messages: expansionMessages,
               temperature: 0,
               maxTokens: 120,
             });
+            auxiliaryInputTokens += expansionMessages.reduce((sum, item) => sum + estimateTokens(item.content), 0);
+            auxiliaryOutputTokens += estimateTokens(expansion.content);
             const parts = expansion.content
               .split("|")
               .map((s) => s.trim())
@@ -182,6 +190,8 @@ export async function answerWithKnowledge(params: {
     model: completion.model,
     latencyMs: Date.now() - started,
     retrieval: retrieved,
+    auxiliaryInputTokens,
+    auxiliaryOutputTokens,
   };
 }
 
