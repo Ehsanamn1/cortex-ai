@@ -441,7 +441,8 @@ export async function processTelegramUpdate(botId: string, update: any) {
   if (user.status !== 'allowed') return sendWelcome(token, msg.chat.id, false);
 
   try {
-    await assertUsageWithinLimits(bot.workspaceId, 1, estimateTokens(rawText), user.id);
+    // Token enforcement is based on the current prompt, including the short-term
+    // conversation memory that will actually be sent to the model.
   } catch (error) {
     const message = error instanceof Error ? error.message : 'سقف مصرف شما به پایان رسیده است.';
     await sendMessage(token, msg.chat.id, '⏳ ' + message + '\n\nبرای افزایش سقف مصرف با مدیر سامانه تماس بگیرید.');
@@ -516,6 +517,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
     });
 
     const inputTokens = estimateTokens(rawText) + history.reduce((sum, item) => sum + estimateTokens(item.content), 0);
+    await assertUsageWithinLimits(bot.workspaceId, 1, inputTokens, user.id);
     const outputTokens = estimateTokens(answer.content);
 
     await db.usageEvent.create({

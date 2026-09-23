@@ -50,7 +50,8 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    await assertUsageWithinLimits(agent.workspaceId, 1, estimateTokens(content));
+    const estimatedPromptTokens = existingMessages.reduce((sum, item) => sum + estimateTokens(item.content), 0) + estimateTokens(content);
+    await assertUsageWithinLimits(agent.workspaceId, 1, estimatedPromptTokens);
 
     // Persist the user message first (honest history even if generation fails).
     const existingMessages = await db.message.findMany({
@@ -117,7 +118,7 @@ export async function POST(req: Request, { params }: Params) {
         where: { id: conversation.id },
         data: { updatedAt: new Date() },
       });
-      const inputTokens = existingMessages.reduce((n,m)=>n+estimateTokens(m.content),0) + estimateTokens(content);
+      const inputTokens = estimatedPromptTokens;
       const outputTokens = estimateTokens(answer.content);
       await db.usageEvent.create({ data: { workspaceId: agent.workspaceId, agentId: agent.id, userId: session.user.id, channel: "web", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens } });
 
