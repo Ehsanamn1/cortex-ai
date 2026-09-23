@@ -176,7 +176,8 @@ jobs:
 
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "Postgres URL missing for smoke cleanup"; exit 1; }
-          printf 'DELETE FROM "User" WHERE "id" = %s;' "$(printf '%s' "$smoke_user_id" | jq -Rr '@sql')"             | npx prisma db execute --url "$db_url" --stdin
+          [[ "$smoke_user_id" =~ ^[A-Za-z0-9]+$ ]] || { echo "Unexpected smoke user id format"; exit 1; }
+          printf 'DELETE FROM "User" WHERE "id" = %s;' "'$smoke_user_id'"             | npx prisma db execute --url "$db_url" --stdin
           rm -f "$smoke_response"
 
       - name: Smoke test live Worker
