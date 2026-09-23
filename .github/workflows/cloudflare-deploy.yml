@@ -45,7 +45,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
-        run: npx wrangler deploy --config dist/server/wrangler.json
+        run: npx wrangler deploy --config dist/server/wrangler.json --var APP_ENV:production
 
       - name: Sync Worker runtime secrets
         env:
@@ -124,10 +124,22 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
+          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
+          set -euo pipefail
           npx wrangler secret list --name cortex-ai
-          echo "Expected runtime secrets: Postgres + APP_SECRET_KEY; R2_ACCOUNT_ID/R2_BUCKET_NAME/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY enable 200MB direct uploads; admin/Telegram secrets are optional."
-
+          test -n "$CORTEX_ADMIN_USERNAME" || { echo "CORTEX_ADMIN_USERNAME is required for the production admin console"; exit 1; }
+          test -n "$CORTEX_ADMIN_PASSWORD" || { echo "CORTEX_ADMIN_PASSWORD is required for the production admin console"; exit 1; }
+          test -n "$R2_ACCOUNT_ID" || { echo "R2_ACCOUNT_ID is required for production file uploads"; exit 1; }
+          test -n "$R2_BUCKET_NAME" || { echo "R2_BUCKET_NAME is required for production file uploads"; exit 1; }
+          test -n "$R2_ACCESS_KEY_ID" || { echo "R2_ACCESS_KEY_ID is required for production file uploads"; exit 1; }
+          test -n "$R2_SECRET_ACCESS_KEY" || { echo "R2_SECRET_ACCESS_KEY is required for production file uploads"; exit 1; }
+          echo "Required production secrets are configured: Postgres, APP_SECRET_KEY, Admin credentials, and R2 storage."
       - name: Smoke test admin and public routes
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
