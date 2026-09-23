@@ -18,7 +18,7 @@ export class AdminConfigError extends Error {
 function secret(): string {
   const configured = process.env.CORTEX_ADMIN_SESSION_SECRET || process.env.APP_SECRET_KEY;
   if (configured && configured.length >= 32) return configured;
-  if (process.env.NODE_ENV === "production") {
+  if ((process.env.NODE_ENV === "production" || process.env.APP_ENV === "production")) {
     throw new AdminConfigError("Secret نشست مدیریت در محیط تولید تنظیم نشده یا کوتاه‌تر از حد امن است.");
   }
   const g = globalThis as { __cortexAdminSecret?: string };
