@@ -49,7 +49,10 @@ async function main() {
   console.log("2) Verifying Cloudflare access...");
   await run("npx", ["wrangler", "whoami"], { interactive: true });
 
-  console.log("3) R2 is optional. If your account has R2 enabled, you can create " + bucketName + " later and bind it to the Worker.");
+  console.log("3) Ensuring the production R2 bucket exists...");
+  await run("npx", ["wrangler", "r2", "bucket", "info", bucketName, "--json"]).catch(async () => {
+    await run("npx", ["wrangler", "r2", "bucket", "create", bucketName]);
+  });
 
   const rl = createInterface({ input, output });
   try {
