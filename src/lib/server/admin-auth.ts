@@ -29,7 +29,7 @@ function secret(): string {
 export function adminCredentials() {
   const username = process.env.CORTEX_ADMIN_USERNAME?.trim();
   const password = process.env.CORTEX_ADMIN_PASSWORD;
-  if (process.env.NODE_ENV === "production" && (!username || !password)) {
+  if ((process.env.NODE_ENV === "production" || process.env.APP_ENV === "production") && (!username || !password)) {
     throw new AdminConfigError("اطلاعات ورود مدیر در محیط تولید تنظیم نشده است.");
   }
   return {
@@ -66,7 +66,7 @@ export function verifyAdminSession(token: string | null): string | null {
 }
 
 export function adminCookie(token: string) {
-  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
+  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production" || process.env.APP_ENV === "production";
   return COOKIE_NAME + "=" + encodeURIComponent(token) + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=" + TTL_SECONDS + (secure ? "; Secure" : "");
 }
 
