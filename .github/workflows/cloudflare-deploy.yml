@@ -183,6 +183,47 @@ jobs:
           returned_user_id="$(jq -r '.user.id // empty' "$session_response")"
           test "$returned_user_id" = "$smoke_user_id"
 
+          smoke_workspace_id="$(jq -r '.workspaces[0].id // empty' "$session_response")"
+          test -n "$smoke_workspace_id"
+
+          check_authed_json() {
+            local path="$1"
+            local expected="$2"
+            local tmp
+            tmp="$(mktemp)"
+            local status
+            status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -o "$tmp" -w "%{http_code}" "$base$path")"
+            echo "GET $base$path -> HTTP $status"
+            head -c 800 "$tmp" || true
+            echo
+            test "$status" = "$expected"
+            rm -f "$tmp"
+          }
+
+          check_authed_json "/api/workspaces" "200"
+          check_authed_json "/api/agents" "200"
+          check_authed_json "/api/dashboard?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/site-config" "200"
+          check_authed_json "/api/settings/limits?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/providers/status?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/telegram/bots?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/admin/overview?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/admin/analytics?workspaceId=$smoke_workspace_id" "200"
+
+          agent_body="$(jq -nc '{name:"Cortex Smoke Agent",language:"fa",tone:"professional",temperature:0.2,topP:1,maxTokens:256}')"
+          agent_response="$(mktemp)"
+          agent_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d "$agent_body" -o "$agent_response" -w "%{http_code}" "$base/api/agents")"
+          echo "POST $base/api/agents -> HTTP $agent_status"
+          cat "$agent_response" | jq . || cat "$agent_response"
+          test "$agent_status" = "201"
+          smoke_agent_id="$(jq -r '.agent.id // empty' "$agent_response")"
+          test -n "$smoke_agent_id"
+
+          check_authed_json "/api/agents/$smoke_agent_id" "200"
+          check_authed_json "/api/agents/$smoke_agent_id/knowledge" "200"
+          check_authed_json "/api/agents/$smoke_agent_id/conversations" "200"
+          rm -f "$agent_response"
+
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "Postgres URL missing for smoke cleanup"; exit 1; }
           [[ "$smoke_user_id" =~ ^[A-Za-z0-9]+$ ]] || { echo "Unexpected smoke user id format"; exit 1; }
