@@ -1,4 +1,4 @@
-import type { View } from "@/components/cortex/store";
+export type CortexView = "dashboard" | "agents" | "knowledge" | "conversations" | "telegram" | "analytics" | "admin" | "learn";
 
 export const CORTEX_UI_CONFIG = {
   brand: {
@@ -16,14 +16,14 @@ export const CORTEX_UI_CONFIG = {
     maxKnowledgeUploadMb: 200,
   },
   navigation: [
-    { view: "dashboard" as View, label: "داشبورد", mobile: true },
-    { view: "agents" as View, label: "ایجنت‌ها", mobile: true },
-    { view: "knowledge" as View, label: "دانش", mobile: true },
-    { view: "conversations" as View, label: "گفتگوها", mobile: true },
-    { view: "telegram" as View, label: "تلگرام", mobile: false },
-    { view: "analytics" as View, label: "تحلیل", mobile: false },
-    { view: "admin" as View, label: "مدیریت", mobile: false },
-    { view: "learn" as View, label: "آموزش", mobile: false },
+    { view: "dashboard" as CortexView, label: "داشبورد", mobile: true },
+    { view: "agents" as CortexView, label: "ایجنت‌ها", mobile: true },
+    { view: "knowledge" as CortexView, label: "دانش", mobile: true },
+    { view: "conversations" as CortexView, label: "گفتگوها", mobile: true },
+    { view: "telegram" as CortexView, label: "تلگرام", mobile: false },
+    { view: "analytics" as CortexView, label: "تحلیل", mobile: false },
+    { view: "admin" as CortexView, label: "مدیریت", mobile: false },
+    { view: "learn" as CortexView, label: "آموزش", mobile: false },
   ],
   copy: {
     welcomeTitle: "هوش کسب‌وکار را از یک داشبورد کنترل کن.",
@@ -43,13 +43,22 @@ export function isSafeHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
-export function normalizeThemeSettings(input: Partial<Record<keyof CortexThemeSettings, string>>): CortexThemeSettings {
-  const primary = input.primary && isSafeHexColor(input.primary) ? input.primary : CORTEX_UI_CONFIG.theme.primary;
-  const secondary = input.secondary && isSafeHexColor(input.secondary) ? input.secondary : CORTEX_UI_CONFIG.theme.secondary;
-  const sidebar = input.sidebar && isSafeHexColor(input.sidebar) ? input.sidebar : CORTEX_UI_CONFIG.theme.sidebar;
+export function normalizeThemeSettings(
+  input: Partial<Record<keyof CortexThemeSettings, string>>,
+): CortexThemeSettings {
+  const primary = input.primary && isSafeHexColor(input.primary)
+    ? input.primary
+    : CORTEX_UI_CONFIG.theme.primary;
+  const secondary = input.secondary && isSafeHexColor(input.secondary)
+    ? input.secondary
+    : CORTEX_UI_CONFIG.theme.secondary;
+  const sidebar = input.sidebar && isSafeHexColor(input.sidebar)
+    ? input.sidebar
+    : CORTEX_UI_CONFIG.theme.sidebar;
   const radiusNumber = Number.parseFloat(input.radius ?? "");
-  const radius = Number.isFinite(radiusNumber) && radiusNumber >= 0.25 && radiusNumber <= 2
-    ? radiusNumber + "rem"
-    : CORTEX_UI_CONFIG.theme.radius;
+  const radius =
+    Number.isFinite(radiusNumber) && radiusNumber >= 0.25 && radiusNumber <= 2
+      ? radiusNumber + "rem"
+      : CORTEX_UI_CONFIG.theme.radius;
   return { primary, secondary, radius, sidebar };
 }
