@@ -7,18 +7,34 @@ const TTL_SECONDS = 60 * 60 * 12;
 const DEFAULT_USERNAME = "admin";
 const DEFAULT_PASSWORD = "CortexAdmin-ChangeMe-2026!";
 
+export class AdminConfigError extends Error {
+  status = 503;
+  constructor(message: string) {
+    super(message);
+    this.name = "AdminConfigError";
+  }
+}
+
 function secret(): string {
   const configured = process.env.CORTEX_ADMIN_SESSION_SECRET || process.env.APP_SECRET_KEY;
-  if (configured && configured.length >= 16) return configured;
+  if (configured && configured.length >= 32) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new AdminConfigError("Secret نشست مدیریت در محیط تولید تنظیم نشده یا کوتاه‌تر از حد امن است.");
+  }
   const g = globalThis as { __cortexAdminSecret?: string };
   if (!g.__cortexAdminSecret) g.__cortexAdminSecret = Buffer.from(randomBytes(32)).toString("hex");
   return g.__cortexAdminSecret as string;
 }
 
 export function adminCredentials() {
+  const username = process.env.CORTEX_ADMIN_USERNAME?.trim();
+  const password = process.env.CORTEX_ADMIN_PASSWORD;
+  if (process.env.NODE_ENV === "production" && (!username || !password)) {
+    throw new AdminConfigError("اطلاعات ورود مدیر در محیط تولید تنظیم نشده است.");
+  }
   return {
-    username: process.env.CORTEX_ADMIN_USERNAME || DEFAULT_USERNAME,
-    password: process.env.CORTEX_ADMIN_PASSWORD || DEFAULT_PASSWORD,
+    username: username || DEFAULT_USERNAME,
+    password: password || DEFAULT_PASSWORD,
   };
 }
 
@@ -54,7 +70,8 @@ export function adminCookie(token: string) {
 }
 
 export function clearAdminCookie() {
-  return COOKIE_NAME + "=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0";
+  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
+  return COOKIE_NAME + "=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0" + (secure ? "; Secure" : "");
 }
 
 export function readAdminUsername(req: Request) {
