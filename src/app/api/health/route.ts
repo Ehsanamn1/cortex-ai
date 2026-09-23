@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { rateLimit } from "@/lib/server/rate-limit";
-import { getKnowledgeBucket } from "@/lib/cloudflare-storage";
 import { llmManager } from "@/lib/providers/llm/manager";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 
@@ -18,17 +17,14 @@ function safeError(e: unknown) {
 export async function GET(req: Request) {
   try {
     rateLimit(req, "public-health", 30, 60_000);
-    const [databaseCheck, knowledgeBucket] = await Promise.all([
-      db.$queryRaw`SELECT 1`,
-      getKnowledgeBucket(),
-    ]);
+    const databaseCheck = await db.$queryRaw`SELECT 1`;
     const llm = llmManager.status();
     const embeddings = embeddingManager.status();
 
     return NextResponse.json({
       ok: true,
       database: databaseCheck ? "connected" : "error",
-      storage: knowledgeBucket ? "r2" : "missing",
+      storage: "postgresql-inline",
       llm: {
         provider: llm.provider,
         status: llm.status,
