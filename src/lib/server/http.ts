@@ -18,9 +18,19 @@ export function applyCors(response: NextResponse, origin: string | null): NextRe
   if (origin && (allowed.includes(origin) || allowed.includes("*"))) {
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Credentials", "true");
+    response.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    response.headers.set(
+      "Access-Control-Allow-Headers",
+      "Authorization, Content-Type, X-API-Key, X-Cortex-Client-Id, X-Cortex-Conversation-Id"
+    );
+    response.headers.set("Access-Control-Max-Age", "600");
     response.headers.set("Vary", "Origin");
   }
   return response;
+}
+
+export function corsPreflight(req: Request): NextResponse {
+  return applyCors(new NextResponse(null, { status: 204 }), req.headers.get("origin"));
 }
 
 export async function readJson<T = Record<string, unknown>>(req: Request): Promise<T> {
