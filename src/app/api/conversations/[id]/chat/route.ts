@@ -50,23 +50,30 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const estimatedPromptTokens = existingMessages.reduce((sum, item) => sum + estimateTokens(item.content), 0) + estimateTokens(content);
+    // Keep the accounting and prompt window aligned: only the same recent
+    // turns we will actually send to the model count toward this request.
+    const existingMessages = await db.message.findMany({
+      where: { conversationId: conversation.id },
+      orderBy: { createdAt: "desc" },
+      take: 24,
+    }).then((rows) => rows.reverse());
+
+    const historyForPrompt = existingMessages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .slice(-12);
+    const estimatedPromptTokens =
+      historyForPrompt.reduce((sum, item) => sum + estimateTokens(item.content), 0) +
+      estimateTokens(content);
+
     await assertUsageWithinLimits(agent.workspaceId, 1, estimatedPromptTokens);
 
     // Persist the user message first (honest history even if generation fails).
-    const existingMessages = await db.message.findMany({
-      where: { conversationId: conversation.id },
-      orderBy: { createdAt: "asc" },
-    });
     const userMessage = await db.message.create({
       data: { conversationId: conversation.id, role: "user", content },
     });
 
     // Short-term memory: only the active conversation's recent turns.
-    const history = existingMessages
-      .filter((m) => m.role === "user" || m.role === "assistant")
-      .slice(-12)
-      .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+    const history = historyForPrompt.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
     // Derive a real title from the first user message.
     if (existingMessages.length === 0) {
