@@ -26,6 +26,16 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Inspect generated Prisma runtime
+        run: |
+          set -euo pipefail
+          echo '--- generated files ---'
+          find src/generated/prisma -maxdepth 3 -type f | sort | sed -n '1,240p'
+          echo '--- prisma compiler references ---'
+          grep -RIn --include='*.ts' --include='*.js' --include='*.mjs' -E 'getQueryCompilerWasmModule|query_compiler.*wasm|WebAssembly\.Module|readFile|readAll' src/generated/prisma node_modules/@prisma/client/runtime 2>/dev/null | head -160 || true
+          echo '--- compiler files ---'
+          find node_modules/@prisma/client/runtime -maxdepth 1 -type f \( -name 'query_compiler*postgresql*' -o -name 'wasm*' \) -print | sort | sed -n '1,160p'
+
       - name: Prepare Prisma query compiler WASM
         run: |
           set -euo pipefail
