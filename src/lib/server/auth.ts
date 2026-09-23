@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { randomBytes } from "./random";
 import { db } from "@/lib/db";
-import type { User, WorkspaceMember } from "@prisma/client";
+import type { User, WorkspaceMember } from "@/generated/prisma/client";
 
 const COOKIE_NAME = "cortex_session";
 
