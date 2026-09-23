@@ -3,7 +3,7 @@ import { decryptSecret } from '@/lib/server/secrets';
 import { estimateTokens } from '@/lib/server/audit';
 import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/usage';
 import { audit } from '@/lib/server/audit';
-import { answerWithKnowledge, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
+import { answerWithKnowledge, RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
 import { normalizeTelegramPhone } from '@/lib/telegram/phone';
 
 const API = 'https://api.telegram.org';
@@ -514,8 +514,8 @@ export async function processTelegramUpdate(botId: string, update: any) {
       data: { updatedAt: new Date() },
     });
 
-    const inputTokens = estimatedPromptTokens;
-    const outputTokens = estimateTokens(answer.content);
+    const inputTokens = estimatedPromptTokens + (answer.auxiliaryInputTokens ?? 0);
+    const outputTokens = estimateTokens(answer.content) + (answer.auxiliaryOutputTokens ?? 0);
 
     await db.$transaction([
       db.usageEvent.create({
