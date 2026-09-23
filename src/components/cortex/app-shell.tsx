@@ -37,6 +37,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { ViewErrorBoundary } from "@/components/cortex/view-error-boundary";
 
 import { DashboardView } from "@/components/cortex/views/dashboard-view";
 import { AgentsView } from "@/components/cortex/views/agents-view";
@@ -508,15 +509,16 @@ export function AppShell() {
         <main className="cortex-scroll flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 lg:px-8 lg:pb-10 lg:pt-8">
             <AnimatePresence mode="wait">
-              <motion.div
-                key={viewKey}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
-                {renderView(view)}
-              </motion.div>
+              <ViewErrorBoundary key={viewKey}>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  {renderView(view)}
+                </motion.div>
+              </ViewErrorBoundary>
             </AnimatePresence>
           </div>
         </main>

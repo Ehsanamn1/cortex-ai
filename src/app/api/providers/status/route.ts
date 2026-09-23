@@ -11,12 +11,18 @@ export async function GET(req: Request) {
     const session = await requireSession(req);
     const workspaceId = new URL(req.url).searchParams.get('workspaceId') || session.memberships[0]?.workspaceId;
     if (workspaceId) assertWorkspaceAccess(session, workspaceId);
-    const vectorStore = await vectorStoreStatus();
-    const llm = await llmManager.statusForWorkspace(workspaceId ?? undefined);
-    return applyCors(jsonOk({
-      llm,
-      embeddings: embeddingManager.status(),
-      vectorStore,
-    }), req.headers.get('origin'));
-  } catch (e) { return toErrorResponse(e); }
+
+    const llmResult = await Promise.resolve().then(() => llmManager.statusForWorkspace(workspaceId ?? undefined)).catch((error) => {
+      console.error('[cortex][providers] LLM status failed:', error);
+      return { provider:'none', status:'not_configured' as const, model:null, source:'none' as const };
+    });
+    const vectorResult = await Promise.resolve().then(() => vectorStoreStatus()).catch((error) => {
+      console.error('[cortex][providers] vector status failed:', error);
+      return { provider:'local' as const, status:'not_configured' as const };
+    });
+
+    return applyCors(jsonOk({ llm:llmResult, embeddings:embeddingManager.status(), vectorStore:vectorResult }), req.headers.get('origin'));
+  } catch(e) {
+    return toErrorResponse(e);
+  }
 }
