@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { decryptSecret } from '@/lib/server/secrets';
 import { processTelegramUpdate } from '@/lib/telegram/service';
@@ -15,8 +15,8 @@ export async function POST(req:Request,{params}:Params){
     if(!expected || !provided || provided!==expected)return NextResponse.json({ok:false},{status:403});
 
     const update=await req.json();
-    await processTelegramUpdate(bot.id,update);
-    return NextResponse.json({ok:true});
+    after(() => processTelegramUpdate(bot.id, update));
+    return NextResponse.json({ ok: true });
   }catch(e){
     console.error('[cortex][telegram-webhook]',e);
     return NextResponse.json({ok:false,error:'webhook processing failed'},{status:500});

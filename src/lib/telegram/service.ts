@@ -48,7 +48,20 @@ async function telegramCall(token:string, method:string, body:Record<string,unkn
   throw lastError??new Error('Telegram API unavailable');
 }
 export async function getBotInfo(token:string){ return telegramCall(token,'getMe',{}); }
-export async function setWebhook(token:string,url:string,secret:string){ return telegramCall(token,'setWebhook',{url,secret_token:secret,allowed_updates:['message']}); }
+export async function configureBotProfile(token:string,botName:string){
+  const safeName=botName.trim().slice(0,32);
+  await telegramCall(token,'setMyName',{name:safeName}).catch(()=>undefined);
+  await telegramCall(token,'setMyShortDescription',{short_description:'دستیار هوشمند Cortex برای پاسخ‌گویی و مدیریت دانش.'}).catch(()=>undefined);
+  await telegramCall(token,'setMyDescription',{description:'دستیار هوشمند Cortex؛ متصل به دانش و ایجنت اختصاصی شما.'}).catch(()=>undefined);
+  await telegramCall(token,'setMyCommands',{commands:[
+    {command:'start',description:'شروع و بررسی دسترسی'},
+    {command:'newchat',description:'شروع گفتگوی جدید'},
+    {command:'help',description:'راهنمای استفاده'},
+    {command:'usage',description:'مشاهده مصرف توکن'},
+  ]}).catch(()=>undefined);
+  await telegramCall(token,'setChatMenuButton',{menu_button:{type:'commands'}}).catch(()=>undefined);
+}
+export async function setWebhook(token:string,url:string,secret:string){ return telegramCall(token,'setWebhook',{url,secret_token:secret,allowed_updates:['message','callback_query']}); }
 export async function deleteWebhook(token:string){ return telegramCall(token,'deleteWebhook',{drop_pending_updates:false}); }
 export async function sendMessage(token:string,chatId:string|number,text:string){
   const value=text.trim();
@@ -58,7 +71,23 @@ export async function sendMessage(token:string,chatId:string|number,text:string)
   for(const chunk of chunks.length?chunks:['']) results.push(await telegramCall(token,'sendMessage',{chat_id:chatId,text:chunk,disable_web_page_preview:true}));
   return results.at(-1);
 }
-export async function requestContact(token:string,chatId:string|number){ return telegramCall(token,'sendMessage',{chat_id:chatId,text:'برای شناسایی و بررسی دسترسی، شماره موبایل خود را از طریق دکمه زیر ارسال کنید.',reply_markup:{keyboard:[[{text:'📱 ارسال شماره موبایل',request_contact:true}]],resize_keyboard:true,one_time_keyboard:true}}); }
+export async function requestContact(token:string,chatId:string|number){
+  return telegramCall(token,'sendMessage',{
+    chat_id:chatId,
+    text:'🔐 برای شروع، شماره موبایل خودتان را از طریق دکمه زیر ارسال کنید. فقط شماره‌های ثبت‌شده در پنل اجازه استفاده خواهند داشت.',
+    reply_markup:{
+      keyboard:[[{
+        text:'📱 ارسال شماره موبایل',
+        request_contact:true,
+      }]],
+      resize_keyboard:true,
+      one_time_keyboard:false,
+      is_persistent:true,
+      selective:false,
+      input_field_placeholder:'ابتدا دکمه ارسال شماره را بزنید…',
+    },
+  });
+}
 export async function processTelegramUpdate(botId:string, update:any){
   const bot=await db.telegramBot.findUnique({where:{id:botId}}); if(!bot) return;
   const token=decryptSecret(bot.tokenEncrypted);

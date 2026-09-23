@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, toErrorResponse } from "@/lib/server/http";
 import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
 import { decryptSecret, encryptSecret } from "@/lib/server/secrets";
-import { getBotInfo, setWebhook, deleteWebhook } from "@/lib/telegram/service";
+import { configureBotProfile, getBotInfo, setWebhook, deleteWebhook } from "@/lib/telegram/service";
 import { audit } from "@/lib/server/audit";
 import { randomBytes } from "@/lib/server/random";
 
@@ -21,6 +21,7 @@ export async function POST(req:Request,{params}:Params){
     const token=decryptSecret(bot.tokenEncrypted);
     const info=await getBotInfo(token);
     if(!info) return applyCors(jsonError("توکن ربات معتبر نیست.",502),req.headers.get("origin"));
+    await configureBotProfile(token,bot.name);
 
     if(bot.mode==="webhook"){
       const secret=bot.webhookSecretEncrypted?decryptSecret(bot.webhookSecretEncrypted):Buffer.from(randomBytes(24)).toString("hex");
