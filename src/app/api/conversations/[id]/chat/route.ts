@@ -127,7 +127,7 @@ export async function POST(req: Request, { params }: Params) {
         data: { updatedAt: new Date() },
       });
       const inputTokens = estimatedPromptTokens;
-      const outputTokens = estimateTokens(answer.content);
+      const outputTokens = estimateTokens(answer.content) + (answer.auxiliaryOutputTokens ?? 0);
       await db.$transaction([
         db.usageEvent.create({ data: { workspaceId: agent.workspaceId, agentId: agent.id, userId: session.user.id, channel: "web", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens } }),
         ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
