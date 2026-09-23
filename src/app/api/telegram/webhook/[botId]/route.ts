@@ -14,7 +14,7 @@ export async function POST(req:Request,{params}:Params){
     const provided=req.headers.get('x-telegram-bot-api-secret-token');
     if(!expected || !provided || provided!==expected)return NextResponse.json({ok:false},{status:403});
 
-    const update=await req.json();
+    const update = (await req.json()) as Record<string, unknown>;
     const updateId = Number(update?.update_id);
 
     // Telegram retries webhook delivery only when the webhook returns a
