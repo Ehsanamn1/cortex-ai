@@ -18,6 +18,12 @@ function toBase64Url(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString("base64url");
 }
 
+function toExactArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(copy).set(bytes);
+  return copy;
+}
+
 function fromBase64Url(value: string): Uint8Array {
   return new Uint8Array(Buffer.from(value, "base64url"));
 }
@@ -32,8 +38,8 @@ function fromBase64Url(value: string): Uint8Array {
  * Existing scrypt hashes remain supported during migration.
  */
 export async function hashPassword(password: string): Promise<string> {
-  const salt = new Uint8Array(16);
-  globalThis.crypto.getRandomValues(salt);
+  const saltBuffer = new ArrayBuffer(16);
+  globalThis.crypto.getRandomValues(new Uint8Array(saltBuffer));
   const keyMaterial = await globalThis.crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(password),
@@ -44,7 +50,7 @@ export async function hashPassword(password: string): Promise<string> {
   const derived = await globalThis.crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt,
+      salt: saltBuffer,
       iterations: PASSWORD_ITERATIONS,
       hash: "SHA-256",
     },
@@ -55,7 +61,7 @@ export async function hashPassword(password: string): Promise<string> {
   return [
     "pbkdf2-sha256-v1",
     String(PASSWORD_ITERATIONS),
-    toBase64Url(salt),
+    toBase64Url(new Uint8Array(saltBuffer)),
     toBase64Url(new Uint8Array(derived)),
   ].join(":");
 }
@@ -68,7 +74,7 @@ async function verifyPbkdf2Password(password: string, stored: string): Promise<b
     const iterations = Number(iterationsRaw);
     if (!Number.isInteger(iterations) || iterations < 100_000 || iterations > 2_000_000) return false;
 
-    const salt = fromBase64Url(saltRaw);
+    const salt = toExactArrayBuffer(fromBase64Url(saltRaw));
     const expected = Buffer.from(fromBase64Url(hashRaw));
     const keyMaterial = await globalThis.crypto.subtle.importKey(
       "raw",
