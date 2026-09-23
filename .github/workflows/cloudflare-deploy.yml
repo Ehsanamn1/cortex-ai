@@ -1,8 +1,8 @@
 name: Deploy Cortex AI to Cloudflare Workers
 
 concurrency:
-  group: cortex-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: cortex-${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: false
 
 on:
   push:
