@@ -248,3 +248,23 @@
 }
 .cortex-hero{box-shadow:0 26px 90px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.04)}
 .cortex-hero::after{content:"";position:absolute;inset:auto 8% -42% auto;width:280px;height:220px;background:radial-gradient(circle,rgba(59,130,255,.14),transparent 68%);filter:blur(18px);pointer-events:none}
+
+/* Premium Cortex surfaces — intentionally restrained to keep the UI product-first. */
+.cortex-auth {
+  background-image:
+    radial-gradient(circle at 88% 6%, rgba(59,130,255,.10), transparent 24%),
+    radial-gradient(circle at 6% 90%, rgba(139,92,246,.08), transparent 22%);
+}
+.cortex-auth-card {
+  position: relative;
+}
+.cortex-auth-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.04), transparent 34%),
+    linear-gradient(300deg, rgba(59,130,255,.035), transparent 38%);
+}

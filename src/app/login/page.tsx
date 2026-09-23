@@ -1,5 +1,5 @@
-import { AuthScreen } from "@/components/cortex/auth-screen";
+import { StandaloneAuthPage } from "@/components/cortex/standalone-auth-page";
 
 export default function LoginPage() {
-  return <AuthScreen defaultTab="login" />;
+  return <StandaloneAuthPage defaultTab="login" />;
 }

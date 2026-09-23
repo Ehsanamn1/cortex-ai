@@ -192,11 +192,12 @@ function SignupForm() {
 
 export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "signup" }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <div className="grid flex-1 lg:grid-cols-[1.05fr_1fr]">
+    <div className="cortex-auth flex min-h-screen flex-col bg-background">
+      <div className="relative grid flex-1 overflow-hidden lg:grid-cols-[1.18fr_.82fr]">
         {/* Brand panel — right side in RTL */}
-        <aside className="relative hidden flex-col justify-between overflow-hidden border-l bg-[#0a0d13] p-12 lg:flex">
-          <div aria-hidden="true" className="cortex-grid-bg absolute inset-0" />
+        <aside className="relative hidden min-h-full flex-col justify-between overflow-hidden border-l border-white/10 bg-[#080b11] p-10 lg:flex xl:p-14">
+          <div aria-hidden="true" className="cortex-grid-bg absolute inset-0 opacity-70" />
+          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,rgba(59,130,255,.16),transparent_24%),radial-gradient(circle_at_18%_78%,rgba(139,92,246,.12),transparent_26%)]" />
           <div
             aria-hidden="true"
             className="absolute -top-32 left-0 size-96 rounded-full bg-primary/15 blur-3xl"
@@ -210,8 +211,8 @@ export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "s
             <CortexLogo markSize={44} />
           </div>
 
-          <div className="relative space-y-8">
-            <h1 className="max-w-md text-3xl font-bold leading-[1.6] text-foreground xl:text-4xl xl:leading-[1.6]">
+          <div className="relative max-w-2xl space-y-8">
+            <div className="space-y-3"><p className="text-[11px] font-bold tracking-[.22em] text-primary/80">PRIVATE AI WORKSPACE</p><h1 className="max-w-xl text-3xl font-bold leading-[1.5] text-foreground xl:text-5xl xl:leading-[1.28]">
               ایجنت‌های هوش مصنوعی را از{" "}
               <span className="bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">
                 دانش خودتان
@@ -220,8 +221,8 @@ export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "s
             </h1>
             <ul className="space-y-5">
               {FEATURES.map((feature) => (
-                <li key={feature.title} className="flex items-start gap-4">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border bg-card text-primary">
+                <li key={feature.title} className="group flex items-start gap-4 rounded-2xl border border-white/[.07] bg-white/[.025] p-4 backdrop-blur-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white/[.04]">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary shadow-[0_8px_30px_rgba(59,130,255,.08)]">
                     <feature.icon aria-hidden="true" className="size-5" />
                   </span>
                   <div className="space-y-1">
@@ -236,7 +237,7 @@ export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "s
         </aside>
 
         {/* Auth card */}
-        <div className="flex items-center justify-center p-6 sm:p-10">
+        <div className="relative flex items-center justify-center p-5 sm:p-10 lg:bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,255,.05),transparent_28%)]">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -247,16 +248,16 @@ export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "s
               <CortexLogo markSize={44} />
             </div>
 
-            <div className="rounded-2xl border bg-card p-6 shadow-lg shadow-black/20 sm:p-8">
-              <div className="mb-6 space-y-1.5 text-center">
-                <h2 className="text-xl font-bold text-foreground">به Cortex AI خوش آمدید</h2>
+            <div className="cortex-auth-card rounded-[28px] border border-white/[.09] bg-white/[.035] p-6 shadow-[0_28px_90px_rgba(0,0,0,.32)] backdrop-blur-2xl sm:p-8 lg:p-9">
+              <div className="mb-7 space-y-2 text-center">
+                <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold tracking-[.15em] text-primary">CORTEX AI <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.75)]" /></div><h2 className="text-2xl font-bold tracking-tight text-foreground">به Cortex AI خوش آمدید</h2>
                 <p className="text-sm text-muted-foreground">برای ادامه، وارد حساب خود شوید یا حساب جدید بسازید.</p>
               </div>
 
               <Tabs defaultValue={defaultTab}>
-                <TabsList className="mb-6 grid w-full grid-cols-2">
-                  <TabsTrigger value="login">ورود</TabsTrigger>
-                  <TabsTrigger value="signup">ثبت‌نام</TabsTrigger>
+                <TabsList className="mb-7 grid h-12 w-full grid-cols-2 rounded-xl border border-white/[.07] bg-black/20 p-1">
+                  <TabsTrigger className="rounded-lg text-sm" value="login">ورود</TabsTrigger>
+                  <TabsTrigger className="rounded-lg text-sm" value="signup">ثبت‌نام</TabsTrigger>
                 </TabsList>
                 <TabsContent value="login">
                   <LoginForm />
@@ -271,7 +272,7 @@ export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "s
       </div>
 
       {/* Sticky mini footer */}
-      <footer className="mt-auto border-t bg-background">
+      <footer className="mt-auto border-t border-white/[.06] bg-background/70 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 py-4 text-xs text-muted-foreground">
           <span>© Cortex AI</span>
           <span>نسخه ۱.۰</span>

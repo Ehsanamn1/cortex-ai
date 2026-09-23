@@ -454,7 +454,7 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
-        <header className="cortex-topbar relative flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4 backdrop-blur-xl lg:px-8">
+        <header className="cortex-topbar relative flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4 backdrop-blur-xl lg:px-8">          <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/35 to-transparent" />
           <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
             <CortexMark size={30} />
             <span className="truncate text-sm font-semibold text-foreground">
@@ -462,7 +462,7 @@ export function AppShell() {
             </span>
           </div>
 
-          <h1 className="hidden truncate text-lg font-bold text-foreground lg:block">{title}</h1>
+          <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><Bot className="size-4" /></span><div className="min-w-0"><p className="truncate text-[9px] font-bold tracking-[.18em] text-primary/75">CORTEX WORKSPACE</p><h1 className="truncate text-lg font-bold text-foreground">{title}</h1></div></div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             {showCta && (
