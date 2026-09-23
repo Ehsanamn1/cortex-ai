@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { decryptSecret } from '@/lib/server/secrets';
 import { estimateTokens } from '@/lib/server/audit';
-import { assertUsageWithinLimits } from '@/lib/server/usage';
+import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/usage';
 import { audit } from '@/lib/server/audit';
 import { answerWithKnowledge, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
 import { normalizeTelegramPhone } from '@/lib/telegram/phone';
@@ -440,17 +440,9 @@ export async function processTelegramUpdate(botId: string, update: any) {
 
   if (user.status !== 'allowed') return sendWelcome(token, msg.chat.id, false);
 
-  try {
-    // Token enforcement is based on the current prompt, including the short-term
-    // conversation memory that will actually be sent to the model.
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'سقف مصرف شما به پایان رسیده است.';
-    await sendMessage(token, msg.chat.id, '⏳ ' + message + '\n\nبرای افزایش سقف مصرف با مدیر سامانه تماس بگیرید.');
-    return;
-  }
-
   await sendChatAction(token, msg.chat.id, 'typing').catch(() => undefined);
 
+  let reservationId: string | null = null;
   try {
     const botAgent = await db.agent.findUniqueOrThrow({ where: { id: bot.agentId } });
 
@@ -480,8 +472,15 @@ export async function processTelegramUpdate(botId: string, update: any) {
       promptHistory.reduce((sum, item) => sum + estimateTokens(item.content), 0) +
       estimateTokens(rawText);
 
-    // Enforce the user's token budget before any LLM call.
-    await assertUsageWithinLimits(bot.workspaceId, 1, estimatedPromptTokens, user.id);
+    // Reserve the whole bounded request budget before the model call so
+    // concurrent Telegram updates cannot race past the configured quota.
+    reservationId = await reserveUsageWithinLimits(
+      bot.workspaceId,
+      1,
+      estimatedPromptTokens,
+      botAgent.maxTokens,
+      user.id,
+    );
 
     await db.message.create({
       data: {
@@ -527,20 +526,24 @@ export async function processTelegramUpdate(botId: string, update: any) {
     const inputTokens = estimatedPromptTokens;
     const outputTokens = estimateTokens(answer.content);
 
-    await db.usageEvent.create({
-      data: {
-        workspaceId: bot.workspaceId,
-        agentId: bot.agentId,
-        telegramBotId: bot.id,
-        telegramUserId: user.id,
-        channel: 'telegram',
-        provider: answer.provider,
-        model: answer.model,
-        inputTokens,
-        outputTokens,
-        totalTokens: inputTokens + outputTokens,
-      },
-    });
+    await db.$transaction([
+      db.usageEvent.create({
+        data: {
+          workspaceId: bot.workspaceId,
+          agentId: bot.agentId,
+          telegramBotId: bot.id,
+          telegramUserId: user.id,
+          channel: 'telegram',
+          provider: answer.provider,
+          model: answer.model,
+          inputTokens,
+          outputTokens,
+          totalTokens: inputTokens + outputTokens,
+        },
+      }),
+      ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
+    ]);
+    reservationId = null;
 
     await db.telegramBot.update({
       where: { id: bot.id },
@@ -549,6 +552,8 @@ export async function processTelegramUpdate(botId: string, update: any) {
 
     await sendMessage(token, msg.chat.id, answer.content);
   } catch (error) {
+    await releaseUsageReservation(reservationId);
+    reservationId = null;
     if (error && typeof error === 'object' && 'status' in error && Number((error as { status?: unknown }).status) === 429) {
       const message = error instanceof Error ? error.message : 'سقف مصرف این کاربر پر شده است.';
       await sendMessage(token, msg.chat.id, '⏳ ' + message + '\n\nبرای ادامه، سقف مصرف باید توسط مدیر افزایش پیدا کند.').catch(() => undefined);
