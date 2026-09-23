@@ -8,21 +8,20 @@ import { processSource } from "@/lib/knowledge/pipeline";
 import {
   ALLOWED_EXTENSIONS,
   detectExtension,
-  persistUpload,
   sanitizeFilename,
   sniffKind,
   validateUrl,
 } from "@/lib/knowledge/extract";
-import { getKnowledgeBucket, createKnowledgeObjectKey as makeKnowledgeObjectKey } from "@/lib/cloudflare-storage";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-const DEFAULT_MAX_UPLOAD_MB = 20;
+const DEFAULT_MAX_UPLOAD_MB = 5;
+const MAX_DB_UPLOAD_MB = 10;
 const ENV_MAX_UPLOAD_MB = (() => {
   const value = Number(process.env.MAX_UPLOAD_MB);
-  return Number.isFinite(value) && value >= 1 ? Math.min(200, Math.floor(value)) : DEFAULT_MAX_UPLOAD_MB;
+  return Number.isFinite(value) && value >= 1 ? Math.min(MAX_DB_UPLOAD_MB, Math.floor(value)) : DEFAULT_MAX_UPLOAD_MB;
 })();
 
 async function serializeSources(agentId: string) {
@@ -80,7 +79,7 @@ export async function POST(req: Request, { params }: Params) {
     try {
       const rows = await db.siteSetting.findMany({ where: { key: "site.maxUploadMb" }, take: 1 });
       const settingLimit = Number(rows[0]?.value ?? 0);
-      if (Number.isFinite(settingLimit) && settingLimit >= 1) maxUploadMb = Math.min(200, Math.floor(settingLimit));
+      if (Number.isFinite(settingLimit) && settingLimit >= 1) maxUploadMb = Math.min(MAX_DB_UPLOAD_MB, Math.floor(settingLimit));
     } catch {
       // Fall back to the environment/default limit when optional settings are unavailable.
     }
@@ -140,34 +139,15 @@ export async function POST(req: Request, { params }: Params) {
         },
       });
 
-      const bucket = await getKnowledgeBucket();
-      let storageUrl: string | null = null;
-
       try {
-        if (bucket) {
-          const objectKey = makeKnowledgeObjectKey(agent.id, source.id, originalName);
-          await bucket.put(objectKey, file.stream(), {
-            httpMetadata: {
-              contentType: file.type || "application/octet-stream",
-            },
-            customMetadata: {
-              originalName,
-              agentId: agent.id,
-              workspaceId: agent.workspaceId,
-            },
-          });
-          storageUrl = "r2://" + objectKey;
-        } else if (process.env.NODE_ENV === "production") {
-          throw new Error("Cloudflare R2 برای ذخیره فایل‌های Production پیکربندی نشده است.");
-        } else {
-          await persistUpload(source.id, originalName, bytes);
-        }
-
+        // R2-free production storage: keep the validated upload in Postgres as an
+        // internal db64:// payload until the background ingestion worker processes it.
+        const storageUrl = "db64://" + Buffer.from(bytes).toString("base64");
         await db.knowledgeDocument.create({
           data: {
             sourceId: source.id,
             name: originalName,
-            mimeType: file.type || null,
+            mimeType: file.type || "application/octet-stream",
             sizeBytes: file.size,
             url: storageUrl,
           },
