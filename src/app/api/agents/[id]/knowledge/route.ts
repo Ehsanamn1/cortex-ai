@@ -88,18 +88,14 @@ export async function POST(req: Request, { params }: Params) {
 
     const contentType = req.headers.get("content-type") ?? "";
 
-    /* Production uses the durable R2 path exclusively. The DB64 path remains
-       only as a small-file development fallback so production never silently
-       stores large customer files inside PostgreSQL. */
-    if (process.env.NODE_ENV === "production" && !isR2Configured()) {
-      return applyCors(
-        jsonError("فضای ذخیره‌سازی پایدار R2 برای بارگذاری فایل در محیط تولید فعال نیست.", 503),
-        req.headers.get("origin")
-      );
-    }
-
-        /* ---------- Mode A: multipart file upload (PDF / TXT / DOCX) ---------- */
+    /* ---------- Mode A: multipart file upload (PDF / TXT / DOCX) ---------- */
     if (contentType.includes("multipart/form-data")) {
+      if (process.env.NODE_ENV === "production" && !isR2Configured()) {
+        return applyCors(
+          jsonError("فضای ذخیره‌سازی پایدار R2 برای بارگذاری فایل در محیط تولید فعال نیست.", 503),
+          req.headers.get("origin")
+        );
+      }
       let form: FormData;
       try {
         form = await req.formData();
