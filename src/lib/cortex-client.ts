@@ -220,7 +220,7 @@ export interface AgentApiAccessDto { keys:AgentApiKeyDto[]; baseUrl:string; endp
 
 /* ---------------- core fetch machinery ---------------- */
 
-const GENERIC_ERROR = "خطای غیرمنتظره‌ای رخ داد؛ لطفاً دوباره تلاش کنید.";
+const GENERIC_ERROR = "سرور خطای داخلی برگرداند؛ جزئیات فنی فقط در لاگ سرور ثبت شده است.";
 const NETWORK_ERROR = "ارتباط با سرور برقرار نشد؛ لطفاً اتصال خود را بررسی کنید.";
 
 function extractErrorMessage(parsed: unknown): string | null {
@@ -252,7 +252,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const parsed = await parseBody(response);
 
   if (!response.ok) {
-    throw new ApiError(extractErrorMessage(parsed) ?? GENERIC_ERROR, response.status);
+    const serverMessage = extractErrorMessage(parsed);
+    const message = serverMessage ??
+      (response.status >= 500
+        ? GENERIC_ERROR + " (" + path + " · HTTP " + response.status + ")"
+        : response.status === 404
+          ? "منبع درخواستی پیدا نشد. (" + path + ")"
+          : "درخواست با خطای HTTP " + response.status + " رد شد. (" + path + ")");
+    throw new ApiError(message, response.status);
   }
 
   return parsed as T;

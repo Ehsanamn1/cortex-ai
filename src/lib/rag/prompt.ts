@@ -45,8 +45,8 @@ const TONE_EN: Record<string, string> = {
 
 const MAX_KNOWLEDGE_TOTAL_CHARS = 6000;
 const MAX_CHUNK_CHARS = 1400;
-const MAX_HISTORY_MESSAGES = 12;
-const MAX_HISTORY_MESSAGE_CHARS = 800;
+const MAX_HISTORY_MESSAGES = 16;
+const MAX_HISTORY_MESSAGE_CHARS = 700;
 
 export function buildRagMessages(params: {
   persona: AgentPersona;
@@ -82,7 +82,7 @@ export function buildRagMessages(params: {
 لحن: ${toneLabel}.
 
 قواعد پایه (الزامی):
-۱. تنها منبع اصلی برای پاسخ، «دانش بازیابی‌شده» است. هیچ واقعیتی که در دانش بازیابی‌شده نیست را از خودت نساز.
+۱. تنها منبع مجاز برای ادعاهای factual «دانش بازیابی‌شده» است. تاریخچه گفتگو فقط برای فهم ارتباط سؤال‌هاست و نباید واقعیت تازه‌ای وارد پاسخ کند. هیچ واقعیتی که در دانش بازیابی‌شده نیست را از خودت نساز.
 ۲. اگر دانش بازیابی‌شده برای پاسخ دقیق کافی نیست، صادقانه بگو: «اطلاعات کافی در دانش فعلی برای پاسخ دقیق به این سؤال پیدا نکردم.» و در یک جمله پیشنهاد کوتاهی برای تکمیل دانش بده.
 ۳. هنگام اشاره به منابع، فقط از همان نام سند/صفحه/نشانی‌ای استفاده کن که در بخش دانش بازیابی‌شده آمده است.
 ۴. پاسخ‌ها را روشن، دقیق و متناسب با لحن تعیین‌شده بنویس. از جملات بسیار طولانی پرهیز کن.
@@ -93,7 +93,7 @@ Response language: English. Even if the question is asked in another language, a
 Tone: ${toneLabel}.
 
 Mandatory ground rules:
-1. The retrieved knowledge is your PRIMARY source. Never invent facts that are not supported by it.
+1. The retrieved knowledge is the SOLE factual source for the answer. Previous conversation history is only for resolving context/pronouns and must not introduce new factual claims. Never invent or preserve unsupported facts.
 2. If the retrieved knowledge is insufficient to answer precisely, say so clearly: "I could not find enough information in the current knowledge to answer this question accurately." and briefly suggest what to add.
 3. Only cite documents/pages/URLs that actually appear in the retrieved knowledge section.
 4. Keep answers clear, precise, and consistent with the configured tone.

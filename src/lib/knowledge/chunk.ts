@@ -18,12 +18,12 @@ export interface ChunkOutput {
 }
 
 export function chunkSize(): number {
-  return clampInt(process.env.CHUNK_SIZE, 600, 200, 4000);
+  return clampInt(process.env.CHUNK_SIZE, 1000, 300, 4000);
 }
 
 export function chunkOverlap(): number {
   const size = chunkSize();
-  return clampInt(process.env.CHUNK_OVERLAP, Math.floor(size * 0.15), 0, Math.floor(size / 2));
+  return clampInt(process.env.CHUNK_OVERLAP, Math.floor(size * 0.12), 0, Math.floor(size / 2));
 }
 
 function clampInt(raw: string | undefined, def: number, min: number, max: number): number {
