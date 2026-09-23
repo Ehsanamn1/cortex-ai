@@ -271,8 +271,14 @@ export async function extractFromUrl(rawUrl: string): Promise<{
   const finalUrl = res.url || url.toString();
 
   if (contentType === "application/pdf") return { pages: await extractPdf(buffer), finalUrl, mimeType: contentType };
-  if (contentType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") return { pages: await extractStoredBytes(buffer, url.pathname.split("/").pop() || "sheet.xlsx"), finalUrl, mimeType: contentType };
-  if (contentType === "application/vnd.openxmlformats-officedocument.presentationml.presentation") return { pages: await extractStoredBytes(buffer, url.pathname.split("/").pop() || "slides.pptx"), finalUrl, mimeType: contentType };
+  if (contentType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+    const result = await extractStoredBytes(buffer, url.pathname.split("/").pop() || "sheet.xlsx");
+    return { pages: result.pages, finalUrl, mimeType: result.mimeType ?? contentType };
+  }
+  if (contentType === "application/vnd.openxmlformats-officedocument.presentationml.presentation") {
+    const result = await extractStoredBytes(buffer, url.pathname.split("/").pop() || "slides.pptx");
+    return { pages: result.pages, finalUrl, mimeType: result.mimeType ?? contentType };
+  }
   if (contentType.startsWith("text/plain")) {
     const normalized = normalizeText(new TextDecoder("utf-8", { fatal: false }).decode(buffer));
     return {

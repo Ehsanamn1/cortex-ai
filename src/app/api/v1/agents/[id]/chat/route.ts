@@ -33,13 +33,13 @@ export async function POST(req: Request, { params }: Params) {
     if (!conversation) conversation = await db.conversation.create({ data: { agentId, userId: null, title: "گفتگوی API", channel: "api", externalUserId: clientId } });
 
     const existing = await db.message.findMany({ where: { conversationId: conversation.id, role: { in: ["user", "assistant"] } }, orderBy: { createdAt: "asc" }, take: 24 });
-    await assertUsageWithinLimits(auth.workspaceId, 1, estimateTokens(message));
+    await assertUsageWithinLimits(auth.agent.workspaceId, 1, estimateTokens(message));
     const userMessage = await db.message.create({ data: { conversationId: conversation.id, role: "user", content: message } });
 
     try {
       const answer = await answerWithKnowledge({
         agentId,
-        workspaceId: auth.workspaceId,
+        workspaceId: auth.agent.workspaceId,
         persona: auth.agent,
         history: existing.slice(-12).map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
         question: message,
@@ -50,7 +50,7 @@ export async function POST(req: Request, { params }: Params) {
       const inputTokens = existing.slice(-12).reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(message);
       const outputTokens = estimateTokens(answer.content);
       const totalTokens = inputTokens + outputTokens;
-      await db.usageEvent.create({ data: { workspaceId: auth.workspaceId, agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens } });
+      await db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens } });
       return applyCors(jsonOk({
         id: assistant.id,
         conversationId: conversation.id,
