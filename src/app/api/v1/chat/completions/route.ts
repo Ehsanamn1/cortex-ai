@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       id: "chatcmpl-" + assistant.id,
       object: "chat.completion",
       created: Math.floor(Date.now() / 1000),
-      model: auth.agent.id,
+      model: answer.model,
       choices: [{ index: 0, message: { role: "assistant", content: answer.content }, finish_reason: "stop" }],
       usage: { prompt_tokens: promptTokens, completion_tokens: outputTokens, total_tokens: totalTokens },
       x_cortex: { conversationId: conversation.id, sources: metadata.sources },
