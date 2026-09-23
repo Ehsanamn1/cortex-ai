@@ -158,9 +158,7 @@ export async function POST(req: Request, { params }: Params) {
           });
           storageUrl = "r2://" + objectKey;
         } else if (process.env.NODE_ENV === "production") {
-          // Portable production fallback when R2 is not enabled.
-          // The raw bytes are cleared after successful processing.
-          storageUrl = "db64://" + Buffer.from(bytes).toString("base64");
+          throw new Error("Cloudflare R2 برای ذخیره فایل‌های Production پیکربندی نشده است.");
         } else {
           await persistUpload(source.id, originalName, bytes);
         }
