@@ -80,6 +80,13 @@ expansion**: when the first-pass top score is weak, the LLM rewrites the query i
 languages and each version re-retrieves; results merge by best chunk score. Neural
 embeddings remove the need for this entirely.
 
+## R2-free storage
+
+Production does not require Cloudflare R2. File uploads are held in PostgreSQL as an
+internal `db64://` payload until extraction completes; the knowledge source cascade
+removes that payload together with the document. The application never exposes the
+payload to clients. The default upload limit is 5 MB with a 10 MB hard cap.
+
 ## Updates & deletion
 
 - **Retry** (`POST /api/knowledge/:id/retry`): purges old chunks + vectors, re-runs the
