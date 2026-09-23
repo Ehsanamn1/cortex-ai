@@ -12,6 +12,8 @@ export interface RagAnswer {
   model: string;
   latencyMs: number;
   retrieval: RetrievedChunk[];
+  auxiliaryInputTokens?: number;
+  auxiliaryOutputTokens?: number;
 }
 
 export const RAG_QUERY_EXPANSION_RESERVE_TOKENS = 384;
