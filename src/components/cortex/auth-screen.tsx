@@ -222,7 +222,7 @@ export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "s
                 دانش خودتان
               </span>{" "}
               بسازید.
-            </h1>
+            </h1></div>
             <ul className="space-y-5">
               {FEATURES.map((feature) => (
                 <li key={feature.title} className="group flex items-start gap-4 rounded-2xl border border-white/[.07] bg-white/[.025] p-4 backdrop-blur-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white/[.04]">
