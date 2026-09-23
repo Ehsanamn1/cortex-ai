@@ -95,8 +95,8 @@ jobs:
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "Postgres URL missing"; exit 1; }
           printf '%s' 'CREATE EXTENSION IF NOT EXISTS pgcrypto;' | npx prisma db execute --url "$db_url" --stdin
-          printf '%s\n' 'CREATE TABLE IF NOT EXISTS "AgentApiKey" ("id" TEXT PRIMARY KEY, "agentId" TEXT NOT NULL, "name" TEXT NOT NULL, "keyHash" TEXT NOT NULL UNIQUE, "keyPrefix" TEXT NOT NULL, "active" BOOLEAN NOT NULL DEFAULT TRUE, "lastUsedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "AgentApiKey_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "Agent"("id") ON DELETE CASCADE ON UPDATE CASCADE); CREATE INDEX IF NOT EXISTS "AgentApiKey_agentId_active_idx" ON "AgentApiKey"("agentId","active");'
-          | npx prisma db execute --url "$db_url" --stdin
+          agent_api_key_sql='CREATE TABLE IF NOT EXISTS "AgentApiKey" ("id" TEXT PRIMARY KEY, "agentId" TEXT NOT NULL, "name" TEXT NOT NULL, "keyHash" TEXT NOT NULL UNIQUE, "keyPrefix" TEXT NOT NULL, "active" BOOLEAN NOT NULL DEFAULT TRUE, "lastUsedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "AgentApiKey_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "Agent"("id") ON DELETE CASCADE ON UPDATE CASCADE); CREATE INDEX IF NOT EXISTS "AgentApiKey_agentId_active_idx" ON "AgentApiKey"("agentId","active");'
+          printf '%s\n' "$agent_api_key_sql" | npx prisma db execute --url "$db_url" --stdin
           echo "PostgreSQL pgcrypto and Agent API key storage are ready."
 
       - name: Ensure required Worker database secret
