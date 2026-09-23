@@ -116,7 +116,7 @@ function AddFileDialogInner({
   });
   const configuredMaxMb = Math.max(
     1,
-    Math.min(200, Math.floor(Number(siteConfigQuery.data?.settings["site.maxUploadMb"] ?? 20)))
+    Math.min(10, Math.floor(Number(siteConfigQuery.data?.settings["site.maxUploadMb"] ?? 5)))
   );
   const maxFileSize = configuredMaxMb * 1024 * 1024;
   const [file, setFile] = useState<File | null>(null);
@@ -159,7 +159,7 @@ function AddFileDialogInner({
     <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-right sm:text-right">
           <DialogTitle>افزودن فایل به دانش</DialogTitle>
-          <DialogDescription>هر فایل تا {configuredMaxMb} مگابایت قابل دریافت است؛ سقف نهایی از تنظیمات سرور اعمال می‌شود و بعد از بارگذاری به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
+          <DialogDescription>هر فایل تا {configuredMaxMb} مگابایت قابل دریافت است؛ فایل پس از اعتبارسنجی در خود سامانه ذخیره و سپس به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
         </DialogHeader>
 
         <div
@@ -250,7 +250,7 @@ function AddFileDialogInner({
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: progress + "%" }} />
             </div>
-            <p className="text-[10px] text-muted-foreground">فایل‌های بزرگ مستقیماً به Storage ارسال می‌شوند.</p>
+            <p className="text-[10px] text-muted-foreground">فایل ابتدا در پایگاه‌داده داخلی ثبت و سپس پردازش و ایندکس می‌شود.</p>
           </div>
         )}
 
