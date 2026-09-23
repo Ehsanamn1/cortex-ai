@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
+import { applyCors, corsPreflight, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
 import { assertUsageWithinLimits } from "@/lib/server/usage";
@@ -8,6 +8,10 @@ import { answerWithKnowledge, RagConfigError, toRetrievalDebug, toSourceRefs } f
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
+
+export function OPTIONS(req: Request) {
+  return corsPreflight(req);
+}
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, { params }: Params) {
@@ -38,8 +42,14 @@ export async function POST(req: Request, { params }: Params) {
     }
     if (!conversation) conversation = await db.conversation.create({ data: { agentId, userId: null, title: "گفتگوی API", channel: "api", externalUserId: clientId } });
 
-    const existing = await db.message.findMany({ where: { conversationId: conversation.id, role: { in: ["user", "assistant"] } }, orderBy: { createdAt: "asc" }, take: 24 });
-    await assertUsageWithinLimits(auth.agent.workspaceId, 1, estimateTokens(message));
+    const existing = await db.message.findMany({
+      where: { conversationId: conversation.id, role: { in: ["user", "assistant"] } },
+      orderBy: { createdAt: "desc" },
+      take: 24,
+    }).then((rows) => rows.reverse());
+    const promptHistory = existing.slice(-12);
+    const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(message);
+    await assertUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens);
     const userMessage = await db.message.create({ data: { conversationId: conversation.id, role: "user", content: message } });
 
     try {
@@ -47,13 +57,13 @@ export async function POST(req: Request, { params }: Params) {
         agentId,
         workspaceId: auth.agent.workspaceId,
         persona: auth.agent,
-        history: existing.slice(-12).map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+        history: promptHistory.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
         question: message,
       });
       const metadata = { sources: toSourceRefs(answer.retrieval), retrieval: toRetrievalDebug(answer.retrieval), provider: answer.provider, model: answer.model, latencyMs: answer.latencyMs };
       const assistant = await db.message.create({ data: { conversationId: conversation.id, role: "assistant", content: answer.content, metadata: JSON.stringify(metadata) } });
       await db.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
-      const inputTokens = existing.slice(-12).reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(message);
+      const inputTokens = promptTokens;
       const outputTokens = estimateTokens(answer.content);
       const totalTokens = inputTokens + outputTokens;
       await db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens } });
