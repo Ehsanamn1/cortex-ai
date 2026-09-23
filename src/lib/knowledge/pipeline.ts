@@ -24,6 +24,16 @@ export function isProcessing(sourceId: string): boolean {
 
 export async function processSource(sourceId: string): Promise<void> {
   if (processing.has(sourceId)) return;
+
+  // Claim the source atomically in PostgreSQL. The in-memory set only avoids
+  // duplicate work inside one Worker isolate; the DB claim prevents two
+  // isolates from processing the same source concurrently.
+  const claimed = await db.knowledgeSource.updateMany({
+    where: { id: sourceId, status: { in: ["pending", "failed"] } },
+    data: { status: "processing", error: null },
+  });
+  if (claimed.count === 0) return;
+
   processing.add(sourceId);
   try {
     const source = await db.knowledgeSource.findUnique({
@@ -32,10 +42,6 @@ export async function processSource(sourceId: string): Promise<void> {
     });
     if (!source) return;
 
-    await db.knowledgeSource.update({
-      where: { id: sourceId },
-      data: { status: "processing", error: null },
-    });
     await db.knowledgeDocument.updateMany({
       where: { sourceId },
       data: { status: "processing", error: null },
