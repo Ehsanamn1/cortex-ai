@@ -4,7 +4,7 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "site.name": "Cortex AI",
   "site.description": "ساخت و مدیریت ایجنت‌های هوش مصنوعی با دانش واقعی کسب‌وکار.",
   "site.supportEmail": "",
-  "site.maxUploadMb": "20",
+  "site.maxUploadMb": "200",
   "site.welcomeTitle": "هوش کسب‌وکار را از یک داشبورد کنترل کن.",
 };
 

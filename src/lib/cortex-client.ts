@@ -337,6 +337,14 @@ export const api = {
     return request(`/api/agents/${encodeURIComponent(agentId)}/knowledge`);
   },
 
+  createKnowledgeUpload(agentId: string, input: { name: string; size: number; mimeType?: string }): Promise<{ source: KnowledgeSourceDto; upload: { url: string; key: string; expiresIn: number; maxSizeMb: number } }> {
+    return jsonRequest(`/api/agents/${encodeURIComponent(agentId)}/knowledge/upload-url`, "POST", input);
+  },
+
+  completeKnowledgeUpload(agentId: string, input: { sourceId: string; key: string; size?: number }): Promise<{ source: KnowledgeSourceDto }> {
+    return jsonRequest(`/api/agents/${encodeURIComponent(agentId)}/knowledge/complete`, "POST", input);
+  },
+
   uploadKnowledgeFile(agentId: string, file: File): Promise<{ source: KnowledgeSourceDto }> {
     const formData = new FormData();
     formData.append("file", file);

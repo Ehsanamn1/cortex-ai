@@ -3,6 +3,7 @@ import { getVectorStore } from "@/lib/providers/vector";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs, type ChunkInput } from "./chunk";
 import { extractFromUrl, extractStoredBytes } from "./extract";
+import { deleteR2Object, getR2ObjectBytes } from "@/lib/storage/r2";
 
 /**
  * Knowledge processing pipeline (real, no simulation):
@@ -65,7 +66,18 @@ export async function processSource(sourceId: string): Promise<void> {
         if (!document) throw new Error("فایل این منبع یافت نشد.");
 
         const storagePath = document.url ?? "";
-        if (storagePath.startsWith("db64://")) {
+        if (storagePath.startsWith("r2://")) {
+          const key = storagePath.slice("r2://".length);
+          if (!key) throw new Error("مسیر فایل R2 معتبر نیست.");
+          const bytes = await getR2ObjectBytes(key);
+          const result = await extractStoredBytes(bytes, document.name);
+          if (!result.pages || result.pages.length === 0 || result.pages.every((p) => p.text.trim().length === 0)) {
+            throw new Error("محتوای متنی قابل استخراجی در این فایل یافت نشد.");
+          }
+          mimeType = result.mimeType;
+          sizeBytes = result.sizeBytes;
+          chunks = chunkInputs(result.pages as ChunkInput[]);
+        } else if (storagePath.startsWith("db64://")) {
           const raw = storagePath.slice("db64://".length);
           if (!raw) throw new Error("داده فایل ذخیره‌شده معتبر نیست.");
           const bytes = new Uint8Array(Buffer.from(raw, "base64"));
@@ -214,11 +226,16 @@ export async function deleteSourceCompletely(sourceId: string): Promise<void> {
   if (!source) return;
 
   await purgeSourceVectors(source.agentId, sourceId);
+  for (const document of source.documents) {
+    if (document.url?.startsWith("r2://")) await deleteR2Object(document.url.slice("r2://".length)).catch(() => undefined);
+  }
   await db.knowledgeSource.delete({ where: { id: sourceId } }); // cascades documents
 }
 
 /** Full removal of an agent's knowledge (used on agent deletion). */
 export async function purgeAgentKnowledge(agentId: string): Promise<void> {
+  const r2Docs = await db.knowledgeDocument.findMany({ where: { source: { agentId }, url: { startsWith: "r2://" } }, select: { url: true } });
+  await Promise.all(r2Docs.map((d) => d.url ? deleteR2Object(d.url.slice("r2://".length)).catch(() => undefined) : Promise.resolve()));
   const vectorStore = getVectorStore();
   await vectorStore.deleteByAgent(agentId);
   await db.knowledgeChunk.deleteMany({ where: { agentId } });

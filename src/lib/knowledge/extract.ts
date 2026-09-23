@@ -50,7 +50,7 @@ export async function removeUploadDir(sourceId: string): Promise<void> {
 
 export const ALLOWED_EXTENSIONS = [
   ".pdf", ".txt", ".docx", ".md", ".csv", ".json", ".xml", ".html", ".htm",
-  ".yaml", ".yml", ".log", ".tsv", ".sql"
+  ".yaml", ".yml", ".log", ".tsv", ".sql", ".jsonl", ".ndjson", ".rst", ".toml", ".ini", ".conf", ".env", ".css", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".py", ".java", ".go", ".rs", ".php", ".rb", ".sh", ".bat", ".ps1", ".graphql", ".gql"
 ] as const;
 
 export function detectExtension(filename: string): string {
@@ -347,8 +347,8 @@ export async function extractStoredBytes(bytes: Uint8Array, originalName: string
   if (ext === ".docx" && kind === "docx-zip") {
     return { pages: await extractDocx(bytes), mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", sizeBytes: bytes.length };
   }
-  const textExtensions = new Set([".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".log", ".tsv", ".sql"]);
-  if (textExtensions.has(ext) && (kind === "text" || kind === "unknown")) {
+  const textExtensions = new Set([".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".log", ".tsv", ".sql", ".jsonl", ".ndjson", ".rst", ".toml", ".ini", ".conf", ".env", ".css", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".py", ".java", ".go", ".rs", ".php", ".rb", ".sh", ".bat", ".ps1", ".graphql", ".gql"]);
+  if ((textExtensions.has(ext) || kind === "text") && (kind === "text" || kind === "unknown")) {
     const mimeType =
       ext === ".json" ? "application/json" :
       ext === ".csv" ? "text/csv" :

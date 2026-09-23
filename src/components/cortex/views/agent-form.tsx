@@ -34,6 +34,7 @@ const agentSchema = z
     persona: z.string().max(2000, { message: "شخصیت حداکثر ۲۰۰۰ کاراکتر است." }),
     systemPrompt: z.string().max(8000, { message: "پرامپت سیستم حداکثر ۸۰۰۰ کاراکتر است." }),
     temperature: z.number().min(0).max(2),
+    topP: z.number().min(0).max(1),
     maxTokens: z.number().int().min(128).max(8000),
     memoryEnabled: z.boolean(),
     citationsEnabled: z.boolean(),
@@ -44,6 +45,14 @@ const agentSchema = z
   });
 
 type AgentFormValues = z.infer<typeof agentSchema>;
+
+const PERSONALITY_PRESETS = [
+  { label: "مشاور فروش", persona: "یک مشاور فروش حرفه‌ای، صبور و نتیجه‌گرا. ابتدا نیاز کاربر را کشف کن و سپس پیشنهاد دقیق بده.", instructions: "قبل از پیشنهاد، سؤال روشن‌کننده بپرس. مزایا و محدودیت‌ها را شفاف بگو و ادعای بدون منبع نکن." },
+  { label: "پشتیبان صبور", persona: "یک پشتیبان مشتری آرام، همدل و دقیق که کاربر را مرحله‌به‌مرحله راهنمایی می‌کند.", instructions: "مشکل را ساده توضیح بده و مراحل حل را شماره‌گذاری کن. در ابهام، سؤال مشخص بپرس." },
+  { label: "تحلیلگر", persona: "یک تحلیلگر داده و کسب‌وکار منطقی و ساختارمند که واقعیت، فرض و نتیجه‌گیری را جدا می‌کند.", instructions: "پاسخ را با جمع‌بندی، داده، تحلیل و اقدام بعدی ساختاربندی کن و هیچ عددی را بدون منبع نساز." },
+  { label: "دستیار اجرایی", persona: "یک دستیار اجرایی سریع، منظم و مسئولیت‌پذیر که درخواست‌ها را به اقدام‌های مشخص تبدیل می‌کند.", instructions: "خروجی را عملیاتی، اولویت‌بندی‌شده و کوتاه نگه دار و همیشه قدم بعدی را روشن کن." },
+  { label: "دستیار خلاق", persona: "یک شریک خلاق با ایده‌های متنوع و در عین حال منضبط که تفاوت ایده و واقعیت را حفظ می‌کند.", instructions: "چند ایده متفاوت بده، تفاوت هرکدام را کوتاه توضیح بده و از کلیشه‌ها دوری کن." },
+] as const;
 
 const TONE_OPTIONS: Array<{ value: AgentFormValues["tone"]; label: string }> = [
   { value: "professional", label: "حرفه‌ای" },
@@ -81,6 +90,7 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
       persona: agent?.persona ?? "",
       systemPrompt: agent?.systemPrompt ?? "",
       temperature: agent?.temperature ?? 0.7,
+      topP: agent?.topP ?? 1,
       maxTokens: agent?.maxTokens ?? 1200,
       memoryEnabled: agent?.memoryEnabled ?? true,
       citationsEnabled: agent?.citationsEnabled ?? true,
@@ -123,6 +133,7 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
         persona: values.persona.trim() || undefined,
         systemPrompt: values.systemPrompt.trim() || undefined,
         temperature: values.temperature,
+        topP: values.topP,
         maxTokens: values.maxTokens,
         memoryEnabled: values.memoryEnabled,
         citationsEnabled: values.citationsEnabled,
@@ -300,6 +311,18 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
             </div>
 
             {/* لحن سفارشی */}
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[.018] p-4">
+              <div><p className="text-sm font-semibold text-foreground">شخصیت‌های آماده</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">یک الگو انتخاب کن و بعد همه متن‌ها را شخصی‌سازی کن.</p></div>
+              <div className="flex flex-wrap gap-2">
+                {PERSONALITY_PRESETS.map((preset) => (
+                  <Button key={preset.label} type="button" variant="outline" size="sm" onClick={() => {
+                    form.setValue("persona", preset.persona, { shouldDirty: true });
+                    form.setValue("instructions", preset.instructions, { shouldDirty: true });
+                  }}>{preset.label}</Button>
+                ))}
+              </div>
+            </div>
+
             {toneValue === "custom" && (
               <div className="space-y-2">
                 <Label htmlFor="agent-custom-tone">لحن سفارشی *</Label>
@@ -349,7 +372,13 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
                 <FieldError message={form.formState.errors.systemPrompt?.message} />
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-5 sm:grid-cols-2"><div className="space-y-2">
+                  <div className="flex items-baseline justify-between"><Label htmlFor="agent-top-p">تنوع انتخاب واژه</Label><span className="text-[11px] text-muted-foreground">{form.watch("topP").toFixed(2)}</span></div>
+                  <input id="agent-top-p" type="range" min="0" max="1" step="0.05" className="w-full accent-primary" {...form.register("topP", { valueAsNumber: true })} />
+                  <div className="flex justify-between text-[10px] text-muted-foreground"><span>متمرکز</span><span>متنوع</span></div>
+                </div>
+
+                
                 <div className="space-y-2">
                   <div className="flex items-baseline justify-between">
                     <Label htmlFor="agent-temperature">خلاقیت پاسخ</Label>

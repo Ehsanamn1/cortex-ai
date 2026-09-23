@@ -101,6 +101,24 @@ export function AddFileDialog({
   );
 }
 
+function uploadWithProgress(url: string, file: File, onProgress: (value: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress(Math.max(1, Math.min(99, Math.round((event.loaded / event.total) * 100))));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error("بارگذاری مستقیم فایل در فضای ذخیره‌سازی ناموفق بود."));
+    };
+    xhr.onerror = () => reject(new Error("ارتباط با فضای ذخیره‌سازی قطع شد."));
+    xhr.onabort = () => reject(new Error("بارگذاری فایل لغو شد."));
+    xhr.send(file);
+  });
+}
+
 function AddFileDialogInner({
   agentId,
   onOpenChange,
@@ -109,15 +127,8 @@ function AddFileDialogInner({
   onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
-  const siteConfigQuery = useQuery({
-    queryKey: ["site-config"],
-    queryFn: api.getSiteConfig,
-    staleTime: 60_000,
-  });
-  const configuredMaxMb = Math.max(
-    1,
-    Math.min(10, Math.floor(Number(siteConfigQuery.data?.settings["site.maxUploadMb"] ?? 5)))
-  );
+  const siteConfigQuery = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000 });
+  const configuredMaxMb = Math.max(1, Math.min(200, Math.floor(Number(siteConfigQuery.data?.settings["site.maxUploadMb"] ?? 200))));
   const maxFileSize = configuredMaxMb * 1024 * 1024;
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -127,16 +138,27 @@ function AddFileDialogInner({
 
   const uploadMutation = useMutation({
     mutationFn: async (selected: File) => {
-      setProgress(8);
-      const result = await api.uploadKnowledgeFile(agentId, selected);
+      setProgress(3);
+      try {
+        const prepared = await api.createKnowledgeUpload(agentId, { name: selected.name, size: selected.size, mimeType: selected.type });
+        await uploadWithProgress(prepared.upload.url, selected, setProgress);
+        setProgress(99);
+        await api.completeKnowledgeUpload(agentId, { sourceId: prepared.source.id, key: prepared.upload.key, size: selected.size });
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 503 && selected.size <= 10 * 1024 * 1024) {
+          setProgress(10);
+          await api.uploadKnowledgeFile(agentId, selected);
+          setProgress(100);
+          return;
+        }
+        throw error;
+      }
       setProgress(100);
-      return result;
     },
     onSuccess: () => {
       invalidateKnowledge(queryClient, agentId);
-      setProgress(100);
       onOpenChange(false);
-      toast.success("فایل دریافت شد؛ پردازش دانش در حال انجام است.");
+      toast.success("فایل دریافت شد؛ پردازش و ایندکس دانش در حال انجام است.");
     },
     onError: (mutationError: Error) => {
       setProgress(0);
@@ -157,112 +179,67 @@ function AddFileDialogInner({
 
   return (
     <DialogContent className="sm:max-w-md">
-        <DialogHeader className="text-right sm:text-right">
-          <DialogTitle>افزودن فایل به دانش</DialogTitle>
-          <DialogDescription>هر فایل تا {configuredMaxMb} مگابایت قابل دریافت است؛ فایل پس از اعتبارسنجی در خود سامانه ذخیره و سپس به‌صورت امن پردازش و ایندکس می‌شود.</DialogDescription>
-        </DialogHeader>
-
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label="ناحیه انتخاب یا رها کردن فایل"
-          onClick={() => inputRef.current?.click()}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              inputRef.current?.click();
-            }
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(event) => {
-            event.preventDefault();
-            setDragOver(false);
-            pickFile(event.dataTransfer.files?.[0]);
-          }}
-          className={cn(
-            "flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-6 text-center transition-colors",
-            dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-accent/50"
-          )}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".pdf,.txt,.docx,.md,.csv,.json,.xml,.html,.htm,.yaml,.yml,.log,.tsv,.sql"
-            className="sr-only"
-            tabIndex={-1}
-            onChange={(event) => {
-              pickFile(event.target.files?.[0]);
-              event.target.value = "";
-            }}
-          />
-          {file ? (
-            <div className="flex w-full max-w-sm items-center gap-3 rounded-lg border bg-card p-3 text-start">
-              <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-primary/10 text-primary">
-                <FileText className="size-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
-                <p className="text-xs text-muted-foreground">{formatSizeFa(file.size)}</p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="حذف فایل انتخاب‌شده"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setFile(null);
-                }}
-              >
-                <X />
-              </Button>
+      <DialogHeader className="text-right sm:text-right">
+        <DialogTitle>افزودن داده به دانش</DialogTitle>
+        <DialogDescription>
+          فایل تا {configuredMaxMb} مگابایت. برای فایل‌های بزرگ، مرورگر مستقیم به فضای ذخیره‌سازی امن متصل می‌شود و محدودیت بدنه Worker دور زده می‌شود.
+        </DialogDescription>
+      </DialogHeader>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label="ناحیه انتخاب یا رها کردن فایل"
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") { event.preventDefault(); inputRef.current?.click(); }
+        }}
+        onDragOver={(event) => { event.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(event) => { event.preventDefault(); setDragOver(false); pickFile(event.dataTransfer.files?.[0]); }}
+        className={cn("flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-6 text-center transition-colors", dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-accent/50")}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept="*/*"
+          className="sr-only"
+          tabIndex={-1}
+          onChange={(event) => { pickFile(event.target.files?.[0]); event.target.value = ""; }}
+        />
+        {file ? (
+          <div className="flex w-full max-w-sm items-center gap-3 rounded-lg border bg-card p-3 text-start">
+            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-primary/10 text-primary"><FileText className="size-5" /></span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
+              <p className="text-xs text-muted-foreground">{formatSizeFa(file.size)}</p>
             </div>
-          ) : (
-            <>
-              <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-xl border bg-card text-primary">
-                <UploadCloud className="size-5" />
-              </span>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">فایل را این‌جا رها کنید</p>
-                <p className="text-xs text-muted-foreground">یا برای انتخاب از دستگاه کلیک کنید · PDF، DOCX، TXT، MD، CSV، JSON، XML، HTML و داده‌های متنی</p>
-              </div>
-            </>
-          )}
-        </div>
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {uploadMutation.isPending && (
-          <div className="space-y-2 rounded-xl border bg-muted/30 p-3">
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>بارگذاری امن فایل…</span>
-              <span>{faNum(progress)}٪</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: progress + "%" }} />
-            </div>
-            <p className="text-[10px] text-muted-foreground">فایل ابتدا در پایگاه‌داده داخلی ثبت و سپس پردازش و ایندکس می‌شود.</p>
+            <Button type="button" variant="ghost" size="icon" aria-label="حذف فایل انتخاب‌شده" onClick={(event) => { event.stopPropagation(); setFile(null); }}><X /></Button>
           </div>
+        ) : (
+          <>
+            <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-xl border bg-card text-primary"><UploadCloud className="size-5" /></span>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">فایل یا داده را این‌جا رها کنید</p>
+              <p className="text-xs text-muted-foreground">PDF، DOCX، CSV، JSON، Markdown، فایل‌های متنی/کدی و فرمت‌های قابل استخراج</p>
+            </div>
+          </>
         )}
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={uploadMutation.isPending}>
-            انصراف
-          </Button>
-          <Button disabled={!file || !!error || uploadMutation.isPending} onClick={() => file && uploadMutation.mutate(file)}>
-            {uploadMutation.isPending && <Loader2 aria-hidden="true" className="animate-spin" />}
-            {uploadMutation.isPending ? "در حال بارگذاری..." : "افزودن فایل"}
-          </Button>
-        </DialogFooter>
+      </div>
+      {error && <Alert variant="destructive"><AlertCircle /><AlertDescription>{error}</AlertDescription></Alert>}
+      {uploadMutation.isPending && (
+        <div className="space-y-2 rounded-xl border bg-muted/30 p-3">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground"><span>انتقال مستقیم و امن فایل…</span><span>{faNum(progress)}٪</span></div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-[width]" style={{ width: progress + "%" }} /></div>
+          <p className="text-[10px] text-muted-foreground">پس از انتقال، Cortex فایل را استخراج، قطعه‌بندی، embedding و ایندکس می‌کند.</p>
+        </div>
+      )}
+      <DialogFooter className="gap-2 sm:gap-0">
+        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={uploadMutation.isPending}>انصراف</Button>
+        <Button disabled={!file || !!error || uploadMutation.isPending} onClick={() => file && uploadMutation.mutate(file)}>
+          {uploadMutation.isPending && <Loader2 aria-hidden="true" className="animate-spin" />}
+          {uploadMutation.isPending ? "در حال انتقال..." : "افزودن به دانش"}
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 }
