@@ -542,6 +542,12 @@ export async function processTelegramUpdate(botId: string, update: any) {
 
     await sendMessage(token, msg.chat.id, answer.content);
   } catch (error) {
+    if (error && typeof error === 'object' && 'status' in error && Number((error as { status?: unknown }).status) === 429) {
+      const message = error instanceof Error ? error.message : 'سقف مصرف این کاربر پر شده است.';
+      await sendMessage(token, msg.chat.id, '⏳ ' + message + '\n\nبرای ادامه، سقف مصرف باید توسط مدیر افزایش پیدا کند.').catch(() => undefined);
+      return;
+    }
+
     console.error('[cortex][telegram] message processing failed:', error);
 
     await db.telegramBot.update({
