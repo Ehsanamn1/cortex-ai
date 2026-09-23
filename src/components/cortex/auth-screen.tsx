@@ -190,7 +190,7 @@ function SignupForm() {
   );
 }
 
-export function AuthScreen() {
+export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "signup" }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div className="grid flex-1 lg:grid-cols-[1.05fr_1fr]">
@@ -253,7 +253,7 @@ export function AuthScreen() {
                 <p className="text-sm text-muted-foreground">برای ادامه، وارد حساب خود شوید یا حساب جدید بسازید.</p>
               </div>
 
-              <Tabs defaultValue="login">
+              <Tabs defaultValue={defaultTab}>
                 <TabsList className="mb-6 grid w-full grid-cols-2">
                   <TabsTrigger value="login">ورود</TabsTrigger>
                   <TabsTrigger value="signup">ثبت‌نام</TabsTrigger>
