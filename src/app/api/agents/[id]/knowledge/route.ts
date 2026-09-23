@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { processSource } from "@/lib/knowledge/pipeline";
+import { isR2Configured } from "@/lib/storage/r2";
 import {
   ALLOWED_EXTENSIONS,
   detectExtension,
@@ -87,7 +88,17 @@ export async function POST(req: Request, { params }: Params) {
 
     const contentType = req.headers.get("content-type") ?? "";
 
-    /* ---------- Mode A: multipart file upload (PDF / TXT / DOCX) ---------- */
+    /* Production uses the durable R2 path exclusively. The DB64 path remains
+       only as a small-file development fallback so production never silently
+       stores large customer files inside PostgreSQL. */
+    if (process.env.NODE_ENV === "production" && !isR2Configured()) {
+      return applyCors(
+        jsonError("فضای ذخیره‌سازی پایدار R2 برای بارگذاری فایل در محیط تولید فعال نیست.", 503),
+        req.headers.get("origin")
+      );
+    }
+
+        /* ---------- Mode A: multipart file upload (PDF / TXT / DOCX) ---------- */
     if (contentType.includes("multipart/form-data")) {
       let form: FormData;
       try {
