@@ -112,6 +112,41 @@ jobs:
           npx wrangler secret list --name cortex-ai
           echo "Expected runtime secrets: Postgres + APP_SECRET_KEY; R2_ACCOUNT_ID/R2_BUCKET_NAME/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY enable 200MB direct uploads; admin/Telegram secrets are optional."
 
+      - name: Smoke test admin and public routes
+        run: |
+          set -euo pipefail
+          base="https://cortex-ai.dengxiao445.workers.dev"
+
+          check_json() {
+            local url="$1"
+            local expected="$2"
+            local tmp
+            tmp=$(mktemp)
+            status=$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -o "$tmp" -w "%{http_code}" "$url")
+            echo "GET $url -> HTTP $status"
+            head -c 500 "$tmp" || true
+            echo
+            test "$status" = "$expected"
+            rm -f "$tmp"
+          }
+
+          check_html() {
+            local url="$1"
+            local tmp
+            tmp=$(mktemp)
+            status=$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -o "$tmp" -w "%{http_code}" "$url")
+            echo "GET $url -> HTTP $status"
+            head -c 900 "$tmp" || true
+            echo
+            test "$status" = "200"
+            grep -q "مرکز مدیریت" "$tmp" || grep -q "Cortex AI" "$tmp"
+            rm -f "$tmp"
+          }
+
+          check_html "$base/control-center"
+          check_html "$base/admin"
+          check_json "$base/api/admin/auth/me" "401"
+
       - name: Smoke test live Worker
         run: |
           set +e
