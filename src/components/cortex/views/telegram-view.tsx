@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, Bot, CheckCircle2, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
-import { api, type AgentDto, type TelegramBotDto } from "@/lib/cortex-client";
+import { api, type AgentDto, type TelegramBotDto, type TelegramUserDto } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,10 +167,11 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
   const { data: allowlistData } = useQuery({ queryKey: ["allowlist", bot.id], queryFn: () => api.getTelegramAllowlist(bot.id), enabled: !!bot.id });
   const workspaceId = useCortexStore((s) => s.activeWorkspaceId);
   const usersQuery = useQuery({
-    queryKey: ["telegram-users-admin", workspaceId],
-    queryFn: () => api.getTelegramUsers(workspaceId ?? undefined),
-    enabled: !!workspaceId,
-    staleTime: 15_000,
+    queryKey: ["telegram-bot-users", bot.id],
+    queryFn: () => api.getTelegramBotUsers(bot.id),
+    enabled: !!bot.id,
+    staleTime: 10_000,
+    refetchInterval: 20_000,
   });
   const botUsers = (usersQuery.data?.users ?? []).filter((item) => item.botId === bot.id).sort((a, b) => (b.usage?.tokens ?? 0) - (a.usage?.tokens ?? 0));
   const [phone, setPhone] = useState("");
@@ -231,16 +232,10 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
               <div className="border-t border-white/[.06] pt-4">
                 <div className="flex items-center justify-between gap-3"><p className="flex items-center gap-2 text-xs font-semibold"><BarChart3 className="size-4 text-primary" />مانیتورینگ مصرف همین ربات</p><span className="text-[10px] text-muted-foreground">{botUsers.length} کاربر شناخته‌شده</span></div>
                 <div className="mt-3 space-y-2">
-                  {botUsers.slice(0, 5).map((user) => (
-                    <div key={user.id} className="rounded-xl border border-white/[.06] bg-black/10 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0"><p className="truncate text-xs font-medium">{[user.firstName,user.lastName].filter(Boolean).join(" ") || user.username || user.telegramUserId}</p><p dir="ltr" className="truncate text-[10px] text-muted-foreground">{user.phoneNumber || "بدون شماره"}</p></div>
-                        <span className="shrink-0 text-xs font-semibold text-primary">{faNum(user.usage?.tokens ?? 0)} توکن</span>
-                      </div>
-                      <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-muted-foreground"><span>امروز: {faNum(user.dailyUsage?.tokens ?? 0)}</span><span>ماه: {faNum(user.monthlyUsage?.tokens ?? 0)}</span><span>سقف روزانه: {user.dailyTokenLimit > 0 ? faNum(user.dailyTokenLimit) : "∞"}</span><span>سقف ماهانه: {user.monthlyTokenLimit > 0 ? faNum(user.monthlyTokenLimit) : "∞"}</span></div>
-                    </div>
+                  {botUsers.map((user) => (
+                    <TelegramUserMonitorCard key={user.id} botId={bot.id} user={user} onChanged={() => void usersQuery.refetch()} />
                   ))}
-                  {botUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">هنوز مصرفی از این ربات ثبت نشده است.</p>}
+                  {botUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">هنوز کاربری برای این ربات ثبت نشده است.</p>}
                 </div>
               </div>
             </CardContent>
