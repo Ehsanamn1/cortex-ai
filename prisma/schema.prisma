@@ -306,6 +306,7 @@ model TelegramUser {
 
   bot TelegramBot @relation(fields: [botId], references: [id], onDelete: Cascade)
   usageEvents UsageEvent[]
+  usageReservations UsageReservation[]
 
   @@unique([botId, telegramUserId])
   @@index([botId, status])
