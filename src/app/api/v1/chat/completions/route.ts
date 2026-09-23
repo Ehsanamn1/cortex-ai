@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
+import { applyCors, corsPreflight, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
 import { assertUsageWithinLimits } from "@/lib/server/usage";
@@ -8,6 +8,10 @@ import { answerWithKnowledge, RagConfigError, toRetrievalDebug, toSourceRefs } f
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
+
+export function OPTIONS(req: Request) {
+  return corsPreflight(req);
+}
 
 export async function POST(req: Request) {
   try {
@@ -22,8 +26,8 @@ export async function POST(req: Request) {
     const last = messages.filter((m) => m.role === "user" && typeof m.content === "string").at(-1)?.content as string | undefined;
     if (!last?.trim()) return applyCors(jsonError("حداقل یک پیام با role=user لازم است.", 400), req.headers.get("origin"));
 
-    const clientId = (req.headers.get("x-cortex-client-id") || "openai-client").slice(0, 120);
-    const conversationId = req.headers.get("x-cortex-conversation-id") || "";
+    const clientId = (req.headers.get("x-cortex-client-id") || (typeof body.clientId === "string" ? body.clientId : "") || "openai-client").trim().slice(0, 120) || "openai-client";
+    const conversationId = req.headers.get("x-cortex-conversation-id") || (typeof body.conversationId === "string" ? body.conversationId : "") || "";
     const startNewChat = body.newChat === true;
     let conversation = !startNewChat && conversationId
       ? await db.conversation.findFirst({ where: { id: conversationId, agentId: auth.agentId, channel: "api", externalUserId: clientId } })
@@ -36,14 +40,19 @@ export async function POST(req: Request) {
     }
     if (!conversation) conversation = await db.conversation.create({ data: { agentId: auth.agentId, userId: null, title: "گفتگوی API", channel: "api", externalUserId: clientId } });
 
-    const existing = await db.message.findMany({ where: { conversationId: conversation.id, role: { in: ["user", "assistant"] } }, orderBy: { createdAt: "asc" }, take: 24 });
-    const promptTokens = existing.slice(-12).reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(last);
+    const existing = await db.message.findMany({
+      where: { conversationId: conversation.id, role: { in: ["user", "assistant"] } },
+      orderBy: { createdAt: "desc" },
+      take: 24,
+    }).then((rows) => rows.reverse());
+    const promptHistory = existing.slice(-12);
+    const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(last);
     await assertUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens);
     const answer = await answerWithKnowledge({
       agentId: auth.agentId,
       workspaceId: auth.agent.workspaceId,
       persona: auth.agent,
-      history: existing.slice(-12).map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+      history: promptHistory.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
       question: last.trim(),
     });
     const metadata = { sources: toSourceRefs(answer.retrieval), retrieval: toRetrievalDebug(answer.retrieval), provider: answer.provider, model: answer.model, latencyMs: answer.latencyMs };
