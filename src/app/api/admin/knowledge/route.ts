@@ -20,10 +20,10 @@ export async function GET(req: Request) {
     });
     const totals = await db.knowledgeChunk.groupBy({
       by:["sourceId"],
-      where: workspaceId ? { source:{agent:{workspaceId}} } : undefined,
+      where: workspaceId ? { workspaceId } : undefined,
       _count:{_all:true},
     });
-    const totalMap=new Map(totals.map(x=>[x.sourceId,x._count._all]));
+    const totalMap=new Map(totals.map(x=>[x.sourceId,x._count?._all ?? 0]));
     return applyCors(jsonOk({
       sources:sources.map(s=>({
         id:s.id,name:s.name,type:s.type,status:s.status,error:s.error,
