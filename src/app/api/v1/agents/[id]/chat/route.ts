@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { applyCors, corsPreflight, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
-import { assertUsageWithinLimits } from "@/lib/server/usage";
+import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
 import { answerWithKnowledge, RagConfigError, toRetrievalDebug, toSourceRefs } from "@/lib/rag/pipeline";
 
@@ -49,7 +49,8 @@ export async function POST(req: Request, { params }: Params) {
     }).then((rows) => rows.reverse());
     const promptHistory = existing.slice(-12);
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(message);
-    await assertUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens);
+    let reservationId: string | null = null;
+    reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens, auth.agent.maxTokens);
     const userMessage = await db.message.create({ data: { conversationId: conversation.id, role: "user", content: message } });
 
     try {
@@ -66,7 +67,11 @@ export async function POST(req: Request, { params }: Params) {
       const inputTokens = promptTokens;
       const outputTokens = estimateTokens(answer.content);
       const totalTokens = inputTokens + outputTokens;
-      await db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens } });
+      await db.$transaction([
+        db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens } }),
+        ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
+      ]);
+      reservationId = null;
       return applyCors(jsonOk({
         id: assistant.id,
         conversationId: conversation.id,
@@ -76,6 +81,8 @@ export async function POST(req: Request, { params }: Params) {
         usage: { inputTokens, outputTokens, totalTokens },
       }), req.headers.get("origin"));
     } catch (e) {
+      await releaseUsageReservation(reservationId);
+      reservationId = null;
       if (e instanceof RagConfigError) return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
       throw e;
     }
