@@ -27,7 +27,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 const signupSchema = z.object({
   name: z.string().min(2, { message: "نام و نام خانوادگی را وارد کنید." }).max(80, { message: "نام حداکثر ۸۰ کاراکتر است." }),
   email: z.email({ message: "یک ایمیل معتبر وارد کنید." }),
-  password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر باشد." }),
+  password: z.string().min(8, { message: "رمز عبور باید حداقل ۸ کاراکتر باشد." }),
 });
 type SignupValues = z.infer<typeof signupSchema>;
 
