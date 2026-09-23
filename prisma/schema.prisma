@@ -41,6 +41,7 @@ model Workspace {
   usageEvents    UsageEvent[]
   auditLogs      AuditLog[]
   usagePolicy    UsagePolicy?
+  usageReservations UsageReservation[]
 
   @@index([ownerId])
 }
