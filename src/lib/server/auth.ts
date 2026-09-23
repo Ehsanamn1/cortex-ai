@@ -95,15 +95,21 @@ function b64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64url");
 }
 
+class SessionConfigError extends Error {
+  status = 503;
+  constructor() {
+    super("کلید امن نشست برنامه در محیط تولید تنظیم نشده است.");
+    this.name = "SessionConfigError";
+  }
+}
+
 function secret(): string {
   const s = process.env.APP_SECRET_KEY;
-  if (s && s.length >= 16) return s;
-  // Ephemeral fallback so the app still boots without APP_SECRET_KEY
-  // (sessions then reset on restart). Configured in this environment.
+  if (s && s.length >= 32) return s;
+  if (process.env.NODE_ENV === "production") throw new SessionConfigError();
   const g = globalThis as { __cortexEphemeralSecret?: string };
   if (!g.__cortexEphemeralSecret) {
     g.__cortexEphemeralSecret = Buffer.from(randomBytes(32)).toString("hex");
-    console.warn("[cortex] APP_SECRET_KEY is not set; using an ephemeral session secret.");
   }
   return g.__cortexEphemeralSecret!;
 }
@@ -139,7 +145,8 @@ export function verifySessionToken(token: string): string | null {
     if (!data.sub || !data.exp) return null;
     if (Date.now() / 1000 > data.exp) return null;
     return data.sub;
-  } catch {
+  } catch (error) {
+    if (error instanceof SessionConfigError) throw error;
     return null;
   }
 }
@@ -211,7 +218,8 @@ export function sessionCookieHeader(token: string): string {
 }
 
 export function clearSessionCookieHeader(): string {
-  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
+  return COOKIE_NAME + "=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0" + (secure ? "; Secure" : "");
 }
 
 /* ---------------- serialization helpers ---------------- */
