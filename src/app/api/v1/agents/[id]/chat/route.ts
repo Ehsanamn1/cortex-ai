@@ -15,6 +15,7 @@ export function OPTIONS(req: Request) {
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, { params }: Params) {
+  let reservationId: string | null = null;
   try {
     const agentId = (await params).id;
     const apiKey = readAgentApiKey(req);
@@ -49,7 +50,6 @@ export async function POST(req: Request, { params }: Params) {
     }).then((rows) => rows.reverse());
     const promptHistory = existing.slice(-12);
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(message);
-    let reservationId: string | null = null;
     reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens, auth.agent.maxTokens);
     const userMessage = await db.message.create({ data: { conversationId: conversation.id, role: "user", content: message } });
 
@@ -86,5 +86,5 @@ export async function POST(req: Request, { params }: Params) {
       if (e instanceof RagConfigError) return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
       throw e;
     }
-  } catch (e) { return toErrorResponse(e); }
+  } catch (e) { await releaseUsageReservation(reservationId); reservationId = null; return toErrorResponse(e); }
 }
