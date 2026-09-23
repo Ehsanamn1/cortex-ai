@@ -70,9 +70,16 @@ export async function answerWithKnowledge(params: {
   }
 
   // 2) Retrieval (only if the agent actually has knowledge)
-  const chunkCount = await db.knowledgeChunk.count({
-    where: { agentId, source: { status: "ready" } },
+  const readySources = await db.knowledgeSource.findMany({
+    where: { agentId, status: "ready" },
+    select: { id: true },
   });
+  const readySourceIds = readySources.map((source) => source.id);
+  const chunkCount = readySourceIds.length === 0
+    ? 0
+    : await db.knowledgeChunk.count({
+        where: { agentId, workspaceId, sourceId: { in: readySourceIds } },
+      });
   let searchResults: SearchResult[] = [];
   let auxiliaryInputTokens = 0;
   let auxiliaryOutputTokens = 0;
@@ -85,6 +92,8 @@ export async function answerWithKnowledge(params: {
           const store = getVectorStore();
           const results = await store.search(agentId, queryVector, topK());
           // Defense in depth: re-verify every hit belongs to this agent's workspace.
+          if (results.length === 0 || readySourceIds.length === 0) return [];
+
           const allowedIds = new Set(
             (
               await db.knowledgeChunk.findMany({
@@ -92,7 +101,7 @@ export async function answerWithKnowledge(params: {
                   id: { in: results.map((r) => r.id) },
                   agentId,
                   workspaceId,
-                  source: { status: "ready" },
+                  sourceId: { in: readySourceIds },
                 },
                 select: { id: true },
               })
