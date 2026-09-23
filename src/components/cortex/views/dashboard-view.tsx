@@ -245,66 +245,71 @@ export function DashboardView() {
       )}
 
       {!hasAgents ? (
-        <EmptyState icon={<DashboardEmptyIllustration />} title="هنوز ایجنتی نساخته‌اید" description="اولین ایجنت خود را بسازید، دانش را به آن وصل کنید و بعد از پلی‌گراند پاسخ بگیرید." action={<Button onClick={() => setView("agent-new")}><Plus />ایجاد ایجنت</Button>} className="bg-card py-16" />
+        <EmptyState
+          icon={<DashboardEmptyIllustration />}
+          title="هنوز ایجنتی نساخته‌اید"
+          description="اولین ایجنت خود را بسازید، دانش را به آن وصل کنید و بعد از پلی‌گراند پاسخ بگیرید."
+          action={<Button onClick={() => setView("agent-new")}><Plus />ایجاد ایجنت</Button>}
+          className="bg-card py-16"
+        />
       ) : (
         <>
           {settingEnabled("feature.dashboardRecent") && (
-          <section className="grid items-start gap-5 lg:grid-cols-2">
-            <Card className="cortex-panel rounded-2xl">
+            <section className="grid items-start gap-5 lg:grid-cols-2">
+              <Card className="cortex-panel rounded-2xl">
+                <CardHeader className="border-b border-white/[.06]">
+                  <CardTitle className="flex items-center gap-2 text-base"><Bot className="size-4 text-primary" />ایجنت‌های اخیر</CardTitle>
+                  <CardAction><Button variant="ghost" size="sm" className="text-primary" onClick={() => setView("agents")}>مشاهده همه<ChevronLeft /></Button></CardAction>
+                </CardHeader>
+                <CardContent className="pt-2">
+                  {recentAgents.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">هنوز ایجنتی وجود ندارد.</p> : (
+                    <ul className="divide-y divide-white/[.06]">{recentAgents.slice(0, 5).map((agent) => (
+                      <li key={agent.id}><button type="button" onClick={() => openAgent(agent.id)} className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-start transition-colors hover:bg-white/[.035]">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary"><Bot className="size-[18px]" /></span>
+                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{agent.name}</span><span className="mt-0.5 block text-xs text-muted-foreground">به‌روزرسانی {timeAgoFa(agent.updatedAt)}</span></span>
+                        <ChevronLeft className="size-4 shrink-0 text-muted-foreground" />
+                      </button></li>
+                    ))}</ul>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="cortex-panel rounded-2xl">
+                <CardHeader className="border-b border-white/[.06]">
+                  <CardTitle className="flex items-center gap-2 text-base"><MessagesSquare className="size-4 text-secondary" />گفتگوهای اخیر</CardTitle>
+                  <CardAction><Button variant="ghost" size="sm" className="text-primary" onClick={() => setView("conversations")}>مشاهده همه<ChevronLeft /></Button></CardAction>
+                </CardHeader>
+                <CardContent className="pt-2">
+                  {recentConversations.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">هنوز گفتگویی ثبت نشده است.</p> : (
+                    <ul className="divide-y divide-white/[.06]">{recentConversations.slice(0, 5).map((conversation) => (
+                      <li key={conversation.id}><button type="button" onClick={() => openConversation(conversation.agentId, conversation.id)} className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-start transition-colors hover:bg-white/[.035]">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-secondary/15 bg-secondary/10 text-secondary"><MessageSquare className="size-[18px]" /></span>
+                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{conversation.title}</span><span className="mt-0.5 block text-xs text-muted-foreground">{conversation.agentName} · {timeAgoFa(conversation.updatedAt)}</span></span>
+                        <ChevronLeft className="size-4 shrink-0 text-muted-foreground" />
+                      </button></li>
+                    ))}</ul>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+          )}
+
+          {settingEnabled("feature.dashboardActivity") && (
+            <Card className="cortex-panel overflow-hidden rounded-2xl">
               <CardHeader className="border-b border-white/[.06]">
-                <CardTitle className="flex items-center gap-2 text-base"><Bot className="size-4 text-primary" />ایجنت‌های اخیر</CardTitle>
-                <CardAction><Button variant="ghost" size="sm" className="text-primary" onClick={() => setView("agents")}>مشاهده همه<ChevronLeft /></Button></CardAction>
+                <div><p className="cortex-kicker">فعالیت سیستم</p><CardTitle className="mt-2 text-base">آخرین رخدادهای ثبت‌شده</CardTitle></div>
+                <div className="flex size-9 items-center justify-center rounded-xl border border-emerald-400/15 bg-emerald-400/10 text-emerald-400"><Activity className="size-4" /></div>
               </CardHeader>
-              <CardContent className="pt-2">
-                {recentAgents.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">هنوز ایجنتی وجود ندارد.</p> : (
-                  <ul className="divide-y divide-white/[.06]">{recentAgents.slice(0, 5).map((agent) => (
-                    <li key={agent.id}><button type="button" onClick={() => openAgent(agent.id)} className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-start transition-colors hover:bg-white/[.035]">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary"><Bot className="size-[18px]" /></span>
-                      <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{agent.name}</span><span className="mt-0.5 block text-xs text-muted-foreground">به‌روزرسانی {timeAgoFa(agent.updatedAt)}</span></span>
-                      <ChevronLeft className="size-4 shrink-0 text-muted-foreground" />
-                    </button></li>
+              <CardContent className="p-0">
+                {activity.length === 0 ? (
+                  <div className="px-5 py-12 text-center"><FileText className="mx-auto size-8 text-muted-foreground/40" /><p className="mt-3 text-sm font-medium">هنوز رخدادی ثبت نشده است.</p><p className="mt-1 text-xs leading-5 text-muted-foreground">ساخت ایجنت، مدیریت دانش و گفتگوها در این بخش دیده می‌شوند.</p></div>
+                ) : (
+                  <ul className="divide-y divide-white/[.06]">{activity.slice(0, 6).map((item) => (
+                    <li key={item.id} className="flex items-center gap-3 px-4 py-3.5"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/[.07] bg-white/[.025]"><Activity className="size-3.5 text-primary" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{item.action}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{item.entityType} · {timeAgoFa(item.createdAt)}</p></div></li>
                   ))}</ul>
                 )}
               </CardContent>
             </Card>
-
-            <Card className="cortex-panel rounded-2xl">
-              <CardHeader className="border-b border-white/[.06]">
-                <CardTitle className="flex items-center gap-2 text-base"><MessagesSquare className="size-4 text-secondary" />گفتگوهای اخیر</CardTitle>
-                <CardAction><Button variant="ghost" size="sm" className="text-primary" onClick={() => setView("conversations")}>مشاهده همه<ChevronLeft /></Button></CardAction>
-              </CardHeader>
-              <CardContent className="pt-2">
-                {recentConversations.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">هنوز گفتگویی ثبت نشده است.</p> : (
-                  <ul className="divide-y divide-white/[.06]">{recentConversations.slice(0, 5).map((conversation) => (
-                    <li key={conversation.id}><button type="button" onClick={() => openConversation(conversation.agentId, conversation.id)} className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-start transition-colors hover:bg-white/[.035]">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-secondary/15 bg-secondary/10 text-secondary"><MessageSquare className="size-[18px]" /></span>
-                      <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{conversation.title}</span><span className="mt-0.5 block text-xs text-muted-foreground">{conversation.agentName} · {timeAgoFa(conversation.updatedAt)}</span></span>
-                      <ChevronLeft className="size-4 shrink-0 text-muted-foreground" />
-                    </button></li>
-                  ))}</ul>
-                )}
-                       {settingEnabled("feature.dashboardActivity") && (
- </CardContent>
-            </Card>
-          </section>
-
-          )}
-
-          <Card className="cortex-panel overflow-hidden rounded-2xl">
-            <CardHeader className="border-b border-white/[.06]">
-              <div><p className="cortex-kicker">فعالیت سیستم</p><CardTitle className="mt-2 text-base">آخرین رخدادهای ثبت‌شده</CardTitle></div>
-              <div className="flex size-9 items-center justify-center rounded-xl border border-emerald-400/15 bg-emerald-400/10 text-emerald-400"><Activity className="size-4" /></div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {activity.length === 0 ? (
-                <div className="px-5 py-12 text-center"><FileText className="mx-auto size-8 text-muted-foreground/40" /><p className="mt-3 text-sm font-medium">هنوز رخدادی ثبت نشده است.</p><p className="mt-1 text-xs leading-5 text-muted-foreground">ساخت ایجنت، مدیریت دانش و گفتگوها در این بخش دیده می‌شوند.</p></div>
-              ) : (
-                <ul className="divide-y divide-white/[.06]">{activity.slice(0, 6).map((item) => (
-                  <li key={item.id} className="flex items-center gap-3 px-4 py-3.5"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/[.07] bg-white/[.025]"><Activity className="size-3.5 text-primary" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{item.action}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{item.entityType} · {timeAgoFa(item.createdAt)}</p></div></li>
-                ))}</ul>
-              )}
-            </CardContent>
-          </Card>
           )}
         </>
       )}
