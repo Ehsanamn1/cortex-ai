@@ -58,6 +58,10 @@ jobs:
           CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
           CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
           TELEGRAM_INTERNAL_SECRET: ${{ secrets.TELEGRAM_INTERNAL_SECRET || vars.TELEGRAM_INTERNAL_SECRET }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
           set -euo pipefail
           put_secret() {
@@ -77,6 +81,10 @@ jobs:
           put_secret CORTEX_ADMIN_PASSWORD "$CORTEX_ADMIN_PASSWORD"
           put_secret CORTEX_ADMIN_USERNAME "$CORTEX_ADMIN_USERNAME"
           put_secret TELEGRAM_INTERNAL_SECRET "$TELEGRAM_INTERNAL_SECRET"
+          put_secret R2_ACCOUNT_ID "$R2_ACCOUNT_ID"
+          put_secret R2_BUCKET_NAME "$R2_BUCKET_NAME"
+          put_secret R2_ACCESS_KEY_ID "$R2_ACCESS_KEY_ID"
+          put_secret R2_SECRET_ACCESS_KEY "$R2_SECRET_ACCESS_KEY"
       - name: Ensure required Worker database secret
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
@@ -102,7 +110,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
         run: |
           npx wrangler secret list --name cortex-ai
-          echo "Expected runtime secrets: one of DATABASE_URL/POSTGRES_PRISMA_URL/POSTGRES_URL, plus APP_SECRET_KEY and optional admin/Telegram secrets."
+          echo "Expected runtime secrets: Postgres + APP_SECRET_KEY; R2_ACCOUNT_ID/R2_BUCKET_NAME/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY enable 200MB direct uploads; admin/Telegram secrets are optional."
 
       - name: Smoke test live Worker
         run: |

@@ -408,6 +408,7 @@ export const api = {
   },
   getLimits(workspaceId?:string){ return request<{policy:{workspaceId:string;dailyMessageLimit:number;monthlyMessageLimit:number;dailyTokenLimit:number;monthlyTokenLimit:number}}>(`/api/settings/limits${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
   saveLimits(input:{workspaceId?:string;dailyMessageLimit:number;monthlyMessageLimit:number;dailyTokenLimit:number;monthlyTokenLimit:number}){ return jsonRequest<{policy:any}>('/api/settings/limits','PUT',input); },
+  reconnectTelegramBot(id:string){ return jsonRequest<{bot:TelegramBotDto}>(`/api/telegram/bots/${encodeURIComponent(id)}/connect`,'POST'); },
   getTelegramBots(workspaceId?:string):Promise<{bots:TelegramBotDto[]}>{ return request(`/api/telegram/bots${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:''}`); },
   createTelegramBot(input:{workspaceId?:string;agentId:string;name:string;token:string;mode:'webhook'|'polling'}){ return jsonRequest<{bot:TelegramBotDto}>('/api/telegram/bots','POST',input); },
   updateTelegramBot(id:string,input:Record<string,unknown>){ return jsonRequest<{bot:TelegramBotDto}>(`/api/telegram/bots/${encodeURIComponent(id)}`,'PATCH',input); },
