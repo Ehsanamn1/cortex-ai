@@ -3,7 +3,7 @@ import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/s
 import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
 import { rateLimit } from '@/lib/server/rate-limit';
-import { assertUsageWithinLimits } from '@/lib/server/usage';
+import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/usage';
 import { estimateTokens } from '@/lib/server/audit';
 import {
   answerWithKnowledge,
@@ -65,7 +65,8 @@ export async function POST(req: Request, { params }: Params) {
       historyForPrompt.reduce((sum, item) => sum + estimateTokens(item.content), 0) +
       estimateTokens(content);
 
-    await assertUsageWithinLimits(agent.workspaceId, 1, estimatedPromptTokens);
+    let reservationId: string | null = null;
+    reservationId = await reserveUsageWithinLimits(agent.workspaceId, 1, estimatedPromptTokens, agent.maxTokens);
 
     // Persist the user message first (honest history even if generation fails).
     const userMessage = await db.message.create({
@@ -127,7 +128,11 @@ export async function POST(req: Request, { params }: Params) {
       });
       const inputTokens = estimatedPromptTokens;
       const outputTokens = estimateTokens(answer.content);
-      await db.usageEvent.create({ data: { workspaceId: agent.workspaceId, agentId: agent.id, userId: session.user.id, channel: "web", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens } });
+      await db.$transaction([
+        db.usageEvent.create({ data: { workspaceId: agent.workspaceId, agentId: agent.id, userId: session.user.id, channel: "web", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens } }),
+        ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
+      ]);
+      reservationId = null;
 
       return applyCors(
         jsonOk({
@@ -149,6 +154,8 @@ export async function POST(req: Request, { params }: Params) {
         req.headers.get("origin")
       );
     } catch (e) {
+      await releaseUsageReservation(reservationId);
+      reservationId = null;
       if (e instanceof RagConfigError) {
         // Honest configuration error — no fake answer is ever produced.
         return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
