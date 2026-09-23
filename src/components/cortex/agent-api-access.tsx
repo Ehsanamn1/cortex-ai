@@ -135,7 +135,31 @@ export function AgentApiAccess({ agentId }: { agentId: string }) {
               نمونه اتصال سریع
             </div>
             <p className="mt-1 text-xs leading-6 text-muted-foreground">در هر کلاینت، Header زیر را بفرست و پیام را به Endpoint اختصاصی ایجنت POST کن.</p>
-            <pre dir="ltr" className="mt-3 overflow-x-auto rounded-xl border border-white/[.06] bg-black/20 p-3 text-[11px] leading-6 text-muted-foreground">{"Authorization: Bearer YOUR_API_KEY\nContent-Type: application/json\n\n{\"message\":\"سلام\",\"clientId\":\"user-123\"}"}</pre>
+            <div className="mt-3 flex items-start gap-2">
+              <pre dir="ltr" className="min-w-0 flex-1 overflow-x-auto rounded-xl border border-white/[.06] bg-black/20 p-3 text-[11px] leading-6 text-muted-foreground">{`Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
+
+{
+  "message": "سلام",
+  "clientId": "user-123",
+  "newChat": false,
+  "conversationId": "optional-conversation-id"
+}`}</pre>
+              <Button
+                size="icon"
+                variant="outline"
+                aria-label="کپی نمونه اتصال"
+                onClick={() => void copyValue(`Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
+
+{"message":"سلام","clientId":"user-123","newChat":false}`, "نمونه اتصال")}
+              >
+                <Copy />
+              </Button>
+            </div>
+            <p className="mt-2 text-[10px] leading-5 text-muted-foreground">
+              برای گفتگوی جدید مقدار <code dir="ltr">newChat</code> را <code dir="ltr">true</code> بفرست؛ برای ادامهٔ یک گفتگو می‌توانی <code dir="ltr">conversationId</code> برگشتی را ذخیره و ارسال کنی.
+            </p>
           </div>
         </CardContent>
       </Card>
