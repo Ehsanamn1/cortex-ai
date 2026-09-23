@@ -65,7 +65,9 @@ export async function answerWithKnowledge(params: {
   }
 
   // 2) Retrieval (only if the agent actually has knowledge)
-  const chunkCount = await db.knowledgeChunk.count({ where: { agentId } });
+  const chunkCount = await db.knowledgeChunk.count({
+    where: { agentId, source: { status: "ready" } },
+  });
   let searchResults: SearchResult[] = [];
   if (chunkCount > 0) {
     const embedder = embeddingManager.resolve();
@@ -79,7 +81,12 @@ export async function answerWithKnowledge(params: {
           const allowedIds = new Set(
             (
               await db.knowledgeChunk.findMany({
-                where: { id: { in: results.map((r) => r.id) }, agentId, workspaceId },
+                where: {
+                  id: { in: results.map((r) => r.id) },
+                  agentId,
+                  workspaceId,
+                  source: { status: "ready" },
+                },
                 select: { id: true },
               })
             ).map((c) => c.id)
