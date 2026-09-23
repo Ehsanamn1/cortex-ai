@@ -327,6 +327,7 @@ model UsageReservation {
 
   @@index([workspaceId, createdAt])
   @@index([workspaceId, expiresAt])
+  @@index([expiresAt])
   @@index([telegramUserId, createdAt])
   @@index([telegramUserId, expiresAt])
 }
