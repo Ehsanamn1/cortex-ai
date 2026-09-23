@@ -436,6 +436,8 @@ export const api = {
   updateTelegramBot(id:string,input:Record<string,unknown>){ return jsonRequest<{bot:TelegramBotDto}>(`/api/telegram/bots/${encodeURIComponent(id)}`,'PATCH',input); },
   deleteTelegramBot(id:string){ return jsonRequest<{ok:boolean}>(`/api/telegram/bots/${encodeURIComponent(id)}`,'DELETE'); },
   getTelegramAllowlist(botId:string){ return request<{entries:TelegramAllowlistDto[]}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`); },
+  getTelegramBotUsers(botId:string){ return request<{users:TelegramUserDto[]}>(`/api/telegram/bots/${encodeURIComponent(botId)}/users`); },
+  updateTelegramBotUser(botId:string,userId:string,status?:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/users`,'PATCH',{id:userId,status,...limits}); },
   addTelegramAllowlist(botId:string,input:{phoneNumber:string;displayName?:string;notes?:string}){ return jsonRequest<{entry:TelegramAllowlistDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`,'POST',input); },
   removeTelegramAllowlist(botId:string,entryId:string){ return request<{ok:boolean}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist?entryId=${encodeURIComponent(entryId)}`,{method:'DELETE'}); },
   getAdminOverview(workspaceId?:string){ return request<any>(`/api/admin/overview${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
