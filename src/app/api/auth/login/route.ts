@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     }
 
     if (user.passwordHash.startsWith("scrypt:")) {
-      void hashPassword(password).then((migratedHash) =>
+      void hashPasswordWithDb(password).then((migratedHash) =>
         db.user.update({ where: { id: user.id }, data: { passwordHash: migratedHash } }).catch(() => undefined),
       );
     }
