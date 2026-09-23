@@ -66,7 +66,7 @@ export async function PATCH(req:Request){
     if(!existing)return applyCors(jsonError('کاربر تلگرام یافت نشد.',404),req.headers.get('origin'));
     const data:any={};
     if(typeof b.status==='string'&&['pending','allowed','blocked'].includes(b.status))data.status=b.status;
-    for(const key of ['dailyTokenLimit','monthlyTokenLimit']){const v=safeLimit(b[key]);if(v!==undefined)data[key]=v;}
+    for(const key of ['dailyMessageLimit','monthlyMessageLimit','dailyTokenLimit','monthlyTokenLimit']){const v=safeLimit(b[key]);if(v!==undefined)data[key]=v;}
     if(!Object.keys(data).length)return applyCors(jsonError('هیچ تغییر معتبری ارسال نشده است.',400),req.headers.get('origin'));
     const user=await db.telegramUser.update({where:{id},data,include:{bot:{select:{id:true,name:true,workspaceId:true,username:true}}}});
     return applyCors(jsonOk({user}),req.headers.get('origin'));
