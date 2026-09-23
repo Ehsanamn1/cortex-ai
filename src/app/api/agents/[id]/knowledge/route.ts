@@ -90,7 +90,7 @@ export async function POST(req: Request, { params }: Params) {
 
     /* ---------- Mode A: multipart file upload (PDF / TXT / DOCX) ---------- */
     if (contentType.includes("multipart/form-data")) {
-      if (process.env.NODE_ENV === "production" && !isR2Configured()) {
+      if ((process.env.NODE_ENV === "production" || process.env.APP_ENV === "production") && !isR2Configured()) {
         return applyCors(
           jsonError("فضای ذخیره‌سازی پایدار R2 برای بارگذاری فایل در محیط تولید فعال نیست.", 503),
           req.headers.get("origin")
