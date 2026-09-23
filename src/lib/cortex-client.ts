@@ -242,30 +242,46 @@ async function parseBody(response: Response): Promise<unknown> {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(path, { credentials: "same-origin", ...init });
-  } catch {
-    throw new ApiError(NETWORK_ERROR, 0);
-  }
+  const method = (init?.method ?? "GET").toUpperCase();
+  const retryable = method === "GET" || method === "HEAD" || method === "OPTIONS";
+  const attempts = retryable ? 3 : 1;
 
-  const parsed = await parseBody(response);
-
-  if (!response.ok) {
-    const serverMessage = extractErrorMessage(parsed);
-    if (response.status === 401 && typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("cortex:session-expired"));
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    let response: Response;
+    try {
+      response = await fetch(path, { credentials: "same-origin", ...init });
+    } catch {
+      if (attempt + 1 >= attempts) throw new ApiError(NETWORK_ERROR, 0);
+      await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** attempt));
+      continue;
     }
-    const message = serverMessage ??
-      (response.status >= 500
-        ? GENERIC_ERROR + " (" + path + " · HTTP " + response.status + ")"
-        : response.status === 404
-          ? "منبع درخواستی پیدا نشد. (" + path + ")"
-          : "درخواست با خطای HTTP " + response.status + " رد شد. (" + path + ")");
-    throw new ApiError(message, response.status);
+
+    const parsed = await parseBody(response);
+
+    if (!response.ok) {
+      const transient = response.status === 502 || response.status === 503 || response.status === 504;
+      if (retryable && transient && attempt + 1 < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 300 * 2 ** attempt));
+        continue;
+      }
+
+      const serverMessage = extractErrorMessage(parsed);
+      if (response.status === 401 && typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("cortex:session-expired"));
+      }
+      const message = serverMessage ??
+        (response.status >= 500
+          ? GENERIC_ERROR + " (" + path + " · HTTP " + response.status + ")"
+          : response.status === 404
+            ? "منبع درخواستی پیدا نشد. (" + path + ")"
+            : "درخواست با خطای HTTP " + response.status + " رد شد. (" + path + ")");
+      throw new ApiError(message, response.status);
+    }
+
+    return parsed as T;
   }
 
-  return parsed as T;
+  throw new ApiError(NETWORK_ERROR, 0);
 }
 
 function jsonRequest<T>(path: string, method: "POST" | "PATCH" | "PUT" | "DELETE", body?: unknown): Promise<T> {
@@ -436,6 +452,8 @@ export const api = {
   updateTelegramBot(id:string,input:Record<string,unknown>){ return jsonRequest<{bot:TelegramBotDto}>(`/api/telegram/bots/${encodeURIComponent(id)}`,'PATCH',input); },
   deleteTelegramBot(id:string){ return jsonRequest<{ok:boolean}>(`/api/telegram/bots/${encodeURIComponent(id)}`,'DELETE'); },
   getTelegramAllowlist(botId:string){ return request<{entries:TelegramAllowlistDto[]}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`); },
+  getTelegramBotUsers(botId:string){ return request<{users:TelegramUserDto[]}>(`/api/telegram/bots/${encodeURIComponent(botId)}/users`); },
+  updateTelegramBotUser(botId:string,userId:string,status?:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/users`,'PATCH',{id:userId,status,...limits}); },
   addTelegramAllowlist(botId:string,input:{phoneNumber:string;displayName?:string;notes?:string}){ return jsonRequest<{entry:TelegramAllowlistDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`,'POST',input); },
   removeTelegramAllowlist(botId:string,entryId:string){ return request<{ok:boolean}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist?entryId=${encodeURIComponent(entryId)}`,{method:'DELETE'}); },
   getAdminOverview(workspaceId?:string){ return request<any>(`/api/admin/overview${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },

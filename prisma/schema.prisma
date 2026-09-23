@@ -41,6 +41,7 @@ model Workspace {
   usageEvents    UsageEvent[]
   auditLogs      AuditLog[]
   usagePolicy    UsagePolicy?
+  usageReservations UsageReservation[]
 
   @@index([ownerId])
 }
@@ -306,9 +307,29 @@ model TelegramUser {
 
   bot TelegramBot @relation(fields: [botId], references: [id], onDelete: Cascade)
   usageEvents UsageEvent[]
+  usageReservations UsageReservation[]
 
   @@unique([botId, telegramUserId])
   @@index([botId, status])
+}
+
+model UsageReservation {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  telegramUserId  String?
+  messages        Int      @default(0)
+  tokens          Int      @default(0)
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  telegramUser TelegramUser? @relation(fields: [telegramUserId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, expiresAt])
+  @@index([expiresAt])
+  @@index([telegramUserId, createdAt])
+  @@index([telegramUserId, expiresAt])
 }
 
 model UsageEvent {

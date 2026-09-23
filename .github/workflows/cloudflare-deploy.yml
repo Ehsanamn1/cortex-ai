@@ -45,7 +45,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
-        run: npx wrangler deploy --config dist/server/wrangler.json
+        run: npx wrangler deploy --config dist/server/wrangler.json --var APP_ENV:production
 
       - name: Sync Worker runtime secrets
         env:
@@ -97,7 +97,9 @@ jobs:
           printf '%s' 'CREATE EXTENSION IF NOT EXISTS pgcrypto;' | npx prisma db execute --url "$db_url" --stdin
           agent_api_key_sql='CREATE TABLE IF NOT EXISTS "AgentApiKey" ("id" TEXT PRIMARY KEY, "agentId" TEXT NOT NULL, "name" TEXT NOT NULL, "keyHash" TEXT NOT NULL UNIQUE, "keyPrefix" TEXT NOT NULL, "active" BOOLEAN NOT NULL DEFAULT TRUE, "lastUsedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "AgentApiKey_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "Agent"("id") ON DELETE CASCADE ON UPDATE CASCADE); CREATE INDEX IF NOT EXISTS "AgentApiKey_agentId_active_idx" ON "AgentApiKey"("agentId","active");'
           printf '%s\n' "$agent_api_key_sql" | npx prisma db execute --url "$db_url" --stdin
-          echo "PostgreSQL pgcrypto and Agent API key storage are ready."
+          usage_reservation_sql='CREATE TABLE IF NOT EXISTS "UsageReservation" ("id" TEXT PRIMARY KEY, "workspaceId" TEXT NOT NULL, "telegramUserId" TEXT, "messages" INTEGER NOT NULL DEFAULT 0, "tokens" INTEGER NOT NULL DEFAULT 0, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "expiresAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "UsageReservation_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT "UsageReservation_telegramUserId_fkey" FOREIGN KEY ("telegramUserId") REFERENCES "TelegramUser"("id") ON DELETE CASCADE ON UPDATE CASCADE); CREATE INDEX IF NOT EXISTS "UsageReservation_workspaceId_createdAt_idx" ON "UsageReservation"("workspaceId","createdAt"); CREATE INDEX IF NOT EXISTS "UsageReservation_workspaceId_expiresAt_idx" ON "UsageReservation"("workspaceId","expiresAt"); CREATE INDEX IF NOT EXISTS "UsageReservation_expiresAt_idx" ON "UsageReservation"("expiresAt"); CREATE INDEX IF NOT EXISTS "UsageReservation_telegramUserId_createdAt_idx" ON "UsageReservation"("telegramUserId","createdAt"); CREATE INDEX IF NOT EXISTS "UsageReservation_telegramUserId_expiresAt_idx" ON "UsageReservation"("telegramUserId","expiresAt");'
+          printf '%s\n' "$usage_reservation_sql" | npx prisma db execute --url "$db_url" --stdin
+          echo "PostgreSQL pgcrypto, Agent API key storage, and usage reservation storage are ready."
 
       - name: Ensure required Worker database secret
         env:
@@ -122,10 +124,22 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
+          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
+          set -euo pipefail
           npx wrangler secret list --name cortex-ai
-          echo "Expected runtime secrets: Postgres + APP_SECRET_KEY; R2_ACCOUNT_ID/R2_BUCKET_NAME/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY enable 200MB direct uploads; admin/Telegram secrets are optional."
-
+          test -n "$CORTEX_ADMIN_USERNAME" || { echo "CORTEX_ADMIN_USERNAME is required for the production admin console"; exit 1; }
+          test -n "$CORTEX_ADMIN_PASSWORD" || { echo "CORTEX_ADMIN_PASSWORD is required for the production admin console"; exit 1; }
+          test -n "$R2_ACCOUNT_ID" || { echo "R2_ACCOUNT_ID is required for production file uploads"; exit 1; }
+          test -n "$R2_BUCKET_NAME" || { echo "R2_BUCKET_NAME is required for production file uploads"; exit 1; }
+          test -n "$R2_ACCESS_KEY_ID" || { echo "R2_ACCESS_KEY_ID is required for production file uploads"; exit 1; }
+          test -n "$R2_SECRET_ACCESS_KEY" || { echo "R2_SECRET_ACCESS_KEY is required for production file uploads"; exit 1; }
+          echo "Required production secrets are configured: Postgres, APP_SECRET_KEY, Admin credentials, and R2 storage."
       - name: Smoke test admin and public routes
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
@@ -224,7 +238,45 @@ jobs:
           check_authed_json "/api/agents/$smoke_agent_id" "200"
           check_authed_json "/api/agents/$smoke_agent_id/knowledge" "200"
           check_authed_json "/api/agents/$smoke_agent_id/conversations" "200"
-          rm -f "$agent_response"
+
+          api_key_response="$(mktemp)"
+          api_key_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d '{"name":"Live smoke key"}' -o "$api_key_response" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/api-keys")"
+          echo "POST $base/api/agents/$smoke_agent_id/api-keys -> HTTP $api_key_status"
+          test "$api_key_status" = "201"
+          smoke_api_key="$(jq -r '.key // empty' "$api_key_response")"
+          test -n "$smoke_api_key"
+
+          api_chat_response="$(mktemp)"
+          api_chat_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -H "Authorization: Bearer $smoke_api_key" -H "Content-Type: application/json" -d '{"message":"Cortex live smoke","clientId":"cloudflare-smoke","newChat":true}' -o "$api_chat_response" -w "%{http_code}" "$base/api/v1/agents/$smoke_agent_id/chat")"
+          echo "POST /api/v1/agents/$smoke_agent_id/chat (authenticated) -> HTTP $api_chat_status"
+          if [ "$api_chat_status" = "200" ]; then
+            smoke_conversation_id="$(jq -r '.conversationId // empty' "$api_chat_response")"
+            test -n "$smoke_conversation_id"
+            echo "Authenticated Agent API chat succeeded."
+          elif [ "$api_chat_status" = "503" ] && grep -q "پیکربندی نشده" "$api_chat_response"; then
+            echo "Authenticated Agent API route is working; live LLM provider is not configured, so generation is intentionally unavailable."
+          else
+            cat "$api_chat_response"
+            echo "Authenticated Agent API smoke test failed."
+            exit 1
+          fi
+
+          openai_response="$(mktemp)"
+          openai_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -H "Authorization: Bearer $smoke_api_key" -H "Content-Type: application/json" -d '{"messages":[{"role":"user","content":"Cortex live smoke"}],"clientId":"cloudflare-smoke","newChat":true}' -o "$openai_response" -w "%{http_code}" "$base/api/v1/chat/completions")"
+          echo "POST /api/v1/chat/completions (authenticated) -> HTTP $openai_status"
+          if [ "$openai_status" = "200" ]; then
+            jq -e '.object == "chat.completion" and (.x_cortex.conversationId | length > 0)' "$openai_response" >/dev/null
+            echo "Authenticated OpenAI-compatible chat succeeded."
+          elif [ "$openai_status" = "503" ] && grep -q "پیکربندی نشده" "$openai_response"; then
+            echo "Authenticated OpenAI-compatible route is working; live LLM provider is not configured."
+          else
+            cat "$openai_response"
+            echo "Authenticated OpenAI-compatible smoke test failed."
+            exit 1
+          fi
+
+          curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -X DELETE "$base/api/agents/$smoke_agent_id/api-keys?keyId=$(jq -r '.keyMeta.id' "$api_key_response")" >/dev/null || true
+          rm -f "$api_key_response" "$api_chat_response" "$openai_response" "$agent_response"
 
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "Postgres URL missing for smoke cleanup"; exit 1; }

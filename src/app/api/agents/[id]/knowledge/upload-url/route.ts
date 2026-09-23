@@ -5,7 +5,8 @@ import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { createR2PresignedPut, isR2Configured, r2MaxUploadBytes } from "@/lib/storage/r2";
-import { sanitizeFilename } from "@/lib/knowledge/extract";
+import { ALLOWED_EXTENSIONS, detectExtension, sanitizeFilename } from "@/lib/knowledge/extract";
+import { getPublicSiteSettings } from "@/lib/site-settings";
 
 export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ id: string }> };
@@ -22,12 +23,23 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const body = await readJson<{ name?: unknown; size?: unknown; mimeType?: unknown }>(req);
+    const settings = await getPublicSiteSettings();
+    const configuredMaxMb = Number(settings["site.maxUploadMb"]);
+    const maxUploadMb = Number.isFinite(configuredMaxMb) && configuredMaxMb >= 1
+      ? Math.min(200, Math.floor(configuredMaxMb))
+      : 200;
+    const maxUploadBytes = maxUploadMb * 1024 * 1024;
     const name = typeof body.name === "string" ? sanitizeFilename(body.name) : "file";
     const size = typeof body.size === "number" && Number.isFinite(body.size) ? Math.floor(body.size) : 0;
     const mimeType = typeof body.mimeType === "string" ? body.mimeType.slice(0, 180) : "application/octet-stream";
+    const ext = detectExtension(name);
 
     if (size < 1) return applyCors(jsonError("حجم فایل معتبر نیست.", 400), req.headers.get("origin"));
-    if (size > r2MaxUploadBytes()) return applyCors(jsonError("حجم فایل بیش از حد مجاز است (حداکثر ۲۰۰ مگابایت).", 413), req.headers.get("origin"));
+    const storageMaxBytes = Math.min(r2MaxUploadBytes(), maxUploadBytes);
+    if (size > storageMaxBytes) return applyCors(jsonError(`حجم فایل بیش از حد مجاز است (حداکثر ${maxUploadMb} مگابایت).`, 413), req.headers.get("origin"));
+    if (!ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])) {
+      return applyCors(jsonError("فرمت این فایل برای دانش Cortex پشتیبانی نمی‌شود.", 400), req.headers.get("origin"));
+    }
 
     const source = await db.knowledgeSource.create({
       data: { agentId: agent.id, name, type: "file", status: "pending" },
@@ -49,7 +61,7 @@ export async function POST(req: Request, { params }: Params) {
       documents: [{ id: document.id, name, status: "pending", chunkCount: 0, url: null }],
     };
     return applyCors(
-      jsonOk({ source: serialized, upload: { url: createR2PresignedPut(key), key, expiresIn: 900, maxSizeMb: 200 } }, 202),
+      jsonOk({ source: serialized, upload: { url: createR2PresignedPut(key), key, expiresIn: 900, maxSizeMb: maxUploadMb } }, 202),
       req.headers.get("origin")
     );
   } catch (e) {

@@ -18,9 +18,19 @@ export function applyCors(response: NextResponse, origin: string | null): NextRe
   if (origin && (allowed.includes(origin) || allowed.includes("*"))) {
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Credentials", "true");
+    response.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    response.headers.set(
+      "Access-Control-Allow-Headers",
+      "Authorization, Content-Type, X-API-Key, X-Cortex-Client-Id, X-Cortex-Conversation-Id"
+    );
+    response.headers.set("Access-Control-Max-Age", "600");
     response.headers.set("Vary", "Origin");
   }
   return response;
+}
+
+export function corsPreflight(req: Request): NextResponse {
+  return applyCors(new NextResponse(null, { status: 204 }), req.headers.get("origin"));
 }
 
 export async function readJson<T = Record<string, unknown>>(req: Request): Promise<T> {
@@ -39,16 +49,16 @@ export class HttpError extends Error {
   }
 }
 
-export function toErrorResponse(e: unknown): NextResponse {
+export function toErrorResponse(e: unknown, origin: string | null = null): NextResponse {
   if (e instanceof HttpError) {
-    return jsonError(e.message, e.status);
+    return applyCors(jsonError(e.message, e.status), origin);
   }
   if (e instanceof Error && typeof (e as Error & { status?: number }).status === "number") {
-    return jsonError(e.message, (e as Error & { status: number }).status);
+    return applyCors(jsonError(e.message, (e as Error & { status: number }).status), origin);
   }
   // Technical diagnostics stay in server logs only — users get a safe Persian message.
   console.error("[cortex] unhandled error:", e instanceof Error ? e.stack ?? e.message : e);
-  return jsonError("خطای غیرمنتظره‌ای در سرور رخ داد. لطفاً دوباره تلاش کنید.", 500);
+  return applyCors(jsonError("خطای غیرمنتظره‌ای در سرور رخ داد. لطفاً دوباره تلاش کنید.", 500), origin);
 }
 
 /** Best-effort client IP behind the sandbox gateway. */

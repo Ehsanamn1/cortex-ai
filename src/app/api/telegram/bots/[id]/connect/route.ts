@@ -22,7 +22,6 @@ export async function POST(req:Request,{params}:Params){
     const info=await getBotInfo(token);
     if(!info) return applyCors(jsonError("توکن ربات معتبر نیست.",502),req.headers.get("origin"));
     await configureBotProfile(token,bot.name);
-    await configureBotProfile(token,bot.name);
 
     if(bot.mode==="webhook"){
       const secret=bot.webhookSecretEncrypted?decryptSecret(bot.webhookSecretEncrypted):Buffer.from(randomBytes(24)).toString("hex");
