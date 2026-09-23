@@ -1,6 +1,6 @@
 import { randomBytes } from "@/lib/server/random";
 import { db } from "@/lib/db";
-import { applyCors, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
+import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
 import { encryptSecret, decryptSecret } from "@/lib/server/secrets";
 import { audit } from "@/lib/server/audit";
