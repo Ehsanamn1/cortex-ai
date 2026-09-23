@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, CheckCircle2, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi, XCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -134,16 +134,16 @@ export function TelegramView() {
 function CreateBotForm({ agents, workspaceId, pending, onSubmit }: { agents: AgentDto[]; workspaceId?: string; pending: boolean; onSubmit: (value: { workspaceId?: string; agentId: string; name: string; token: string }) => void }) {
   const [name, setName] = useState("ربات Cortex");
   const [token, setToken] = useState("");
-  const [agentId, setAgentId] = useState(agents[0]?.id ?? "");
-  useEffect(() => { if (!agentId && agents[0]?.id) setAgentId(agents[0].id); }, [agentId, agents]);
+  const [agentId, setAgentId] = useState("");
+  const resolvedAgentId = agentId || agents[0]?.id || "";
 
   return (
-    <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); onSubmit({ workspaceId, agentId, name: name.trim(), token: token.trim() }); }}>
+    <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); onSubmit({ workspaceId, agentId: resolvedAgentId, name: name.trim(), token: token.trim() }); }}>
       <div className="space-y-2"><Label>نام ربات</Label><Input value={name} onChange={(event) => setName(event.target.value)} placeholder="مثلاً پشتیبان شرکت" /></div>
       <div className="space-y-2"><Label>Bot Token</Label><Input dir="ltr" type="password" value={token} onChange={(event) => setToken(event.target.value)} placeholder="123456:AA..." className="text-left" autoComplete="off" /><p className="text-[11px] leading-5 text-muted-foreground">توکن فقط سمت سرور رمزنگاری و نگهداری می‌شود.</p></div>
       <div className="space-y-2"><Label>ایجنت مقصد</Label><Select value={agentId} onValueChange={setAgentId}><SelectTrigger className="w-full"><SelectValue placeholder="انتخاب ایجنت" /></SelectTrigger><SelectContent>{agents.map((agent) => <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>)}</SelectContent></Select></div>
       <div className="rounded-xl border border-primary/15 bg-primary/[.05] p-4 text-xs leading-6 text-muted-foreground"><p className="font-semibold text-foreground">Webhook خودکار</p><p className="mt-1">پس از ساخت، Cortex اعتبار توکن و اتصال Webhook را بررسی می‌کند.</p></div>
-      <DialogFooter><Button type="submit" disabled={pending || !token.trim() || !agentId || !name.trim()}>{pending ? "در حال بررسی و اتصال…" : "ساخت و اتصال"}</Button></DialogFooter>
+      <DialogFooter><Button type="submit" disabled={pending || !token.trim() || !resolvedAgentId || !name.trim()}>{pending ? "در حال بررسی و اتصال…" : "ساخت و اتصال"}</Button></DialogFooter>
     </form>
   );
 }
@@ -153,8 +153,6 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
   const [name, setName] = useState(bot.name);
   const [agentId, setAgentId] = useState(bot.agentId);
   const [token, setToken] = useState("");
-  useEffect(() => { setName(bot.name); setAgentId(bot.agentId); setToken(""); }, [bot]);
-
   const reconnect = useMutation({
     mutationFn: () => api.reconnectTelegramBot(bot.id),
     onSuccess: ({ bot: updated }) => { onUpdated(updated); queryClient.invalidateQueries({ queryKey: ["telegram-bots"] }); toast.success("اتصال Telegram تست و تازه‌سازی شد."); },

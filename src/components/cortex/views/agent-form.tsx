@@ -120,6 +120,8 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
   const nameValue = useWatch({ control: form.control, name: "name" }) ?? "";
   const descriptionValue = useWatch({ control: form.control, name: "description" }) ?? "";
   const toneValue = useWatch({ control: form.control, name: "tone" });
+  const topPValue = useWatch({ control: form.control, name: "topP" }) ?? 1;
+  const temperatureValue = useWatch({ control: form.control, name: "temperature" }) ?? 0.7;
 
   const createMutation = useMutation({
     mutationFn: (values: AgentFormValues) => {
@@ -375,7 +377,7 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2"><div className="space-y-2">
-                  <div className="flex items-baseline justify-between"><Label htmlFor="agent-top-p">تنوع انتخاب واژه</Label><span className="text-[11px] text-muted-foreground">{form.watch("topP").toFixed(2)}</span></div>
+                  <div className="flex items-baseline justify-between"><Label htmlFor="agent-top-p">تنوع انتخاب واژه</Label><span className="text-[11px] text-muted-foreground">{topPValue.toFixed(2)}</span></div>
                   <input id="agent-top-p" type="range" min="0" max="1" step="0.05" className="w-full accent-primary" {...form.register("topP", { valueAsNumber: true })} />
                   <div className="flex justify-between text-[10px] text-muted-foreground"><span>متمرکز</span><span>متنوع</span></div>
                 </div>
@@ -384,7 +386,7 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
                 <div className="space-y-2">
                   <div className="flex items-baseline justify-between">
                     <Label htmlFor="agent-temperature">خلاقیت پاسخ</Label>
-                    <span className="text-[11px] text-muted-foreground">{form.watch("temperature").toFixed(2)}</span>
+                    <span className="text-[11px] text-muted-foreground">{temperatureValue.toFixed(2)}</span>
                   </div>
                   <input id="agent-temperature" type="range" min="0" max="2" step="0.05" className="w-full accent-primary" {...form.register("temperature", { valueAsNumber: true })} />
                   <div className="flex justify-between text-[10px] text-muted-foreground"><span>دقیق</span><span>خلاق</span></div>
