@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { applyCors, corsPreflight, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
-import { assertUsageWithinLimits } from "@/lib/server/usage";
+import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
 import { answerWithKnowledge, RagConfigError, toRetrievalDebug, toSourceRefs } from "@/lib/rag/pipeline";
 
@@ -14,6 +14,7 @@ export function OPTIONS(req: Request) {
 }
 
 export async function POST(req: Request) {
+  let reservationId: string | null = null;
   try {
     const key = readAgentApiKey(req);
     if (!key) return applyCors(jsonError("API Key ارسال نشده است.", 401), req.headers.get("origin"));
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     }).then((rows) => rows.reverse());
     const promptHistory = existing.slice(-12);
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(last);
-    await assertUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens);
+    reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens, auth.agent.maxTokens);
     const answer = await answerWithKnowledge({
       agentId: auth.agentId,
       workspaceId: auth.agent.workspaceId,
@@ -61,7 +62,11 @@ export async function POST(req: Request) {
     await db.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
     const outputTokens = estimateTokens(answer.content);
     const totalTokens = promptTokens + outputTokens;
-    await db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId: auth.agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens: promptTokens, outputTokens, totalTokens } });
+    await db.$transaction([
+      db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId: auth.agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens: promptTokens, outputTokens, totalTokens } }),
+      ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
+    ]);
+    reservationId = null;
     return applyCors(jsonOk({
       id: "chatcmpl-" + assistant.id,
       object: "chat.completion",
@@ -72,6 +77,8 @@ export async function POST(req: Request) {
       x_cortex: { conversationId: conversation.id, sources: metadata.sources },
     }), req.headers.get("origin"));
   } catch (e) {
+    await releaseUsageReservation(reservationId);
+    reservationId = null;
     if (e instanceof RagConfigError) return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
     return toErrorResponse(e);
   }
