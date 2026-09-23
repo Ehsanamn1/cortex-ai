@@ -18,7 +18,7 @@ Cortex AI is an AI knowledge-agent platform: build an agent from your own busine
 - **Frontend / API:** Next.js App Router through Vinext
 - **Compute:** Cloudflare Workers
 - **Database:** PostgreSQL on Neon through Prisma + Neon adapter
-- **Files:** Cloudflare R2 for production knowledge uploads
+- **Files:** PostgreSQL-backed inline storage for knowledge uploads (R2-free)
 - **Vectors:** local Postgres-backed vector store by default, optional Qdrant
 - **LLM:** workspace-level OpenAI-compatible providers with optional OpenRouter environment fallback
 - **Embeddings:** OpenAI embeddings when configured, otherwise the built-in lexical engine
@@ -62,21 +62,14 @@ CLOUDFLARE_ACCOUNT_ID
 
 These are read from the GitHub Actions Environment `cortex1`. The Worker runtime secrets are separate Cloudflare Worker secrets and must exist on the target Worker before a successful production deployment.
 
-## Cloudflare storage
+## Knowledge file storage
 
-Production knowledge files are stored only in the private R2 bucket:
+Cortex does not require Cloudflare R2. Uploaded knowledge files are stored as an internal
+`db64://` payload in PostgreSQL, decoded during ingestion, and then represented by durable
+knowledge chunks and vector records. The client never receives the internal payload.
 
-```text
-cortex-ai-knowledge
-```
-
-If the R2 binding is missing in Production, file upload fails explicitly instead of storing raw file bytes in PostgreSQL. The Worker binding is:
-
-```text
-CORTEX_KNOWLEDGE_BUCKET
-```
-
-The production upload path intentionally fails with a clear 503 when the R2 binding is absent instead of silently falling back to ephemeral local disk.
+The R2-free mode uses a conservative upload limit: 5 MB by default and 10 MB as the hard
+application limit. URL ingestion remains separately bounded.
 
 ## AI provider
 
