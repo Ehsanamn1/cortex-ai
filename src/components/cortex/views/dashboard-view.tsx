@@ -143,6 +143,7 @@ export function DashboardView() {
 
   const { stats, recentAgents, recentConversations, activity = [] } = dashboardQuery.data;
   const providers = providersQuery.data;
+  const settingEnabled = (key: string, fallback = true) => siteConfigQuery.data?.settings[key] === undefined ? fallback : siteConfigQuery.data.settings[key] !== "false";
   const hasAgents = stats.agents > 0;
   const llmReady = providers?.llm.status === "configured";
   const embeddingsReady = providers?.embeddings.status === "configured" || providers?.embeddings.mode === "lexical";
@@ -151,6 +152,7 @@ export function DashboardView() {
 
   return (
     <div className="space-y-7">
+      {settingEnabled("feature.dashboardHero") && (
       <section className="cortex-hero relative overflow-hidden rounded-[30px] border border-white/[.08]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_16%,rgba(59,130,255,.18),transparent_28%),radial-gradient(circle_at_20%_78%,rgba(139,92,246,.13),transparent_25%),linear-gradient(145deg,#111824,#070a0f)]" />
         <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(148,163,184,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.05)_1px,transparent_1px)] [background-size:34px_34px]" />
@@ -188,6 +190,8 @@ export function DashboardView() {
         </div>
       </section>
 
+      )}
+
       <section aria-label="آمار کلی" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard icon={Bot} label="ایجنت‌ها" value={faNum(stats.activeAgents)} caption={faNum(stats.agents) + " ایجنت ثبت شده"} tint="border-primary/25 bg-primary/10 text-primary" />
         <StatCard icon={Library} label="منابع دانش" value={faNum(stats.knowledgeReady)} caption={faNum(stats.knowledgeSources) + " منبع در مجموع"} tint="border-violet-400/25 bg-violet-400/10 text-violet-300" />
@@ -195,6 +199,7 @@ export function DashboardView() {
         <StatCard icon={Activity} label="امروز" value={faNum(stats.todayMessages ?? 0)} caption={faNum(stats.todayTokens ?? 0) + " توکن امروز"} tint="border-amber-400/25 bg-amber-400/10 text-amber-300" />
       </section>
 
+      {settingEnabled("feature.dashboardQuickActions") && (
       <section aria-label="عملیات و وضعیت" className="grid items-start gap-5 xl:grid-cols-[1.2fr_.8fr]">
         <Card className="cortex-panel overflow-hidden rounded-2xl">
           <CardHeader className="border-b border-white/[.06]">
@@ -237,10 +242,13 @@ export function DashboardView() {
         </Card>
       </section>
 
+      )}
+
       {!hasAgents ? (
         <EmptyState icon={<DashboardEmptyIllustration />} title="هنوز ایجنتی نساخته‌اید" description="اولین ایجنت خود را بسازید، دانش را به آن وصل کنید و بعد از پلی‌گراند پاسخ بگیرید." action={<Button onClick={() => setView("agent-new")}><Plus />ایجاد ایجنت</Button>} className="bg-card py-16" />
       ) : (
         <>
+          {settingEnabled("feature.dashboardRecent") && (
           <section className="grid items-start gap-5 lg:grid-cols-2">
             <Card className="cortex-panel rounded-2xl">
               <CardHeader className="border-b border-white/[.06]">
@@ -275,9 +283,12 @@ export function DashboardView() {
                     </button></li>
                   ))}</ul>
                 )}
-              </CardContent>
+                       {settingEnabled("feature.dashboardActivity") && (
+ </CardContent>
             </Card>
           </section>
+
+          )}
 
           <Card className="cortex-panel overflow-hidden rounded-2xl">
             <CardHeader className="border-b border-white/[.06]">
@@ -294,6 +305,7 @@ export function DashboardView() {
               )}
             </CardContent>
           </Card>
+          )}
         </>
       )}
     </div>

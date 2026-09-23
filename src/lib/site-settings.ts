@@ -13,6 +13,29 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "site.sidebarColor": CORTEX_UI_CONFIG.theme.sidebar,
   "site.authTitle": CORTEX_UI_CONFIG.copy.authTitle,
   "site.authDescription": CORTEX_UI_CONFIG.copy.authDescription,
+  "site.navOrder": "dashboard,agents,knowledge,conversations,telegram,analytics,admin,learn",
+  "nav.dashboard.enabled": "true",
+  "nav.dashboard.label": "داشبورد",
+  "nav.agents.enabled": "true",
+  "nav.agents.label": "ایجنت‌ها",
+  "nav.knowledge.enabled": "true",
+  "nav.knowledge.label": "دانش",
+  "nav.conversations.enabled": "true",
+  "nav.conversations.label": "گفتگوها",
+  "nav.telegram.enabled": "true",
+  "nav.telegram.label": "تلگرام",
+  "nav.analytics.enabled": "true",
+  "nav.analytics.label": "تحلیل",
+  "nav.admin.enabled": "true",
+  "nav.admin.label": "مدیریت",
+  "nav.learn.enabled": "true",
+  "nav.learn.label": "آموزش",
+  "feature.dashboardHero": "true",
+  "feature.dashboardQuickActions": "true",
+  "feature.dashboardRecent": "true",
+  "feature.dashboardActivity": "true",
+  "feature.authBrandPanel": "true",
+  "feature.createAgentCta": "true",
 };
 
 export async function getPublicSiteSettings(): Promise<Record<string, string>> {
@@ -24,7 +47,7 @@ export async function getPublicSiteSettings(): Promise<Record<string, string>> {
     });
     for (const row of rows) values[row.key] = row.value;
   } catch {
-    // Optional CMS settings must never prevent the product shell from loading.
+    // Settings are optional; the shell must still render with defaults.
   }
   return values;
 }

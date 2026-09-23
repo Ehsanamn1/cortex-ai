@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { FileSearch, GraduationCap, Loader2, MessagesSquare } from "lucide-react";
 import { toast } from "sonner";
@@ -192,6 +192,9 @@ function SignupForm() {
 }
 
 export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "signup" }) {
+  const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
+  const settings = siteConfig.data?.settings;
+  const showBrandPanel = settings?.["feature.authBrandPanel"] === undefined ? true : settings["feature.authBrandPanel"] !== "false";
   return (
     <div className="cortex-auth flex min-h-screen flex-col bg-background">
       <div className="relative grid flex-1 overflow-hidden lg:grid-cols-[1.18fr_.82fr]">
@@ -251,8 +254,8 @@ export function AuthScreen({ defaultTab = "login" }: { defaultTab?: "login" | "s
 
             <div className="cortex-auth-card rounded-[28px] border border-white/[.09] bg-white/[.035] p-6 shadow-[0_28px_90px_rgba(0,0,0,.32)] backdrop-blur-2xl sm:p-8 lg:p-9">
               <div className="mb-7 space-y-2 text-center">
-                <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold tracking-[.15em] text-primary">CORTEX AI <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.75)]" /></div><h2 className="text-2xl font-bold tracking-tight text-foreground">{CORTEX_UI_CONFIG.copy.authTitle}</h2>
-                <p className="text-sm text-muted-foreground">برای ادامه، وارد حساب خود شوید یا حساب جدید بسازید.</p>
+                <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold tracking-[.15em] text-primary">{settings?.["site.name"] || CORTEX_UI_CONFIG.brand.name} <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.75)]" /></div><h2 className="text-2xl font-bold tracking-tight text-foreground">{settings?.["site.authTitle"] || CORTEX_UI_CONFIG.copy.authTitle}</h2>
+                <p className="text-sm text-muted-foreground">{settings?.["site.authDescription"] || CORTEX_UI_CONFIG.copy.authDescription}</p>
               </div>
 
               <Tabs defaultValue={defaultTab}>

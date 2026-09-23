@@ -214,7 +214,7 @@ export interface SessionDto {
   workspaces: WorkspaceDto[];
 }
 
-export interface SiteConfigDto { settings: { "site.name": string; "site.description": string; "site.supportEmail": string; "site.maxUploadMb": string; "site.welcomeTitle": string } }
+export interface SiteConfigDto { settings: Record<string, string> }
 
 /* ---------------- core fetch machinery ---------------- */
 

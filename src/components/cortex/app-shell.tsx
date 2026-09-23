@@ -98,7 +98,12 @@ function WorkspaceSwitcher() {
 
   function handleSwitch(workspaceId: string) {
     setActiveWorkspace(workspaceId);
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["agents"] });
+    queryClient.invalidateQueries({ queryKey: ["conversations-all"] });
+    queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    queryClient.invalidateQueries({ queryKey: ["telegram-bots"] });
+    queryClient.invalidateQueries({ queryKey: ["providers-status"] });
   }
 
   return (
@@ -218,28 +223,50 @@ interface NavItem {
   matches: View[];
 }
 
-const NAV_ITEMS: NavItem[] = CORTEX_UI_CONFIG.navigation.map((item) => ({
-  ...item,
-  icon: item.view === "dashboard" ? LayoutDashboard
-    : item.view === "agents" ? Bot
-    : item.view === "knowledge" ? BookOpen
-    : item.view === "conversations" ? MessagesSquare
-    : item.view === "telegram" ? ShieldCheck
-    : item.view === "analytics" ? BarChart3
-    : item.view === "admin" ? ShieldCheck
-    : GraduationCap,
-  matches: item.view === "agents" ? ["agents", "agent-new", "agent-detail", "agent-edit"] : [item.view],
-}));
+const ICONS = {
+  dashboard: LayoutDashboard,
+  agents: Bot,
+  knowledge: BookOpen,
+  conversations: MessagesSquare,
+  telegram: ShieldCheck,
+  analytics: BarChart3,
+  admin: ShieldCheck,
+  learn: GraduationCap,
+} as const;
 
-const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((item) => CORTEX_UI_CONFIG.navigation.find((nav) => nav.view === item.view)?.mobile);
+function settingEnabled(settings: Record<string, string> | undefined, key: string, fallback = true) {
+  return settings?.[key] === undefined ? fallback : settings[key] !== "false";
+}
 
-function SidebarNav() {
+function buildNavItems(settings: Record<string, string> | undefined): NavItem[] {
+  const defaultOrder = CORTEX_UI_CONFIG.navigation.map((item) => item.view);
+  const order = (settings?.["site.navOrder"] ?? defaultOrder.join(","))
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value): value is View => value in ICONS);
+  const base = new Map(CORTEX_UI_CONFIG.navigation.map((item) => [item.view, item]));
+  const uniqueOrder = [...new Set(order)];
+  const ordered = [
+    ...uniqueOrder.map((view) => base.get(view)).filter((item): item is (typeof CORTEX_UI_CONFIG.navigation)[number] => Boolean(item)),
+    ...CORTEX_UI_CONFIG.navigation.filter((item) => !uniqueOrder.includes(item.view)),
+  ];
+  return ordered
+    .filter((item) => settingEnabled(settings, "nav." + item.view + ".enabled"))
+    .map((item) => ({
+      ...item,
+      label: settings?.["nav." + item.view + ".label"] || item.label,
+      icon: ICONS[item.view],
+      matches: item.view === "agents" ? ["agents", "agent-new", "agent-detail", "agent-edit"] : [item.view],
+    }));
+}
+
+function SidebarNav({ items }: { items: NavItem[] }) {
   const view = useCortexStore((s) => s.view);
   const setView = useCortexStore((s) => s.setView);
 
   return (
     <nav aria-label="ناوبری اصلی" className="flex flex-col gap-1">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const active = item.matches.includes(view);
         return (
           <button
@@ -285,11 +312,12 @@ function SidebarNav() {
 
 /* ---------------- mobile bottom nav ---------------- */
 
-function BottomNav({ onMore }: { onMore: () => void }) {
+function BottomNav({ onMore, items }: { onMore: () => void; items: NavItem[] }) {
   const view = useCortexStore((s) => s.view);
   const setView = useCortexStore((s) => s.setView);
 
-  const moreActive = !MOBILE_NAV_ITEMS.some((item) => item.matches.includes(view));
+  const mobileItems = items.filter((item) => item.mobile);
+  const moreActive = !mobileItems.some((item) => item.matches.includes(view));
 
   return (
     <nav
@@ -297,7 +325,7 @@ function BottomNav({ onMore }: { onMore: () => void }) {
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-popover/95 backdrop-blur supports-[backdrop-filter]:bg-popover/85 lg:hidden"
     >
       <div className="flex items-stretch pb-[env(safe-area-inset-bottom)]">
-        {MOBILE_NAV_ITEMS.map((item) => {
+        {mobileItems.map((item) => {
           const active = item.matches.includes(view);
           return (
             <button
@@ -418,13 +446,14 @@ export function AppShell() {
   const activeAgentId = useCortexStore((s) => s.activeAgentId);
   const setView = useCortexStore((s) => s.setView);
   const activeWorkspaceName = useCortexStore((s) => s.workspaces.find((w) => w.id === s.activeWorkspaceId)?.name);
-  const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000 });
+  const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
+  const navItems = buildNavItems(siteConfig.data?.settings);
 
   const [moreOpen, setMoreOpen] = useState(false);
   const title = usePageTitle(siteConfig.data?.settings["site.name"]);
 
   const viewKey = view.startsWith("agent") && activeAgentId ? `${view}-${activeAgentId}` : view;
-  const showCta = view === "dashboard" || view === "agents";
+  const showCta = (view === "dashboard" || view === "agents") && settingEnabled(siteConfig.data?.settings, "feature.createAgentCta");
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
@@ -442,7 +471,7 @@ export function AppShell() {
         <WorkspaceSwitcher />
 
         <div className="flex-1">
-          <SidebarNav />
+          <SidebarNav items={navItems} />
         </div>
 
         <SidebarUserCard />
@@ -490,7 +519,7 @@ export function AppShell() {
           </div>
         </main>
 
-        <BottomNav onMore={() => setMoreOpen(true)} />
+        <BottomNav items={navItems} onMore={() => setMoreOpen(true)} />
       </div>
 
       {/* Mobile «بیشتر» sheet */}
