@@ -253,6 +253,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const serverMessage = extractErrorMessage(parsed);
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("cortex:session-expired"));
+    }
     const message = serverMessage ??
       (response.status >= 500
         ? GENERIC_ERROR + " (" + path + " · HTTP " + response.status + ")"

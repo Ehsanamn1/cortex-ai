@@ -20,11 +20,12 @@ function makeQueryClient(): QueryClient {
         refetchOnWindowFocus: false,
         retry: (failureCount, error) => {
           if (error instanceof ApiError) {
-            const retryable = error.status === 0 || error.status >= 500 || error.status === 408;
+            const retryable = error.status === 0 || error.status >= 500 || error.status === 408 || error.status === 429;
             if (!retryable) return false;
           }
           return failureCount < 2;
         },
+        retryDelay: (attemptIndex) => Math.min(8000, 600 * 2 ** attemptIndex),
       },
     },
   });
@@ -52,6 +53,15 @@ function SessionGate() {
   const hydrate = useCortexStore((s) => s.hydrate);
   const [phase, setPhase] = useState<"checking" | "auth" | "ready">("checking");
   const [recoveryNotice, setRecoveryNotice] = useState("");
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      useCortexStore.getState().signOut();
+      setPhase("auth");
+    };
+    window.addEventListener("cortex:session-expired", handleSessionExpired);
+    return () => window.removeEventListener("cortex:session-expired", handleSessionExpired);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
