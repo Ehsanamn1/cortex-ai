@@ -64,13 +64,13 @@ These are read from the GitHub Actions Environment `cortex1`. The Worker runtime
 
 ## Cloudflare storage
 
-Production knowledge files are stored in the R2 bucket:
+Production knowledge files are stored only in the private R2 bucket:
 
 ```text
 cortex-ai-knowledge
 ```
 
-The Worker binding is:
+If the R2 binding is missing in Production, file upload fails explicitly instead of storing raw file bytes in PostgreSQL. The Worker binding is:
 
 ```text
 CORTEX_KNOWLEDGE_BUCKET
