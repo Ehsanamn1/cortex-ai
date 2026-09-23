@@ -51,6 +51,25 @@ jobs:
             npx wrangler r2 bucket create cortex-ai-knowledge
           fi
 
+      - name: Ensure required Worker database secret
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+        run: |
+          set -euo pipefail
+          secrets="$(npx wrangler secret list --name cortex-ai 2>/dev/null || true)"
+          if ! printf '%s' "$secrets" | grep -q 'DATABASE_URL'; then
+            echo "Missing required Cloudflare Worker secret: DATABASE_URL"
+            echo "Add DATABASE_URL to the Cortex AI Worker, then rerun the deployment."
+            exit 1
+          fi
+          if ! printf '%s' "$secrets" | grep -q 'APP_SECRET_KEY'; then
+            echo "APP_SECRET_KEY not found; generating a persistent Worker secret."
+            openssl rand -hex 32 | npx wrangler secret put APP_SECRET_KEY --name cortex-ai
+          else
+            echo "Worker APP_SECRET_KEY already exists."
+          fi
+
       - name: Deploy Worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
