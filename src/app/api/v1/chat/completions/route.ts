@@ -4,7 +4,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
 import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
-import { answerWithKnowledge, RagConfigError, toRetrievalDebug, toSourceRefs } from "@/lib/rag/pipeline";
+import { answerWithKnowledge, RAG_QUERY_EXPANSION_RESERVE_TOKENS, RagConfigError, toRetrievalDebug, toSourceRefs } from "@/lib/rag/pipeline";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     }).then((rows) => rows.reverse());
     const promptHistory = existing.slice(-12);
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(last);
-    reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens, auth.agent.maxTokens);
+    reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS, auth.agent.maxTokens);
     const answer = await answerWithKnowledge({
       agentId: auth.agentId,
       workspaceId: auth.agent.workspaceId,
@@ -60,10 +60,11 @@ export async function POST(req: Request) {
     await db.message.create({ data: { conversationId: conversation.id, role: "user", content: last.trim() } });
     const assistant = await db.message.create({ data: { conversationId: conversation.id, role: "assistant", content: answer.content, metadata: JSON.stringify(metadata) } });
     await db.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
-    const outputTokens = estimateTokens(answer.content);
-    const totalTokens = promptTokens + outputTokens;
+    const outputTokens = estimateTokens(answer.content) + (answer.auxiliaryOutputTokens ?? 0);
+    const inputTokens = promptTokens + (answer.auxiliaryInputTokens ?? 0);
+    const totalTokens = inputTokens + outputTokens;
     await db.$transaction([
-      db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId: auth.agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens: promptTokens, outputTokens, totalTokens } }),
+      db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId: auth.agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens } }),
       ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
     ]);
     reservationId = null;
