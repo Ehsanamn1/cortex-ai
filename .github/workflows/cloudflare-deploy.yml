@@ -26,6 +26,19 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Prepare Prisma query compiler asset
+        run: |
+          set -euo pipefail
+          mkdir -p node_modules/.prisma/client
+          wasm="$(find src/generated/prisma node_modules/.prisma node_modules/@prisma/client -type f -name 'query_compiler*.wasm' -print -quit 2>/dev/null || true)"
+          if [ -z "$wasm" ]; then
+            echo "No Prisma query compiler WASM was generated."
+            exit 1
+          fi
+          echo "Using Prisma compiler WASM: $wasm"
+          cp "$wasm" node_modules/.prisma/client/query_compiler_bg.wasm
+          ls -lh node_modules/.prisma/client/query_compiler_bg.wasm
+
       - name: Build Worker
         run: npx vinext build
 
