@@ -20,6 +20,7 @@ type Params = { params: Promise<{ id: string }> };
 const MAX_QUESTION_CHARS = 4000;
 
 export async function POST(req: Request, { params }: Params) {
+  let reservationId: string | null = null;
   try {
     const session = await requireSession(req);
     const { id } = await params;
@@ -65,7 +66,6 @@ export async function POST(req: Request, { params }: Params) {
       historyForPrompt.reduce((sum, item) => sum + estimateTokens(item.content), 0) +
       estimateTokens(content);
 
-    let reservationId: string | null = null;
     reservationId = await reserveUsageWithinLimits(agent.workspaceId, 1, estimatedPromptTokens, agent.maxTokens);
 
     // Persist the user message first (honest history even if generation fails).
@@ -163,6 +163,8 @@ export async function POST(req: Request, { params }: Params) {
       throw e;
     }
   } catch (e) {
+    await releaseUsageReservation(reservationId);
+    reservationId = null;
     return toErrorResponse(e);
   }
 }
