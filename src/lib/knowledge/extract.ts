@@ -136,9 +136,22 @@ function ipv4ToInt(ip: string): number | null {
 }
 
 export function isPrivateIp(ip: string): boolean {
-  if (ip === "::1" || ip === "0:0:0:0:0:0:0:1") return true;
-  if (ip.startsWith("fc") || ip.startsWith("fd") || ip.startsWith("fe80")) return true; // ipv6 private/link-local
-  const v4 = ipv4ToInt(ip);
+  const normalized = ip.trim().replace(/^\[|\]$/g, "").toLowerCase();
+  if (normalized === "::1" || normalized === "0:0:0:0:0:0:0:1") return true;
+
+  const firstHextet = Number.parseInt(normalized.split(":")[0] || "", 16);
+  if (
+    Number.isFinite(firstHextet) &&
+    ((firstHextet >= 0xfc00 && firstHextet <= 0xfdff) || // fc00::/7
+      (firstHextet >= 0xfe80 && firstHextet <= 0xfebf)) // fe80::/10
+  ) {
+    return true;
+  }
+
+  const mappedIpv4 = normalized.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/)?.[1];
+  if (mappedIpv4 && isPrivateIp(mappedIpv4)) return true;
+
+  const v4 = ipv4ToInt(normalized);
   if (v4 === null) return false;
   if (v4 >>> 24 === 127) return true; // loopback
   if (v4 >>> 24 === 10) return true; // 10/8
