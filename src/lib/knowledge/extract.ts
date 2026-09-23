@@ -340,10 +340,13 @@ export async function extractReadableHtml(html: string): Promise<ExtractedPage[]
 function xmlText(xml: string): string {
   return xml
     .replace(/<[^>]+>/g, " ")
-    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n,16)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
     .replace(/\s+/g, " ");
 }
 
@@ -352,61 +355,132 @@ async function extractXlsx(bytes: Uint8Array): Promise<ExtractedPage[]> {
   const files = unzipSync(bytes);
   const shared: string[] = [];
   const sharedXml = files["xl/sharedStrings.xml"] ? strFromU8(files["xl/sharedStrings.xml"]) : "";
-  for (const match of sharedXml.matchAll(/<si>([\s\/S]*?)<\//si>/g)) {
-    const value = [...match[1]!.matchAll(/<t[^>]*>([\s\/S]*?)<\//t>/g)].map(m => xmlText(m[1]!)).join("");
+
+  for (const match of sharedXml.matchAll(/<si>([\s\S]*?)<\/si>/g)) {
+    const value = [...match[1]!.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)]
+      .map((m) => xmlText(m[1]!))
+      .join("");
     shared.push(normalizeText(value));
   }
 
-  const sheetNames = Object.keys(files).filter(k => /^xl\//worksheets\//sheet\d+\/.xml$/.test(k)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
+  const sheetNames = Object.keys(files)
+    .filter((key) => /^xl\/worksheets\/sheet\d+\.xml$/.test(key))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
   const pages: ExtractedPage[] = [];
   sheetNames.forEach((name, sheetIndex) => {
     const xml = strFromU8(files[name]!);
     const rows: string[] = [];
-    for (const rowMatch of xml.matchAll(/<row[^>]*>([\s\/S]*?)<\//row>/g)) {
+
+    for (const rowMatch of xml.matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g)) {
       const cells: string[] = [];
-      for (const cell of rowMatch[1]!.matchAll(/<c([^>]*)>([\s\/S]*?)<\//c>/g)) {
-        const attrs = cell[1]!;
-        const body = cell[2]!;
+      for (const cellMatch of rowMatch[1]!.matchAll(/<c([^>]*)>([\s\S]*?)<\/c>/g)) {
+        const attrs = cellMatch[1]!;
+        const body = cellMatch[2]!;
         const type = attrs.match(/(?:^|\s)t="([^"]+)"/)?.[1] ?? "";
-        const v = body.match(/<v>([\s\/S]*?)<\//v>/)?.[1] ?? "";
-        const inline = [...body.matchAll(/<t[^>]*>([\s\/S]*?)<\//t>/g)].map(m => xmlText(m[1]!)).join("");
-        const value = type === "s" ? (shared[Number(v)] ?? v) : type === "inlineStr" ? inline : xmlText(v);
-        if (value.trim()) cells.push(normalizeText(value));
+        const valueTag = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? "";
+        const inlineText = [...body.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)]
+          .map((m) => xmlText(m[1]!))
+          .join("");
+
+        const rawValue =
+          type === "s"
+            ? (shared[Number(valueTag)] ?? valueTag)
+            : type === "inlineStr"
+              ? inlineText
+              : xmlText(valueTag);
+
+        const value = normalizeText(rawValue);
+        if (value) cells.push(value);
       }
       if (cells.length) rows.push(cells.join(" | "));
     }
-    if (rows.length) pages.push({ text: normalizeText("برگه " + (sheetIndex + 1) + "\/n" + rows.join("\/n")) , section: "Sheet " + (sheetIndex + 1) });
+
+    if (rows.length) {
+      pages.push({
+        text: normalizeText("برگه " + (sheetIndex + 1) + "\n" + rows.join("\n")),
+        section: "Sheet " + (sheetIndex + 1),
+      });
+    }
   });
+
   return pages;
 }
 
 async function extractPptx(bytes: Uint8Array): Promise<ExtractedPage[]> {
   const { unzipSync, strFromU8 } = await import("fflate");
   const files = unzipSync(bytes);
-  const slides = Object.keys(files).filter(k => /^ppt\//slides\//slide\d+\/.xml$/.test(k)).sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
-  return slides.map((name,index) => {
-    const xml = strFromU8(files[name]!);
-    const texts = [...xml.matchAll(/<a:t[^>]*>([\s\/S]*?)<\//a:t>/g)].map(m => xmlText(m[1]!)).filter(Boolean);
-    return { text: normalizeText(texts.join(" ")) , page:index+1, section:"Slide " + (index+1) };
-  }).filter(p => p.text.length > 0);
+
+  const slides = Object.keys(files)
+    .filter((key) => /^ppt\/slides\/slide\d+\.xml$/.test(key))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+  return slides
+    .map((name, index) => {
+      const xml = strFromU8(files[name]!);
+      const texts = [...xml.matchAll(/<a:t[^>]*>([\s\S]*?)<\/a:t>/g)]
+        .map((m) => xmlText(m[1]!))
+        .filter(Boolean);
+
+      return {
+        text: normalizeText(texts.join(" ")),
+        page: index + 1,
+        section: "Slide " + (index + 1),
+      };
+    })
+    .filter((page) => page.text.length > 0);
 }
 
 export async function extractStoredBytes(bytes: Uint8Array, originalName: string): Promise<ExtractionResult> {
   const ext = detectExtension(originalName);
   const kind = sniffKind(bytes);
 
-  if (ext === ".pdf" && kind === "pdf") return { pages: await extractPdf(bytes), mimeType: "application/pdf", sizeBytes: bytes.length };
-  if ((ext === ".docx" || ext === ".docm") && kind === "docx-zip") {
-    return { pages: await extractDocx(bytes), mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", sizeBytes: bytes.length };
+  if (ext === ".pdf" && kind === "pdf") {
+    return { pages: await extractPdf(bytes), mimeType: "application/pdf", sizeBytes: bytes.length };
   }
-  if (ext === ".xlsx" && kind === "docx-zip") return { pages: await extractXlsx(bytes), mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", sizeBytes: bytes.length };
-  if (ext === ".pptx" && kind === "docx-zip") return { pages: await extractPptx(bytes), mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation", sizeBytes: bytes.length };
 
-  const textExtensions = new Set([".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".log", ".tsv", ".sql", ".jsonl", ".ndjson", ".rst", ".toml", ".ini", ".conf", ".env", ".css", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".py", ".java", ".go", ".rs", ".php", ".rb", ".sh", ".bat", ".ps1", ".graphql", ".gql"]);
+  if ((ext === ".docx" || ext === ".docm") && kind === "docx-zip") {
+    return {
+      pages: await extractDocx(bytes),
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      sizeBytes: bytes.length,
+    };
+  }
+
+  if (ext === ".xlsx" && kind === "docx-zip") {
+    return {
+      pages: await extractXlsx(bytes),
+      mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      sizeBytes: bytes.length,
+    };
+  }
+
+  if (ext === ".pptx" && kind === "docx-zip") {
+    return {
+      pages: await extractPptx(bytes),
+      mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      sizeBytes: bytes.length,
+    };
+  }
+
+  const textExtensions = new Set([
+    ".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".yaml", ".yml", ".log", ".tsv",
+    ".sql", ".jsonl", ".ndjson", ".rst", ".toml", ".ini", ".conf", ".env", ".css", ".js", ".mjs",
+    ".cjs", ".ts", ".tsx", ".jsx", ".py", ".java", ".go", ".rs", ".php", ".rb", ".sh", ".bat",
+    ".ps1", ".graphql", ".gql",
+  ]);
+
   if ((textExtensions.has(ext) || kind === "text") && (kind === "text" || kind === "unknown")) {
-    const mimeType = ext === ".json" ? "application/json" : ext === ".csv" ? "text/csv" : ext === ".html" || ext === ".htm" ? "text/html" : ext === ".xml" ? "application/xml" : "text/plain";
+    const mimeType =
+      ext === ".json" ? "application/json" :
+      ext === ".csv" ? "text/csv" :
+      ext === ".html" || ext === ".htm" ? "text/html" :
+      ext === ".xml" ? "application/xml" :
+      "text/plain";
+
     return { pages: await extractTxt(bytes), mimeType, sizeBytes: bytes.length };
   }
+
   throw new Error("این فایل قابل خواندن است، اما نوع آن هنوز در استخراج Cortex پشتیبانی نشده است.");
 }
 
