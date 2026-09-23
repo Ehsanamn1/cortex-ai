@@ -256,7 +256,7 @@ function buildNavItems(settings: Record<string, string> | undefined): NavItem[] 
       ...item,
       label: settings?.["nav." + item.view + ".label"] || item.label,
       icon: ICONS[item.view],
-      matches: item.view === "agents" ? ["agents", "agent-new", "agent-detail", "agent-edit"] : [item.view],
+      matches: item.view === "agents" ? (["agents", "agent-new", "agent-detail", "agent-edit"] as View[]) : [item.view],
     }));
 }
 
