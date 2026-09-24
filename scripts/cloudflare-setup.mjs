@@ -103,11 +103,16 @@ async function main() {
       maxAgeSeconds: 3600,
     }],
   }, null, 2), "utf8");
+  const corsProbe = process.cwd() + "/.cortex-r2-cors-probe.txt";
+  await fs.writeFile(corsProbe, "Cortex AI CORS probe\\n", "utf8");
   try {
+    await run("npx", ["wrangler", "r2", "object", "put", bucketName + "/.cortex-cors-probe", "--file", corsProbe, "--content-type", "text/plain", "--force"]);
     await run("npx", ["wrangler", "r2", "bucket", "cors", "set", bucketName, "--file", corsFile, "--force"]);
     console.log("R2 CORS policy configured for: " + corsOrigins.join(", "));
   } finally {
+    await run("npx", ["wrangler", "r2", "object", "delete", bucketName + "/.cortex-cors-probe", "--force"]).catch(() => undefined);
     await fs.rm(corsFile, { force: true });
+    await fs.rm(corsProbe, { force: true });
   }
 
   console.log("\n4) Building and deploying Cortex AI...");
