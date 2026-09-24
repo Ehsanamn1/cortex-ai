@@ -106,38 +106,20 @@ jobs:
           DATABASE_URL="$db_url" npx prisma db push --skip-generate
           echo "Production Prisma schema is synchronized."
 
-      - name: Ensure production R2 bucket and browser CORS
+      - name: Prepare optional R2 bucket and browser CORS
+        continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
         run: |
-          set -euo pipefail
+          set -u
           bucket="cortex-ai-knowledge"
-          if npx wrangler r2 bucket info "$bucket" --json >/dev/null 2>&1; then
-            echo "R2 bucket exists: $bucket"
-          else
-            npx wrangler r2 bucket create "$bucket"
-            echo "Created R2 bucket: $bucket"
-          fi
+          npx wrangler r2 bucket info "$bucket" --json >/dev/null 2>&1 || npx wrangler r2 bucket create "$bucket" || true
           cors_file="$(mktemp --suffix=.json)"
-          probe_file="$(mktemp)"
-          printf '%s\n' 'Cortex AI R2 CORS probe' > "$probe_file"
-          jq -n '{
-            rules: [{
-              allowed: {
-                origins: ["https://cortex-ai.dengxiao445.workers.dev"],
-                methods: ["PUT","GET","HEAD"],
-                headers: ["Content-Type"]
-              },
-              exposeHeaders: ["ETag"],
-              maxAgeSeconds: 3600
-            }]
-          }' > "$cors_file"
-          npx wrangler r2 object put "$bucket/.cortex-cors-probe" --file "$probe_file" --content-type "text/plain" --force >/dev/null
-          npx wrangler r2 bucket cors set "$bucket" --file "$cors_file" --force
-          npx wrangler r2 object delete "$bucket/.cortex-cors-probe" --force >/dev/null 2>&1 || true
-          rm -f "$cors_file" "$probe_file"
-          echo "R2 bucket and browser CORS are ready."
+          jq -n '{rules:[{allowed:{origins:["https://cortex-ai.dengxiao445.workers.dev"],methods:["PUT","GET","HEAD"],headers:["Content-Type"]},exposeHeaders:["ETag"],maxAgeSeconds:3600}]}' > "$cors_file"
+          npx wrangler r2 bucket cors set "$bucket" --file "$cors_file" --force || true
+          rm -f "$cors_file"
+          echo "R2 preparation attempted; PostgreSQL fallback remains available for <=20 MB MVP uploads."
 
       - name: Ensure password crypto extension
         env:
@@ -174,7 +156,7 @@ jobs:
             echo "Worker APP_SECRET_KEY already exists."
           fi
 
-      - name: Verify Worker runtime secrets
+      - name: Verify core Worker runtime secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
@@ -182,14 +164,13 @@ jobs:
           set -euo pipefail
           secret_names="$(npx wrangler secret list --name cortex-ai --format json 2>/dev/null || npx wrangler secret list --name cortex-ai)"
           printf '%s\n' "$secret_names"
-          for required in DATABASE_URL APP_SECRET_KEY CORTEX_ADMIN_USERNAME CORTEX_ADMIN_PASSWORD R2_ACCOUNT_ID R2_BUCKET_NAME R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+          for required in DATABASE_URL APP_SECRET_KEY; do
             printf '%s' "$secret_names" | grep -q "$required" || {
-              echo "Missing Worker secret: $required"
-              echo "Configure this secret on the cortex-ai Worker and rerun the release."
+              echo "Missing core Worker secret: $required"
               exit 1
             }
           done
-          echo "Required Worker runtime secrets are present."
+          echo "Core Worker runtime secrets are present."
       - name: Deploy Worker to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}

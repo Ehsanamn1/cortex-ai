@@ -18,8 +18,8 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-const DEFAULT_MAX_UPLOAD_MB = 5;
-const MAX_DB_UPLOAD_MB = 10;
+const DEFAULT_MAX_UPLOAD_MB = 20;
+const MAX_DB_UPLOAD_MB = 20;
 const ENV_MAX_UPLOAD_MB = (() => {
   const value = Number(process.env.MAX_UPLOAD_MB);
   return Number.isFinite(value) && value >= 1 ? Math.min(MAX_DB_UPLOAD_MB, Math.floor(value)) : DEFAULT_MAX_UPLOAD_MB;
@@ -90,12 +90,6 @@ export async function POST(req: Request, { params }: Params) {
 
     /* ---------- Mode A: multipart file upload (PDF / TXT / DOCX) ---------- */
     if (contentType.includes("multipart/form-data")) {
-      if ((process.env.NODE_ENV === "production" || process.env.APP_ENV === "production") && !isR2Configured()) {
-        return applyCors(
-          jsonError("فضای ذخیره‌سازی پایدار R2 برای بارگذاری فایل در محیط تولید فعال نیست.", 503),
-          req.headers.get("origin")
-        );
-      }
       let form: FormData;
       try {
         form = await req.formData();
@@ -190,8 +184,8 @@ export async function POST(req: Request, { params }: Params) {
             },
           });
         } else {
-          // Local/development-only fallback. Production is rejected above when
-          // R2 is unavailable, so upload bytes never remain inline in production.
+          // Compatibility fallback: when R2 is unavailable, MVP uploads up to
+          // 20 MB remain inline in PostgreSQL so the core product stays usable.
           const storageUrl = "db64://" + Buffer.from(bytes).toString("base64");
           await db.knowledgeDocument.create({
             data: {
