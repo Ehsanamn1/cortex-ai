@@ -35,7 +35,7 @@ The normal browser flow is:
 4. Cortex HEAD-checks the stored object and only then starts extraction, chunking, embedding and indexing.
 5. The source becomes `ready` only after vectors are stored successfully.
 
-The configured file limit is controlled by `site.maxUploadMb` and is capped at **200 MB per file**. URL ingestion is separately bounded to **25 MB**. A small multipart compatibility fallback is retained for development and for clients that cannot complete the direct upload path; in production it still stores the file in R2.
+The default MVP file limit is **20 MB per file**. It is controlled by `site.maxUploadMb` and can be raised by an authorized administrator up to a hard cap of **200 MB per file**. URL ingestion is separately bounded to **25 MB**. A small multipart compatibility fallback is retained for development and for clients that cannot complete the direct upload path; in production it still stores the file in R2.
 
 Current extraction support includes PDF, DOCX/DOCM, XLSX, PPTX and a broad set of text/data/code formats such as Markdown, CSV, JSON, XML, YAML, SQL, logs and common source-code extensions.
 
