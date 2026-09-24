@@ -13,7 +13,7 @@ export const CORTEX_UI_CONFIG = {
     sidebar: "#0A0D13",
   },
   limits: {
-    maxKnowledgeUploadMb: 200,
+    maxKnowledgeUploadMb: 20,
   },
   navigation: [
     { view: "dashboard" as CortexView, label: "داشبورد", mobile: true },
