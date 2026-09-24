@@ -106,6 +106,39 @@ jobs:
           DATABASE_URL="$db_url" npx prisma db push --skip-generate
           echo "Production Prisma schema is synchronized."
 
+      - name: Ensure production R2 bucket and browser CORS
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+        run: |
+          set -euo pipefail
+          bucket="cortex-ai-knowledge"
+          if npx wrangler r2 bucket info "$bucket" --json >/dev/null 2>&1; then
+            echo "R2 bucket exists: $bucket"
+          else
+            npx wrangler r2 bucket create "$bucket"
+            echo "Created R2 bucket: $bucket"
+          fi
+          cors_file="$(mktemp --suffix=.json)"
+          probe_file="$(mktemp)"
+          printf '%s\n' 'Cortex AI R2 CORS probe' > "$probe_file"
+          jq -n '{
+            rules: [{
+              allowed: {
+                origins: ["https://cortex-ai.dengxiao445.workers.dev"],
+                methods: ["PUT","GET","HEAD"],
+                headers: ["Content-Type"]
+              },
+              exposeHeaders: ["ETag"],
+              maxAgeSeconds: 3600
+            }]
+          }' > "$cors_file"
+          npx wrangler r2 object put "$bucket/.cortex-cors-probe" --file "$probe_file" --content-type "text/plain" --force >/dev/null
+          npx wrangler r2 bucket cors set "$bucket" --file "$cors_file" --force
+          npx wrangler r2 object delete "$bucket/.cortex-cors-probe" --force >/dev/null 2>&1 || true
+          rm -f "$cors_file" "$probe_file"
+          echo "R2 bucket and browser CORS are ready."
+
       - name: Ensure password crypto extension
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
@@ -145,22 +178,18 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
-          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
-          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
           set -euo pipefail
-          npx wrangler secret list --name cortex-ai
-          test -n "$CORTEX_ADMIN_USERNAME" || { echo "CORTEX_ADMIN_USERNAME is required for the production admin console"; exit 1; }
-          test -n "$CORTEX_ADMIN_PASSWORD" || { echo "CORTEX_ADMIN_PASSWORD is required for the production admin console"; exit 1; }
-          test -n "$R2_ACCOUNT_ID" || { echo "R2_ACCOUNT_ID is required for production file uploads"; exit 1; }
-          test -n "$R2_BUCKET_NAME" || { echo "R2_BUCKET_NAME is required for production file uploads"; exit 1; }
-          test -n "$R2_ACCESS_KEY_ID" || { echo "R2_ACCESS_KEY_ID is required for production file uploads"; exit 1; }
-          test -n "$R2_SECRET_ACCESS_KEY" || { echo "R2_SECRET_ACCESS_KEY is required for production file uploads"; exit 1; }
-          echo "Required production secrets are configured: Postgres, APP_SECRET_KEY, Admin credentials, and R2 storage."
+          secret_names="$(npx wrangler secret list --name cortex-ai --format json 2>/dev/null || npx wrangler secret list --name cortex-ai)"
+          printf '%s\n' "$secret_names"
+          for required in DATABASE_URL APP_SECRET_KEY CORTEX_ADMIN_USERNAME CORTEX_ADMIN_PASSWORD R2_ACCOUNT_ID R2_BUCKET_NAME R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+            printf '%s' "$secret_names" | grep -q "$required" || {
+              echo "Missing Worker secret: $required"
+              echo "Configure this secret on the cortex-ai Worker and rerun the release."
+              exit 1
+            }
+          done
+          echo "Required Worker runtime secrets are present."
       - name: Deploy Worker to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
