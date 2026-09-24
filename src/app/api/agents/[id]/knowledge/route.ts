@@ -146,6 +146,7 @@ export async function POST(req: Request, { params }: Params) {
         },
       });
 
+      let r2Key: string | null = null;
       try {
         const mimeType = file.type || "application/octet-stream";
 
@@ -164,6 +165,7 @@ export async function POST(req: Request, { params }: Params) {
             crypto.randomUUID() +
             "-" +
             originalName;
+          r2Key = key;
 
           const upload = await fetch(createR2PresignedPut(key), {
             method: "PUT",
@@ -203,6 +205,7 @@ export async function POST(req: Request, { params }: Params) {
         }
       } catch (error) {
         const message = error instanceof Error ? error.message.slice(0, 1000) : "ذخیره فایل ناموفق بود.";
+        if (r2Key) await deleteR2Object(r2Key).catch(() => undefined);
         await db.knowledgeSource.update({
           where: { id: source.id },
           data: { status: "failed", error: message },
