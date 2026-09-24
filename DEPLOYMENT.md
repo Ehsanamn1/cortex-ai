@@ -1,37 +1,44 @@
 # Cortex AI — Cloudflare deployment
 
-Production compute is Cloudflare Workers. The repository deploys through:
+Production compute is Cloudflare Workers.
+
+The canonical deployment workflow is:
 
 `.github/workflows/cloudflare-deploy.yml`
 
-## GitHub Actions
+## GitHub Environment
 
-The deploy job references the protected GitHub Environment `cortex1`.
+The workflow uses the protected GitHub Environment `cortex1`.
 
-That environment supplies only the Cloudflare CI credentials:
+The environment must provide:
 
-```
+```text
 CLOUDFLARE_API_TOKEN
 CLOUDFLARE_ACCOUNT_ID
-```
-
-Application/database credentials should not be committed to Git or copied into source files.
-
-## Worker runtime secrets
-
-The Cloudflare Worker requires:
-
-```
 DATABASE_URL
-APP_SECRET_KEY
-CORTEX_ADMIN_PASSWORD
-```
-
-Optional runtime settings include:
-
-```
 CORTEX_ADMIN_USERNAME
+CORTEX_ADMIN_PASSWORD
+R2_ACCOUNT_ID
+R2_BUCKET_NAME
+R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY
+```
+
+`APP_SECRET_KEY` is strongly recommended in the protected Environment. When it is not supplied there, the workflow preserves an existing Worker secret and generates one only when the Worker does not already have a persistent value.
+
+Optional values may include:
+
+```text
+POSTGRES_PRISMA_URL
+POSTGRES_URL
 CORTEX_ADMIN_SESSION_SECRET
+LLM_PROVIDER
+LLM_BASE_URL
+LLM_API_KEY
+LLM_MODEL
+LLM_AUTH_MODE
+OPENROUTER_API_KEY
+OPENROUTER_MODEL
 OPENAI_API_KEY
 EMBEDDINGS_MODEL
 EMBEDDINGS_BASE_URL
@@ -39,38 +46,81 @@ QDRANT_URL
 QDRANT_API_KEY
 APP_PUBLIC_URL
 TELEGRAM_INTERNAL_SECRET
+CORS_ORIGINS
 ```
 
-These values belong to the Worker environment and are managed in Cloudflare.
+Never commit these values to the repository.
 
 ## R2
 
-Knowledge uploads use the private R2 bucket `cortex-ai-knowledge` via the binding `CORTEX_KNOWLEDGE_BUCKET`.
+Knowledge uploads use the private R2 bucket `cortex-ai-knowledge` through S3-compatible presigned URLs. There is **no** `CORTEX_KNOWLEDGE_BUCKET` Worker binding in the current architecture.
 
-The deployment workflow verifies the bucket before publishing the Worker.
+Required R2 credentials are:
 
-## Deployment flow
+```text
+R2_ACCOUNT_ID
+R2_BUCKET_NAME
+R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY
+```
+
+The browser normally uploads directly to R2, avoiding the Worker request-body limit. Production allows up to 200 MB per file, controlled by `site.maxUploadMb`.
+
+The local/development multipart fallback may store a small `db64://` payload in PostgreSQL when R2 is unavailable. Production rejects that fallback path when R2 is not configured.
+
+## Release order
+
+The deployment workflow intentionally follows this order:
 
 1. Install dependencies.
-2. Build with Vinext.
-3. Validate GitHub → Cloudflare credentials.
-4. Verify/create the R2 bucket.
-5. Deploy with `@vinext/cloudflare deploy`.
-6. Wrangler validates the Worker-side required secrets.
+2. Generate Prisma and build the Worker.
+3. Verify Cloudflare credentials.
+4. Verify required production inputs before any deployment.
+5. Sync runtime secrets to the target Worker.
+6. Ensure `pgcrypto`, `AgentApiKey` and `UsageReservation` database objects exist.
+7. Verify the Worker runtime secret set.
+8. Deploy the Worker.
+9. Run authenticated app/API smoke tests.
+10. Run the public `/api/health` smoke test.
+
+This prevents the previous failure mode where new code was deployed first and the job only discovered missing production credentials afterward.
 
 ## Local validation
 
 ```bash
 npm install
 npm run check:vinext
+npm run typecheck
+npm run lint
 npm run build:vinext
-npm run start:vinext
 ```
 
-For fresh Cloudflare setup:
+For first-time Cloudflare setup:
 
 ```bash
 npm run setup:cloudflare
 ```
 
-A protected GitHub Environment can require approval before a job is released and its secrets become available. That approval is an external GitHub account setting.
+The setup helper creates the `cortex-ai-knowledge` bucket if necessary and prompts for all runtime secrets required by the production Worker.
+
+## Smoke coverage
+
+The deploy workflow exercises:
+
+- public `/control-center` and `/admin` pages;
+- unauthenticated admin protection;
+- signup and persistent session;
+- workspace/agent/dashboard/provider/Telegram/admin/analytics routes;
+- agent API-key creation and revocation;
+- authenticated dedicated Agent API;
+- authenticated OpenAI-compatible chat endpoint;
+- production Worker health endpoint.
+
+When no real LLM provider is configured, authenticated chat endpoints are allowed to return the intentional `503` "not configured" response; route/authentication correctness is still validated.
+
+## Current target
+
+```text
+https://cortex-ai.dengxiao445.workers.dev
+```
+
