@@ -11,6 +11,7 @@ on:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     environment: cortex1
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -41,11 +42,30 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "CLOUDFLARE_API_TOKEN is missing from cortex1 secrets/variables"; exit 1; }
           echo "Cloudflare API token is available; account ID is configured in workflow."
 
-      - name: Deploy Worker to Cloudflare
+
+
+      - name: Verify required production inputs before any deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
-        run: npx wrangler deploy --config dist/server/wrangler.json --var APP_ENV:production
+          DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
+          POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
+          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
+          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID || 'cddba2278fda0cf565b31f9280a7af1f' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
+          test -n "$db_url" || { echo "A Postgres connection is required before production deploy"; exit 1; }
+          test -n "$CORTEX_ADMIN_USERNAME" || { echo "CORTEX_ADMIN_USERNAME is required before production deploy"; exit 1; }
+          test -n "$CORTEX_ADMIN_PASSWORD" || { echo "CORTEX_ADMIN_PASSWORD is required before production deploy"; exit 1; }
+          test -n "$R2_ACCOUNT_ID" || { echo "R2_ACCOUNT_ID is required before production deploy"; exit 1; }
+          test -n "$R2_BUCKET_NAME" || { echo "R2_BUCKET_NAME is required before production deploy"; exit 1; }
+          test -n "$R2_ACCESS_KEY_ID" || { echo "R2_ACCESS_KEY_ID is required before production deploy"; exit 1; }
+          test -n "$R2_SECRET_ACCESS_KEY" || { echo "R2_SECRET_ACCESS_KEY is required before production deploy"; exit 1; }
+          echo "Required production inputs are present. Deployment may continue."
 
       - name: Sync Worker runtime secrets
         env:
@@ -58,8 +78,8 @@ jobs:
           CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
           CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
           TELEGRAM_INTERNAL_SECRET: ${{ secrets.TELEGRAM_INTERNAL_SECRET || vars.TELEGRAM_INTERNAL_SECRET }}
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID || 'cddba2278fda0cf565b31f9280a7af1f' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
@@ -85,6 +105,50 @@ jobs:
           put_secret R2_BUCKET_NAME "$R2_BUCKET_NAME"
           put_secret R2_ACCESS_KEY_ID "$R2_ACCESS_KEY_ID"
           put_secret R2_SECRET_ACCESS_KEY "$R2_SECRET_ACCESS_KEY"
+      - name: Ensure production R2 bucket
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
+        run: |
+          set -euo pipefail
+          if npx wrangler r2 bucket info "$R2_BUCKET_NAME" --json >/dev/null 2>&1; then
+            echo "R2 bucket exists: $R2_BUCKET_NAME"
+          else
+            npx wrangler r2 bucket create "$R2_BUCKET_NAME"
+            echo "Created R2 bucket: $R2_BUCKET_NAME"
+          fi
+
+      - name: Configure private R2 CORS
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
+          APP_PUBLIC_URL: ${{ secrets.APP_PUBLIC_URL || vars.APP_PUBLIC_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$R2_BUCKET_NAME" || { echo "R2_BUCKET_NAME is required for CORS configuration"; exit 1; }
+          cors_file="$(mktemp --suffix=.json)"
+          probe_file="$(mktemp)"
+          printf '%s
+' 'Cortex AI R2 CORS probe' > "$probe_file"
+          cors_origins='["https://cortex-ai.dengxiao445.workers.dev"]'
+          if [ -n "${APP_PUBLIC_URL:-}" ] && printf '%s' "$APP_PUBLIC_URL" | grep -Eq '^https://'; then
+            cors_origins="$(jq -c --arg origin "${APP_PUBLIC_URL%/}" '. + [$origin] | unique' <<< "$cors_origins")"
+          fi
+          jq -n --argjson origins "$cors_origins" '{
+            rules: [{
+              allowed: { origins: $origins, methods: ["PUT","GET","HEAD"], headers: ["Content-Type"] },
+              exposeHeaders: ["ETag"],
+              maxAgeSeconds: 3600
+            }]
+          }' > "$cors_file"
+          npx wrangler r2 object put "$R2_BUCKET_NAME/.cortex-cors-probe" --file "$probe_file" --content-type "text/plain" --force
+          npx wrangler r2 bucket cors set "$R2_BUCKET_NAME" --file "$cors_file" --force
+          npx wrangler r2 object delete "$R2_BUCKET_NAME/.cortex-cors-probe" --force || true
+          rm -f "$cors_file" "$probe_file"
+          echo "Private R2 CORS policy configured."
+
       - name: Ensure password crypto extension
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
@@ -126,8 +190,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
           CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
           CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID || 'cddba2278fda0cf565b31f9280a7af1f' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
@@ -140,6 +204,12 @@ jobs:
           test -n "$R2_ACCESS_KEY_ID" || { echo "R2_ACCESS_KEY_ID is required for production file uploads"; exit 1; }
           test -n "$R2_SECRET_ACCESS_KEY" || { echo "R2_SECRET_ACCESS_KEY is required for production file uploads"; exit 1; }
           echo "Required production secrets are configured: Postgres, APP_SECRET_KEY, Admin credentials, and R2 storage."
+      - name: Deploy Worker to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+        run: npx wrangler deploy --config dist/server/wrangler.json --var APP_ENV:production
+
       - name: Smoke test admin and public routes
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
@@ -238,6 +308,58 @@ jobs:
           check_authed_json "/api/agents/$smoke_agent_id" "200"
           check_authed_json "/api/agents/$smoke_agent_id/knowledge" "200"
           check_authed_json "/api/agents/$smoke_agent_id/conversations" "200"
+
+          r2_smoke_file="$(mktemp --suffix=.txt)"
+          printf '%s\n' 'Cortex R2 release smoke: this document must become a ready knowledge source.' > "$r2_smoke_file"
+          r2_smoke_size="$(wc -c < "$r2_smoke_file" | tr -d ' ')"
+          r2_prepare="$(mktemp)"
+          r2_prepare_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d "$(jq -nc --arg name "cortex-r2-smoke.txt" --argjson size "$r2_smoke_size" '{name:$name,size:$size,mimeType:"text/plain"}')" -o "$r2_prepare" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/knowledge/upload-url")"
+          echo "POST R2 upload-url -> HTTP $r2_prepare_status"
+          cat "$r2_prepare" | jq . || cat "$r2_prepare"
+          test "$r2_prepare_status" = "202"
+          r2_upload_url="$(jq -r '.upload.url // empty' "$r2_prepare")"
+          r2_source_id="$(jq -r '.source.id // empty' "$r2_prepare")"
+          r2_key="$(jq -r '.upload.key // empty' "$r2_prepare")"
+          test -n "$r2_upload_url"
+          test -n "$r2_source_id"
+          test -n "$r2_key"
+
+          r2_put_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 60 -X PUT -H "Content-Type: text/plain" --data-binary "@$r2_smoke_file" -o /dev/null -w "%{http_code}" "$r2_upload_url")"
+          echo "PUT direct to R2 -> HTTP $r2_put_status"
+          test "$r2_put_status" -ge 200 -a "$r2_put_status" -lt 300
+
+          r2_complete="$(mktemp)"
+          r2_complete_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d "$(jq -nc --arg sourceId "$r2_source_id" --arg key "$r2_key" --argjson size "$r2_smoke_size" '{sourceId:$sourceId,key:$key,size:$size}')" -o "$r2_complete" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/knowledge/complete")"
+          echo "POST R2 complete -> HTTP $r2_complete_status"
+          cat "$r2_complete" | jq . || cat "$r2_complete"
+          test "$r2_complete_status" = "202"
+
+          r2_ready="false"
+          for attempt in $(seq 1 30); do
+            r2_status_body="$(mktemp)"
+            r2_status="$(curl -sS --retry 3 --retry-delay 1 --retry-all-errors --max-time 30 -b "$smoke_cookie" -o "$r2_status_body" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/knowledge")"
+            test "$r2_status" = "200"
+            r2_state="$(jq -r --arg id "$r2_source_id" '.sources[] | select(.id==$id) | .status // empty' "$r2_status_body")"
+            echo "R2 knowledge attempt $attempt -> $r2_state"
+            if [ "$r2_state" = "ready" ]; then
+              r2_chunks="$(jq -r --arg id "$r2_source_id" '.sources[] | select(.id==$id) | .chunkCount // 0' "$r2_status_body")"
+              test "$r2_chunks" -gt 0
+              r2_ready="true"
+              rm -f "$r2_status_body"
+              break
+            fi
+            if [ "$r2_state" = "failed" ]; then
+              cat "$r2_status_body" | jq . || cat "$r2_status_body"
+              rm -f "$r2_status_body"
+              exit 1
+            fi
+            rm -f "$r2_status_body"
+            sleep 2
+          done
+          test "$r2_ready" = "true"
+
+          curl -sS --retry 3 --retry-delay 1 --retry-all-errors --max-time 30 -b "$smoke_cookie" -X DELETE "$base/api/knowledge/$r2_source_id" -o /dev/null -w "DELETE R2 smoke source -> HTTP %{http_code}\n"
+          rm -f "$r2_smoke_file" "$r2_prepare" "$r2_complete"
 
           api_key_response="$(mktemp)"
           api_key_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d '{"name":"Live smoke key"}' -o "$api_key_response" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/api-keys")"

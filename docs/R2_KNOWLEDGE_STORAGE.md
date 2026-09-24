@@ -8,7 +8,7 @@ Required Worker secrets:
 - R2_ACCESS_KEY_ID
 - R2_SECRET_ACCESS_KEY
 
-The GitHub deployment workflow syncs these values automatically from the `cortex1` Environment when they are present.
+The GitHub deployment workflow syncs these values automatically from the `cortex1` Environment when they are present. The first-time setup helper also configures a scoped CORS policy for the production Worker origin (and `APP_PUBLIC_URL` when supplied).
 
 In production, R2 is required for file uploads. Cortex does not silently fall back to storing upload bytes inside PostgreSQL in production. A small DB-inline fallback remains available only for local/development operation.
 

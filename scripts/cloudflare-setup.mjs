@@ -30,14 +30,19 @@ async function putSecret(name, value) {
   });
 }
 
-async function promptSecret(rl, name, required = true) {
+async function promptValue(rl, name, required = true) {
   const suffix = required ? " (required)" : " (optional; Enter to skip)";
   const value = await rl.question(name + suffix + ": ");
   if (!value.trim()) {
     if (required) throw new Error(name + " is required.");
-    return;
+    return "";
   }
-  await putSecret(name, value);
+  return value.trim();
+}
+
+async function promptSecret(rl, name, required = true) {
+  const value = await promptValue(rl, name, required);
+  if (value) await putSecret(name, value);
 }
 
 async function main() {
@@ -55,20 +60,59 @@ async function main() {
   });
 
   const rl = createInterface({ input, output });
+  let appPublicUrl = "";
   try {
     console.log("\nEnter the runtime secrets. They are sent directly to Cloudflare and are not written to Git.\n");
     await promptSecret(rl, "DATABASE_URL");
     await promptSecret(rl, "APP_SECRET_KEY");
+    await promptSecret(rl, "CORTEX_ADMIN_USERNAME");
     await promptSecret(rl, "CORTEX_ADMIN_PASSWORD");
     await promptSecret(rl, "CORTEX_ADMIN_SESSION_SECRET");
+    await promptSecret(rl, "R2_ACCOUNT_ID");
+    await putSecret("R2_BUCKET_NAME", bucketName);
+    await promptSecret(rl, "R2_ACCESS_KEY_ID");
+    await promptSecret(rl, "R2_SECRET_ACCESS_KEY");
     await promptSecret(rl, "OPENAI_API_KEY", false);
     await promptSecret(rl, "EMBEDDINGS_MODEL", false);
     await promptSecret(rl, "EMBEDDINGS_BASE_URL", false);
     await promptSecret(rl, "QDRANT_URL", false);
     await promptSecret(rl, "QDRANT_API_KEY", false);
-    await promptSecret(rl, "APP_PUBLIC_URL", false);
+    appPublicUrl = await promptValue(rl, "APP_PUBLIC_URL", false);
+    if (appPublicUrl) await putSecret("APP_PUBLIC_URL", appPublicUrl);
+    await promptSecret(rl, "TELEGRAM_INTERNAL_SECRET", false);
   } finally {
     rl.close();
+  }
+
+  console.log("\n3.5) Configuring private R2 CORS for the application origin...");
+  const corsOrigins = ["https://cortex-ai.dengxiao445.workers.dev"];
+  if (appPublicUrl) {
+    const normalized = appPublicUrl.replace(/\/$/, "");
+    if (/^https:\/\//i.test(normalized) && !corsOrigins.includes(normalized)) corsOrigins.push(normalized);
+  }
+  const fs = await import("node:fs/promises");
+  const corsFile = process.cwd() + "/.cortex-r2-cors.json";
+  await fs.writeFile(corsFile, JSON.stringify({
+    rules: [{
+      allowed: {
+        origins: corsOrigins,
+        methods: ["PUT", "GET", "HEAD"],
+        headers: ["Content-Type"],
+      },
+      exposeHeaders: ["ETag"],
+      maxAgeSeconds: 3600,
+    }],
+  }, null, 2), "utf8");
+  const corsProbe = process.cwd() + "/.cortex-r2-cors-probe.txt";
+  await fs.writeFile(corsProbe, "Cortex AI CORS probe\\n", "utf8");
+  try {
+    await run("npx", ["wrangler", "r2", "object", "put", bucketName + "/.cortex-cors-probe", "--file", corsProbe, "--content-type", "text/plain", "--force"]);
+    await run("npx", ["wrangler", "r2", "bucket", "cors", "set", bucketName, "--file", corsFile, "--force"]);
+    console.log("R2 CORS policy configured for: " + corsOrigins.join(", "));
+  } finally {
+    await run("npx", ["wrangler", "r2", "object", "delete", bucketName + "/.cortex-cors-probe", "--force"]).catch(() => undefined);
+    await fs.rm(corsFile, { force: true });
+    await fs.rm(corsProbe, { force: true });
   }
 
   console.log("\n4) Building and deploying Cortex AI...");

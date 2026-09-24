@@ -71,7 +71,7 @@ export function adminCookie(token: string) {
 }
 
 export function clearAdminCookie() {
-  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
+  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production" || process.env.APP_ENV === "production";
   return COOKIE_NAME + "=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0" + (secure ? "; Secure" : "");
 }
 

@@ -49,9 +49,9 @@ export async function processSource(sourceId: string): Promise<void> {
 
     try {
       // 1) EXTRACT / RESTORE
-      // New file uploads carry an internal db64:// payload. Once processing
-      // succeeds the raw payload is cleared; retries then rebuild vectors from
-      // the durable KnowledgeChunk rows instead of needing file storage.
+      // Production file uploads use durable r2:// storage. The development-only
+      // db64:// fallback is cleared after successful processing; R2 object paths
+      // remain durable so deletion and explicit reprocessing can address the file.
       let mimeType: string | undefined;
       let sizeBytes: number | undefined;
       let documentUrl: string | undefined;
@@ -129,7 +129,12 @@ export async function processSource(sourceId: string): Promise<void> {
       const document = source.documents[0]!;
       const vectorStore = getVectorStore();
       const EMBED_BATCH = 32;
-      const persistedUrl = source.type === "url" ? documentUrl ?? document.url : null;
+      const persistedUrl =
+        source.type === "url"
+          ? documentUrl ?? document.url
+          : document.url?.startsWith("r2://")
+            ? document.url
+            : null;
 
       await db.knowledgeDocument.update({
         where: { id: document.id },
@@ -206,6 +211,7 @@ export async function processSource(sourceId: string): Promise<void> {
           ? e.message
           : "پردازش این منبع دانش با خطا مواجه شد.";
       console.error(`[cortex][knowledge] source ${sourceId} failed:`, e instanceof Error ? e.stack ?? e.message : e);
+      await purgeSourceVectors(source.agentId, sourceId).catch(() => undefined);
       await db.knowledgeSource.update({
         where: { id: sourceId },
         data: { status: "failed", error: safeMessage },
