@@ -103,6 +103,20 @@ jobs:
           put_secret R2_BUCKET_NAME "$R2_BUCKET_NAME"
           put_secret R2_ACCESS_KEY_ID "$R2_ACCESS_KEY_ID"
           put_secret R2_SECRET_ACCESS_KEY "$R2_SECRET_ACCESS_KEY"
+      - name: Synchronize production database schema
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
+          POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
+        run: |
+          set -euo pipefail
+          db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
+          test -n "$db_url" || { echo "Postgres URL missing"; exit 1; }
+          # Keep the deployed Prisma client and the real production database schema in lockstep.
+          # No --accept-data-loss: destructive drift must stop the release instead of dropping data.
+          DATABASE_URL="$db_url" npx prisma db push --skip-generate
+          echo "Production Prisma schema is synchronized."
+
       - name: Ensure password crypto extension
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
