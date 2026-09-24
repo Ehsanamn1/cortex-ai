@@ -5,7 +5,7 @@ import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { processSource } from "@/lib/knowledge/pipeline";
-import { isR2Configured } from "@/lib/storage/r2";
+import { createR2PresignedPut, deleteR2Object, headR2Object, isR2Configured } from "@/lib/storage/r2";
 import {
   ALLOWED_EXTENSIONS,
   detectExtension,
@@ -147,18 +147,60 @@ export async function POST(req: Request, { params }: Params) {
       });
 
       try {
-        // R2-free production storage: keep the validated upload in Postgres as an
-        // internal db64:// payload until the background ingestion worker processes it.
-        const storageUrl = "db64://" + Buffer.from(bytes).toString("base64");
-        await db.knowledgeDocument.create({
-          data: {
-            sourceId: source.id,
-            name: originalName,
-            mimeType: file.type || "application/octet-stream",
-            sizeBytes: file.size,
-            url: storageUrl,
-          },
-        });
+        const mimeType = file.type || "application/octet-stream";
+
+        if (isR2Configured()) {
+          // Small multipart uploads are the compatibility fallback for clients or
+          // browsers that cannot complete the direct presigned upload flow. They
+          // still use the same private R2 storage path in production.
+          const key =
+            "knowledge/" +
+            agent.workspaceId +
+            "/" +
+            agent.id +
+            "/" +
+            source.id +
+            "/" +
+            crypto.randomUUID() +
+            "-" +
+            originalName;
+
+          const upload = await fetch(createR2PresignedPut(key), {
+            method: "PUT",
+            headers: { "Content-Type": mimeType },
+            body: bytes,
+          });
+          if (!upload.ok) throw new Error("بارگذاری فایل در فضای ذخیره‌سازی ناموفق بود.");
+
+          const head = await headR2Object(key);
+          if (head.size !== file.size) {
+            await deleteR2Object(key);
+            throw new Error("اندازه فایل بارگذاری‌شده با فایل اصلی برابر نیست.");
+          }
+
+          await db.knowledgeDocument.create({
+            data: {
+              sourceId: source.id,
+              name: originalName,
+              mimeType: head.contentType || mimeType,
+              sizeBytes: head.size,
+              url: "r2://" + key,
+            },
+          });
+        } else {
+          // Local/development-only fallback. Production is rejected above when
+          // R2 is unavailable, so upload bytes never remain inline in production.
+          const storageUrl = "db64://" + Buffer.from(bytes).toString("base64");
+          await db.knowledgeDocument.create({
+            data: {
+              sourceId: source.id,
+              name: originalName,
+              mimeType,
+              sizeBytes: file.size,
+              url: storageUrl,
+            },
+          });
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message.slice(0, 1000) : "ذخیره فایل ناموفق بود.";
         await db.knowledgeSource.update({
