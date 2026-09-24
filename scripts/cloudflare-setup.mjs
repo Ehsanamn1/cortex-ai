@@ -30,14 +30,19 @@ async function putSecret(name, value) {
   });
 }
 
-async function promptSecret(rl, name, required = true) {
+async function promptValue(rl, name, required = true) {
   const suffix = required ? " (required)" : " (optional; Enter to skip)";
   const value = await rl.question(name + suffix + ": ");
   if (!value.trim()) {
     if (required) throw new Error(name + " is required.");
-    return;
+    return "";
   }
-  await putSecret(name, value);
+  return value.trim();
+}
+
+async function promptSecret(rl, name, required = true) {
+  const value = await promptValue(rl, name, required);
+  if (value) await putSecret(name, value);
 }
 
 async function main() {
@@ -71,10 +76,38 @@ async function main() {
     await promptSecret(rl, "EMBEDDINGS_BASE_URL", false);
     await promptSecret(rl, "QDRANT_URL", false);
     await promptSecret(rl, "QDRANT_API_KEY", false);
-    await promptSecret(rl, "APP_PUBLIC_URL", false);
+    const appPublicUrl = await promptValue(rl, "APP_PUBLIC_URL", false);
+    if (appPublicUrl) await putSecret("APP_PUBLIC_URL", appPublicUrl);
     await promptSecret(rl, "TELEGRAM_INTERNAL_SECRET", false);
   } finally {
     rl.close();
+  }
+
+  console.log("\n3.5) Configuring private R2 CORS for the application origin...");
+  const corsOrigins = ["https://cortex-ai.dengxiao445.workers.dev"];
+  const appPublicUrl = process.env.APP_PUBLIC_URL?.trim();
+  if (appPublicUrl) {
+    const normalized = appPublicUrl.replace(/\/$/, "");
+    if (/^https:\/\//i.test(normalized) && !corsOrigins.includes(normalized)) corsOrigins.push(normalized);
+  }
+  const fs = await import("node:fs/promises");
+  const corsFile = process.cwd() + "/.cortex-r2-cors.json";
+  await fs.writeFile(corsFile, JSON.stringify({
+    rules: [{
+      allowed: {
+        origins: corsOrigins,
+        methods: ["PUT", "GET", "HEAD"],
+        headers: ["Content-Type"],
+      },
+      exposeHeaders: ["ETag"],
+      maxAgeSeconds: 3600,
+    }],
+  }, null, 2), "utf8");
+  try {
+    await run("npx", ["wrangler", "r2", "bucket", "cors", "set", bucketName, "--file", corsFile, "--force"]);
+    console.log("R2 CORS policy configured for: " + corsOrigins.join(", "));
+  } finally {
+    await fs.rm(corsFile, { force: true });
   }
 
   console.log("\n4) Building and deploying Cortex AI...");
