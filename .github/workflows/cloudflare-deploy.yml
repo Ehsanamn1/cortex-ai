@@ -42,28 +42,17 @@ jobs:
           echo "Cloudflare API token is available; account ID is configured in workflow."
 
 
-      - name: Preflight required production configuration
+      - name: Preflight deployment prerequisites
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
-          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
-          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
           set -euo pipefail
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "A Postgres connection is required before production deploy"; exit 1; }
-          test -n "$CORTEX_ADMIN_USERNAME" || { echo "CORTEX_ADMIN_USERNAME is required before production deploy"; exit 1; }
-          test -n "$CORTEX_ADMIN_PASSWORD" || { echo "CORTEX_ADMIN_PASSWORD is required before production deploy"; exit 1; }
-          test -n "$R2_ACCOUNT_ID" || { echo "R2_ACCOUNT_ID is required before production deploy"; exit 1; }
-          test -n "$R2_BUCKET_NAME" || { echo "R2_BUCKET_NAME is required before production deploy"; exit 1; }
-          test -n "$R2_ACCESS_KEY_ID" || { echo "R2_ACCESS_KEY_ID is required before production deploy"; exit 1; }
-          test -n "$R2_SECRET_ACCESS_KEY" || { echo "R2_SECRET_ACCESS_KEY is required before production deploy"; exit 1; }
-          echo "Required production configuration is present."
+          echo "Postgres deployment prerequisite is present."
+          echo "Admin/R2 credentials are verified directly against the existing Cloudflare Worker after schema preparation; GitHub does not need duplicate copies of those secrets."
 
       - name: Sync Worker runtime secrets
         env:
