@@ -104,6 +104,36 @@ jobs:
           put_secret R2_BUCKET_NAME "$R2_BUCKET_NAME"
           put_secret R2_ACCESS_KEY_ID "$R2_ACCESS_KEY_ID"
           put_secret R2_SECRET_ACCESS_KEY "$R2_SECRET_ACCESS_KEY"
+      - name: Configure private R2 CORS
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          APP_PUBLIC_URL: ${{ secrets.APP_PUBLIC_URL || vars.APP_PUBLIC_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$R2_BUCKET_NAME" || { echo "R2_BUCKET_NAME is required for CORS configuration"; exit 1; }
+          cors_file="$(mktemp --suffix=.json)"
+          probe_file="$(mktemp)"
+          printf '%s
+' 'Cortex AI R2 CORS probe' > "$probe_file"
+          cors_origins='["https://cortex-ai.dengxiao445.workers.dev"]'
+          if [ -n "${APP_PUBLIC_URL:-}" ] && printf '%s' "$APP_PUBLIC_URL" | grep -Eq '^https://'; then
+            cors_origins="$(jq -c --arg origin "${APP_PUBLIC_URL%/}" '. + [$origin] | unique' <<< "$cors_origins")"
+          fi
+          jq -n --argjson origins "$cors_origins" '{
+            rules: [{
+              allowed: { origins: $origins, methods: ["PUT","GET","HEAD"], headers: ["Content-Type"] },
+              exposeHeaders: ["ETag"],
+              maxAgeSeconds: 3600
+            }]
+          }' > "$cors_file"
+          npx wrangler r2 object put "$R2_BUCKET_NAME/.cortex-cors-probe" --file "$probe_file" --content-type "text/plain" --force
+          npx wrangler r2 bucket cors set "$R2_BUCKET_NAME" --file "$cors_file" --force
+          npx wrangler r2 object delete "$R2_BUCKET_NAME/.cortex-cors-probe" --force || true
+          rm -f "$cors_file" "$probe_file"
+          echo "Private R2 CORS policy configured."
+
       - name: Ensure password crypto extension
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
