@@ -60,6 +60,7 @@ async function main() {
   });
 
   const rl = createInterface({ input, output });
+  let appPublicUrl = "";
   try {
     console.log("\nEnter the runtime secrets. They are sent directly to Cloudflare and are not written to Git.\n");
     await promptSecret(rl, "DATABASE_URL");
@@ -76,7 +77,7 @@ async function main() {
     await promptSecret(rl, "EMBEDDINGS_BASE_URL", false);
     await promptSecret(rl, "QDRANT_URL", false);
     await promptSecret(rl, "QDRANT_API_KEY", false);
-    const appPublicUrl = await promptValue(rl, "APP_PUBLIC_URL", false);
+    appPublicUrl = await promptValue(rl, "APP_PUBLIC_URL", false);
     if (appPublicUrl) await putSecret("APP_PUBLIC_URL", appPublicUrl);
     await promptSecret(rl, "TELEGRAM_INTERNAL_SECRET", false);
   } finally {
@@ -85,7 +86,6 @@ async function main() {
 
   console.log("\n3.5) Configuring private R2 CORS for the application origin...");
   const corsOrigins = ["https://cortex-ai.dengxiao445.workers.dev"];
-  const appPublicUrl = process.env.APP_PUBLIC_URL?.trim();
   if (appPublicUrl) {
     const normalized = appPublicUrl.replace(/\/$/, "");
     if (/^https:\/\//i.test(normalized) && !corsOrigins.includes(normalized)) corsOrigins.push(normalized);
