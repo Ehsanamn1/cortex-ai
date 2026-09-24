@@ -64,7 +64,7 @@ R2_ACCESS_KEY_ID
 R2_SECRET_ACCESS_KEY
 ```
 
-The browser normally uploads directly to R2, avoiding the Worker request-body limit. Production allows up to 200 MB per file, controlled by `site.maxUploadMb`.
+The browser normally uploads directly to R2, avoiding the Worker request-body limit. The MVP default is 20 MB per file; `site.maxUploadMb` can raise it up to the 200 MB hard cap.
 
 The local/development multipart fallback may store a small `db64://` payload in PostgreSQL when R2 is unavailable. Production rejects that fallback path when R2 is not configured.
 
