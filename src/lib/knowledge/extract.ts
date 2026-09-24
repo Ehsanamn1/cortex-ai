@@ -192,7 +192,7 @@ export function validateUrl(raw: string): URL {
 async function assertPublicHost(hostname: string): Promise<void> {
   // Local Node development can use the native resolver; production Workers use
   // DNS-over-HTTPS so we never depend on a partially-polyfilled node:dns API.
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && process.env.APP_ENV !== "production") {
     try {
       const dns = await import("node:dns");
       const resolved = await Promise.allSettled([
