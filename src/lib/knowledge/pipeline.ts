@@ -206,6 +206,7 @@ export async function processSource(sourceId: string): Promise<void> {
           ? e.message
           : "پردازش این منبع دانش با خطا مواجه شد.";
       console.error(`[cortex][knowledge] source ${sourceId} failed:`, e instanceof Error ? e.stack ?? e.message : e);
+      await purgeSourceVectors(source.agentId, sourceId).catch(() => undefined);
       await db.knowledgeSource.update({
         where: { id: sourceId },
         data: { status: "failed", error: safeMessage },
