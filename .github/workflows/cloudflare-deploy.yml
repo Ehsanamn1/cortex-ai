@@ -50,8 +50,8 @@ jobs:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
           CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
           CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID || 'cddba2278fda0cf565b31f9280a7af1f' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
@@ -77,8 +77,8 @@ jobs:
           CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
           CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
           TELEGRAM_INTERNAL_SECRET: ${{ secrets.TELEGRAM_INTERNAL_SECRET || vars.TELEGRAM_INTERNAL_SECRET }}
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID || 'cddba2278fda0cf565b31f9280a7af1f' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
@@ -104,11 +104,25 @@ jobs:
           put_secret R2_BUCKET_NAME "$R2_BUCKET_NAME"
           put_secret R2_ACCESS_KEY_ID "$R2_ACCESS_KEY_ID"
           put_secret R2_SECRET_ACCESS_KEY "$R2_SECRET_ACCESS_KEY"
+      - name: Ensure production R2 bucket
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
+        run: |
+          set -euo pipefail
+          if npx wrangler r2 bucket info "$R2_BUCKET_NAME" --json >/dev/null 2>&1; then
+            echo "R2 bucket exists: $R2_BUCKET_NAME"
+          else
+            npx wrangler r2 bucket create "$R2_BUCKET_NAME"
+            echo "Created R2 bucket: $R2_BUCKET_NAME"
+          fi
+
       - name: Configure private R2 CORS
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
           APP_PUBLIC_URL: ${{ secrets.APP_PUBLIC_URL || vars.APP_PUBLIC_URL }}
         run: |
           set -euo pipefail
@@ -175,8 +189,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
           CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
           CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || vars.R2_ACCOUNT_ID || 'cddba2278fda0cf565b31f9280a7af1f' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cortex-ai-knowledge' }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || vars.R2_SECRET_ACCESS_KEY }}
         run: |
