@@ -1,29 +1,122 @@
 # Cortex AI
 
-Cortex AI is an AI knowledge-agent platform: build an agent from your own business knowledge, connect a real LLM provider, test it in a persistent playground, and expose the same agent through Telegram.
+Cortex AI is a multi-tenant AI knowledge-agent SaaS: create an agent, give it company knowledge, configure its behavior, test it in a persistent playground, and expose the same agent through authenticated APIs and Telegram.
 
-## Product
+## MVP scope
 
-- Auth, workspaces and multi-tenant agent management
-- Real knowledge ingestion for PDF, DOCX and text formats
-- URL ingestion with SSRF protection and bounded downloads
-- Chunking, embeddings, vector search and grounded RAG
-- Persistent conversations, source-aware answers and New Chat
-- Telegram bots with contact verification, allowlist/blocking, webhook or polling
-- Per-user usage tracking and limits
-- Admin control center, analytics, audit logs, provider settings and health checks
+The current MVP focuses on three active capabilities:
+
+- **Company Brain:** PDF, DOCX, XLSX, PPTX and a broad set of text/data/code formats, plus public URL ingestion, chunking, embeddings, tenant-scoped retrieval and grounded answers.
+- **Agent Studio:** agent persona, language, tone, instructions, model settings, memory and citation controls.
+- **Business Operations:** usage limits, Telegram access controls, analytics, audit logs, provider health, API keys and an OpenAI-compatible chat endpoint.
+
+Advanced roadmap capabilities remain intentionally out of the active MVP path until the core is stable.
 
 ## Runtime architecture
 
-- **Frontend / API:** Next.js App Router through Vinext
-- **Compute:** Cloudflare Workers
-- **Database:** PostgreSQL on Neon through Prisma + Neon adapter
-- **Files:** PostgreSQL-backed inline storage for knowledge uploads (R2-free)
-- **Vectors:** local Postgres-backed vector store by default, optional Qdrant
-- **LLM:** workspace-level OpenAI-compatible providers with optional OpenRouter environment fallback
-- **Embeddings:** OpenAI embeddings when configured, otherwise the built-in lexical engine
+- **App + API:** Next.js App Router through Vinext.
+- **Compute:** Cloudflare Workers.
+- **Database:** PostgreSQL on Neon through Prisma + Neon adapter.
+- **Knowledge files (production):** private Cloudflare R2 through S3-compatible presigned requests. Raw upload bytes do not pass through the Worker in the normal flow.
+- **Knowledge files (local/development):** a small PostgreSQL `db64://` fallback remains available only outside production when R2 is unavailable.
+- **Vector store:** tenant-scoped local PostgreSQL vector records by default, with optional Qdrant adapter.
+- **LLM:** workspace-level OpenAI-compatible provider configuration, with optional environment fallback.
+- **Embeddings:** OpenAI-compatible neural embeddings when configured; otherwise the built-in deterministic lexical engine.
 
-The Worker uses Vinext on Cloudflare Workers with the PostgreSQL Neon adapter and current Workers Node.js compatibility.
+The production Worker runs with `APP_ENV=production` and Node.js compatibility.
+
+## Knowledge upload
+
+The normal browser flow is:
+
+1. Cortex authenticates the workspace and validates the filename, size and extension.
+2. Cortex creates a pending knowledge source and a short-lived R2 presigned PUT target.
+3. The browser uploads directly to private R2.
+4. Cortex HEAD-checks the stored object and only then starts extraction, chunking, embedding and indexing.
+5. The source becomes `ready` only after vectors are stored successfully.
+
+The configured file limit is controlled by `site.maxUploadMb` and is capped at **200 MB per file**. URL ingestion is separately bounded to **25 MB**. A small multipart compatibility fallback is retained for development and for clients that cannot complete the direct upload path; in production it still stores the file in R2.
+
+Current extraction support includes PDF, DOCX/DOCM, XLSX, PPTX and a broad set of text/data/code formats such as Markdown, CSV, JSON, XML, YAML, SQL, logs and common source-code extensions.
+
+## Required production secrets
+
+The Cloudflare Worker needs:
+
+```text
+DATABASE_URL
+APP_SECRET_KEY
+CORTEX_ADMIN_USERNAME
+CORTEX_ADMIN_PASSWORD
+R2_ACCOUNT_ID
+R2_BUCKET_NAME
+R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY
+```
+
+Optional runtime settings include:
+
+```text
+CORTEX_ADMIN_SESSION_SECRET
+LLM_PROVIDER
+LLM_BASE_URL
+LLM_API_KEY
+LLM_MODEL
+LLM_AUTH_MODE
+OPENROUTER_API_KEY
+OPENROUTER_MODEL
+OPENAI_API_KEY
+EMBEDDINGS_MODEL
+EMBEDDINGS_BASE_URL
+QDRANT_URL
+QDRANT_API_KEY
+APP_PUBLIC_URL
+TELEGRAM_INTERNAL_SECRET
+CORS_ORIGINS
+```
+
+Keep application secrets in Cloudflare Worker Secrets or the protected GitHub Environment `cortex1`; never commit them to Git.
+
+## AI provider
+
+New workspaces should configure a real provider in **Settings → اتصال و کنترل AI**. The provider configuration is stored encrypted server-side. When no LLM provider is configured, Cortex deliberately returns a `503` configuration error instead of generating a fake answer.
+
+The lexical embedding engine is real deterministic retrieval, not a mock. For neural embeddings, configure `OPENAI_API_KEY` and the desired embeddings model.
+
+## Telegram
+
+Telegram bots can run through webhook or polling mode. Webhook mode needs a public `APP_PUBLIC_URL`. User access can be pending, allowed or blocked, with per-user message/token limits and usage visibility. `/newchat` starts a fresh conversation.
+
+## API access
+
+Each agent can issue and revoke API keys. The dedicated endpoint supports conversation continuity through `clientId` / `conversationId` / `newChat`. The OpenAI-compatible endpoint accepts the same identity controls and supports browser CORS when `CORS_ORIGINS` allows the caller.
+
+See `docs/API_ACCESS.md` for the client contract.
+
+## Security
+
+- Tenant access is checked server-side for workspaces, agents, conversations, knowledge and Telegram resources.
+- Knowledge URL ingestion blocks local/private destinations, re-checks redirects and bounds downloads.
+- Provider credentials, Telegram tokens and webhook secrets are encrypted at rest with `APP_SECRET_KEY`.
+- Production sessions require a persistent `APP_SECRET_KEY` of at least 32 characters.
+- Production admin credentials are explicit; the development-only `admin` fallback is disabled in production.
+- Chat POST requests are not automatically retried by the frontend/API client; only idempotent GET/HEAD/OPTIONS calls are retried.
+- Usage limits use durable PostgreSQL reservations and transaction-scoped advisory locks so concurrent Worker isolates cannot bypass the same quota.
+
+## CI and release
+
+Two GitHub Actions workflows protect the MVP:
+
+- **Cortex CI** validates Prisma, Vinext compatibility, TypeScript, ESLint and the Worker build on pushes and pull requests.
+- **Cloudflare Deploy** targets the `cortex1` GitHub Environment. It verifies required production inputs **before deployment**, syncs Worker runtime secrets, prepares required PostgreSQL objects, deploys the Worker, verifies the runtime secret set and then runs authenticated smoke tests.
+
+The deployment target is:
+
+```text
+https://cortex-ai.dengxiao445.workers.dev
+```
+
+A legacy Vercel status check may still appear on old GitHub commits; Vercel is not the production compute target.
 
 ## Local development
 
@@ -35,96 +128,28 @@ npx prisma db push --accept-data-loss
 npm run dev
 ```
 
-For the Cloudflare runtime locally:
+For the Cloudflare runtime:
 
 ```bash
 npm run dev:vinext
 ```
 
-Open `http://localhost:3000` for the standard app or the port printed by Vinext.
+For first-time Cloudflare setup:
 
-## Required production secrets
-
-The Cloudflare Worker requires these secrets:
-
-```text
-DATABASE_URL
-APP_SECRET_KEY
-CORTEX_ADMIN_PASSWORD
+```bash
+npm run setup:cloudflare
 ```
 
-Keep these values in Cloudflare Worker Secrets, not in the repository. The deployment workflow expects Cloudflare CI credentials:
+The setup script creates/validates the `cortex-ai-knowledge` R2 bucket, collects the required production credentials, stores them with Wrangler and deploys the Worker.
 
-```text
-CLOUDFLARE_API_TOKEN
-CLOUDFLARE_ACCOUNT_ID
-```
+## Release definition for this MVP
 
-These are read from the GitHub Actions Environment `cortex1`. The Worker runtime secrets are separate Cloudflare Worker secrets and must exist on the target Worker before a successful production deployment.
+The codebase is treated as release-ready when:
 
-## Knowledge file storage
+1. CI is green on the release commit.
+2. The Cloudflare deployment job completes successfully, including runtime secret verification.
+3. The post-deploy authenticated smoke tests pass.
+4. At least one real LLM provider is configured for the workspace that will be used.
+5. R2 browser upload + knowledge processing succeeds on the target Worker.
+6. Telegram credentials/webhook configuration are present when Telegram is enabled.
 
-Cortex does not require Cloudflare R2. Uploaded knowledge files are stored as an internal
-`db64://` payload in PostgreSQL, decoded during ingestion, and then represented by durable
-knowledge chunks and vector records. The client never receives the internal payload.
-
-The R2-free mode uses a conservative upload limit: 5 MB by default and 10 MB as the hard
-application limit. URL ingestion remains separately bounded.
-
-## AI provider
-
-Cortex supports workspace-level OpenAI-compatible gateways. Configure these in **Settings → اتصال AI**. Supported auth modes are Bearer, X-API-Key and none.
-
-Optional environment fallback:
-
-```env
-LLM_PROVIDER=
-LLM_BASE_URL=
-LLM_API_KEY=
-LLM_MODEL=
-LLM_AUTH_MODE=bearer
-OPENROUTER_API_KEY=
-OPENROUTER_MODEL=
-```
-
-## Embeddings and vector search
-
-If an OpenAI embedding key is configured, Cortex can use neural embeddings. Otherwise it falls back to the built-in deterministic lexical embedding engine.
-
-For larger installations, set:
-
-```env
-QDRANT_URL=
-QDRANT_API_KEY=
-```
-
-The local vector store remains tenant-scoped to the owning agent/workspace.
-
-## Telegram
-
-Create a bot from the Telegram page. Webhook mode requires a public `APP_PUBLIC_URL`. Polling mode is also supported.
-
-The bot can require the user to share their own Telegram contact, checks the allowlist, maintains a separate session per Telegram user, and supports `/newchat`.
-
-## Security
-
-Provider keys, Telegram tokens and webhook secrets are encrypted at rest using `APP_SECRET_KEY`.
-
-Knowledge URL ingestion blocks local/private targets and re-validates redirected hosts before fetching content. Downloads are size-bounded.
-
-Never commit:
-- `.env`
-- API keys
-- Telegram bot tokens
-- database credentials
-- generated runtime secret files
-
-## CI
-
-GitHub Actions runs Prisma validation, TypeScript type checking, ESLint and the production build on pushes to `main` and pull requests.
-
-The Cloudflare deployment workflow builds the Worker first, validates required credentials, then deploys through Wrangler.
-
-## Current deployment target
-
-The production deployment target is **Cloudflare Workers**. The repository no longer depends on a platform-specific Vercel deployment configuration.
