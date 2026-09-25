@@ -5,6 +5,8 @@ import { loadAgentForSession } from "@/lib/server/access";
 import { rateLimit } from '@/lib/server/rate-limit';
 import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/usage';
 import { estimateTokens } from '@/lib/server/audit';
+import { runAgentExecution } from '@/lib/runtime/engine';
+import { listAgentTools } from '@/lib/runtime/tools';
 import {
   answerWithKnowledge,
   RAG_QUERY_EXPANSION_RESERVE_TOKENS,
