@@ -49,7 +49,7 @@ import { SettingsView } from "@/components/cortex/views/settings-view";
 import { TelegramView } from "@/components/cortex/views/telegram-view";
 import { AnalyticsView } from "@/components/cortex/views/analytics-view";
 import { AdminView } from "@/components/cortex/views/admin-view";
-import { LearnView } from "@/components/cortex/views/learn-view";
+import { LearnView } from "@/components/cortex/views/learn-view";\nimport { WorkflowsView } from "@/components/cortex/views/workflows-view";
 
 /* ---------------- provider status pill ---------------- */
 
