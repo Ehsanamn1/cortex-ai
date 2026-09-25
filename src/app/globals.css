@@ -286,3 +286,19 @@
 @media (max-width: 1023px) {
   body { overscroll-behavior-y: contain; }
 }
+
+
+/* Mobile app-shell hardening: prevent accidental horizontal page scroll and respect device safe areas. */
+@media (max-width: 1023px) {
+  html, body { max-width: 100%; overflow-x: hidden; }
+  button, [role="button"], input, textarea, select { -webkit-tap-highlight-color: transparent; }
+  input, textarea, select { font-size: 16px; }
+  [data-slot="sheet-content"] { max-height: calc(100dvh - env(safe-area-inset-top)); }
+  [data-slot="select-content"] { max-width: calc(100vw - 1rem); }
+  .cortex-scroll { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+}
+@media (max-width: 640px) {
+  .cortex-hero { border-radius: 22px; }
+  .cortex-hero h2 { font-size: clamp(1.65rem, 8vw, 2.25rem); line-height: 1.35; }
+  .cortex-panel { min-width: 0; }
+}
