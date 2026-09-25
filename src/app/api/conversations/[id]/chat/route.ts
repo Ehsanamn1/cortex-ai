@@ -91,6 +91,33 @@ export async function POST(req: Request, { params }: Params) {
       });
     }
 
+    const attachedTools = await listAgentTools(agent.id);
+    if (attachedTools.length > 0) {
+      const runtime = await runAgentExecution({
+        workspaceId: agent.workspaceId,
+        agentId: agent.id,
+        input: content,
+        conversationId: conversation.id,
+        history,
+      });
+      const metadata = { executionId: runtime.executionId, provider: runtime.provider, model: runtime.model };
+      const assistantMessage = await db.message.create({
+        data: { conversationId: conversation.id, role: "assistant", content: runtime.content, metadata: JSON.stringify(metadata) },
+      });
+      await db.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
+      const inputTokens = estimatedPromptTokens;
+      const outputTokens = estimateTokens(runtime.content);
+      await db.$transaction([
+        db.usageEvent.create({ data: { workspaceId: agent.workspaceId, agentId: agent.id, userId: session.user.id, channel: "web", provider: runtime.provider, model: runtime.model, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens } }),
+        ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
+      ]);
+      reservationId = null;
+      return applyCors(jsonOk({
+        userMessage: { id: userMessage.id, role: "user", content: userMessage.content, createdAt: userMessage.createdAt.toISOString(), metadata: null },
+        assistantMessage: { id: assistantMessage.id, role: "assistant", content: assistantMessage.content, createdAt: assistantMessage.createdAt.toISOString(), metadata },
+      }), req.headers.get("origin"));
+    }
+
     try {
       const answer = await answerWithKnowledge({
         agentId: agent.id,
