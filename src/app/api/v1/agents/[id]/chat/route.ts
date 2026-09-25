@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { applyCors, corsPreflight, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
-import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
+
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
 import { answerWithKnowledge, RAG_QUERY_EXPANSION_RESERVE_TOKENS, RagConfigError, toRetrievalDebug, toSourceRefs } from "@/lib/rag/pipeline";
 import { runAgentExecution } from "@/lib/runtime/engine";
@@ -16,7 +16,7 @@ export function OPTIONS(req: Request) {
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, { params }: Params) {
-  let reservationId: string | null = null;
+
   try {
     const agentId = (await params).id;
     const apiKey = readAgentApiKey(req);
@@ -53,7 +53,7 @@ export async function POST(req: Request, { params }: Params) {
     }).then((rows) => rows.reverse());
     const promptHistory = existing.slice(-12);
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(message);
-    reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS, auth.agent.maxTokens);
+
     const userMessage = await db.message.create({ data: { conversationId: conversation.id, role: "user", content: message } });
 
     const runtime = await runAgentExecution({
@@ -72,9 +72,7 @@ export async function POST(req: Request, { params }: Params) {
     const totalTokens = inputTokens + outputTokens;
     await db.$transaction([
       db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId, channel: "api", provider: runtime.provider, model: runtime.model, inputTokens, outputTokens, totalTokens } }),
-      ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
     ]);
-    reservationId = null;
     return applyCors(jsonOk({ id: assistant.id, conversationId: conversation.id, agent: { id: auth.agent.id, name: auth.agent.name }, message: assistant.content, sources: [], executionId: runtime.executionId, usage: { inputTokens, outputTokens, totalTokens } }), req.headers.get("origin"));
 
 
@@ -111,5 +109,5 @@ export async function POST(req: Request, { params }: Params) {
       if (e instanceof RagConfigError) return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
       throw e;
     }
-  } catch (e) { await releaseUsageReservation(reservationId); reservationId = null; return toErrorResponse(e, req.headers.get("origin")); }
+  } catch (e) { return toErrorResponse(e, req.headers.get("origin")); }
 }
