@@ -38,36 +38,36 @@ export async function GET(req: Request) {
 
     const [agents, activeAgents, knowledgeSources, knowledgeReady, conversations, messages, usage, telegramBots, recentAgents, recentConversations, audit, todayUsage] =
       await Promise.all([
-        safe(() => db.agent.count({ where: agentFilter }),0,'agents'),
-        safe(() => db.agent.count({ where: { ...agentFilter, status:'active' } }),0,'active agents'),
-        safe(() => db.knowledgeSource.count({ where:{ agent:agentFilter } }),0,'knowledge'),
-        safe(() => db.knowledgeSource.count({ where:{ agent:agentFilter, status:'ready' } }),0,'knowledge ready'),
-        safe(() => db.conversation.count({ where:{ agent:agentFilter } }),0,'conversations'),
-        safe(() => db.message.count({ where:{ conversation:{ agent:agentFilter } } }),0,'messages'),
+        safe(() => db.agent.count({ where: agentFilter }), 0, 'agents'),
+        safe(() => db.agent.count({ where: { ...agentFilter, status: 'active' } }), 0, 'active agents'),
+        safe(() => db.knowledgeSource.count({ where: { agent: agentFilter } }), 0, 'knowledge'),
+        safe(() => db.knowledgeSource.count({ where: { agent: agentFilter, status: 'ready' } }), 0, 'knowledge ready'),
+        safe(() => db.conversation.count({ where: { agent: agentFilter } }), 0, 'conversations'),
+        safe(() => db.message.count({ where: { conversation: { agent: agentFilter } } }), 0, 'messages'),
         safe(
-          db.usageEvent.aggregate({ where:{ workspaceId }, _sum:{totalTokens:true,estimatedCostMicros:true}, _count:{_all:true} }),
-          { _count:{_all:0}, _sum:{totalTokens:0,estimatedCostMicros:0} },
+          () => db.usageEvent.aggregate({ where: { workspaceId }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
+          { _count: { _all: 0 }, _sum: { totalTokens: 0, estimatedCostMicros: 0 } },
           'usage'
         ),
-        safe(() => db.telegramBot.count({ where:{ workspaceId } }),0,'telegram'),
+        safe(() => db.telegramBot.count({ where: { workspaceId } }), 0, 'telegram'),
         safe(
-          () => db.agent.findMany({ where:agentFilter, select:{id:true,name:true,updatedAt:true}, orderBy:{updatedAt:'desc'}, take:5 }),
+          () => db.agent.findMany({ where: agentFilter, select: { id: true, name: true, updatedAt: true }, orderBy: { updatedAt: 'desc' }, take: 5 }),
           [],
           'recent agents'
         ),
         safe(
-          () => db.conversation.findMany({ where:{agent:agentFilter}, select:{id:true,title:true,updatedAt:true,agent:{select:{id:true,name:true}}}, orderBy:{updatedAt:'desc'}, take:5 }),
+          () => db.conversation.findMany({ where: { agent: agentFilter }, select: { id: true, title: true, updatedAt: true, agent: { select: { id: true, name: true } } }, orderBy: { updatedAt: 'desc' }, take: 5 }),
           [],
           'recent conversations'
         ),
         safe(
-          () => db.auditLog.findMany({ where:{workspaceId}, select:{id:true,action:true,entityType:true,createdAt:true}, orderBy:{createdAt:'desc'}, take:6 }),
+          () => db.auditLog.findMany({ where: { workspaceId }, select: { id: true, action: true, entityType: true, createdAt: true }, orderBy: { createdAt: 'desc' }, take: 6 }),
           [],
           'audit'
         ),
         safe(
-          () => db.usageEvent.aggregate({ where:{workspaceId,createdAt:{gte:dayStart()}}, _sum:{totalTokens:true}, _count:{_all:true} }),
-          { _count:{_all:0}, _sum:{totalTokens:0} },
+          () => db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: dayStart() } }, _sum: { totalTokens: true }, _count: { _all: true } }),
+          { _count: { _all: 0 }, _sum: { totalTokens: 0 } },
           'today usage'
         )
       ]);
