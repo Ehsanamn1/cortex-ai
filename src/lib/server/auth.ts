@@ -25,13 +25,22 @@ async function ensurePgcrypto(): Promise<void> {
  * Cloudflare Worker CPU. Existing password formats remain supported below.
  */
 export async function hashPasswordWithDb(password: string): Promise<string> {
-  await ensurePgcrypto();
-  const rows = await db.$queryRaw<Array<{ hash: string }>>`
+  try {
+    await ensurePgcrypto();
+    const rows = await db.$queryRaw<Array<{ hash: string }>>`
     SELECT crypt(encode(digest(${password}, 'sha256'), 'hex'), gen_salt('bf', 12)) AS hash
   `;
-  const hash = rows[0]?.hash;
-  if (!hash) throw new Error("Password hashing failed.");
-  return hash;
+    const hash = rows[0]?.hash;
+    if (hash) return hash;
+  } catch (error) {
+    console.error("[cortex][auth] pgcrypto password hashing failed; using PBKDF2 fallback:", error);
+  }
+
+  const salt = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(salt);
+  const keyMaterial = await globalThis.crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const derived = await globalThis.crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 210_000, hash: "SHA-256" }, keyMaterial, 256);
+  return `pbkdf2-sha256-v1:210000:${Buffer.from(salt).toString("base64url")}:${Buffer.from(new Uint8Array(derived)).toString("base64url")}`;
 }
 
 export async function verifyPasswordWithDb(password: string, storedHash: string): Promise<boolean> {
