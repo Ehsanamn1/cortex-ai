@@ -328,9 +328,9 @@ function BottomNav({ onMore, items }: { onMore: () => void; items: NavItem[] }) 
   return (
     <nav
       aria-label="ناوبری موبایل"
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-popover/95 backdrop-blur supports-[backdrop-filter]:bg-popover/85 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/[.08] bg-[#0b0f16]/96 shadow-[0_-12px_35px_rgba(0,0,0,.28)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#0b0f16]/88 lg:hidden"
     >
-      <div className="flex items-stretch pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto flex w-full max-w-lg items-stretch pb-[max(env(safe-area-inset-bottom),6px)]">
         {mobileItems.map((item) => {
           const active = item.matches.includes(view);
           return (
@@ -341,11 +341,11 @@ function BottomNav({ onMore, items }: { onMore: () => void; items: NavItem[] }) 
               aria-label={item.label}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[11px] font-medium transition-colors",
+                "relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-medium transition-colors active:scale-[.96]",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon aria-hidden="true" className="size-5" />
+              <item.icon aria-hidden="true" className="size-[19px]" />
               {item.label}
             </button>
           );
@@ -356,11 +356,11 @@ function BottomNav({ onMore, items }: { onMore: () => void; items: NavItem[] }) 
           aria-label="بیشتر"
           aria-current={moreActive ? "page" : undefined}
           className={cn(
-            "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[11px] font-medium transition-colors",
+            "relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-medium transition-colors active:scale-[.96]",
             moreActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <MoreHorizontal aria-hidden="true" className="size-5" />
+          <MoreHorizontal aria-hidden="true" className="size-[19px]" />
           بیشتر
         </button>
       </div>
@@ -485,10 +485,10 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
-        <header className="cortex-topbar relative flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4 backdrop-blur-xl lg:px-8">          <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/35 to-transparent" />
+        <header className="cortex-topbar relative flex h-16 shrink-0 items-center justify-between gap-2 border-b px-3.5 backdrop-blur-xl sm:px-4 lg:px-8">          <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/35 to-transparent" />
           <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
             <CortexMark size={30} />
-            <span className="truncate text-sm font-semibold text-foreground">
+            <span className="max-w-[calc(100vw-110px)] truncate text-sm font-semibold text-foreground">
               {activeWorkspaceName ?? "Cortex AI"}
             </span>
           </div>
@@ -510,7 +510,7 @@ export function AppShell() {
         </header>
 
         <main className="cortex-scroll flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 lg:px-8 lg:pb-10 lg:pt-8">
+          <div className="mx-auto w-full max-w-6xl px-3 pb-32 pt-4 sm:px-4 sm:pb-32 sm:pt-6 lg:px-8 lg:pb-10 lg:pt-8">
             <AnimatePresence mode="wait">
               <ViewErrorBoundary key={viewKey}>
                 <motion.div
