@@ -446,8 +446,10 @@ export const api = {
   /* DASHBOARD */
 
   getDashboard(workspaceId?: string): Promise<DashboardDto> {
-    const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
-    return request(`/api/dashboard${query}`);
+    const params = new URLSearchParams();
+    if (workspaceId) params.set("workspaceId", workspaceId);
+    params.set("_t", String(Date.now()));
+    return request(`/api/dashboard?${params.toString()}`, { cache: "no-store" });
   },
 
   /* PROVIDERS */
