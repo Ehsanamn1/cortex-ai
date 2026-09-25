@@ -12,6 +12,8 @@ import {
   MessagesSquare,
   Pencil,
   Trash2,
+  Wrench,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,6 +44,7 @@ import { AgentApiAccess } from "@/components/cortex/agent-api-access";
 const AGENT_TABS: Array<{ value: AgentTab; label: string }> = [
   { value: "overview", label: "نمای کلی" },
   { value: "knowledge", label: "دانش" },
+  { value: "tools", label: "ابزارها" },
   { value: "playground", label: "پلی‌گراند" },
   { value: "api", label: "API" },
   { value: "settings", label: "تنظیمات" },
@@ -237,6 +240,35 @@ function OverviewTab({ agentId }: { agentId: string }) {
   );
 }
 
+function ToolsTab({ agentId }: { agentId: string }) {
+  const queryClient = useQueryClient();
+  const { data, isPending } = useQuery({ queryKey: ["agent-tools", agentId], queryFn: () => api.getAgentTools(agentId) });
+  const mutation = useMutation({
+    mutationFn: (input: { toolId: string; enabled: boolean }) => api.setAgentTool(agentId, input.toolId, input.enabled),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["agent-tools", agentId] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const removeMutation = useMutation({
+    mutationFn: (toolId: string) => api.removeAgentTool(agentId, toolId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["agent-tools", agentId] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const tools = data?.tools ?? [];
+  return <div className="space-y-4">
+    <Card className="rounded-xl">
+      <CardHeader className="border-b [.border-b]:pb-4"><CardTitle className="text-base">ابزارهای Agent Runtime</CardTitle><CardDescription>این ابزارها واقعاً هنگام اجرای ایجنت قابل فراخوانی هستند؛ صرفاً ظاهر UI نیستند.</CardDescription></CardHeader>
+      <CardContent className="space-y-3 pt-4">
+        {isPending ? <Skeleton className="h-20 rounded-xl" /> : tools.map(tool => <div key={tool.id} className="flex items-center gap-3 rounded-xl border p-4">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-primary/10 text-primary"><Wrench className="size-4" /></span>
+          <div className="min-w-0 flex-1"><p className="font-medium">{tool.name}</p><p className="mt-1 text-xs text-muted-foreground">{tool.key} · {tool.description}</p></div>
+          {tool.attached ? <Button variant="outline" size="sm" onClick={() => removeMutation.mutate(tool.id)} disabled={removeMutation.isPending}>حذف از Agent</Button> : <Button size="sm" onClick={() => mutation.mutate({toolId:tool.id,enabled:true})} disabled={mutation.isPending}><Check /> فعال‌سازی</Button>}
+        </div>)}
+        {!isPending && tools.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">ابزار فعالی ثبت نشده است.</p>}
+      </CardContent>
+    </Card>
+  </div>;
+}
+
 function SettingsTab({ agentId }: { agentId: string }) {
   const { data } = useQuery({
     queryKey: ["agent", agentId],
@@ -401,7 +433,7 @@ export function AgentDetailView() {
 
       {/* Tabs */}
       <Tabs value={agentTab} onValueChange={(value) => setAgentTab(value as AgentTab)}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           {AGENT_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -415,7 +447,7 @@ export function AgentDetailView() {
         <TabsContent value="knowledge" className="mt-6">
           <KnowledgeManager agentId={agentId} />
         </TabsContent>
-        <TabsContent value="playground" className="mt-4">
+        <TabsContent value="tools" className="mt-6">\n          <ToolsTab agentId={agentId} />\n        </TabsContent>\n        <TabsContent value="playground" className="mt-4">
           <Playground agentId={agentId} />
         </TabsContent>
         <TabsContent value="api" className="mt-6">
