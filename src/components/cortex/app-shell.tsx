@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   BarChart3,
   GraduationCap,
+  GitBranch,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
