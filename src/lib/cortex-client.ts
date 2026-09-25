@@ -372,7 +372,9 @@ export const api = {
   createWorkflow(input:{workspaceId?:string;agentId?:string;name:string;description?:string;definition?:string}){ return jsonRequest<{workflow:WorkflowDto}>("/api/workflows","POST",input); },
   updateWorkflow(id:string,input:Partial<Pick<WorkflowDto,"name"|"description"|"definition"|"status">>){ return jsonRequest<{workflow:WorkflowDto}>(`/api/workflows/${encodeURIComponent(id)}`,"PATCH",input); },
   deleteWorkflow(id:string){ return jsonRequest<{ok:boolean}>(`/api/workflows/${encodeURIComponent(id)}`,"DELETE"); },
-  runWorkflow(id:string,input:string){ return jsonRequest<{executionId:string;content:string;provider:string;model:string}>(`/api/workflows/${encodeURIComponent(id)}/run`,"POST",{input}); },\n\n  getAgentApiAccess(agentId: string): Promise<AgentApiAccessDto> {
+  runWorkflow(id:string,input:string){ return jsonRequest<{executionId:string;content:string;provider:string;model:string}>(`/api/workflows/${encodeURIComponent(id)}/run`,"POST",{input}); },
+
+  getAgentApiAccess(agentId: string): Promise<AgentApiAccessDto> {
     return request("/api/agents/" + encodeURIComponent(agentId) + "/api-keys");
   },
   createAgentApiKey(agentId: string, name = "کلید API"): Promise<{key:string; keyMeta:AgentApiKeyDto; warning:string}> {
