@@ -254,6 +254,8 @@ function ToolsTab({ agentId }: { agentId: string }) {
     onError: (error: Error) => toast.error(error.message),
   });
   const tools = data?.tools ?? [];
+  const { data: executionData } = useQuery({ queryKey: ["executions", agentId], queryFn: () => api.getExecutions(undefined, agentId) });
+  const executions = executionData?.executions ?? [];
   return <div className="space-y-4">
     <Card className="rounded-xl">
       <CardHeader className="border-b [.border-b]:pb-4"><CardTitle className="text-base">ابزارهای Agent Runtime</CardTitle><CardDescription>این ابزارها واقعاً هنگام اجرای ایجنت قابل فراخوانی هستند؛ صرفاً ظاهر UI نیستند.</CardDescription></CardHeader>
@@ -264,6 +266,13 @@ function ToolsTab({ agentId }: { agentId: string }) {
           {tool.attached ? <Button variant="outline" size="sm" onClick={() => removeMutation.mutate(tool.id)} disabled={removeMutation.isPending}>حذف از Agent</Button> : <Button size="sm" onClick={() => mutation.mutate({toolId:tool.id,enabled:true})} disabled={mutation.isPending}><Check /> فعال‌سازی</Button>}
         </div>)}
         {!isPending && tools.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">ابزار فعالی ثبت نشده است.</p>}
+      </CardContent>
+    </Card>
+    <Card className="rounded-xl">
+      <CardHeader className="border-b [.border-b]:pb-4"><CardTitle className="text-base">Execution History</CardTitle><CardDescription>اجرای واقعی Agent، مرحله‌به‌مرحله ثبت می‌شود.</CardDescription></CardHeader>
+      <CardContent className="space-y-3 pt-4">
+        {executions.slice(0, 8).map(ex => <div key={ex.id} className="rounded-xl border p-4"><div className="flex items-center justify-between gap-3"><div><p className="font-medium">{ex.status}</p><p className="text-xs text-muted-foreground">{new Date(ex.startedAt).toLocaleString("fa-IR")}</p></div><Badge variant="outline">{ex.triggerType}</Badge></div><div className="mt-3 flex flex-wrap gap-2">{ex.steps.map(s => <Badge key={s.id} variant="secondary">{s.seq}. {s.name}</Badge>)}</div>{ex.output && <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{ex.output}</p>}</div>)}
+        {executions.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">هنوز Executionای ثبت نشده است. یک پیام در Playground بفرستید.</p>}
       </CardContent>
     </Card>
   </div>;
