@@ -72,20 +72,66 @@ export async function GET(req: Request) {
         )
       ]);
 
-    return applyCors(jsonOk({
-      stats:{
-        agents,activeAgents,knowledgeSources,knowledgeReady,conversations,messages,telegramBots,
-        totalUsageEvents:usage._count._all,
-        totalTokens:usage._sum.totalTokens ?? 0,
-        estimatedCostMicros:usage._sum.estimatedCostMicros ?? 0,
-        todayMessages:todayUsage._count._all,
-        todayTokens:todayUsage._sum.totalTokens ?? 0
+    // Keep the dashboard response deliberately JSON-safe. A single malformed
+    // record must never turn the whole endpoint into HTTP 500.
+    const iso = (value: unknown) => {
+      if (value instanceof Date) return value.toISOString();
+      const parsed = new Date(String(value));
+      return Number.isNaN(parsed.getTime()) ? new Date(0).toISOString() : parsed.toISOString();
+    };
+
+    const payload = {
+      stats: {
+        agents: Number(agents) || 0,
+        activeAgents: Number(activeAgents) || 0,
+        knowledgeSources: Number(knowledgeSources) || 0,
+        knowledgeReady: Number(knowledgeReady) || 0,
+        conversations: Number(conversations) || 0,
+        messages: Number(messages) || 0,
+        telegramBots: Number(telegramBots) || 0,
+        totalUsageEvents: Number(usage?._count?._all) || 0,
+        totalTokens: Number(usage?._sum?.totalTokens) || 0,
+        estimatedCostMicros: Number(usage?._sum?.estimatedCostMicros) || 0,
+        todayMessages: Number(todayUsage?._count?._all) || 0,
+        todayTokens: Number(todayUsage?._sum?.totalTokens) || 0
       },
-      recentAgents:recentAgents.map(a=>({id:a.id,name:a.name,updatedAt:a.updatedAt.toISOString()})),
-      recentConversations:recentConversations.map(c=>({id:c.id,title:c.title,agentId:c.agent.id,agentName:c.agent.name,updatedAt:c.updatedAt.toISOString()})),
-      activity:audit.map(a=>({id:a.id,action:a.action,entityType:a.entityType,createdAt:a.createdAt.toISOString()}))
+      recentAgents: Array.isArray(recentAgents)
+        ? recentAgents.map((a) => ({ id: String(a.id), name: String(a.name ?? ''), updatedAt: iso(a.updatedAt) }))
+        : [],
+      recentConversations: Array.isArray(recentConversations)
+        ? recentConversations.map((item) => ({
+            id: String(item.id),
+            title: String(item.title ?? ''),
+            agentId: String(item.agent?.id ?? ''),
+            agentName: String(item.agent?.name ?? ''),
+            updatedAt: iso(item.updatedAt)
+          }))
+        : [],
+      activity: Array.isArray(audit)
+        ? audit.map((a) => ({
+            id: String(a.id),
+            action: String(a.action ?? ''),
+            entityType: String(a.entityType ?? ''),
+            createdAt: iso(a.createdAt)
+          }))
+        : []
+    };
+
+    return applyCors(jsonOk(payload), req.headers.get('origin'));
+  } catch (e) {
+    // Last-resort dashboard contract: never expose an internal 500 to the UI
+    // for a non-authentication data failure. Authentication/authorization
+    // errors still retain their explicit 401/403 status.
+    const status = Number((e as { status?: unknown })?.status);
+    if (status === 401 || status === 403 || status === 503) return toErrorResponse(e);
+    console.error('[cortex][dashboard] unhandled dashboard failure:', e);
+    return applyCors(jsonOk({
+      stats: {
+        agents: 0, activeAgents: 0, knowledgeSources: 0, knowledgeReady: 0,
+        conversations: 0, messages: 0, telegramBots: 0, totalUsageEvents: 0,
+        totalTokens: 0, estimatedCostMicros: 0, todayMessages: 0, todayTokens: 0
+      },
+      recentAgents: [], recentConversations: [], activity: []
     }), req.headers.get('origin'));
-  } catch(e) {
-    return toErrorResponse(e);
   }
 }
