@@ -1,0 +1,6 @@
+import { db } from "@/lib/db";
+import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
+import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
+import { runAgentExecution } from "@/lib/runtime/engine";
+export const dynamic="force-dynamic";
+export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){try{const s=await requireSession(req);const {id}=await params;const wf=await db.workflow.findUnique({where:{id}});if(!wf)return applyCors(jsonError("Workflow پیدا نشد.",404),req.headers.get("origin"));assertWorkspaceAccess(s,wf.workspaceId);if(!wf.agentId)return applyCors(jsonError("برای اجرای Workflow باید یک Agent متصل باشد.",400),req.headers.get("origin"));const b=await readJson<{input?:unknown}>(req);const input=typeof b.input==="string"?b.input.trim():"";if(!input)return applyCors(jsonError("input الزامی است.",400),req.headers.get("origin"));const result=await runAgentExecution({workspaceId:wf.workspaceId,agentId:wf.agentId,input,history:[]});await db.execution.update({where:{id:result.executionId},data:{workflowId:wf.id,triggerType:"manual-workflow"}});return applyCors(jsonOk(result),req.headers.get("origin"));}catch(e){return toErrorResponse(e,req.headers.get("origin"));}}

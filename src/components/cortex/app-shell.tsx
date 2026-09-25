@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   BarChart3,
   GraduationCap,
+  GitBranch,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
@@ -50,6 +51,7 @@ import { TelegramView } from "@/components/cortex/views/telegram-view";
 import { AnalyticsView } from "@/components/cortex/views/analytics-view";
 import { AdminView } from "@/components/cortex/views/admin-view";
 import { LearnView } from "@/components/cortex/views/learn-view";
+import { WorkflowsView } from "@/components/cortex/views/workflows-view";
 
 /* ---------------- provider status pill ---------------- */
 
@@ -227,6 +229,7 @@ interface NavItem {
 
 const ICONS = {
   dashboard: LayoutDashboard,
+  workflows: GitBranch,
   agents: Bot,
   knowledge: BookOpen,
   conversations: MessagesSquare,

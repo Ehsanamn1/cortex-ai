@@ -5,6 +5,7 @@ import type { UserDto, WorkspaceDto } from "@/lib/cortex-client";
 
 export type View =
   | "dashboard"
+  | "workflows"
   | "agents"
   | "agent-new"
   | "agent-detail"
@@ -17,7 +18,7 @@ export type View =
   | "admin"
   | "learn";
 
-export type AgentTab = "overview" | "knowledge" | "playground" | "api" | "settings";
+export type AgentTab = "overview" | "knowledge" | "tools" | "playground" | "api" | "settings";
 
 interface CortexState {
   user: UserDto | null;
