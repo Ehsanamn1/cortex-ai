@@ -216,7 +216,7 @@ export interface SessionDto {
 
 export interface SiteConfigDto { settings: Record<string, string> }
 export interface AgentApiKeyDto { id:string; name:string; keyPrefix:string; active:boolean; lastUsedAt:string|null; createdAt:string }
-export interface AgentApiAccessDto { keys:AgentApiKeyDto[]; baseUrl:string; endpoint:string; openAiEndpoint:string }
+export interface AgentToolDto { id:string; key:string; name:string; description:string; inputSchema:string; permissions:string; attached:boolean; }\nexport interface ExecutionDto { id:string; workspaceId:string; agentId:string|null; triggerType:string; status:string; input:string|null; output:string|null; error:string|null; startedAt:string; completedAt:string|null; steps:Array<{id:string;seq:number;type:string;name:string;status:string;input:string|null;output:string|null;error:string|null;startedAt:string;completedAt:string|null}>; agent?:{id:string;name:string}|null; }\n\nexport interface AgentApiAccessDto { keys:AgentApiKeyDto[]; baseUrl:string; endpoint:string; openAiEndpoint:string }
 
 /* ---------------- core fetch machinery ---------------- */
 
@@ -359,7 +359,7 @@ export const api = {
     return jsonRequest(`/api/agents/${encodeURIComponent(agentId)}`, "DELETE");
   },
 
-  getAgentApiAccess(agentId: string): Promise<AgentApiAccessDto> {
+  getAgentTools(agentId:string):Promise<{tools:AgentToolDto[]}>{ return request(`/api/agents/${encodeURIComponent(agentId)}/tools`); },\n  setAgentTool(agentId:string,toolId:string,enabled:boolean):Promise<{attachment:{id:string;toolId:string;enabled:boolean}}>{ return jsonRequest(`/api/agents/${encodeURIComponent(agentId)}/tools`,"POST",{toolId,enabled}); },\n  removeAgentTool(agentId:string,toolId:string):Promise<{ok:boolean}>{ return request(`/api/agents/${encodeURIComponent(agentId)}/tools?toolId=${encodeURIComponent(toolId)}`,{method:"DELETE"}); },\n  getExecutions(workspaceId?:string):Promise<{executions:ExecutionDto[]}>{ return request(`/api/executions${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },\n  runAgentExecution(input:{workspaceId?:string;agentId:string;input:string;conversationId?:string}){ return jsonRequest<{executionId:string;content:string;provider:string;model:string}>("/api/executions","POST",input); },\n  getExecution(id:string):Promise<{execution:ExecutionDto}>{ return request(`/api/executions/${encodeURIComponent(id)}`); },\n\n  getAgentApiAccess(agentId: string): Promise<AgentApiAccessDto> {
     return request("/api/agents/" + encodeURIComponent(agentId) + "/api-keys");
   },
   createAgentApiKey(agentId: string, name = "کلید API"): Promise<{key:string; keyMeta:AgentApiKeyDto; warning:string}> {
