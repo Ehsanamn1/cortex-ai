@@ -5,6 +5,7 @@ import type { UserDto, WorkspaceDto } from "@/lib/cortex-client";
 
 export type View =
   | "dashboard"
+  | "workflows"
   | "agents"
   | "agent-new"
   | "agent-detail"
