@@ -134,15 +134,25 @@ export function DashboardView() {
     staleTime: 30_000,
   });
 
-  useErrorToast(dashboardQuery.isError ? dashboardQuery.error : null);
+  // Dashboard data is non-critical UI telemetry. A backend data failure must
+  // never replace the whole workspace with a scary internal-error screen.
+  // Keep the shell usable and let React Query retry in the background.
   useErrorToast(providersQuery.isError ? providersQuery.error : null);
 
   if (dashboardQuery.isPending) return <DashboardSkeleton />;
-  if (dashboardQuery.isError || !dashboardQuery.data) {
-    return <ErrorState message={dashboardQuery.error instanceof Error ? dashboardQuery.error.message : "دریافت اطلاعات داشبورد ناموفق بود."} onRetry={() => void dashboardQuery.refetch()} />;
-  }
 
-  const { stats, recentAgents, recentConversations, activity = [] } = dashboardQuery.data;
+  const dashboardData = dashboardQuery.data ?? {
+    stats: {
+      agents: 0, activeAgents: 0, knowledgeSources: 0, knowledgeReady: 0,
+      conversations: 0, messages: 0, telegramBots: 0, totalUsageEvents: 0,
+      totalTokens: 0, estimatedCostMicros: 0, todayMessages: 0, todayTokens: 0,
+    },
+    recentAgents: [],
+    recentConversations: [],
+    activity: [],
+  };
+
+  const { stats, recentAgents, recentConversations, activity = [] } = dashboardData;
   const providers = providersQuery.data;
   const settingEnabled = (key: string, fallback = true) => siteConfigQuery.data?.settings[key] === undefined ? fallback : siteConfigQuery.data.settings[key] !== "false";
   const hasAgents = stats.agents > 0;
