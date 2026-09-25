@@ -5,6 +5,7 @@ import { estimateTokens } from "@/lib/server/audit";
 import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
 import { answerWithKnowledge, RAG_QUERY_EXPANSION_RESERVE_TOKENS, RagConfigError, toRetrievalDebug, toSourceRefs } from "@/lib/rag/pipeline";
+import { runAgentExecution } from "@/lib/runtime/engine";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -54,6 +55,37 @@ export async function POST(req: Request, { params }: Params) {
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(message);
     reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS, auth.agent.maxTokens);
     const userMessage = await db.message.create({ data: { conversationId: conversation.id, role: "user", content: message } });
+
+    const runtime = await runAgentExecution({
+      workspaceId: auth.agent.workspaceId,
+      agentId,
+      input: message,
+      conversationId: conversation.id,
+      history: promptHistory.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+    });
+    const assistant = await db.message.create({
+      data: { conversationId: conversation.id, role: "assistant", content: runtime.content, metadata: JSON.stringify({ executionId: runtime.executionId, provider: runtime.provider, model: runtime.model }) },
+    });
+    await db.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
+    const inputTokens = promptTokens;
+    const outputTokens = estimateTokens(runtime.content);
+    const totalTokens = inputTokens + outputTokens;
+    await db.$transaction([
+      db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId, channel: "api", provider: runtime.provider, model: runtime.model, inputTokens, outputTokens, totalTokens } }),
+      ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
+    ]);
+    reservationId = null;
+    return applyCors(jsonOk({
+      id: assistant.id,
+      conversationId: conversation.id,
+      agent: { id: auth.agent.id, name: auth.agent.name },
+      message: assistant.content,
+      sources: [],
+      executionId: runtime.executionId,
+      usage: { inputTokens, outputTokens, totalTokens },
+    }), req.headers.get("origin"));
+
+
 
     try {
       const answer = await answerWithKnowledge({
