@@ -1,4 +1,4 @@
-export type CortexView = "dashboard" | "agents" | "knowledge" | "conversations" | "telegram" | "analytics" | "admin" | "learn";
+export type CortexView = "dashboard" | "workflows" | "agents" | "knowledge" | "conversations" | "telegram" | "analytics" | "admin" | "learn";
 
 export const CORTEX_UI_CONFIG = {
   brand: {
@@ -17,6 +17,7 @@ export const CORTEX_UI_CONFIG = {
   },
   navigation: [
     { view: "dashboard" as CortexView, label: "داشبورد", mobile: true },
+    { view: "workflows" as CortexView, label: "Workflow", mobile: true },
     { view: "agents" as CortexView, label: "ایجنت‌ها", mobile: true },
     { view: "knowledge" as CortexView, label: "مغز شرکت", mobile: true },
     { view: "conversations" as CortexView, label: "گفتگوها", mobile: true },
