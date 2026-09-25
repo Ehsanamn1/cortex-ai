@@ -38,11 +38,21 @@ export async function GET(req: Request) {
 
     const agentFilter = { workspaceId };
     async function safe<T>(operation: () => Promise<T>, fallback: T, label: string): Promise<T> {
+      // A database call must never be allowed to hold the Worker request open.
+      // This is especially important on Workers + Neon where a stalled
+      // connection/query otherwise becomes a Cloudflare 1101 instead of a
+      // recoverable application response.
+      let timer: ReturnType<typeof setTimeout> | undefined;
       try {
-        return await operation();
+        const timeout = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('dashboard query timeout')), 2500);
+        });
+        return await Promise.race([operation(), timeout]);
       } catch (error) {
         console.error('[cortex][dashboard] ' + label + ' failed:', error);
         return fallback;
+      } finally {
+        if (timer) clearTimeout(timer);
       }
     }
 
