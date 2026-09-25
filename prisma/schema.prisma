@@ -380,6 +380,127 @@ model AuditLog {
 }
 
 
+model ToolDefinition {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String
+  inputSchema String
+  outputSchema String?
+  permissions String   @default("READ")
+  kind        String   @default("builtin")
+  configJson  String?
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  agents AgentTool[]
+  @@index([enabled])
+}
+
+model AgentTool {
+  id         String   @id @default(cuid())
+  agentId    String
+  toolId     String
+  enabled    Boolean  @default(true)
+  configJson String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tool ToolDefinition @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  @@unique([agentId, toolId])
+  @@index([agentId, enabled])
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  workspaceId String
+  agentId     String?
+  name        String
+  description String?
+  definition  String
+  status      String   @default("draft")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  agent Agent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  triggers Trigger[]
+  executions Execution[]
+  @@index([workspaceId])
+  @@index([agentId])
+}
+
+model Trigger {
+  id         String   @id @default(cuid())
+  workflowId String
+  type       String
+  configJson String?
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  @@index([workflowId, enabled])
+}
+
+model Execution {
+  id          String   @id @default(cuid())
+  workspaceId String
+  agentId     String?
+  workflowId  String?
+  triggerType String
+  status      String   @default("QUEUED")
+  input       String?
+  output      String?
+  error       String?
+  metadata    String?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  agent Agent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  workflow Workflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  steps ExecutionStep[]
+  @@index([workspaceId, startedAt])
+  @@index([agentId, startedAt])
+  @@index([workflowId, startedAt])
+  @@index([status, startedAt])
+}
+
+model ExecutionStep {
+  id          String   @id @default(cuid())
+  executionId String
+  seq         Int
+  type        String
+  name        String
+  status      String   @default("RUNNING")
+  input       String?
+  output      String?
+  error       String?
+  metadata    String?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  execution Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  @@unique([executionId, seq])
+  @@index([executionId, seq])
+}
+
+model MemoryEntry {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  agentId        String
+  conversationId String?
+  type           String   @default("fact")
+  key            String
+  value          String
+  metadata       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  @@index([agentId, updatedAt])
+  @@index([conversationId, updatedAt])
+  @@index([workspaceId, updatedAt])
+}
+
 model AdminUser {
   id           String   @id @default(cuid())
   username     String   @unique
