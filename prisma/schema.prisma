@@ -42,6 +42,9 @@ model Workspace {
   auditLogs      AuditLog[]
   usagePolicy    UsagePolicy?
   usageReservations UsageReservation[]
+  workflows       Workflow[]
+  executions      Execution[]
+  memoryEntries   MemoryEntry[]
 
   @@index([ownerId])
 }
@@ -87,6 +90,10 @@ model Agent {
   usageEvents      UsageEvent[]
   telegramBots     TelegramBot[]
   apiKeys          AgentApiKey[]
+  tools             AgentTool[]
+  workflows        Workflow[]
+  executions       Execution[]
+  memoryEntries    MemoryEntry[]
 
   @@index([workspaceId])
 }
@@ -194,6 +201,7 @@ model Conversation {
   user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   telegramBot TelegramBot? @relation(fields: [telegramBotId], references: [id], onDelete: SetNull)
   messages    Message[]
+  memoryEntries MemoryEntry[]
 
   @@index([agentId])
   @@index([userId])
