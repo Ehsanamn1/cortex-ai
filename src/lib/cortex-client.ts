@@ -217,8 +217,10 @@ export interface SessionDto {
 export interface SiteConfigDto { settings: Record<string, string> }
 export interface AgentApiKeyDto { id:string; name:string; keyPrefix:string; active:boolean; lastUsedAt:string|null; createdAt:string }
 export interface AgentToolDto { id:string; key:string; name:string; description:string; inputSchema:string; permissions:string; attached:boolean; }
-export interface WorkflowDto { id:string; workspaceId:string; agentId:string|null; name:string; description:string|null; definition:string; status:string; triggers:Array<{id:string;type:string;enabled:boolean}>; agent?:{id:string;name:string}|null; _count?:{executions:number}; }\n
-export interface ExecutionDto { id:string; workspaceId:string; agentId:string|null; triggerType:string; status:string; input:string|null; output:string|null; error:string|null; startedAt:string; completedAt:string|null; steps:Array<{id:string;seq:number;type:string;name:string;status:string;input:string|null;output:string|null;error:string|null;startedAt:string;completedAt:string|null}>; agent?:{id:string;name:string}|null; }\n
+export interface WorkflowDto { id:string; workspaceId:string; agentId:string|null; name:string; description:string|null; definition:string; status:string; triggers:Array<{id:string;type:string;enabled:boolean}>; agent?:{id:string;name:string}|null; _count?:{executions:number}; }
+
+export interface ExecutionDto { id:string; workspaceId:string; agentId:string|null; triggerType:string; status:string; input:string|null; output:string|null; error:string|null; startedAt:string; completedAt:string|null; steps:Array<{id:string;seq:number;type:string;name:string;status:string;input:string|null;output:string|null;error:string|null;startedAt:string;completedAt:string|null}>; agent?:{id:string;name:string}|null; }
+
 export interface AgentApiAccessDto { keys:AgentApiKeyDto[]; baseUrl:string; endpoint:string; openAiEndpoint:string }
 
 /* ---------------- core fetch machinery ---------------- */
