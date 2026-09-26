@@ -33,9 +33,13 @@ export function isPrivateIp(ip: string): boolean {
 
   const first = numeric >>> 24;
   if (first === 127 || first === 0 || first === 10) return true;
-  if ((numeric >>> 20) === 0xAC1) return true; // 172.16.0.0/12
-  if ((numeric >>> 16) === 0xC0A8) return true; // 192.168.0.0/16
-  if ((numeric >>> 16) === 0xA9FE) return true; // 169.254.0.0/16
+  if (first >= 224) return true; // multicast + reserved
+  if (numeric >= 0xAC100000 && numeric <= 0xAC1FFFFF) return true; // 172.16.0.0/12
+  if (numeric >= 0xC0A80000 && numeric <= 0xC0A8FFFF) return true; // 192.168.0.0/16
+  if (numeric >= 0xA9FE0000 && numeric <= 0xA9FEFFFF) return true; // 169.254.0.0/16
+  if (numeric >= 0x64400000 && numeric <= 0x647FFFFF) return true; // 100.64.0.0/10
+  if (numeric >= 0xC0000000 && numeric <= 0xC00000FF) return true; // 192.0.0.0/24
+  if (numeric >= 0xC6120000 && numeric <= 0xC613FFFF) return true; // 198.18.0.0/15
   return false;
 }
 
@@ -57,7 +61,9 @@ export function validateProviderBaseUrl(raw: string): URL {
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new UnsafeProviderUrlError();
 
   const host = url.hostname.toLowerCase().replace(/\.$/, "");
-  if (!host || host.length > 253 || url.search || url.hash) throw new UnsafeProviderUrlError();
+  if (!host || host.length > 253 || url.search || url.hash || url.username || url.password) {
+    throw new UnsafeProviderUrlError();
+  }
   if (PRIVATE_HOSTNAMES.has(host) || host.endsWith(".local") || host.endsWith(".internal")) {
     throw new UnsafeProviderUrlError();
   }
