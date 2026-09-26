@@ -56,7 +56,6 @@ export class LocalVectorStore implements VectorStore {
     const rows = await db.vectorPoint.findMany({
       where: { agentId },
       select: { id: true, vector: true, payload: true },
-      ...(total <= MAX_CACHE_POINTS ? {} : { take: MAX_CACHE_POINTS + 1 }),
     });
 
     const points: CachedPoint[] = [];
