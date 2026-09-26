@@ -1,6 +1,8 @@
 import {
   ProviderNotConfiguredError,
   ProviderUnavailableError,
+  classifyProviderFailure,
+  classifyProviderFailure,
   type GenerateOptions,
   type GenerateResult,
   type LLMProvider,
@@ -50,7 +52,7 @@ export class OpenRouterProvider implements LLMProvider {
         signal: AbortSignal.timeout(90_000),
       });
       if (!res.ok) {
-        console.error("[cortex][openrouter] HTTP", res.status, (await res.text()).slice(0, 300));
+        console.error("[cortex][openrouter] HTTP", res.status);
         throw new Error(`openrouter http ${res.status}`);
       }
       const data = (await res.json()) as {
@@ -63,7 +65,7 @@ export class OpenRouterProvider implements LLMProvider {
       return { content: content.trim(), provider: this.name, model };
     } catch (e) {
       console.error("[cortex][openrouter] generation failed:", e instanceof Error ? e.message : e);
-      throw new ProviderUnavailableError();
+      throw classifyProviderFailure(error, this.name);
     }
   }
 
