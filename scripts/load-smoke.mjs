@@ -10,13 +10,21 @@ const endpoints = [
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function one(endpoint) {
   const started = performance.now();
-  try {
-    const res = await fetch(base + endpoint.path, { headers: { accept: "application/json" } });
-    const elapsed = performance.now() - started;
-    return { path: endpoint.path, status: res.status, expected: endpoint.expected, ms: elapsed };
-  } catch (error) {
-    return { path: endpoint.path, status: 0, expected: endpoint.expected, ms: performance.now() - started, error: String(error) };
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(base + endpoint.path, {
+        headers: { accept: "application/json" },
+        signal: AbortSignal.timeout(15_000),
+      });
+      const elapsed = performance.now() - started;
+      return { path: endpoint.path, status: res.status, expected: endpoint.expected, ms: elapsed, attempt: attempt + 1 };
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await sleep(150 * (attempt + 1));
+    }
   }
+  return { path: endpoint.path, status: 0, expected: endpoint.expected, ms: performance.now() - started, error: String(lastError) };
 }
 async function runRound() {
   const tasks = [];
