@@ -11,6 +11,18 @@ export interface CompatibleConfig {
   authMode?: CompatibleAuthMode;
 }
 
+function retryableStatus(status: number) {
+  return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
+}
+
+async function backoff(attempt: number, retryAfter?: string | null) {
+  const retrySeconds = Number(retryAfter ?? "");
+  const delay = Number.isFinite(retrySeconds) && retrySeconds > 0
+    ? Math.min(4000, retrySeconds * 1000)
+    : Math.min(2000, 250 * 2 ** attempt);
+  await new Promise((resolve) => setTimeout(resolve, delay));
+}
+
 export class OpenAICompatibleProvider implements LLMProvider {
   readonly name: string;
   private readonly baseUrl: string;
@@ -49,30 +61,53 @@ export class OpenAICompatibleProvider implements LLMProvider {
 
   async generateResponse(options: GenerateOptions): Promise<GenerateResult> {
     if (!this.isConfigured()) throw new ProviderNotConfiguredError(this.name);
+
     try {
       const base = await assertPublicProviderBaseUrl(this.baseUrl);
       const endpoint = base.toString().replace(/\/$/, '') + '/chat/completions';
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: this.headers(),
-        body: JSON.stringify({
-          model: this.modelId,
-          messages: options.messages,
-          temperature: options.temperature ?? 0.3,
-          max_tokens: options.maxTokens ?? 900,
-        }),
-        signal: AbortSignal.timeout(90_000),
-      });
-      const text = await res.text();
-      if (!res.ok) {
-        console.error(`[cortex][${this.name}] HTTP ${res.status}`, text.slice(0, 300));
-        throw new Error(`${this.name} http ${res.status}`);
+      let lastError: unknown = null;
+
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify({
+              model: this.modelId,
+              messages: options.messages,
+              temperature: options.temperature ?? 0.3,
+              max_tokens: options.maxTokens ?? 900,
+            }),
+            signal: AbortSignal.timeout(45_000),
+          });
+          const text = await res.text();
+
+          if (!res.ok) {
+            lastError = new Error(`${this.name} http ${res.status}: ${text.slice(0, 240)}`);
+            if (attempt < 2 && retryableStatus(res.status)) {
+              await backoff(attempt, res.headers.get('retry-after'));
+              continue;
+            }
+            throw lastError;
+          }
+
+          const data = JSON.parse(text) as { choices?: Array<{ message?: { content?: string | Array<{type?: string; text?: string}> } }> };
+          const raw = data.choices?.[0]?.message?.content;
+          const content = Array.isArray(raw) ? raw.map((part) => part.text ?? '').join('') : raw;
+          if (!content?.trim()) throw new Error('empty completion');
+          return { content: content.trim(), provider: this.name, model: this.modelId };
+        } catch (error) {
+          lastError = error;
+          const retryableNetwork = error instanceof TypeError || (error instanceof Error && /timed out|timeout|fetch failed|network/i.test(error.message));
+          if (attempt < 2 && retryableNetwork) {
+            await backoff(attempt);
+            continue;
+          }
+          throw error;
+        }
       }
-      const data = JSON.parse(text) as { choices?: Array<{ message?: { content?: string | Array<{type?: string; text?: string}> } }> };
-      const raw = data.choices?.[0]?.message?.content;
-      const content = Array.isArray(raw) ? raw.map((part) => part.text ?? '').join('') : raw;
-      if (!content?.trim()) throw new Error('empty completion');
-      return { content: content.trim(), provider: this.name, model: this.modelId };
+
+      throw lastError ?? new Error('provider request failed');
     } catch (error) {
       if (error instanceof ProviderNotConfiguredError) throw error;
       console.error(`[cortex][${this.name}] generation failed`, error instanceof Error ? error.message : error);
