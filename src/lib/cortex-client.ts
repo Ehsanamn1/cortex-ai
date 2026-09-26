@@ -203,7 +203,7 @@ export interface ProviderHealthOkDto {
 }
 
 
-export interface ProviderConfigDto { id:string; providerName:string; baseUrl:string; model:string; authMode:string; enabled:boolean; hasApiKey:boolean }
+export interface ProviderConfigDto { id:string; providerName:string; baseUrl:string; model:string; protocol:string; authMode:string; enabled:boolean; hasApiKey:boolean }
 export interface TelegramBotDto { id:string; name:string; agentId:string; agentName:string; username:string|null; status:string; mode:string; lastError:string|null; lastSeenAt:string|null; createdAt:string; updatedAt:string; allowlistCount:number; usersCount:number }
 export interface TelegramAllowlistDto { id:string; botId:string; phoneNumber:string; displayName:string|null; notes:string|null; status:string; createdAt:string; updatedAt:string }
 export interface TelegramUserDto { id:string; botId:string; telegramUserId:string; phoneNumber:string|null; username:string|null; firstName:string|null; lastName:string|null; status:string; dailyMessageLimit:number; monthlyMessageLimit:number; dailyTokenLimit:number; monthlyTokenLimit:number; lastSeenAt:string|null; createdAt:string; updatedAt:string; usage?:{events:number;tokens:number;inputTokens:number;outputTokens:number;estimatedCostMicros?:number;lastUsedAt?:string|null}; dailyUsage?:{events:number;tokens:number}; monthlyUsage?:{events:number;tokens:number}; bot?:{name:string} }
@@ -463,7 +463,7 @@ export const api = {
   getAgentProviderConfig(agentId: string): Promise<{config:ProviderConfigDto|null;status:ProvidersStatusDto["llm"]}> {
     return request(`/api/agents/${encodeURIComponent(agentId)}/provider`);
   },
-  saveAgentProviderConfig(agentId:string,input:{providerName:string;baseUrl:string;model:string;authMode:string;apiKey?:string;enabled?:boolean}): Promise<{config:ProviderConfigDto;status:ProvidersStatusDto["llm"]}> {
+  saveAgentProviderConfig(agentId:string,input:{providerName:string;baseUrl:string;model:string;protocol?:string;authMode:string;apiKey?:string;enabled?:boolean}): Promise<{config:ProviderConfigDto;status:ProvidersStatusDto["llm"]}> {
     return jsonRequest(`/api/agents/${encodeURIComponent(agentId)}/provider`,'PUT',input);
   },
   testAgentProviderHealth(agentId:string): Promise<ProviderHealthOkDto> {
