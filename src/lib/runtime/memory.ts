@@ -46,7 +46,7 @@ export async function loadAgentMemory(
     .slice(0, safeLimit);
 
   if (ranked.length) {
-    await db.memoryEntry.updateMany({
+    void db.memoryEntry.updateMany({
       where: { id: { in: ranked.map(({ entry }) => entry.id) } },
       data: { lastAccessedAt: now },
     }).catch(() => undefined);
