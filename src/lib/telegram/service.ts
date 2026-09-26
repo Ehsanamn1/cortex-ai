@@ -11,6 +11,10 @@ import { listAgentTools } from '@/lib/runtime/tools';
 
 const API = 'https://api.telegram.org';
 
+function escapeTelegramHtml(value: string) {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 type SendOptions = {
   parse_mode?: 'HTML';
   reply_markup?: Record<string, unknown>;
@@ -217,14 +221,14 @@ async function sendWelcome(token: string, chatId: string | number, profile: Awai
       return;
     } catch {}
   }
-  return sendMessage(token, chatId, '<b>' + profile.welcomeTitle + '</b>\n\n' + profile.welcomeText, {
+  return sendMessage(token, chatId, '<b>' + escapeTelegramHtml(profile.welcomeTitle) + '</b>\n\n' + escapeTelegramHtml(profile.welcomeText), {
     parse_mode: 'HTML',
     reply_markup: markup,
   });
 }
 
 async function sendHelp(token: string, chatId: string | number, profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
-  return sendMessage(token, chatId, '<b>راهنمای دستیار</b>\n\n' + profile.helpText, {
+  return sendMessage(token, chatId, '<b>راهنمای دستیار</b>\n\n' + escapeTelegramHtml(profile.helpText), {
     parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [[
@@ -472,6 +476,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
       },
     });
 
+    const generationStartedAt = Date.now();
     const progress = async (message: string) => {
       if (!profile.showThinking) return;
       if (progressMessageId == null) {
@@ -536,7 +541,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
       retrieval: toRetrievalDebug(retrieval),
       provider,
       model,
-      latencyMs: 0,
+      latencyMs: Date.now() - generationStartedAt,
       conversationId: conversation.id,
     };
 
