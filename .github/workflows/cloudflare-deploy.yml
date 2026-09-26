@@ -186,6 +186,26 @@ jobs:
           set -euo pipefail
           base="https://cortex-ai.dengxiao445.workers.dev"
 
+          tail_log="$(mktemp)"
+          tail_pid=""
+          cleanup_tail() {
+            if [ -n "$tail_pid" ]; then
+              kill "$tail_pid" >/dev/null 2>&1 || true
+            fi
+            echo "===== TEMPORARY CLOUDFLARE WORKER ERROR TAIL ====="
+            cat "$tail_log" 2>/dev/null || true
+            rm -f "$tail_log"
+          }
+          trap cleanup_tail EXIT
+          npx wrangler tail cortex-ai --format json --status error --method POST >"$tail_log" 2>&1 &
+          tail_pid=$!
+          sleep 5
+          kill -0 "$tail_pid" 2>/dev/null || {
+            echo "Cloudflare tail failed to start."
+            cat "$tail_log" || true
+            exit 1
+          }
+
           check_json() {
             local url="$1"
             local expected="$2"
