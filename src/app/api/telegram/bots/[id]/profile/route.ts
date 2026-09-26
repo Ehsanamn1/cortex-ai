@@ -3,7 +3,7 @@ import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { decryptSecret } from "@/lib/server/secrets";
 import { getBotInfo, configureBotProfile } from "@/lib/telegram/service";
-import { getTelegramBotProfile, profileUpdateData } from "@/lib/telegram/profile";
+import { getTelegramBotProfile, invalidateTelegramBotProfile, profileUpdateData } from "@/lib/telegram/profile";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -40,6 +40,8 @@ export async function PATCH(req: Request, { params }: Params) {
       update: data,
       create: { botId: bot.id, ...(data as any) },
     });
+
+    invalidateTelegramBotProfile(bot.id);
 
     // Keep Telegram's own Bot API profile aligned with Cortex branding.
     try {
