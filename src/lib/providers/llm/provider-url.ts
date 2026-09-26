@@ -14,13 +14,14 @@ function ipv4ToInt(ip: string): number | null {
 
 export function isPrivateIp(ip: string): boolean {
   const value = ip.trim().replace(/^\[|\]$/g, "").toLowerCase();
-  if (value === "::1" || value === "0:0:0:0:0:0:0:1") return true;
+  if (value === "::" || value === "::1" || value === "0:0:0:0:0:0:0:0" || value === "0:0:0:0:0:0:0:1") return true;
 
   const firstHextet = Number.parseInt(value.split(":")[0] || "", 16);
   if (
     Number.isFinite(firstHextet) &&
     ((firstHextet >= 0xfc00 && firstHextet <= 0xfdff) ||
-      (firstHextet >= 0xfe80 && firstHextet <= 0xfebf))
+      (firstHextet >= 0xfe80 && firstHextet <= 0xfebf) ||
+      firstHextet >= 0xff00)
   ) {
     return true;
   }
