@@ -5,6 +5,7 @@ import { loadAgentForSession } from "@/lib/server/access";
 import { encryptSecret } from "@/lib/server/secrets";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { llmManager } from "@/lib/providers/llm/manager";
+import { validateProviderBaseUrl } from "@/lib/providers/llm/provider-url";
 
 export const dynamic = "force-dynamic";
 
@@ -88,9 +89,11 @@ export async function PUT(req: Request, { params }: Params) {
       );
     }
 
-    if (!/^https?:\/\//i.test(baseUrl)) {
+    try {
+      validateProviderBaseUrl(baseUrl);
+    } catch {
       return applyCors(
-        jsonError("Base URL باید با http:// یا https:// شروع شود.", 400),
+        jsonError("Base URL باید یک آدرس عمومی http/https باشد و نباید به localhost یا شبکه خصوصی اشاره کند.", 400),
         req.headers.get("origin"),
       );
     }
