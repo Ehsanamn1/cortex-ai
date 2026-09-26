@@ -218,6 +218,53 @@ describe("OpenAI-compatible provider simulation", () => {
       .resolves.toMatchObject({ content: "مسیر درست" });
   });
 
+  test("production DNS checks allow public hosts and reject DNS-to-private targets", async () => {
+    vi.stubEnv("APP_ENV", "production");
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("cloudflare-dns.com/dns-query")) {
+        const type = new URL(url).searchParams.get("type");
+        return new Response(JSON.stringify({
+          Status: 0,
+          Answer: [{ type: type === "A" ? 1 : 28, data: type === "A" ? "203.0.113.10" : "2001:db8::10" }],
+        }), { status: 200, headers: { "content-type": "application/dns-json" } });
+      }
+      expect(init?.method).toBe("POST");
+      return new Response(JSON.stringify(mockCompletion("DNS safe")), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new OpenAICompatibleProvider({
+      name: "DNS Provider",
+      baseUrl: "https://provider.example/v1",
+      apiKey: "secret",
+      model: "model",
+    });
+
+    await expect(provider.generateResponse({ messages: [{ role: "user", content: "ping" }] }))
+      .resolves.toMatchObject({ content: "DNS safe" });
+
+    vi.resetAllMocks();
+    vi.stubEnv("APP_ENV", "production");
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("cloudflare-dns.com/dns-query")) {
+        return new Response(JSON.stringify({
+          Status: 0,
+          Answer: [{ type: 1, data: "10.0.0.8" }],
+        }), { status: 200, headers: { "content-type": "application/dns-json" } });
+      }
+      throw new Error("upstream should never be reached");
+    }));
+
+    await expect(provider.generateResponse({ messages: [{ role: "user", content: "blocked" }] }))
+      .rejects.toBeInstanceOf(ProviderUnavailableError);
+  });
+
   test("missing credentials make the provider unusable before any network call", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
