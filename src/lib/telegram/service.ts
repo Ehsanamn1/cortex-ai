@@ -167,36 +167,21 @@ export async function requestContact(token: string, chatId: string | number) {
   );
 }
 
-async function sendWelcome(token: string, chatId: string | number, allowed: boolean) {
-  if (!allowed) {
-    await sendMessage(
-      token,
-      chatId,
-      '<b>سلام 👋</b>\n\nبه دستیار هوشمند <b>Cortex</b> خوش آمدید.\n\nبرای شروع، اول شماره موبایل خودتان را تأیید کنید.',
-      {
-        parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [[{ text: '📖 Cortex چیست؟', callback_data: 'help' }]],
-        },
-      },
-    );
-    return requestContact(token, chatId);
-  }
-
+async function sendWelcome(token: string, chatId: string | number) {
   return sendMessage(
     token,
     chatId,
-    '<b>🧠 Cortex آماده است.</b>\n\nسؤال یا درخواستتان را بفرستید. از ایجنت و دانش متصل‌شده استفاده می‌کنم.',
+    '<b>✨ خوش آمدید</b>\n\nمن دستیار هوشمند <b>Cortex</b> هستم و به دانش و ایجنت این ربات متصل‌ام.\n\nبدون ثبت شماره موبایل شروع کنید؛ فقط پیام‌تان را بفرستید. 🚀',
     {
       parse_mode: 'HTML',
       reply_markup: {
-        keyboard: [
-          [{ text: '💬 گفتگوی جدید' }, { text: '📊 مصرف من' }],
-          [{ text: '❓ راهنما' }],
+        inline_keyboard: [
+          [
+            { text: '💬 شروع گفتگو', callback_data: 'new_chat' },
+            { text: '❓ راهنما', callback_data: 'help' },
+          ],
+          [{ text: '📊 وضعیت مصرف', callback_data: 'usage' }],
         ],
-        resize_keyboard: true,
-        is_persistent: true,
-        input_field_placeholder: 'پیامتان را بنویسید…',
       },
     },
   );
@@ -311,10 +296,10 @@ export async function processTelegramUpdate(botId: string, update: any) {
     if (data === 'help') {
       await sendHelp(token, chatId);
     } else if (data === 'usage') {
-      if (user.status !== 'allowed') return requestContact(token, chatId);
+      if (user.status === 'blocked') return sendMessage(token, chatId, '⛔ دسترسی این حساب مسدود است.');
       await sendUsage(token, chatId, user.id);
     } else if (data === 'new_chat') {
-      if (user.status !== 'allowed') return requestContact(token, chatId);
+      if (user.status === 'blocked') return sendMessage(token, chatId, '⛔ دسترسی این حساب مسدود است.');
       await createTelegramConversation(bot.id, bot.agentId, tgId);
       await sendMessage(token, chatId, '✅ گفتگوی جدید آماده است. پیام بعدی‌تان را بفرستید.');
     }
@@ -345,58 +330,29 @@ export async function processTelegramUpdate(botId: string, update: any) {
     },
   });
 
+  // Telegram is public by default: no phone verification and no allowlist gate.
+  // Keep blocked users blocked, but automatically activate every other first-time user.
+  if (user.status !== 'allowed' && user.status !== 'blocked') {
+    await db.telegramUser.update({
+      where: { id: user.id },
+      data: { status: 'allowed' },
+    });
+    user.status = 'allowed';
+  }
+
   const contactPhone = msg.contact?.phone_number ? normalizeTelegramPhone(msg.contact.phone_number) : '';
 
   if (contactPhone) {
+    // Contact sharing is optional. Store a verified Telegram-native contact only
+    // when it belongs to the same Telegram account; it never controls access.
     const sharedUserId = msg.contact?.user_id != null ? String(msg.contact.user_id) : '';
-
-    if (sharedUserId && sharedUserId !== tgId) {
+    if (!sharedUserId || sharedUserId === tgId) {
       await db.telegramUser.update({
         where: { id: user.id },
-        data: { phoneNumber: contactPhone, status: 'blocked' },
+        data: { phoneNumber: contactPhone, status: 'allowed' },
       });
-      await audit({
-        workspaceId: bot.workspaceId,
-        userId: null,
-        action: 'telegram.contact_rejected',
-        entityType: 'TelegramUser',
-        entityId: user.id,
-        metadata: { reason: 'contact_user_mismatch' },
-      });
-      await sendMessage(token, msg.chat.id, '⛔ این شماره متعلق به حساب تلگرام شما نیست. از دکمه ارسال شماره خودتان استفاده کنید.');
-      return;
+      user.status = 'allowed';
     }
-
-    const allowed = await db.telegramAllowlistEntry.findUnique({
-      where: { botId_phoneNumber: { botId, phoneNumber: contactPhone } },
-    });
-
-    const nextStatus = allowed?.status === 'allowed' ? 'allowed' : 'pending';
-
-    await db.telegramUser.update({
-      where: { id: user.id },
-      data: { phoneNumber: contactPhone, status: nextStatus },
-    });
-
-    await audit({
-      workspaceId: bot.workspaceId,
-      userId: null,
-      action: 'telegram.user_' + nextStatus,
-      entityType: 'TelegramUser',
-      entityId: user.id,
-      metadata: { phoneNumber: contactPhone },
-    });
-
-    if (nextStatus === 'allowed') {
-      await sendMessage(token, msg.chat.id, '✅ شماره شما تأیید شد.', {
-        reply_markup: { remove_keyboard: true },
-      });
-      await sendWelcome(token, msg.chat.id, true);
-    } else {
-      await sendMessage(token, msg.chat.id, '⏳ این شماره فعلاً در فهرست دسترسی ربات نیست. بعد از ثبت شماره توسط مدیر، دوباره /start را بزنید.');
-      await requestContact(token, msg.chat.id);
-    }
-    return;
   }
 
   if (user.status === 'blocked') {
@@ -408,10 +364,10 @@ export async function processTelegramUpdate(botId: string, update: any) {
   const command = rawText.split(/\s+/)[0]?.split('@')[0]?.toLowerCase();
 
   if (command === '/start' || command === '/newchat' || command === '/help' || command === '/usage') {
-    if (user.status !== 'allowed') return sendWelcome(token, msg.chat.id, false);
+    if (user.status === 'blocked') return sendMessage(token, msg.chat.id, '⛔ دسترسی این حساب مسدود است.');
     if (command === '/help') return sendHelp(token, msg.chat.id);
     if (command === '/usage') return sendUsage(token, msg.chat.id, user.id);
-    if (command === '/start') return sendWelcome(token, msg.chat.id, true);
+    if (command === '/start') return sendWelcome(token, msg.chat.id);
 
     await createTelegramConversation(bot.id, bot.agentId, tgId);
     await sendMessage(token, msg.chat.id, '✅ گفتگوی جدید آماده است. پیام بعدی‌تان را بفرستید.');
@@ -421,7 +377,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
   if (!rawText) return;
 
   const quickAction = rawText.toLowerCase();
-  if (user.status === 'allowed' && (quickAction === '💬 گفتگوی جدید' || quickAction === '📊 مصرف من' || quickAction === '❓ راهنما')) {
+  if (user.status !== 'blocked' && (quickAction === '💬 گفتگوی جدید' || quickAction === '📊 مصرف من' || quickAction === '❓ راهنما')) {
     if (quickAction === '📊 مصرف من') return sendUsage(token, msg.chat.id, user.id);
     if (quickAction === '❓ راهنما') return sendHelp(token, msg.chat.id);
     await createTelegramConversation(bot.id, bot.agentId, tgId);
@@ -429,7 +385,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
     return;
   }
 
-  if (user.status !== 'allowed') return sendWelcome(token, msg.chat.id, false);
+  if (user.status === 'blocked') return sendMessage(token, msg.chat.id, '⛔ دسترسی این حساب مسدود است.');
 
   await sendChatAction(token, msg.chat.id, 'typing').catch(() => undefined);
 
@@ -485,6 +441,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
       agentId: bot.agentId,
       workspaceId: bot.workspaceId,
       conversationId: conversation.id,
+      memorySubjectKey: 'telegram:' + bot.id + ':' + tgId,
       persona: botAgent,
       history: promptHistory.map((m) => ({
         role: m.role as 'user' | 'assistant',
@@ -542,7 +499,14 @@ export async function processTelegramUpdate(botId: string, update: any) {
       data: { status: 'connected', lastSeenAt: new Date(), lastError: null },
     });
 
-    await sendMessage(token, msg.chat.id, answer.content);
+    await sendMessage(token, msg.chat.id, answer.content, {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '🆕 گفتگوی جدید', callback_data: 'new_chat' },
+          { text: '❓ راهنما', callback_data: 'help' },
+        ]],
+      },
+    });
   } catch (error) {
     await releaseUsageReservation(reservationId);
     reservationId = null;
