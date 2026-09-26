@@ -367,14 +367,14 @@ function ProviderTab({ agentId }: { agentId: string }) {
                 اتصال اختصاصی هوش مصنوعی
               </CardTitle>
               <CardDescription className="mt-2 leading-6">
-                این اتصال فقط برای همین ایجنت استفاده می‌شود. کلید API در سرور به‌صورت رمزنگاری‌شده ذخیره می‌شود و دوباره در رابط کاربری نمایش داده نمی‌شود.
+                این اتصال فقط برای همین ایجنت استفاده می‌شود. کلید API در سرور به‌صورت رمزنگاری‌شده ذخیره می‌شود و دوباره در رابط کاربری نمایش داده نمی‌شود. «پیکربندی‌شده» یعنی مشخصات اتصال کامل است؛ برای اطمینان از دسترسی واقعی، «تست اتصال» را اجرا کنید.
               </CardDescription>
             </div>
             <Badge
               variant={data.config && data.config.enabled && providerConfigured ? "default" : "outline"}
               className="shrink-0"
             >
-              {data.config && data.config.enabled && providerConfigured ? "متصل" : data.config ? "نیاز به بررسی" : "متصل نشده"}
+              {data.config && data.config.enabled && providerConfigured ? "پیکربندی‌شده" : data.config ? "نیاز به بررسی" : "متصل نشده"}
             </Badge>
           </div>
         </CardHeader>
