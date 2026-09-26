@@ -153,7 +153,7 @@ export async function PUT(req: Request, { params }: Params) {
     return applyCors(
       jsonOk({
         config: serializeConfig(config),
-        status: await llmManager.statusForAgent(agent.id, agent.workspaceId),
+        status: await llmManager.statusForAgent(agent.id),
       }),
       req.headers.get("origin"),
     );
