@@ -59,6 +59,31 @@ export async function reserveUsageWithinLimits(
   telegramUserId?: string,
 ): Promise<string | null> {
   const reservationTokens = Math.max(0, Math.floor(incomingTokens)) + Math.max(0, Math.floor(maxOutputTokens));
+
+  const [policyProbe, telegramUserProbe] = await Promise.all([
+    db.usagePolicy.findUnique({
+      where: { workspaceId },
+      select: { dailyMessageLimit: true, monthlyMessageLimit: true, dailyTokenLimit: true, monthlyTokenLimit: true },
+    }),
+    telegramUserId
+      ? db.telegramUser.findUnique({
+          where: { id: telegramUserId },
+          select: { dailyMessageLimit: true, monthlyMessageLimit: true, dailyTokenLimit: true, monthlyTokenLimit: true },
+        })
+      : null,
+  ]);
+  const normalizeScope = (value: { dailyMessageLimit:number; monthlyMessageLimit:number; dailyTokenLimit:number; monthlyTokenLimit:number } | null | undefined): UsageScope | null =>
+    value ? {
+      dailyMessageLimit: Math.max(0, value.dailyMessageLimit),
+      monthlyMessageLimit: Math.max(0, value.monthlyMessageLimit),
+      dailyTokenLimit: Math.max(0, value.dailyTokenLimit),
+      monthlyTokenLimit: Math.max(0, value.monthlyTokenLimit),
+    } : null;
+  const probeWorkspaceLimits = normalizeScope(policyProbe);
+  const probeUserLimits = normalizeScope(telegramUserProbe);
+  const zeroLimits: UsageScope = { dailyMessageLimit:0, monthlyMessageLimit:0, dailyTokenLimit:0, monthlyTokenLimit:0 };
+  if (!hasLimits(probeWorkspaceLimits ?? zeroLimits) && !hasLimits(probeUserLimits ?? zeroLimits)) return null;
+
   const reservationId = crypto.randomUUID();
   const now = new Date();
   const day = new Date(now);
@@ -74,8 +99,8 @@ export async function reserveUsageWithinLimits(
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${telegramUserId}))`;
     }
 
-    // Expired reservations cannot consume quota anymore.
-    await tx.usageReservation.deleteMany({ where: { expiresAt: { lte: now } } });
+    // Only purge expired reservations in the workspace being checked.
+    await tx.usageReservation.deleteMany({ where: { workspaceId, expiresAt: { lte: now } } });
 
     const [policy, telegramUser] = await Promise.all([
       tx.usagePolicy.findUnique({ where: { workspaceId } }),

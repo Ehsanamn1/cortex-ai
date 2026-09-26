@@ -18,7 +18,7 @@ export function applyCors(response: NextResponse, origin: string | null): NextRe
   if (origin && (allowed.includes(origin) || allowed.includes("*"))) {
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Credentials", "true");
-    response.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    response.headers.set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
     response.headers.set(
       "Access-Control-Allow-Headers",
       "Authorization, Content-Type, X-API-Key, X-Cortex-Client-Id, X-Cortex-Conversation-Id"

@@ -4,7 +4,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
 import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
-import { answerWithKnowledge, RAG_QUERY_EXPANSION_RESERVE_TOKENS, RagConfigError, toRetrievalDebug, toSourceRefs } from "@/lib/rag/pipeline";
+import { llmManager } from "@/lib/providers/llm/manager";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -23,6 +23,24 @@ export async function POST(req: Request) {
     rateLimit(req, "openai-agent-api-" + auth.id, 60, 60000);
 
     const body = await readJson<Record<string, unknown>>(req);
+
+    let providerReady = false;
+    try {
+      providerReady = Boolean((await llmManager.resolveForWorkspace(auth.agent.workspaceId)).provider);
+    } catch (error) {
+      console.error("[cortex][openai-api] provider preflight failed:", error);
+    }
+    if (!providerReady) {
+      return applyCors(jsonError("سرویس‌دهنده هوش مصنوعی پیکربندی نشده است. لطفاً از تنظیمات، وضعیت سرویس را بررسی کنید.", 503), req.headers.get("origin"));
+    }
+
+    let rag: typeof import("@/lib/rag/pipeline");
+    try {
+      rag = await import("@/lib/rag/pipeline");
+    } catch (error) {
+      console.error("[cortex][openai-api] RAG module load failed:", error);
+      return applyCors(jsonError("سرویس پاسخ‌گویی در حال حاضر در دسترس نیست؛ لطفاً دوباره تلاش کنید.", 503), req.headers.get("origin"));
+    }
     const messages = Array.isArray(body.messages) ? body.messages.filter((m): m is Record<string, unknown> => !!m && typeof m === "object") : [];
     const last = messages.filter((m) => m.role === "user" && typeof m.content === "string").at(-1)?.content as string | undefined;
     if (!last?.trim()) return applyCors(jsonError("حداقل یک پیام با role=user لازم است.", 400), req.headers.get("origin"));
@@ -48,15 +66,15 @@ export async function POST(req: Request) {
     }).then((rows) => rows.reverse());
     const promptHistory = existing.slice(-12);
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(last);
-    reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS, auth.agent.maxTokens);
-    const answer = await answerWithKnowledge({
+    reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens + rag.RAG_QUERY_EXPANSION_RESERVE_TOKENS, auth.agent.maxTokens);
+    const answer = await rag.answerWithKnowledge({
       agentId: auth.agentId,
       workspaceId: auth.agent.workspaceId,
       persona: auth.agent,
       history: promptHistory.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
       question: last.trim(),
     });
-    const metadata = { sources: toSourceRefs(answer.retrieval), retrieval: toRetrievalDebug(answer.retrieval), provider: answer.provider, model: answer.model, latencyMs: answer.latencyMs };
+    const metadata = { sources: rag.toSourceRefs(answer.retrieval), retrieval: rag.toRetrievalDebug(answer.retrieval), provider: answer.provider, model: answer.model, latencyMs: answer.latencyMs };
     await db.message.create({ data: { conversationId: conversation.id, role: "user", content: last.trim() } });
     const assistant = await db.message.create({ data: { conversationId: conversation.id, role: "assistant", content: answer.content, metadata: JSON.stringify(metadata) } });
     await db.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
@@ -80,7 +98,7 @@ export async function POST(req: Request) {
   } catch (e) {
     await releaseUsageReservation(reservationId);
     reservationId = null;
-    if (e instanceof RagConfigError) return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
+    if (e instanceof rag.RagConfigError) return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
     return toErrorResponse(e, req.headers.get("origin"));
   }
 }
