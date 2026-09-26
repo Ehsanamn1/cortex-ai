@@ -460,6 +460,15 @@ export const api = {
   getProviderConfig(workspaceId?: string): Promise<{config:ProviderConfigDto|null;status:ProvidersStatusDto["llm"]}> {
     return request(`/api/settings/provider${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`);
   },
+  getAgentProviderConfig(agentId: string): Promise<{config:ProviderConfigDto|null;status:ProvidersStatusDto["llm"]}> {
+    return request(`/api/agents/${encodeURIComponent(agentId)}/provider`);
+  },
+  saveAgentProviderConfig(agentId:string,input:{providerName:string;baseUrl:string;model:string;authMode:string;apiKey?:string;enabled?:boolean}): Promise<{config:ProviderConfigDto;status:ProvidersStatusDto["llm"]}> {
+    return jsonRequest(`/api/agents/${encodeURIComponent(agentId)}/provider`,'PUT',input);
+  },
+  testAgentProviderHealth(agentId:string): Promise<ProviderHealthOkDto> {
+    return request(`/api/agents/${encodeURIComponent(agentId)}/provider`, { method: "POST" });
+  },
   saveProviderConfig(input:{workspaceId?:string;providerName:string;baseUrl:string;model:string;authMode:string;apiKey?:string;enabled?:boolean}): Promise<{config:ProviderConfigDto;status:ProvidersStatusDto["llm"]}> {
     return jsonRequest('/api/settings/provider','PUT',input);
   },
