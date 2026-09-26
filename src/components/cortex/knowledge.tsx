@@ -89,15 +89,17 @@ export function AddFileDialog({
   agentId,
   open,
   onOpenChange,
+  onCompleted,
 }: {
   agentId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCompleted?: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Inner component unmounts with the dialog → local state resets automatically. */}
-      <AddFileDialogInner agentId={agentId} onOpenChange={onOpenChange} />
+      <AddFileDialogInner agentId={agentId} onOpenChange={onOpenChange} onCompleted={onCompleted} />
     </Dialog>
   );
 }
@@ -123,9 +125,11 @@ function uploadWithProgress(url: string, file: File, onProgress: (value: number)
 function AddFileDialogInner({
   agentId,
   onOpenChange,
+  onCompleted,
 }: {
   agentId: string;
   onOpenChange: (open: boolean) => void;
+  onCompleted?: () => void;
 }) {
   const queryClient = useQueryClient();
   const siteConfigQuery = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000 });
@@ -160,6 +164,7 @@ function AddFileDialogInner({
       invalidateKnowledge(queryClient, agentId);
       onOpenChange(false);
       toast.success("فایل دریافت شد؛ پردازش و ایندکس دانش در حال انجام است.");
+      onCompleted?.();
     },
     onError: (mutationError: Error) => {
       setProgress(0);
@@ -249,15 +254,17 @@ export function AddUrlDialog({
   agentId,
   open,
   onOpenChange,
+  onCompleted,
 }: {
   agentId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCompleted?: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Inner component unmounts with the dialog → local state resets automatically. */}
-      <AddUrlDialogInner agentId={agentId} onOpenChange={onOpenChange} />
+      <AddUrlDialogInner agentId={agentId} onOpenChange={onOpenChange} onCompleted={onCompleted} />
     </Dialog>
   );
 }
@@ -265,9 +272,11 @@ export function AddUrlDialog({
 function AddUrlDialogInner({
   agentId,
   onOpenChange,
+  onCompleted,
 }: {
   agentId: string;
   onOpenChange: (open: boolean) => void;
+  onCompleted?: () => void;
 }) {
   const queryClient = useQueryClient();
   const [url, setUrl] = useState("");
@@ -279,6 +288,7 @@ function AddUrlDialogInner({
       invalidateKnowledge(queryClient, agentId);
       onOpenChange(false);
       toast.success("در حال پردازش دانش...");
+      onCompleted?.();
     },
     onError: (mutationError: Error) => toast.error(mutationError.message),
   });
