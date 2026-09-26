@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
 import type { ChatTurn } from "@/lib/providers/llm/types";
 import { answerWithKnowledge } from "@/lib/rag/pipeline";
-import { loadAgentMemory, remember } from "./memory";
+import { loadAgentMemory, remember, rememberExplicitUserFacts } from "./memory";
 import { executeTool, listAgentTools } from "./tools";
 import type { AgentRuntimeInput } from "./types";
 
@@ -36,7 +36,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
   if (!resolved.provider) throw Object.assign(new Error("سرویس‌دهنده هوش مصنوعی برای این ایجنت پیکربندی نشده است. از تب «هوش مصنوعی» ایجنت استفاده کنید."), { status: 503 });
 
   const tools = await listAgentTools(agent.id);
-  const memories = agent.memoryEnabled ? await loadAgentMemory(agent.id, 8, input.conversationId) : [];
+  const memories = agent.memoryEnabled ? await loadAgentMemory(agent.id, 12, input.conversationId, input.memorySubjectKey) : [];
   const system = [agent.systemPrompt, agent.instructions, agent.persona, "نام ایجنت: " + agent.name,
     tools.length ? "اگر ابزار لازم است فقط JSON معتبر با type=tool_call برگردان. ابزارهای مجاز: " + tools.map(t => t.key + ": " + t.description + " schema=" + t.inputSchema).join(" | ") : "",
     memories.length ? "Memory:\n" + memories.map(m => m.key + ": " + m.value).join("\n") : ""].filter(Boolean).join("\n\n");
@@ -49,27 +49,63 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
     let toolUsed: string | null = null;
 
     if (tools.length === 0) {
+      await input.onProgress?.("🔎 در حال بررسی دانش و زمینه گفتگو…");
       const answer = await answerWithKnowledge({ agentId: agent.id, workspaceId: input.workspaceId, conversationId: input.conversationId, persona: agent, history, question: input.input });
       finalContent = answer.content;
     } else {
       let seq = 0;
-      const planned = await recordStep(execution!.id, ++seq, "model", "Agent decision", { input: input.input },
-        () => resolved.provider!.generateResponse({ messages: [{ role: "system", content: system }, ...history, { role: "user", content: input.input }], temperature: agent.temperature, maxTokens: agent.maxTokens }));
-      const call = parseToolCall((planned as { content: string }).content);
-      finalContent = (planned as { content: string }).content;
-      if (call) {
+      const modelMessages: ChatTurn[] = [
+        { role: "system", content: system },
+        ...history,
+        { role: "user", content: input.input },
+      ];
+      for (let iteration = 0; iteration < 4; iteration++) {
+        await input.onProgress?.(iteration === 0 ? "🧠 در حال فکر کردن و برنامه‌ریزی…" : "🛠️ در حال ادامه کار ایجنت…");
+        const planned = await recordStep(execution!.id, ++seq, "model", iteration === 0 ? "Agent decision" : "Agent continuation", { input: input.input, iteration },
+          () => resolved.provider!.generateResponse({
+            messages: modelMessages,
+            temperature: agent.temperature,
+            maxTokens: agent.maxTokens,
+          }));
+        const plannedContent = (planned as { content: string }).content;
+        const call = parseToolCall(plannedContent);
+        if (!call) {
+          finalContent = plannedContent;
+          break;
+        }
         toolUsed = call.tool;
         const tool = tools.find(t => t.key === call.tool);
         if (!tool) throw new Error("Agent requested unavailable tool: " + call.tool);
+        await input.onProgress?.("⚙️ در حال اجرای «" + tool.name + "»…");
         const result = await recordStep(execution!.id, ++seq, "tool", tool.name, call.arguments,
           () => executeTool(tool, call.arguments, { workspaceId: input.workspaceId, agentId: agent.id, conversationId: input.conversationId, executionId: execution!.id }));
-        const final = await recordStep(execution!.id, ++seq, "model", "Final response", { tool: call.tool },
-          () => resolved.provider!.generateResponse({ messages: [{ role: "system", content: system + "\n\nنتیجه ابزار را پردازش کن و پاسخ نهایی را تولید کن." }, ...history, { role: "user", content: input.input }, { role: "assistant", content: "Tool " + call.tool + " result: " + JSON.stringify(result) }], temperature: agent.temperature, maxTokens: agent.maxTokens }));
-        finalContent = (final as { content: string }).content;
+        modelMessages.push(
+          { role: "assistant", content: plannedContent },
+          { role: "user", content: "نتیجه ابزار " + call.tool + ": " + JSON.stringify(result).slice(0, 12000) + "\nادامه بده؛ اگر کار تمام شده پاسخ نهایی عادی بده و اگر ابزار دیگری لازم است tool_call بده." },
+        );
       }
+      if (!finalContent) {
+        finalContent = "✅ کار انجام شد. برای ادامه، جزئیات بیشتری لازم دارم.";
+      }
+      await input.onProgress?.("✍️ در حال جمع‌بندی پاسخ نهایی…");
       if (execution && agent.memoryEnabled) {
         await recordStep(execution.id, ++seq, "memory", "Memory update", { input: input.input }, async () => {
-          await remember({ workspaceId: input.workspaceId, agentId: agent.id, conversationId: input.conversationId, key: "conversation:" + (input.conversationId ?? "manual") + ":last", value: input.input.slice(0, 1000), type: "interaction" });
+          await remember({
+            workspaceId: input.workspaceId,
+            agentId: agent.id,
+            conversationId: input.conversationId,
+            key: "conversation:" + (input.conversationId ?? "manual") + ":last",
+            value: input.input.slice(0, 1000),
+            type: "interaction",
+          });
+          if (input.memorySubjectKey) {
+            await rememberExplicitUserFacts({
+              workspaceId: input.workspaceId,
+              agentId: agent.id,
+              subjectKey: input.memorySubjectKey,
+              text: input.input,
+            });
+          }
           return { stored: true };
         }).catch(() => undefined);
       }
