@@ -70,7 +70,17 @@ vi.mock("@/lib/runtime/tools", () => ({
 }));
 
 vi.mock("@/lib/runtime/engine", () => ({
-  runAgentExecution: vi.fn(),
+  runAgentExecution: vi.fn(async ({ input }: { input: string }) => ({
+    executionId: "execution-1",
+    content: "پاسخ از Provider اختصاصی این ایجنت",
+    provider: "Mock Provider",
+    model: "mock-telegram-model",
+    retrieval: [],
+    auxiliaryInputTokens: 0,
+    auxiliaryOutputTokens: 0,
+    latencyMs: 12,
+    toolUsed: null,
+  })),
 }));
 
 vi.mock("@/lib/rag/pipeline", () => ({
