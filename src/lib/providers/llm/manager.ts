@@ -142,7 +142,8 @@ class ProviderManager {
   }
 
   async resolveForAgent(agentId: string, workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus }> {
-    const cached = configCache.get(agentId);
+    const useConfigCache = process.env.APP_ENV !== "test" && process.env.NODE_ENV !== "test";
+    const cached = useConfigCache ? configCache.get(agentId) : undefined;
     const agentConfig = cached && cached.expiresAt > Date.now()
       ? cached.config
       : await db.agentProviderConfig.findUnique({ where: { agentId } });
