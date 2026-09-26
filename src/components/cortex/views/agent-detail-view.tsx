@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { api } from "@/lib/cortex-client";
+import { api, type AgentProviderType } from "@/lib/cortex-client";
 import { useCortexStore, type AgentTab } from "@/components/cortex/store";
 import { ErrorState, useErrorToast } from "@/components/cortex/bits";
 import { faNum, languageLabel, timeAgoFa, toneLabel } from "@/components/cortex/format";
@@ -319,6 +319,7 @@ function ProviderConnectionForm({
   agentId: string;
   config: {
     id: string;
+    providerType: AgentProviderType;
     providerName: string;
     baseUrl: string;
     model: string;
@@ -330,6 +331,7 @@ function ProviderConnectionForm({
   configured: boolean;
 }) {
   const queryClient = useQueryClient();
+  const [providerType, setProviderType] = useState<AgentProviderType>(config?.providerType ?? "openai-compatible");
   const [providerName, setProviderName] = useState(config?.providerName ?? "AI Gateway");
   const [baseUrl, setBaseUrl] = useState(config?.baseUrl ?? "");
   const [model, setModel] = useState(config?.model ?? "");
@@ -339,6 +341,7 @@ function ProviderConnectionForm({
 
   const saveMutation = useMutation({
     mutationFn: () => api.saveAgentProviderConfig(agentId, {
+      providerType,
       providerName: providerName.trim(),
       baseUrl: baseUrl.trim(),
       model: model.trim(),
@@ -396,12 +399,23 @@ function ProviderConnectionForm({
 
         <CardContent className="grid gap-5 pt-6 md:grid-cols-2">
           <div className="space-y-2">
+            <Label>نوع Provider</Label>
+            <Select value={providerType} onValueChange={(value) => setProviderType(value as AgentProviderType)}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="انتخاب نوع Provider" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="openai-compatible">OpenAI-compatible — OpenRouter / AI Gateway / سرویس‌های مشابه</SelectItem>
+                <SelectItem value="anthropic">Anthropic Messages API</SelectItem>
+                <SelectItem value="gemini">Google Gemini API</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>نام سرویس</Label>
             <Input value={providerName} onChange={(e) => setProviderName(e.target.value)} placeholder="مثلاً OpenRouter یا AI Gateway" />
           </div>
           <div className="space-y-2">
             <Label>Base URL</Label>
-            <Input dir="ltr" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://.../v1" />
+            <Input dir="ltr" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={providerType === "gemini" ? "https://generativelanguage.googleapis.com/v1beta" : providerType === "anthropic" ? "https://api.anthropic.com/v1" : "https://.../v1"} />
           </div>
           <div className="space-y-2">
             <Label>Model ID</Label>
@@ -409,7 +423,7 @@ function ProviderConnectionForm({
           </div>
           <div className="space-y-2">
             <Label>روش احراز</Label>
-            <Select value={authMode} onValueChange={setAuthMode}>
+            <Select value={providerType === "anthropic" ? "x-api-key" : providerType === "gemini" ? "x-api-key" : authMode} onValueChange={setAuthMode} disabled={providerType !== "openai-compatible"}>
               <SelectTrigger className="w-full"><SelectValue placeholder="انتخاب روش" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="bearer">Bearer</SelectItem>
