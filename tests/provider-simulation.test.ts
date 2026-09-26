@@ -262,7 +262,13 @@ describe("OpenAI-compatible provider simulation", () => {
       throw new Error("upstream should never be reached");
     }));
 
-    await expect(provider.generateResponse({ messages: [{ role: "user", content: "blocked" }] }))
+    const blockedProvider = new OpenAICompatibleProvider({
+      name: "Blocked DNS Provider",
+      baseUrl: "https://private.example/v1",
+      apiKey: "secret",
+      model: "model",
+    });
+    await expect(blockedProvider.generateResponse({ messages: [{ role: "user", content: "blocked" }] }))
       .rejects.toBeInstanceOf(ProviderUnavailableError);
   });
 
