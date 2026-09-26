@@ -1,4 +1,4 @@
-import { ProviderNotConfiguredError, ProviderUnavailableError, type GenerateOptions, type GenerateResult, type LLMProvider } from './types';
+import { ProviderNotConfiguredError, ProviderUnavailableError, classifyProviderFailure, type GenerateOptions, type GenerateResult, type LLMProvider } from './types';
 import { assertPublicProviderBaseUrl, validateProviderBaseUrl } from './provider-url';
 
 export type CompatibleAuthMode = 'bearer' | 'x-api-key' | 'none';
@@ -111,7 +111,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
     } catch (error) {
       if (error instanceof ProviderNotConfiguredError) throw error;
       console.error(`[cortex][${this.name}] generation failed`, error instanceof Error ? error.message : error);
-      throw new ProviderUnavailableError();
+      throw classifyProviderFailure(error, this.name);
     }
   }
 
