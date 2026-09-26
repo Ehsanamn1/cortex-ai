@@ -58,18 +58,22 @@ export async function PATCH(req: Request, { params }: Params) {
     if (!existing) throw Object.assign(new Error("حافظه پیدا نشد."), { status: 404 });
 
     const data: Record<string, unknown> = {};
-    for (const key of ["key", "value", "type", "source", "scope", "subjectKey", "conversationId"] as const) {
-      if (typeof body[key] === "string") data[key] = String(body[key]).trim().slice(0, 2000);
-      if (body[key] === null && ["subjectKey", "conversationId"].includes(key)) data[key] = null;
+    for (const key of ["value", "type", "source"] as const) {
+      if (typeof body[key] === "string") {
+        data[key] = String(body[key]).trim().slice(0, 2000);
+      }
     }
     if (typeof body.importance === "number") data.importance = Math.max(0, Math.min(100, Math.floor(body.importance)));
     if (typeof body.confidence === "number") data.confidence = Math.max(0, Math.min(100, Math.floor(body.confidence)));
     if (typeof body.expiresAt === "string" && body.expiresAt.trim()) {
       const date = new Date(body.expiresAt);
-      if (Number.isNaN(date.getTime())) throw Object.assign(new Error("تاریخ انقضا نامعتبر است."), { status: 400 });
+      if (Number.isNaN(date.getTime())) {
+        throw Object.assign(new Error("تاریخ انقضا نامعتبر است."), { status: 400 });
+      }
       data.expiresAt = date;
     }
     if (body.expiresAt === null) data.expiresAt = null;
+    data.lastAccessedAt = new Date();
 
     const updated = await db.memoryEntry.update({ where: { id: existing.id }, data: data as any });
     return applyCors(jsonOk({ memory: {
