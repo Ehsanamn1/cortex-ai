@@ -5,6 +5,9 @@ import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/
 import { audit } from '@/lib/server/audit';
 import { answerWithKnowledge, RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
 import { normalizeTelegramPhone } from '@/lib/telegram/phone';
+import { getTelegramBotProfile } from '@/lib/telegram/profile';
+import { runAgentExecution } from '@/lib/runtime/engine';
+import { listAgentTools } from '@/lib/runtime/tools';
 
 const API = 'https://api.telegram.org';
 
@@ -80,27 +83,30 @@ export async function getBotInfo(token: string) {
   return telegramCall(token, 'getMe', {});
 }
 
-export async function configureBotProfile(token: string, botName: string) {
+export async function configureBotProfile(
+  token: string,
+  botName: string,
+  profile?: { shortDescription?: string; description?: string; commands?: Array<{command:string;description:string}> },
+) {
   const safeName = botName.trim().slice(0, 32);
+  const commands = profile?.commands?.length
+    ? profile.commands
+    : [
+        { command: 'start', description: 'شروع' },
+        { command: 'newchat', description: 'گفتگوی جدید' },
+        { command: 'help', description: 'راهنما' },
+        { command: 'usage', description: 'مصرف' },
+      ];
 
   await telegramCall(token, 'setMyName', { name: safeName }).catch(() => undefined);
   await telegramCall(token, 'setMyShortDescription', {
-    short_description: 'دستیار هوشمند Cortex برای پاسخ‌گویی و مدیریت دانش.',
+    short_description: (profile?.shortDescription || 'دستیار هوشمند Cortex برای پاسخ‌گویی و مدیریت دانش.').slice(0, 120),
   }).catch(() => undefined);
   await telegramCall(token, 'setMyDescription', {
-    description: 'دستیار هوشمند Cortex؛ متصل به دانش و ایجنت اختصاصی شما.',
+    description: (profile?.description || 'دستیار هوشمند Cortex؛ متصل به دانش و ایجنت اختصاصی شما.').slice(0, 512),
   }).catch(() => undefined);
-  await telegramCall(token, 'setMyCommands', {
-    commands: [
-      { command: 'start', description: 'شروع و بررسی دسترسی' },
-      { command: 'newchat', description: 'شروع گفتگوی جدید' },
-      { command: 'help', description: 'راهنمای استفاده' },
-      { command: 'usage', description: 'مشاهده مصرف توکن' },
-    ],
-  }).catch(() => undefined);
-  await telegramCall(token, 'setChatMenuButton', {
-    menu_button: { type: 'commands' },
-  }).catch(() => undefined);
+  await telegramCall(token, 'setMyCommands', { commands }).catch(() => undefined);
+  await telegramCall(token, 'setChatMenuButton', { menu_button: { type: 'commands' } }).catch(() => undefined);
 }
 
 export async function setWebhook(token: string, url: string, secret: string) {
@@ -148,6 +154,26 @@ async function answerCallback(token: string, callbackId: string) {
   return telegramCall(token, 'answerCallbackQuery', { callback_query_id: callbackId });
 }
 
+async function editMessageText(token: string, chatId: string | number, messageId: string | number, text: string, options: SendOptions = {}) {
+  return telegramCall(token, 'editMessageText', {
+    chat_id: chatId,
+    message_id: messageId,
+    text: text.slice(0, 4096),
+    disable_web_page_preview: true,
+    ...options,
+  });
+}
+
+async function sendPhoto(token: string, chatId: string | number, photo: string, caption: string, replyMarkup?: Record<string, unknown>) {
+  return telegramCall(token, 'sendPhoto', {
+    chat_id: chatId,
+    photo,
+    caption: caption.slice(0, 1024),
+    parse_mode: 'HTML',
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+  });
+}
+
 export async function requestContact(token: string, chatId: string | number) {
   return sendMessage(
     token,
@@ -167,41 +193,46 @@ export async function requestContact(token: string, chatId: string | number) {
   );
 }
 
-async function sendWelcome(token: string, chatId: string | number) {
-  return sendMessage(
-    token,
-    chatId,
-    '<b>✨ خوش آمدید</b>\n\nمن دستیار هوشمند <b>Cortex</b> هستم و به دانش و ایجنت این ربات متصل‌ام.\n\nبدون ثبت شماره موبایل شروع کنید؛ فقط پیام‌تان را بفرستید. 🚀',
-    {
-      parse_mode: 'HTML',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: '💬 شروع گفتگو', callback_data: 'new_chat' },
-            { text: '❓ راهنما', callback_data: 'help' },
-          ],
-          [{ text: '📊 وضعیت مصرف', callback_data: 'usage' }],
-        ],
-      },
-    },
-  );
+function buttonMarkup(profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
+  return {
+    inline_keyboard: [
+      [
+        { text: profile.newChatButtonText, callback_data: 'new_chat' },
+        { text: profile.helpButtonText, callback_data: 'help' },
+      ],
+      ...(profile.usageButtonText ? [[{ text: profile.usageButtonText, callback_data: 'usage' }]] : []),
+    ],
+  };
 }
 
-async function sendHelp(token: string, chatId: string | number) {
-  return sendMessage(
-    token,
-    chatId,
-    '<b>راهنمای Cortex</b>\n\n💬 پیام عادی → پاسخ از ایجنت\n🆕 /newchat → گفتگوی جدید\n📊 /usage → مصرف توکن\n🔄 /start → منوی اصلی\n\nبرای پاسخ دقیق‌تر، سؤال را کامل و واضح بفرستید.',
-    {
-      parse_mode: 'HTML',
-      reply_markup: {
-        inline_keyboard: [[
-          { text: '💬 شروع گفتگوی جدید', callback_data: 'new_chat' },
-          { text: '📊 مصرف من', callback_data: 'usage' },
-        ]],
-      },
+function pickThinkingMessage(profile: Awaited<ReturnType<typeof getTelegramBotProfile>>, index = 0) {
+  return profile.thinkingMessages[index % Math.max(1, profile.thinkingMessages.length)] || '🧠 در حال فکر کردن…';
+}
+
+async function sendWelcome(token: string, chatId: string | number, profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
+  const markup = buttonMarkup(profile);
+  if (profile.showWelcomeBanner && profile.welcomeBannerUrl) {
+    try {
+      await sendPhoto(token, chatId, profile.welcomeBannerUrl, '<b>' + profile.welcomeTitle + '</b>\n\n' + profile.welcomeText, markup);
+      return;
+    } catch {}
+  }
+  return sendMessage(token, chatId, '<b>' + profile.welcomeTitle + '</b>\n\n' + profile.welcomeText, {
+    parse_mode: 'HTML',
+    reply_markup: markup,
+  });
+}
+
+async function sendHelp(token: string, chatId: string | number, profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
+  return sendMessage(token, chatId, '<b>راهنمای دستیار</b>\n\n' + profile.helpText, {
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [[
+        { text: profile.newChatButtonText, callback_data: 'new_chat' },
+        { text: profile.usageButtonText, callback_data: 'usage' },
+      ]],
     },
-  );
+  });
 }
 
 function startOfDay() {
@@ -288,13 +319,13 @@ export async function processTelegramUpdate(botId: string, update: any) {
 
     if (!user) return;
     if (user.status === 'blocked') {
-      await sendMessage(token, chatId, '⛔ دسترسی این حساب مسدود است.');
+      await sendMessage(token, chatId, (await getTelegramBotProfile(bot.id)).blockedText);
       return;
     }
 
     const data = String(callback.data ?? '');
     if (data === 'help') {
-      await sendHelp(token, chatId);
+      await sendHelp(token, chatId, await getTelegramBotProfile(bot.id));
     } else if (data === 'usage') {
       if (user.status === 'blocked') return sendMessage(token, chatId, '⛔ دسترسی این حساب مسدود است.');
       await sendUsage(token, chatId, user.id);
@@ -365,9 +396,9 @@ export async function processTelegramUpdate(botId: string, update: any) {
 
   if (command === '/start' || command === '/newchat' || command === '/help' || command === '/usage') {
     if (user.status === 'blocked') return sendMessage(token, msg.chat.id, '⛔ دسترسی این حساب مسدود است.');
-    if (command === '/help') return sendHelp(token, msg.chat.id);
+    if (command === '/help') return sendHelp(token, msg.chat.id, await getTelegramBotProfile(bot.id));
     if (command === '/usage') return sendUsage(token, msg.chat.id, user.id);
-    if (command === '/start') return sendWelcome(token, msg.chat.id);
+    if (command === '/start') return sendWelcome(token, msg.chat.id, await getTelegramBotProfile(bot.id));
 
     await createTelegramConversation(bot.id, bot.agentId, tgId);
     await sendMessage(token, msg.chat.id, '✅ گفتگوی جدید آماده است. پیام بعدی‌تان را بفرستید.');
@@ -379,7 +410,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
   const quickAction = rawText.toLowerCase();
   if (user.status !== 'blocked' && (quickAction === '💬 گفتگوی جدید' || quickAction === '📊 مصرف من' || quickAction === '❓ راهنما')) {
     if (quickAction === '📊 مصرف من') return sendUsage(token, msg.chat.id, user.id);
-    if (quickAction === '❓ راهنما') return sendHelp(token, msg.chat.id);
+    if (quickAction === '❓ راهنما') return sendHelp(token, msg.chat.id, await getTelegramBotProfile(bot.id));
     await createTelegramConversation(bot.id, bot.agentId, tgId);
     await sendMessage(token, msg.chat.id, '✅ گفتگوی جدید آماده است. پیام بعدی‌تان را بفرستید.');
     return;
