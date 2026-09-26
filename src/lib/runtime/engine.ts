@@ -16,7 +16,8 @@ function parseToolCall(content: string): { tool: string; arguments: Record<strin
   } catch { return null; }
 }
 
-async function recordStep(executionId: string, seq: number, type: string, name: string, input: unknown, run: () => Promise<unknown>) {
+async function recordStep(executionId: string | null, seq: number, type: string, name: string, input: unknown, run: () => Promise<unknown>) {
+  if (!executionId) return run();
   const step = await db.executionStep.create({ data: { executionId, seq, type, name, status: "RUNNING", input: JSON.stringify(input) } });
   try {
     const output = await run();
@@ -61,7 +62,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
       ];
       for (let iteration = 0; iteration < 4; iteration++) {
         await input.onProgress?.(iteration === 0 ? "🧠 در حال فکر کردن و برنامه‌ریزی…" : "🛠️ در حال ادامه کار ایجنت…");
-        const planned = await recordStep(execution!.id, ++seq, "model", iteration === 0 ? "Agent decision" : "Agent continuation", { input: input.input, iteration },
+        const planned = await recordStep(execution?.id ?? null, ++seq, "model", iteration === 0 ? "Agent decision" : "Agent continuation", { input: input.input, iteration },
           () => resolved.provider!.generateResponse({
             messages: modelMessages,
             temperature: agent.temperature,
@@ -77,7 +78,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
         const tool = tools.find(t => t.key === call.tool);
         if (!tool) throw new Error("Agent requested unavailable tool: " + call.tool);
         await input.onProgress?.("⚙️ در حال اجرای «" + tool.name + "»…");
-        const result = await recordStep(execution!.id, ++seq, "tool", tool.name, call.arguments,
+        const result = await recordStep(execution?.id ?? null, ++seq, "tool", tool.name, call.arguments,
           () => executeTool(tool, call.arguments, { workspaceId: input.workspaceId, agentId: agent.id, conversationId: input.conversationId, executionId: execution!.id }));
         modelMessages.push(
           { role: "assistant", content: plannedContent },
