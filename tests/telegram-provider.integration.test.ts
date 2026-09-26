@@ -174,12 +174,13 @@ describe("Telegram -> agent provider simulation", () => {
       },
     });
 
-    const rag = await import("@/lib/rag/pipeline");
-    expect(vi.mocked(rag.answerWithKnowledge)).toHaveBeenCalledWith(expect.objectContaining({
+    const runtime = await import("@/lib/runtime/engine");
+    expect(vi.mocked(runtime.runAgentExecution)).toHaveBeenCalledWith(expect.objectContaining({
       agentId: "agent-telegram-1",
       workspaceId: "workspace-1",
       memorySubjectKey: "telegram:bot-1:123",
-      question: "سلام، یک سؤال واقعی دارم",
+      input: "سلام، یک سؤال واقعی دارم",
+      conversationId: "conversation-1",
     }));
     expect(vi.mocked(db.telegramUser.update)).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: "tg-user-1" },
