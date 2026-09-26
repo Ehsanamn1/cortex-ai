@@ -40,6 +40,50 @@ export async function GET(req: Request, { params }: Params) {
   }
 }
 
+export async function PATCH(req: Request, { params }: Params) {
+  try {
+    const session = await requireSession(req);
+    const agent = await loadAgentForSession(session, (await params).id);
+    const membership = assertWorkspaceAccess(session, agent.workspaceId);
+    if (!["owner", "admin"].includes(membership.role)) {
+      throw Object.assign(new Error("دسترسی ویرایش حافظه را ندارید."), { status: 403 });
+    }
+    const body = await readJson<Record<string, unknown>>(req);
+    const id = typeof body.id === "string" ? body.id : "";
+    if (!id) throw Object.assign(new Error("شناسه حافظه الزامی است."), { status: 400 });
+
+    const existing = await db.memoryEntry.findFirst({
+      where: { id, agentId: agent.id, workspaceId: agent.workspaceId },
+    });
+    if (!existing) throw Object.assign(new Error("حافظه پیدا نشد."), { status: 404 });
+
+    const data: Record<string, unknown> = {};
+    for (const key of ["key", "value", "type", "source", "scope", "subjectKey", "conversationId"] as const) {
+      if (typeof body[key] === "string") data[key] = String(body[key]).trim().slice(0, 2000);
+      if (body[key] === null && ["subjectKey", "conversationId"].includes(key)) data[key] = null;
+    }
+    if (typeof body.importance === "number") data.importance = Math.max(0, Math.min(100, Math.floor(body.importance)));
+    if (typeof body.confidence === "number") data.confidence = Math.max(0, Math.min(100, Math.floor(body.confidence)));
+    if (typeof body.expiresAt === "string" && body.expiresAt.trim()) {
+      const date = new Date(body.expiresAt);
+      if (Number.isNaN(date.getTime())) throw Object.assign(new Error("تاریخ انقضا نامعتبر است."), { status: 400 });
+      data.expiresAt = date;
+    }
+    if (body.expiresAt === null) data.expiresAt = null;
+
+    const updated = await db.memoryEntry.update({ where: { id: existing.id }, data: data as any });
+    return applyCors(jsonOk({ memory: {
+      id: updated.id, scope: updated.scope, subjectKey: updated.subjectKey,
+      conversationId: updated.conversationId, type: updated.type, key: updated.key,
+      value: updated.value, importance: updated.importance, confidence: updated.confidence,
+      source: updated.source, expiresAt: updated.expiresAt?.toISOString() ?? null,
+      updatedAt: updated.updatedAt.toISOString(), lastAccessedAt: updated.lastAccessedAt.toISOString(),
+    }}), req.headers.get("origin"));
+  } catch (e) {
+    return toErrorResponse(e);
+  }
+}
+
 export async function DELETE(req: Request, { params }: Params) {
   try {
     const session = await requireSession(req);
