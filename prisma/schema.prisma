@@ -105,6 +105,7 @@ model AgentProviderConfig {
   agentId         String   @unique
   workspaceId     String
   providerName    String
+  providerType   String?  // legacy production column; retained for backward-compatible schema sync
   baseUrl         String
   model           String
   protocol        String   @default("openai-compatible")
