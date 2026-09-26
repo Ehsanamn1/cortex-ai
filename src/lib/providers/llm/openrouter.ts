@@ -5,6 +5,7 @@ import {
   type GenerateResult,
   type LLMProvider,
 } from "./types";
+import { fetchProviderResponse } from "./request";
 
 /**
  * OpenRouter provider — real, standard OpenAI-compatible REST.
@@ -33,7 +34,7 @@ export class OpenRouterProvider implements LLMProvider {
     if (!key) throw new ProviderNotConfiguredError(this.name);
     const model = this.model()!;
     try {
-      const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+      const res = await fetchProviderResponse(`${OPENROUTER_BASE}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${key}`,
@@ -47,12 +48,7 @@ export class OpenRouterProvider implements LLMProvider {
           temperature: options.temperature ?? 0.3,
           max_tokens: options.maxTokens ?? 900,
         }),
-        signal: AbortSignal.timeout(90_000),
-      });
-      if (!res.ok) {
-        console.error("[cortex][openrouter] HTTP", res.status, (await res.text()).slice(0, 300));
-        throw new Error(`openrouter http ${res.status}`);
-      }
+      }, this.name);
       const data = (await res.json()) as {
         choices?: Array<{ message?: { content?: string } }>;
       };
@@ -62,8 +58,9 @@ export class OpenRouterProvider implements LLMProvider {
       }
       return { content: content.trim(), provider: this.name, model };
     } catch (e) {
+      if (e instanceof ProviderNotConfiguredError || e instanceof ProviderUnavailableError) throw e;
       console.error("[cortex][openrouter] generation failed:", e instanceof Error ? e.message : e);
-      throw new ProviderUnavailableError();
+      throw new ProviderUnavailableError("OpenRouter پاسخ نامعتبر برگرداند.", 502);
     }
   }
 
