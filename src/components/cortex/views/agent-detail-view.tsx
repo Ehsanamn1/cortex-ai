@@ -303,7 +303,7 @@ function ProviderTab({ agentId }: { agentId: string }) {
 
   return (
     <ProviderConnectionForm
-      key={data.config?.updatedAt ?? data.config?.id ?? "new"}
+      key={data.config?.id ?? "new"}
       agentId={agentId}
       config={data.config}
       configured={data.status.status === "configured"}
