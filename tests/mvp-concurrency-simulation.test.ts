@@ -59,11 +59,9 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
         messages: Array<{ role: string; content: string }>;
       };
       const question = body.messages.at(-1)?.content ?? "";
-      const system = body.messages.find((message) => message.role === "system")?.content ?? "";
-      const marker = system.match(/کاربر-\d+/)?.[0] ?? "کاربر-unknown";
       await Promise.resolve();
       return new Response(JSON.stringify({
-        choices: [{ message: { content: marker + " :: " + question } }],
+        choices: [{ message: { content: "پاسخ برای " + question } }],
       }), {
         status: 200,
         headers: { "content-type": "application/json" },
@@ -96,8 +94,21 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
 
     expect(results).toHaveLength(1000);
     expect(new Set(results.map((result) => result.content)).size).toBe(1000);
-    expect(results.every((result, index) => result.content === "کاربر-" + index + " :: سؤال کاربر " + index)).toBe(true);
+    expect(results.every((result, index) => result.content === "پاسخ برای سؤال کاربر " + index)).toBe(true);
     expect(results.every((result) => result.provider === "Simulation Provider")).toBe(true);
+    const calls = vi.mocked(globalThis.fetch).mock.calls;
+    expect(calls).toHaveLength(1000);
+    for (const [input, init] of calls) {
+      const body = JSON.parse(String(init?.body)) as {
+        messages: Array<{ role: string; content: string }>;
+      };
+      const question = body.messages.at(-1)?.content ?? "";
+      const index = Number(question.match(/سؤال کاربر (\d+)/)?.[1] ?? -1);
+      const system = body.messages.filter((message) => message.role === "system").map((message) => message.content).join("\n");
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(system).toContain("کاربر-" + index);
+      expect(system).not.toContain("کاربر-" + (index === 999 ? 0 : index + 1));
+    }
     expect(results.every((result) => result.model === "simulation-model")).toBe(true);
     expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledTimes(1000);
     expect(vi.mocked(db.agentProviderConfig.findUnique)).toHaveBeenCalledTimes(1000);
