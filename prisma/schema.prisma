@@ -39,6 +39,7 @@ model Workspace {
   providerConfig ProviderConfig?
   agentProviderConfigs AgentProviderConfig[]
   telegramBots   TelegramBot[]
+  providerHealth AgentProviderHealth[]
   usageEvents    UsageEvent[]
   auditLogs      AuditLog[]
   usagePolicy    UsagePolicy?
@@ -297,6 +298,7 @@ model TelegramBot {
   users      TelegramUser[]
   conversations Conversation[]
   usageEvents UsageEvent[]
+  profile TelegramBotProfile?
 
   @@index([workspaceId])
   @@index([agentId])
@@ -317,6 +319,32 @@ model TelegramAllowlistEntry {
 
   @@unique([botId, phoneNumber])
   @@index([botId, status])
+}
+
+model TelegramBotProfile {
+  id                    String   @id @default(cuid())
+  botId                  String   @unique
+  displayName            String   @default("")
+  shortDescription       String   @default("")
+  description            String   @default("")
+  welcomeTitle           String   @default("✨ خوش آمدید")
+  welcomeText            String   @default("من دستیار هوشمند Cortex هستم و به دانش و ایجنت این ربات متصل‌ام.\n\nبدون ثبت شماره موبایل شروع کنید؛ فقط پیام‌تان را بفرستید. 🚀")
+  welcomeBannerUrl       String?
+  helpText               String   @default("💬 پیام عادی → پاسخ از ایجنت\n🆕 گفتگوی جدید → یک conversation تازه\n📊 مصرف → وضعیت استفاده\n\nسؤال را کامل و واضح بفرستید.")
+  newChatText            String   @default("✅ گفتگوی جدید آماده است. پیام بعدی‌تان را بفرستید.")
+  blockedText            String   @default("⛔ دسترسی این حساب مسدود است.")
+  errorText              String   @default("⚠️ در پردازش این پیام مشکلی پیش آمد. لطفاً چند لحظه بعد دوباره تلاش کنید.")
+  thinkingMessages       String   @default("[\"🧠 در حال فکر کردن…\",\"🔎 در حال بررسی اطلاعات…\",\"✍️ در حال آماده‌سازی پاسخ…\"]")
+  newChatButtonText      String   @default("🆕 گفتگوی جدید")
+  helpButtonText         String   @default("❓ راهنما")
+  usageButtonText        String   @default("📊 مصرف")
+  showThinking           Boolean  @default(true)
+  showWelcomeBanner      Boolean  @default(false)
+  commandsJson           String   @default("[]")
+  updatedAt              DateTime @updatedAt
+  createdAt              DateTime @default(now())
+
+  bot TelegramBot @relation(fields: [botId], references: [id], onDelete: Cascade)
 }
 
 model TelegramUser {
@@ -524,6 +552,12 @@ model MemoryEntry {
   key            String
   value          String
   metadata       String?
+  importance     Int      @default(60)
+  confidence     Int      @default(80)
+  source         String   @default("explicit")
+  lastAccessedAt DateTime @default(now())
+  expiresAt      DateTime?
+  supersededById String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -533,6 +567,31 @@ model MemoryEntry {
   @@index([agentId, subjectKey, updatedAt])
   @@index([conversationId, updatedAt])
   @@index([workspaceId, updatedAt])
+  @@index([agentId, scope, subjectKey, importance, updatedAt])
+  @@index([agentId, expiresAt])
+}
+
+model AgentProviderHealth {
+  id                 String   @id @default(cuid())
+  agentId            String   @unique
+  workspaceId        String
+  state              String   @default("healthy")
+  consecutiveFailures Int     @default(0)
+  openedUntil        DateTime?
+  lastCode           String?
+  lastStatus         Int?
+  lastLatencyMs      Int?
+  lastError          String?
+  lastErrorAt        DateTime?
+  lastSuccessAt      DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, state])
+  @@index([openedUntil])
 }
 
 model AdminUser {
