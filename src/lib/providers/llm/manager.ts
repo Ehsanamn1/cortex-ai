@@ -137,7 +137,7 @@ class ProviderManager {
     return this.resolveEnvironment();
   }
 
-  async statusForAgent(agentId: string, workspaceId?: string): Promise<ProviderStatus> {
+  async statusForAgent(agentId: string): Promise<ProviderStatus> {
     const config = await db.agentProviderConfig.findUnique({ where: { agentId } });
     if (!config) {
       return {
