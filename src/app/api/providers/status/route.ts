@@ -3,6 +3,7 @@ import { requireSession, assertWorkspaceAccess } from '@/lib/server/auth';
 import { llmManager } from '@/lib/providers/llm/manager';
 import { embeddingManager } from '@/lib/providers/embeddings/manager';
 import { vectorStoreStatus } from '@/lib/providers/vector';
+import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,14 @@ export async function GET(req: Request) {
       return { provider:'local' as const, status:'not_configured' as const };
     });
 
-    return applyCors(jsonOk({ llm:llmResult, embeddings:embeddingManager.status(), vectorStore:vectorResult }), req.headers.get('origin'));
+    const health = workspaceId
+      ? await db.agentProviderHealth.findMany({
+          where: { workspaceId },
+          select: { agentId:true,state:true,consecutiveFailures:true,openedUntil:true,lastCode:true,lastStatus:true,lastLatencyMs:true,lastErrorAt:true,lastSuccessAt:true },
+          orderBy: { updatedAt: 'desc' },
+        }).catch(() => [])
+      : [];
+    return applyCors(jsonOk({ llm:llmResult, embeddings:embeddingManager.status(), vectorStore:vectorResult, agentHealth:health }), req.headers.get('origin'));
   } catch(e) {
     return toErrorResponse(e);
   }
