@@ -1,4 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
+
+vi.mock("@/lib/providers/llm/provider-url", () => ({
+  validateProviderBaseUrl: () => undefined,
+  assertPublicProviderBaseUrl: async (value: string) => new URL(value),
+}));
 import { AnthropicProvider } from "@/lib/providers/llm/anthropic";
 import { GeminiProvider } from "@/lib/providers/llm/gemini";
 
