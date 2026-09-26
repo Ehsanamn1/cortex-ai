@@ -113,6 +113,7 @@ describe("Telegram 10-user simulation", () => {
     expect(vi.mocked(db.usageEvent.create)).toHaveBeenCalledTimes(10);
 
     const fetchMock = vi.mocked(globalThis.fetch);
-    expect(fetchMock.mock.calls.filter(([input]) => String(input).includes("/sendMessage")).length).toBeGreaterThanOrEqual(20);
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).includes("/sendMessage")).length).toBeGreaterThanOrEqual(10);
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).includes("/editMessageText")).length).toBeGreaterThanOrEqual(10);
   });
 });
