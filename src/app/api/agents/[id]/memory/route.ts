@@ -97,7 +97,7 @@ export async function DELETE(req: Request, { params }: Params) {
       throw Object.assign(new Error("دسترسی حذف حافظه را ندارید."), { status: 403 });
     }
     const url = new URL(req.url);
-    const body = await readJson<Record<string, unknown>>(req).catch(() => ({}));
+    const body = await readJson<Record<string, unknown>>(req).catch(() => ({} as Record<string, unknown>));
     const deleted = await forgetMemory({
       workspaceId: agent.workspaceId,
       agentId: agent.id,
