@@ -42,6 +42,47 @@ vi.mock("@/lib/server/usage", () => ({
   releaseUsageReservation: vi.fn(async () => undefined),
 }));
 
+vi.mock("@/lib/telegram/profile", () => ({
+  getTelegramBotProfile: vi.fn(async () => ({
+    botId: "bot-1",
+    displayName: "Test Bot",
+    shortDescription: "Test",
+    description: "Test",
+    welcomeTitle: "✨ خوش آمدید",
+    welcomeText: "شروع کن",
+    welcomeBannerUrl: "",
+    helpText: "راهنما",
+    newChatText: "گفتگوی جدید آماده است.",
+    blockedText: "⛔ مسدود",
+    errorText: "خطا",
+    thinkingMessages: ["🧠 فکر"],
+    newChatButtonText: "🆕 جدید",
+    helpButtonText: "❓ راهنما",
+    usageButtonText: "📊 مصرف",
+    showThinking: true,
+    showWelcomeBanner: false,
+    commands: [],
+  })),
+}));
+
+vi.mock("@/lib/runtime/tools", () => ({
+  listAgentTools: vi.fn(async () => []),
+}));
+
+vi.mock("@/lib/runtime/engine", () => ({
+  runAgentExecution: vi.fn(async ({ input }: { input: string }) => ({
+    executionId: "execution-1",
+    content: "پاسخ از Provider اختصاصی این ایجنت",
+    provider: "Mock Provider",
+    model: "mock-telegram-model",
+    retrieval: [],
+    auxiliaryInputTokens: 0,
+    auxiliaryOutputTokens: 0,
+    latencyMs: 12,
+    toolUsed: null,
+  })),
+}));
+
 vi.mock("@/lib/rag/pipeline", () => ({
   RAG_QUERY_EXPANSION_RESERVE_TOKENS: 384,
   answerWithKnowledge: vi.fn(async () => ({
@@ -133,12 +174,13 @@ describe("Telegram -> agent provider simulation", () => {
       },
     });
 
-    const rag = await import("@/lib/rag/pipeline");
-    expect(vi.mocked(rag.answerWithKnowledge)).toHaveBeenCalledWith(expect.objectContaining({
+    const runtime = await import("@/lib/runtime/engine");
+    expect(vi.mocked(runtime.runAgentExecution)).toHaveBeenCalledWith(expect.objectContaining({
       agentId: "agent-telegram-1",
       workspaceId: "workspace-1",
       memorySubjectKey: "telegram:bot-1:123",
-      question: "سلام، یک سؤال واقعی دارم",
+      input: "سلام، یک سؤال واقعی دارم",
+      conversationId: "conversation-1",
     }));
     expect(vi.mocked(db.telegramUser.update)).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: "tg-user-1" },

@@ -2,6 +2,19 @@ import { db } from "@/lib/db";
 
 export type MemoryScope = "conversation" | "user";
 
+function rankMemory(entry: {
+  importance: number;
+  confidence: number;
+  updatedAt: Date;
+  lastAccessedAt: Date;
+}) {
+  const ageHours = Math.max(0, (Date.now() - entry.updatedAt.getTime()) / 3_600_000);
+  const accessAgeHours = Math.max(0, (Date.now() - entry.lastAccessedAt.getTime()) / 3_600_000);
+  const recency = Math.max(0, 100 - Math.min(100, ageHours * 2));
+  const access = Math.max(0, 100 - Math.min(100, accessAgeHours));
+  return entry.importance * 0.55 + entry.confidence * 0.25 + recency * 0.15 + access * 0.05;
+}
+
 export async function loadAgentMemory(
   agentId: string,
   limit = 16,
@@ -9,7 +22,7 @@ export async function loadAgentMemory(
   subjectKey?: string | null,
 ) {
   const safeLimit = Math.min(50, Math.max(1, limit));
-  return db.memoryEntry.findMany({
+  const entries = await db.memoryEntry.findMany({
     where: conversationId
       ? {
           agentId,
@@ -21,9 +34,25 @@ export async function loadAgentMemory(
       : subjectKey
         ? { agentId, conversationId: null, scope: "user", subjectKey }
         : { agentId, conversationId: null, scope: "conversation" },
-    orderBy: { updatedAt: "desc" },
-    take: safeLimit,
+    take: Math.min(50, safeLimit * 3),
   });
+
+  const now = new Date();
+  const ranked = entries
+    .filter((entry) => !entry.expiresAt || entry.expiresAt > now)
+    .filter((entry) => !entry.supersededById)
+    .map((entry) => ({ entry, score: rankMemory(entry) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, safeLimit);
+
+  if (ranked.length) {
+    void db.memoryEntry.updateMany({
+      where: { id: { in: ranked.map(({ entry }) => entry.id) } },
+      data: { lastAccessedAt: now },
+    }).catch(() => undefined);
+  }
+
+  return ranked.map(({ entry }) => entry);
 }
 
 export async function remember(params: {
@@ -36,15 +65,16 @@ export async function remember(params: {
   value: string;
   type?: string;
   metadata?: unknown;
+  importance?: number;
+  confidence?: number;
+  source?: string;
+  expiresAt?: Date | null;
 }) {
   const scope = params.scope ?? (params.conversationId ? "conversation" : "user");
   const subjectKey = params.subjectKey ?? null;
-  const id = [
-    params.agentId,
-    scope,
-    subjectKey ?? "global",
-    params.key,
-  ].join(":");
+  const id = [params.agentId, scope, subjectKey ?? "global", params.key].join(":");
+  const importance = Math.max(0, Math.min(100, Math.floor(params.importance ?? (params.type === "preference" ? 75 : 60))));
+  const confidence = Math.max(0, Math.min(100, Math.floor(params.confidence ?? 80)));
 
   return db.memoryEntry.upsert({
     where: { id },
@@ -55,6 +85,12 @@ export async function remember(params: {
       subjectKey,
       type: params.type ?? "fact",
       metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+      importance,
+      confidence,
+      source: params.source ?? "explicit",
+      expiresAt: params.expiresAt ?? null,
+      lastAccessedAt: new Date(),
+      supersededById: null,
     },
     create: {
       id,
@@ -67,17 +103,51 @@ export async function remember(params: {
       value: params.value,
       type: params.type ?? "fact",
       metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+      importance,
+      confidence,
+      source: params.source ?? "explicit",
+      expiresAt: params.expiresAt ?? null,
+      lastAccessedAt: new Date(),
     },
   });
 }
 
-/**
- * Fast, deterministic memory extraction.
- *
- * We deliberately store only explicit, low-risk profile/preferences stated by
- * the user. No addresses, phone numbers, credentials, health, financial or
- * other sensitive data is promoted into long-term memory automatically.
- */
+export async function forgetMemory(params: {
+  workspaceId: string;
+  agentId: string;
+  key?: string;
+  subjectKey?: string;
+  conversationId?: string;
+}) {
+  const hasSelector = Boolean(params.key || params.subjectKey || params.conversationId);
+  if (!hasSelector) {
+    throw Object.assign(new Error("برای حذف حافظه حداقل یک محدوده یا کلید مشخص کنید."), { status: 400 });
+  }
+  return db.memoryEntry.deleteMany({
+    where: {
+      workspaceId: params.workspaceId,
+      agentId: params.agentId,
+      ...(params.key ? { key: params.key } : {}),
+      ...(params.subjectKey ? { subjectKey: params.subjectKey } : {}),
+      ...(params.conversationId ? { conversationId: params.conversationId } : {}),
+    },
+  });
+}
+
+export async function buildConversationSummary(conversationId: string, maxChars = 4000) {
+  const messages = await db.message.findMany({
+    where: { conversationId, role: { in: ["user", "assistant"] } },
+    orderBy: { createdAt: "desc" },
+    take: 24,
+    select: { role: true, content: true },
+  });
+  if (!messages.length) return null;
+  return messages.reverse()
+    .map((m) => (m.role === "user" ? "کاربر: " : "دستیار: ") + m.content.trim())
+    .join("\n")
+    .slice(-maxChars);
+}
+
 export function extractExplicitMemories(text: string): Array<{ key: string; value: string; type: string }> {
   const input = text.replace(/\s+/g, " ").trim().slice(0, 1500);
   if (!input) return [];
@@ -120,6 +190,9 @@ export async function rememberExplicitUserFacts(params: {
         key: memory.key,
         value: memory.value,
         type: memory.type,
+        importance: memory.type === "preference" ? 80 : 70,
+        confidence: 90,
+        source: "explicit_user",
       })
     )
   );

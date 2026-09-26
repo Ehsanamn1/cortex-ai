@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { applyCors, corsPreflight, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
+import { runAgentExecution } from "@/lib/runtime/engine";
 import { reserveUsageWithinLimits, releaseUsageReservation } from "@/lib/server/usage";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
 
@@ -25,13 +26,6 @@ export async function POST(req: Request, { params }: Params) {
 
     const body = await readJson<Record<string, unknown>>(req);
 
-    let rag: typeof import("@/lib/rag/pipeline");
-    try {
-      rag = await import("@/lib/rag/pipeline");
-    } catch (error) {
-      console.error("[cortex][agent-api] RAG module load failed:", error);
-      return applyCors(jsonError("سرویس پاسخ‌گویی در حال حاضر در دسترس نیست؛ لطفاً دوباره تلاش کنید.", 503), req.headers.get("origin"));
-    }
     const message = typeof body.message === "string" ? body.message.trim() : "";
     if (!message) return applyCors(jsonError("فیلد message الزامی است.", 400), req.headers.get("origin"));
     if (message.length > 8000) return applyCors(jsonError("پیام بیش از حد طولانی است (حداکثر ۸۰۰۰ کاراکتر).", 400), req.headers.get("origin"));
@@ -60,42 +54,97 @@ export async function POST(req: Request, { params }: Params) {
     const promptHistory = existing.slice(-12);
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(message);
 
-    reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens + rag.RAG_QUERY_EXPANSION_RESERVE_TOKENS, auth.agent.maxTokens);
+    reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens + 384, auth.agent.maxTokens);
 
     await db.message.create({ data: { conversationId: conversation.id, role: "user", content: message } });
 
     try {
-      const answer = await rag.answerWithKnowledge({
-        agentId,
+      const runtime = await runAgentExecution({
         workspaceId: auth.agent.workspaceId,
+        agentId,
         conversationId: conversation.id,
-        persona: auth.agent,
-        history: promptHistory.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
-        question: message,
+        memorySubjectKey: "api:" + agentId + ":" + clientId,
+        input: message,
+        history: promptHistory.map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
       });
-      const metadata = { sources: rag.toSourceRefs(answer.retrieval), retrieval: rag.toRetrievalDebug(answer.retrieval), provider: answer.provider, model: answer.model, latencyMs: answer.latencyMs };
-      const assistant = await db.message.create({ data: { conversationId: conversation.id, role: "assistant", content: answer.content, metadata: JSON.stringify(metadata) } });
+
+      const sources = (runtime.retrieval ?? []).map((r) => ({
+        index: r.index,
+        documentName: r.documentName,
+        page: r.page ?? null,
+        sourceUrl: r.sourceUrl ?? null,
+      }));
+      const retrieval = (runtime.retrieval ?? []).map((r) => ({
+        index: r.index,
+        score: Math.round(r.score * 1000) / 1000,
+        documentName: r.documentName,
+        page: r.page ?? null,
+        sourceUrl: r.sourceUrl ?? null,
+        snippet: r.text.slice(0, 220),
+      }));
+
+      const assistant = await db.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "assistant",
+          content: runtime.content,
+          metadata: JSON.stringify({
+            executionId: runtime.executionId,
+            sources,
+            retrieval,
+            provider: runtime.provider,
+            model: runtime.model,
+            latencyMs: runtime.latencyMs ?? 0,
+            toolUsed: runtime.toolUsed ?? null,
+          }),
+        },
+      });
       await db.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
-      const inputTokens = promptTokens + (answer.auxiliaryInputTokens ?? 0);
-      const outputTokens = estimateTokens(answer.content) + (answer.auxiliaryOutputTokens ?? 0);
+
+      const inputTokens = promptTokens + (runtime.auxiliaryInputTokens ?? 0);
+      const outputTokens = estimateTokens(runtime.content) + (runtime.auxiliaryOutputTokens ?? 0);
       const totalTokens = inputTokens + outputTokens;
       await db.$transaction([
-        db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens } }),
+        db.usageEvent.create({
+          data: {
+            workspaceId: auth.agent.workspaceId,
+            agentId,
+            channel: "api",
+            provider: runtime.provider,
+            model: runtime.model,
+            inputTokens,
+            outputTokens,
+            totalTokens,
+          },
+        }),
         ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
       ]);
       reservationId = null;
+
       return applyCors(jsonOk({
         id: assistant.id,
         conversationId: conversation.id,
         agent: { id: auth.agent.id, name: auth.agent.name },
         message: assistant.content,
-        sources: metadata.sources,
+        sources,
         usage: { inputTokens, outputTokens, totalTokens },
+        execution: {
+          id: runtime.executionId,
+          provider: runtime.provider,
+          model: runtime.model,
+          latencyMs: runtime.latencyMs ?? 0,
+          toolUsed: runtime.toolUsed ?? null,
+        },
       }), req.headers.get("origin"));
     } catch (e) {
       await releaseUsageReservation(reservationId);
       reservationId = null;
-      if (e instanceof rag.RagConfigError) return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
+      if (e && typeof e === "object" && "status" in e && Number((e as { status?: unknown }).status) === 503) {
+        return applyCors(jsonError(e instanceof Error ? e.message : "سرویس پاسخ‌گویی در دسترس نیست.", 503), req.headers.get("origin"));
+      }
       throw e;
     }
   } catch (e) {

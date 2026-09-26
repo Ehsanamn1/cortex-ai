@@ -5,7 +5,7 @@ import { llmManager } from "@/lib/providers/llm/manager";
 import { ProviderNotConfiguredError, type ChatTurn } from "@/lib/providers/llm/types";
 import { buildRagMessages, type RetrievedChunk } from "./prompt";
 import { estimateTokens } from "@/lib/server/audit";
-import { remember, rememberExplicitUserFacts } from "@/lib/runtime/memory";
+import { loadAgentMemory, remember, rememberExplicitUserFacts } from "@/lib/runtime/memory";
 
 export interface RagAnswer {
   content: string;
@@ -78,15 +78,10 @@ export async function answerWithKnowledge(params: {
     select: { id: true },
   });
   const readySourceIds = readySources.map((source) => source.id);
-  const chunkCount = readySourceIds.length === 0
-    ? 0
-    : await db.knowledgeChunk.count({
-        where: { agentId, workspaceId, sourceId: { in: readySourceIds } },
-      });
   let searchResults: SearchResult[] = [];
   let auxiliaryInputTokens = 0;
   let auxiliaryOutputTokens = 0;
-  if (chunkCount > 0) {
+  if (readySourceIds.length > 0) {
     const embedder = embeddingManager.resolve();
     if (embedder) {
       try {
@@ -184,24 +179,10 @@ export async function answerWithKnowledge(params: {
   const longTermMemory =
     persona.memoryEnabled === false || !conversationId
       ? []
-      : await db.memoryEntry.findMany({
-          where: {
-            agentId,
-            workspaceId,
-            OR: [
-              { conversationId },
-              ...(memorySubjectKey
-                ? [{ conversationId: null, scope: "user", subjectKey: memorySubjectKey }]
-                : []),
-            ],
-          },
-          orderBy: { updatedAt: "desc" },
-          take: 16,
-          select: { key: true, value: true },
-        });
+      : await loadAgentMemory(agentId, 16, conversationId, memorySubjectKey);
   const messages: ChatTurn[] = buildRagMessages({
     persona,
-    memory: longTermMemory,
+    memory: longTermMemory.map((m) => ({ key: m.key, value: m.value })),
     retrieved,
     history: effectiveHistory,
     question,
