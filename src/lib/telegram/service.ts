@@ -484,6 +484,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
     const answer = await answerWithKnowledge({
       agentId: bot.agentId,
       workspaceId: bot.workspaceId,
+      conversationId: conversation.id,
       persona: botAgent,
       history: promptHistory.map((m) => ({
         role: m.role as 'user' | 'assistant',

@@ -36,7 +36,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
   if (!resolved.provider) throw Object.assign(new Error("سرویس‌دهنده هوش مصنوعی پیکربندی نشده است."), { status: 503 });
 
   const tools = await listAgentTools(agent.id);
-  const memories = agent.memoryEnabled ? await loadAgentMemory(agent.id, 8) : [];
+  const memories = agent.memoryEnabled ? await loadAgentMemory(agent.id, 8, input.conversationId) : [];
   const system = [agent.systemPrompt, agent.instructions, agent.persona, "نام ایجنت: " + agent.name,
     tools.length ? "اگر ابزار لازم است فقط JSON معتبر با type=tool_call برگردان. ابزارهای مجاز: " + tools.map(t => t.key + ": " + t.description + " schema=" + t.inputSchema).join(" | ") : "",
     memories.length ? "Memory:\n" + memories.map(m => m.key + ": " + m.value).join("\n") : ""].filter(Boolean).join("\n\n");
@@ -49,7 +49,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
     let toolUsed: string | null = null;
 
     if (tools.length === 0) {
-      const answer = await answerWithKnowledge({ agentId: agent.id, workspaceId: input.workspaceId, persona: agent, history, question: input.input });
+      const answer = await answerWithKnowledge({ agentId: agent.id, workspaceId: input.workspaceId, conversationId: input.conversationId, persona: agent, history, question: input.input });
       finalContent = answer.content;
     } else {
       let seq = 0;

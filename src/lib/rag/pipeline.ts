@@ -5,6 +5,7 @@ import { llmManager } from "@/lib/providers/llm/manager";
 import { ProviderNotConfiguredError, type ChatTurn } from "@/lib/providers/llm/types";
 import { buildRagMessages, type RetrievedChunk } from "./prompt";
 import { estimateTokens } from "@/lib/server/audit";
+import { remember } from "@/lib/runtime/memory";
 
 export interface RagAnswer {
   content: string;
@@ -56,10 +57,11 @@ export async function answerWithKnowledge(params: {
     memoryEnabled?: boolean;
     citationsEnabled?: boolean;
   };
+  conversationId?: string | null;
   history: Array<{ role: "user" | "assistant"; content: string }>;
   question: string;
 }): Promise<RagAnswer> {
-  const { agentId, workspaceId, persona, history, question } = params;
+  const { agentId, workspaceId, conversationId, persona, history, question } = params;
 
   // 1) Provider gate — honest failure, never a fake answer.
   const { provider: llm } = await llmManager.resolveForWorkspace(workspaceId);
@@ -177,7 +179,22 @@ export async function answerWithKnowledge(params: {
 
   // 3) Prompt + generation
   const effectiveHistory = persona.memoryEnabled === false ? [] : history;
-  const messages: ChatTurn[] = buildRagMessages({ persona, retrieved, history: effectiveHistory, question });
+  const longTermMemory =
+    persona.memoryEnabled === false || !conversationId
+      ? []
+      : await db.memoryEntry.findMany({
+          where: { agentId, workspaceId, conversationId },
+          orderBy: { updatedAt: "desc" },
+          take: 8,
+          select: { key: true, value: true },
+        });
+  const messages: ChatTurn[] = buildRagMessages({
+    persona,
+    memory: longTermMemory,
+    retrieved,
+    history: effectiveHistory,
+    question,
+  });
   const started = Date.now();
   let completion;
   try {
@@ -193,6 +210,19 @@ export async function answerWithKnowledge(params: {
       );
     }
     throw e;
+  }
+
+  if (persona.memoryEnabled !== false && conversationId) {
+    await remember({
+      workspaceId,
+      agentId,
+      conversationId,
+      key: "conversation:" + conversationId + ":last_user",
+      value: question.slice(0, 1000),
+      type: "interaction",
+    }).catch((error) => {
+      console.warn("[cortex][memory] durable interaction memory skipped:", error instanceof Error ? error.message : error);
+    });
   }
 
   return {

@@ -79,6 +79,7 @@ export async function POST(req: Request, { params }: Params) {
       const answer = await rag.answerWithKnowledge({
         agentId,
         workspaceId: auth.agent.workspaceId,
+        conversationId: conversation.id,
         persona: auth.agent,
         history: promptHistory.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
         question: message,
