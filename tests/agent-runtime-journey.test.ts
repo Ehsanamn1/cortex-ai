@@ -35,6 +35,8 @@ import { listAgentTools, executeTool } from "@/lib/runtime/tools";
 import { answerWithKnowledge } from "@/lib/rag/pipeline";
 import { runAgentExecution } from "@/lib/runtime/engine";
 
+const executionStepCreateMock = db.executionStep.create as unknown as ReturnType<typeof vi.fn>;
+
 const agent = {
   id: "agent-journey",
   workspaceId: "workspace-journey",
@@ -65,7 +67,7 @@ describe("Cortex end-to-end agent runtime journey simulation", () => {
     } as never);
     vi.mocked(db.execution.create).mockResolvedValue({ id: "exec-journey" } as never);
     vi.mocked(db.execution.update).mockResolvedValue({} as never);
-    vi.mocked(db.executionStep.create).mockImplementation(async ({ data }: any) => ({ id: "step-" + data.seq } as never));
+    executionStepCreateMock.mockImplementation(async ({ data }: any) => ({ id: "step-" + data.seq }));
     vi.mocked(db.executionStep.update).mockResolvedValue({} as never);
 
     vi.mocked(listAgentTools).mockResolvedValue([]);
@@ -173,7 +175,7 @@ describe("Cortex end-to-end agent runtime journey simulation", () => {
         executionId: "exec-journey",
       }),
     );
-    expect(db.executionStep.create.mock.calls.length).toBeGreaterThanOrEqual(3);
+    expect(executionStepCreateMock.mock.calls.length).toBeGreaterThanOrEqual(3);
     expect(db.execution.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: "exec-journey" },
       data: expect.objectContaining({
