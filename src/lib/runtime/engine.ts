@@ -89,7 +89,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
         if (!tool) throw new Error("Agent requested unavailable tool: " + call.tool);
         await input.onProgress?.("⚙️ در حال اجرای «" + tool.name + "»…");
         const result = await recordStep(execution?.id ?? null, ++seq, "tool", tool.name, call.arguments,
-          () => executeTool(tool, call.arguments, { workspaceId: input.workspaceId, agentId: agent.id, conversationId: input.conversationId, executionId: execution!.id }));
+          () => executeTool(tool, call.arguments, { workspaceId: input.workspaceId, agentId: agent.id, conversationId: input.conversationId, executionId: execution?.id ?? "ephemeral" }));
         modelMessages.push(
           { role: "assistant", content: plannedContent },
           { role: "user", content: "نتیجه ابزار " + call.tool + ": " + JSON.stringify(result).slice(0, 12000) + "\nادامه بده؛ اگر کار تمام شده پاسخ نهایی عادی بده و اگر ابزار دیگری لازم است tool_call بده." },
