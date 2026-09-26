@@ -20,7 +20,12 @@ export const TELEGRAM_PROFILE_DEFAULTS = {
   usageButtonText: "📊 مصرف",
   showThinking: true,
   showWelcomeBanner: false,
-  commands: [] as Array<{ command: string; description: string }>,
+  commands: [
+    { command: "start", description: "شروع" },
+    { command: "newchat", description: "گفتگوی جدید" },
+    { command: "help", description: "راهنما" },
+    { command: "usage", description: "مصرف" },
+  ] as Array<{ command: string; description: string }>,
 };
 
 export function parseTelegramProfile(raw: any) {
