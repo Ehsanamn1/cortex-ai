@@ -182,6 +182,9 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
         run: |
           set -euo pipefail
           base="https://cortex-ai.dengxiao445.workers.dev"
