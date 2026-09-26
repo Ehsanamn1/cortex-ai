@@ -126,7 +126,7 @@ export async function assertPublicProviderBaseUrl(raw: string): Promise<URL> {
   // Keep unit tests deterministic and avoid adding DNS traffic to non-production
   // development environments. Production Cloudflare Workers use DoH.
   if (process.env.APP_ENV === "production" || process.env.NODE_ENV === "production") {
-    const host = url.hostname.toLowerCase().replace(/.$/, "");
+    const host = url.hostname.toLowerCase().replace(/\.$/, "");
     const isLiteralIp = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(host) || host.includes(":");
     if (!isLiteralIp) await resolvePublicAddresses(host);
   }
