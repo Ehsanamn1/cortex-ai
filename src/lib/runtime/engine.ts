@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
 import type { ChatTurn } from "@/lib/providers/llm/types";
-import { answerWithKnowledge } from "@/lib/rag/pipeline";
+import { answerWithKnowledge, type RetrievedChunk } from "@/lib/rag/pipeline";
 import { loadAgentMemory, remember, rememberExplicitUserFacts } from "./memory";
 import { executeTool, listAgentTools } from "./tools";
 import type { AgentRuntimeInput } from "./types";
@@ -46,13 +46,22 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
   try { execution = await db.execution.create({ data: { workspaceId: input.workspaceId, agentId: agent.id, triggerType: "manual", status: "RUNNING", input: JSON.stringify(input.input) } }); } catch { execution = null; }
 
   try {
-    let finalContent: string;
+    let finalContent = "";
     let toolUsed: string | null = null;
+    let retrieval: RetrievedChunk[] = [];
+    let auxiliaryInputTokens = 0;
+    let auxiliaryOutputTokens = 0;
+    let latencyMs = 0;
 
     if (tools.length === 0) {
       await input.onProgress?.("🔎 در حال بررسی دانش و زمینه گفتگو…");
-      const answer = await answerWithKnowledge({ agentId: agent.id, workspaceId: input.workspaceId, conversationId: input.conversationId, persona: agent, history, question: input.input });
+      const generationStartedAt = Date.now();
+      const answer = await answerWithKnowledge({ agentId: agent.id, workspaceId: input.workspaceId, conversationId: input.conversationId, memorySubjectKey: input.memorySubjectKey, persona: agent, history, question: input.input });
       finalContent = answer.content;
+      retrieval = answer.retrieval;
+      auxiliaryInputTokens = answer.auxiliaryInputTokens ?? 0;
+      auxiliaryOutputTokens = answer.auxiliaryOutputTokens ?? 0;
+      latencyMs = answer.latencyMs || (Date.now() - generationStartedAt);
     } else {
       let seq = 0;
       const modelMessages: ChatTurn[] = [
@@ -115,7 +124,17 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
     if (execution) {
       await db.execution.update({ where: { id: execution.id }, data: { status: "COMPLETED", output: finalContent, completedAt: new Date(), metadata: JSON.stringify({ provider: resolved.status.provider, model: resolved.status.model, toolUsed }) } }).catch(() => undefined);
     }
-    return { executionId: execution?.id ?? "ephemeral", content: finalContent, provider: resolved.status.provider, model: resolved.status.model };
+    return {
+      executionId: execution?.id ?? "ephemeral",
+      content: finalContent,
+      provider: resolved.status.provider,
+      model: resolved.status.model,
+      retrieval,
+      auxiliaryInputTokens,
+      auxiliaryOutputTokens,
+      latencyMs,
+      toolUsed,
+    };
   } catch (error) {
     if (execution) await db.execution.update({ where: { id: execution.id }, data: { status: "FAILED", error: error instanceof Error ? error.message : "unknown error", completedAt: new Date() } }).catch(() => undefined);
     throw error;
