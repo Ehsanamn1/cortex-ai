@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
-import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
+import { applyCors, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { decryptSecret } from "@/lib/server/secrets";
 import { getBotInfo, configureBotProfile } from "@/lib/telegram/service";
 import { getTelegramBotProfile, invalidateTelegramBotProfile, profileUpdateData } from "@/lib/telegram/profile";
