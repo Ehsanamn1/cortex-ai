@@ -37,7 +37,7 @@ export async function GET(req: Request, { params }: Params) {
     const { id } = await params;
     const agent = await loadAgentForSession(session, id);
     const config = await db.agentProviderConfig.findUnique({ where: { agentId: agent.id } });
-    const status = await llmManager.statusForAgent(agent.id, agent.workspaceId);
+    const status = await llmManager.statusForAgent(agent.id);
 
     return applyCors(
       jsonOk({
