@@ -196,6 +196,8 @@ describe("OpenAI-compatible provider simulation", () => {
     expect(() => validateProviderBaseUrl("http://127.0.0.1:8080/v1")).toThrow();
     expect(() => validateProviderBaseUrl("http://localhost:3000/v1")).toThrow();
     expect(() => validateProviderBaseUrl("http://169.254.169.254/latest")).toThrow();
+    expect(() => validateProviderBaseUrl("http://224.0.0.1/v1")).toThrow();
+    expect(() => validateProviderBaseUrl("https://user:pass@provider.example/v1")).toThrow();
     expect(() => validateProviderBaseUrl("https://provider.example/v1?model=bad")).toThrow();
     expect(() => validateProviderBaseUrl("https://provider.example/v1#fragment")).toThrow();
 
