@@ -138,7 +138,33 @@ class ProviderManager {
   }
 
   async statusForAgent(agentId: string, workspaceId?: string): Promise<ProviderStatus> {
-    return (await this.resolveForAgent(agentId, workspaceId)).status;
+    const config = await db.agentProviderConfig.findUnique({ where: { agentId } });
+    if (!config) {
+      return {
+        provider: "none",
+        status: "not_configured",
+        model: null,
+        source: "none",
+      };
+    }
+    if (!config.enabled) {
+      return {
+        provider: config.providerName,
+        status: "not_configured",
+        model: config.model || null,
+        source: "none",
+      };
+    }
+
+    const provider = buildConfiguredProvider(config);
+    return provider.isConfigured()
+      ? this.statusFor(provider, "agent")
+      : {
+          provider: config.providerName,
+          status: "not_configured",
+          model: config.model || null,
+          source: "none",
+        };
   }
 
   async statusForWorkspace(workspaceId?: string): Promise<ProviderStatus> {
