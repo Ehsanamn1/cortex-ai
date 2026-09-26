@@ -1,0 +1,27 @@
+name: Cortex Production Load Smoke
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  load:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[load-test]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        concurrency: [10, 100, 1000]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Run public endpoint load smoke
+        env:
+          CORTEX_BASE_URL: https://cortex-ai.dengxiao445.workers.dev
+          LOAD_CONCURRENCY: ${{ matrix.concurrency }}
+          LOAD_ROUNDS: 1
+        run: node scripts/load-smoke.mjs
