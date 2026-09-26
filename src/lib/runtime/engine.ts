@@ -32,8 +32,8 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
   const agent = await db.agent.findFirst({ where: { id: input.agentId, workspaceId: input.workspaceId, status: "active" } });
   if (!agent) throw Object.assign(new Error("ایجنت فعال پیدا نشد."), { status: 404 });
 
-  const resolved = await llmManager.resolveForWorkspace(input.workspaceId);
-  if (!resolved.provider) throw Object.assign(new Error("سرویس‌دهنده هوش مصنوعی پیکربندی نشده است."), { status: 503 });
+  const resolved = await llmManager.resolveForAgent(agent.id, input.workspaceId);
+  if (!resolved.provider) throw Object.assign(new Error("سرویس‌دهنده هوش مصنوعی برای این ایجنت پیکربندی نشده است. از تب «هوش مصنوعی» ایجنت استفاده کنید."), { status: 503 });
 
   const tools = await listAgentTools(agent.id);
   const memories = agent.memoryEnabled ? await loadAgentMemory(agent.id, 8, input.conversationId) : [];
