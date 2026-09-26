@@ -13,6 +13,7 @@ type Params = { params: Promise<{ id: string }> };
 
 function serializeConfig(config: {
   id: string;
+  providerType: string;
   providerName: string;
   baseUrl: string;
   model: string;
@@ -22,6 +23,7 @@ function serializeConfig(config: {
 }) {
   return {
     id: config.id,
+    providerType: config.providerType,
     providerName: config.providerName,
     baseUrl: config.baseUrl,
     model: config.model,
@@ -66,6 +68,10 @@ export async function PUT(req: Request, { params }: Params) {
     }
 
     const body = await readJson<Record<string, unknown>>(req);
+    const providerType =
+      typeof body.providerType === "string" && ["openai-compatible", "anthropic", "gemini"].includes(body.providerType)
+        ? body.providerType
+        : "openai-compatible";
     const providerName = typeof body.providerName === "string"
       ? body.providerName.trim().slice(0, 80)
       : "";
@@ -100,7 +106,14 @@ export async function PUT(req: Request, { params }: Params) {
 
     const current = await db.agentProviderConfig.findUnique({ where: { agentId: agent.id } });
 
-    if (authMode !== "none" && !apiKey && !current?.apiKeyEncrypted) {
+    if (providerType !== "openai-compatible" && !apiKey && !current?.apiKeyEncrypted) {
+      return applyCors(
+        jsonError("این نوع Provider به API Key نیاز دارد.", 400),
+        req.headers.get("origin"),
+      );
+    }
+
+    if (providerType === "openai-compatible" && authMode !== "none" && !apiKey && !current?.apiKeyEncrypted) {
       return applyCors(
         jsonError("برای این اتصال، API Key الزامی است.", 400),
         req.headers.get("origin"),
@@ -111,6 +124,7 @@ export async function PUT(req: Request, { params }: Params) {
       where: { agentId: agent.id },
       update: {
         workspaceId: agent.workspaceId,
+        providerType,
         providerName,
         baseUrl,
         model,
@@ -121,6 +135,7 @@ export async function PUT(req: Request, { params }: Params) {
       create: {
         agentId: agent.id,
         workspaceId: agent.workspaceId,
+        providerType,
         providerName,
         baseUrl,
         model,
@@ -139,6 +154,7 @@ export async function PUT(req: Request, { params }: Params) {
         entityId: config.id,
         metadata: JSON.stringify({
           agentId: agent.id,
+          providerType,
           providerName,
           baseUrl,
           model,
