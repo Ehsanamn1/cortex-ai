@@ -22,33 +22,27 @@ export async function POST(req: Request, { params }: Params) {
     if (!apiKey) return applyCors(jsonError("API Key ارسال نشده است.", 401), req.headers.get("origin"));
     const auth = await authenticateAgentApiKey(apiKey);
     if (!auth || auth.agentId !== agentId) return applyCors(jsonError("API Key نامعتبر یا برای این ایجنت نیست.", 401), req.headers.get("origin"));
-    console.info("[cortex][agent-api] stage=auth-ok");
     rateLimit(req, "agent-api-" + auth.id, 60, 60000);
 
     const body = await readJson<Record<string, unknown>>(req);
 
-    console.info("[cortex][agent-api] stage=provider-preflight");
     let providerReady = false;
     try {
       providerReady = Boolean((await llmManager.resolveForWorkspace(auth.agent.workspaceId)).provider);
     } catch (error) {
       console.error("[cortex][agent-api] provider preflight failed:", error);
     }
-    console.info("[cortex][agent-api] stage=provider-preflight-done providerReady=" + String(providerReady));
     if (!providerReady) {
       return applyCors(jsonError("سرویس‌دهنده هوش مصنوعی پیکربندی نشده است. لطفاً از تنظیمات، وضعیت سرویس را بررسی کنید.", 503), req.headers.get("origin"));
     }
 
-    console.info("[cortex][agent-api] stage=rag-import");
     let rag: typeof import("@/lib/rag/pipeline");
     try {
       rag = await import("@/lib/rag/pipeline");
-      console.info("[cortex][agent-api] stage=rag-import-done");
     } catch (error) {
       console.error("[cortex][agent-api] RAG module load failed:", error);
       return applyCors(jsonError("سرویس پاسخ‌گویی در حال حاضر در دسترس نیست؛ لطفاً دوباره تلاش کنید.", 503), req.headers.get("origin"));
     }
-    console.info("[cortex][agent-api] stage=message-validation");
     const message = typeof body.message === "string" ? body.message.trim() : "";
     if (!message) return applyCors(jsonError("فیلد message الزامی است.", 400), req.headers.get("origin"));
     if (message.length > 8000) return applyCors(jsonError("پیام بیش از حد طولانی است (حداکثر ۸۰۰۰ کاراکتر).", 400), req.headers.get("origin"));

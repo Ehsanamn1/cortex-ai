@@ -2,10 +2,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cortex-ai",
   "account_id": "cddba2278fda0cf565b31f9280a7af1f",
-  "main": "vinext/server/fetch-handler",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-09-22",
   "compatibility_flags": [
-    "nodejs_compat"
+    "nodejs_compat",
+    "nodejs_als"
   ],
   "workers_dev": true,
   "preview_urls": true,
