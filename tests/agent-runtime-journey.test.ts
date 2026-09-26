@@ -48,26 +48,21 @@ const agent = {
   memoryEnabled: true,
 };
 
-function provider(messages: Array<{ content: string }>) {
-  let index = 0;
-  return {
-    name: "Journey Provider",
-    model: () => "journey-model",
-    isConfigured: () => true,
-    healthCheck: vi.fn(async () => ({ ok: true as const, latencyMs: 1, sample: "OK" })),
-    generateResponse: vi.fn(async () => ({
-      content: messages[index++]?.content ?? "پاسخ نهایی",
-      provider: "Journey Provider",
-      model: "journey-model",
-    })),
-  };
-}
-
 describe("Cortex end-to-end agent runtime journey simulation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     vi.mocked(db.agent.findFirst).mockResolvedValue(agent as never);
+    vi.mocked(llmManager.resolveForAgent).mockResolvedValue({
+      provider: {
+        name: "Journey Provider",
+        model: () => "journey-model",
+        isConfigured: () => true,
+        healthCheck: vi.fn(async () => ({ ok: true as const, latencyMs: 1, sample: "OK" })),
+        generateResponse: vi.fn(async () => ({ content: "پاسخ نهایی", provider: "Journey Provider", model: "journey-model" })),
+      },
+      status: { provider: "Journey Provider", status: "configured", model: "journey-model", source: "agent" },
+    } as never);
     vi.mocked(db.execution.create).mockResolvedValue({ id: "exec-journey" } as never);
     vi.mocked(db.execution.update).mockResolvedValue({} as never);
     vi.mocked(db.executionStep.create).mockImplementation(async ({ data }: any) => ({ id: "step-" + data.seq } as never));
