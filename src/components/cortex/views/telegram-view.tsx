@@ -251,6 +251,10 @@ function TelegramCustomizer({ botId }: { botId: string }) {
     staleTime: 15_000,
   });
   const profile = q.data?.profile;
+  const [displayName, setDisplayName] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
+  const [description, setDescription] = useState("");
+  const [welcomeTitle, setWelcomeTitle] = useState("");
   const [welcome, setWelcome] = useState("");
   const [help, setHelp] = useState("");
   const [newChat, setNewChat] = useState("");
@@ -265,6 +269,10 @@ function TelegramCustomizer({ botId }: { botId: string }) {
 
   useEffect(() => {
     if (!profile) return;
+    setDisplayName(profile.displayName);
+    setShortDescription(profile.shortDescription);
+    setDescription(profile.description);
+    setWelcomeTitle(profile.welcomeTitle);
     setWelcome(profile.welcomeText);
     setHelp(profile.helpText);
     setNewChat(profile.newChatText);
@@ -280,6 +288,10 @@ function TelegramCustomizer({ botId }: { botId: string }) {
 
   const save = useMutation({
     mutationFn: () => api.updateTelegramBotProfile(botId, {
+      displayName: displayName.trim(),
+      shortDescription: shortDescription.trim(),
+      description: description.trim(),
+      welcomeTitle: welcomeTitle.trim(),
       welcomeText: welcome.trim(),
       helpText: help.trim(),
       newChatText: newChat.trim(),
@@ -313,6 +325,10 @@ function TelegramCustomizer({ botId }: { botId: string }) {
         <p className="text-xs leading-6 text-muted-foreground">متن‌های خوش‌آمد، راهنما، دکمه‌ها، پیام‌های «در حال کار» و بنر را برای همین ربات تغییر بده. ذخیره‌سازی روی خود Bot Profile انجام می‌شود.</p>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2"><Label>نام نمایشی Bot</Label><Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="نام دستیار کسب‌وکار" /></div>
+        <div className="space-y-2"><Label>توضیح کوتاه Bot</Label><Input value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} /></div>
+        <div className="space-y-2 md:col-span-2"><Label>توضیح کامل Bot</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} /></div>
+        <div className="space-y-2"><Label>عنوان خوش‌آمد</Label><Input value={welcomeTitle} onChange={(e) => setWelcomeTitle(e.target.value)} /></div>
         <div className="space-y-2 md:col-span-2"><Label>متن خوش‌آمدگویی</Label><Textarea value={welcome} onChange={(e) => setWelcome(e.target.value)} rows={4} /></div>
         <div className="space-y-2"><Label>متن راهنما</Label><Textarea value={help} onChange={(e) => setHelp(e.target.value)} rows={4} /></div>
         <div className="space-y-2"><Label>متن New Chat</Label><Textarea value={newChat} onChange={(e) => setNewChat(e.target.value)} rows={4} /></div>
