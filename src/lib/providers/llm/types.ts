@@ -102,7 +102,7 @@ export function classifyProviderFailure(
       causeMessage: message,
     });
   }
-  if (status === 429 || /rate.?limit|too many requests|quota/i.test(message)) {
+  if (status === 429 || /(?:\b429\b|rate.?limit|too many requests|quota)/i.test(message)) {
     return new ProviderUnavailableError({
       code: "provider_429",
       provider,
