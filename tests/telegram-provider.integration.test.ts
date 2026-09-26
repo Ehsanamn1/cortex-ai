@@ -25,6 +25,9 @@ vi.mock("@/lib/db", () => ({
     usageEvent: {
       create: vi.fn(),
     },
+    usageReservation: {
+      delete: vi.fn(),
+    },
     $transaction: vi.fn(async (operations: unknown[]) => Promise.all(operations)),
   },
 }));
