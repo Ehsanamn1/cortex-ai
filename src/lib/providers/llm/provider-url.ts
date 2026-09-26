@@ -67,3 +67,63 @@ export function validateProviderBaseUrl(raw: string): URL {
 
   return url;
 }
+
+
+const dnsSafetyCache = new Map<string, { expiresAt: number; safe: boolean }>();
+const DNS_CACHE_MS = 30_000;
+
+async function resolvePublicAddresses(hostname: string): Promise<string[]> {
+  const cache = dnsSafetyCache.get(hostname);
+  if (cache && cache.expiresAt > Date.now()) {
+    if (!cache.safe) throw new UnsafeProviderUrlError();
+    return [];
+  }
+
+  const answers = await Promise.all(
+    ["A", "AAAA"].map(async (type) => {
+      const endpoint =
+        "https://cloudflare-dns.com/dns-query?name=" +
+        encodeURIComponent(hostname) +
+        "&type=" +
+        type;
+      const response = await fetch(endpoint, {
+        headers: { accept: "application/dns-json" },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) throw new UnsafeProviderUrlError();
+      const payload = (await response.json()) as {
+        Status?: number;
+        Answer?: Array<{ type?: number; data?: string }>;
+      };
+      if ((payload.Status ?? 2) !== 0) return [];
+      return (payload.Answer ?? [])
+        .filter((record) => record.type === (type === "A" ? 1 : 28) && typeof record.data === "string")
+        .map((record) => record.data as string);
+    }),
+  );
+
+  const addresses = answers.flat();
+  const safe = addresses.length > 0 && !addresses.some(isPrivateIp);
+  dnsSafetyCache.set(hostname, { expiresAt: Date.now() + DNS_CACHE_MS, safe });
+  if (!safe) throw new UnsafeProviderUrlError();
+  return addresses;
+}
+
+/**
+ * In production, re-check hostname resolution before each upstream request.
+ * This blocks the common case where a public-looking hostname resolves to a
+ * private/link-local address. Literal private addresses are blocked above.
+ */
+export async function assertPublicProviderBaseUrl(raw: string): Promise<URL> {
+  const url = validateProviderBaseUrl(raw);
+
+  // Keep unit tests deterministic and avoid adding DNS traffic to non-production
+  // development environments. Production Cloudflare Workers use DoH.
+  if (process.env.APP_ENV === "production" || process.env.NODE_ENV === "production") {
+    const host = url.hostname.toLowerCase().replace(/.$/, "");
+    const isLiteralIp = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(host) || host.includes(":");
+    if (!isLiteralIp) await resolvePublicAddresses(host);
+  }
+
+  return url;
+}
