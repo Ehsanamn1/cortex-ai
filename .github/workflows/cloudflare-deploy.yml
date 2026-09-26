@@ -278,8 +278,8 @@ jobs:
 
           knowledge_response="$(mktemp)"
           knowledge_file="$(mktemp --suffix=.txt)"
-          printf 'Cortex smoke knowledge\\nنام محصول: Cortex AI\\nاین سند برای تست واقعی ingestion و retrieval pipeline ساخته شده است.' > "$knowledge_file"
-          knowledge_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 60 -b "$smoke_cookie" -H "Content-Type: multipart/form-data" -F "file=@$knowledge_file;filename=smoke-knowledge.txt;text/plain" -o "$knowledge_response" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/knowledge")"
+          printf "%s\n" "Cortex smoke knowledge" "نام محصول: Cortex AI" "این سند برای تست واقعی ingestion و retrieval pipeline ساخته شده است." > "$knowledge_file"
+          knowledge_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 60 -b "$smoke_cookie" -F "file=@$knowledge_file;filename=smoke-knowledge.txt;type=text/plain" -o "$knowledge_response" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/knowledge")"
           echo "POST /api/agents/$smoke_agent_id/knowledge -> HTTP $knowledge_status"
           cat "$knowledge_response" | jq . || cat "$knowledge_response"
           test "$knowledge_status" = "202"
@@ -290,70 +290,16 @@ jobs:
           for _ in 1 2 3 4 5 6 7 8 9 10; do
             sleep 2
             knowledge_state_response="$(curl -sS --retry 2 --retry-delay 1 --retry-all-errors --max-time 20 -b "$smoke_cookie" "$base/api/agents/$smoke_agent_id/knowledge")"
-            knowledge_ready="$(printf '%s' "$knowledge_state_response" | jq -r --arg id "$smoke_source_id" '.sources[] | select(.id == $id) | .status' | grep -q '^ready
-          api_key_response="$(mktemp)"
-          api_key_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d '{"name":"Live smoke key"}' -o "$api_key_response" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/api-keys")"
-          echo "POST $base/api/agents/$smoke_agent_id/api-keys -> HTTP $api_key_status"
-          test "$api_key_status" = "201"
-          smoke_api_key="$(jq -r '.key // empty' "$api_key_response")"
-          test -n "$smoke_api_key"
-
-          api_chat_response="$(mktemp)"
-          api_chat_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -H "Authorization: Bearer $smoke_api_key" -H "Content-Type: application/json" -d '{"message":"Cortex live smoke","clientId":"cloudflare-smoke","newChat":true}' -o "$api_chat_response" -w "%{http_code}" "$base/api/v1/agents/$smoke_agent_id/chat")"
-          echo "POST /api/v1/agents/$smoke_agent_id/chat (authenticated) -> HTTP $api_chat_status"
-          if [ "$api_chat_status" = "200" ]; then
-            smoke_conversation_id="$(jq -r '.conversationId // empty' "$api_chat_response")"
-            test -n "$smoke_conversation_id"
-            echo "Authenticated Agent API chat succeeded."
-          elif [ "$api_chat_status" = "503" ] && grep -q "پیکربندی نشده" "$api_chat_response"; then
-            echo "Authenticated Agent API route is working; live LLM provider is not configured, so generation is intentionally unavailable."
-          else
-            cat "$api_chat_response"
-            echo "Authenticated Agent API smoke test failed."
-            exit 1
-          fi
-
-          openai_response="$(mktemp)"
-          openai_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -H "Authorization: Bearer $smoke_api_key" -H "Content-Type: application/json" -d '{"messages":[{"role":"user","content":"Cortex live smoke"}],"clientId":"cloudflare-smoke","newChat":true}' -o "$openai_response" -w "%{http_code}" "$base/api/v1/chat/completions")"
-          echo "POST /api/v1/chat/completions (authenticated) -> HTTP $openai_status"
-          if [ "$openai_status" = "200" ]; then
-            jq -e '.object == "chat.completion" and (.x_cortex.conversationId | length > 0)' "$openai_response" >/dev/null
-            echo "Authenticated OpenAI-compatible chat succeeded."
-          elif [ "$openai_status" = "503" ] && grep -q "پیکربندی نشده" "$openai_response"; then
-            echo "Authenticated OpenAI-compatible route is working; live LLM provider is not configured."
-          else
-            cat "$openai_response"
-            echo "Authenticated OpenAI-compatible smoke test failed."
-            exit 1
-          fi
-
-          curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -X DELETE "$base/api/agents/$smoke_agent_id/api-keys?keyId=$(jq -r '.keyMeta.id' "$api_key_response")" >/dev/null || true
-          rm -f "$api_key_response" "$api_chat_response" "$openai_response" "$agent_response"
-
-          db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
-          test -n "$db_url" || { echo "Postgres URL missing for smoke cleanup"; exit 1; }
-          [[ "$smoke_user_id" =~ ^[A-Za-z0-9]+$ ]] || { echo "Unexpected smoke user id format"; exit 1; }
-          printf 'DELETE FROM "User" WHERE "id" = %s;' "'$smoke_user_id'"             | npx prisma db execute --url "$db_url" --stdin
-          rm -f "$smoke_response" "$session_response" "$smoke_cookie"
-
-      - name: Smoke test live Worker
-        run: |
-          set +e
-          tmp=$(mktemp)
-          status=$(curl -sS --retry 5 --retry-delay 3 --retry-all-errors --max-time 30             -o "$tmp" -w "%{http_code}"             "https://cortex-ai.dengxiao445.workers.dev/api/health")
-          cat "$tmp" | jq . || cat "$tmp"
-          echo "HTTP status: $status"
-          rm -f "$tmp"
-          test "$status" = "200"
-
-      - name: Cleanup
-        if: always()
-        run: rm -f .cf-runtime-secrets && echo true || echo false)"
-            echo "Knowledge source $smoke_source_id ready=$knowledge_ready"
-            [ "$knowledge_ready" = "true" ] && break
+            if printf "%s" "$knowledge_state_response" | jq -e --arg id "$smoke_source_id" '.sources[] | select(.id == $id and .status == "ready")' >/dev/null 2>&1; then
+              knowledge_ready="true"
+              break
+            fi
+            echo "Knowledge source $smoke_source_id is not ready yet."
           done
+          echo "Knowledge source $smoke_source_id ready=$knowledge_ready"
           test "$knowledge_ready" = "true"
           rm -f "$knowledge_response" "$knowledge_file"
+
 
           api_key_response="$(mktemp)"
           api_key_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d '{"name":"Live smoke key"}' -o "$api_key_response" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/api-keys")"
