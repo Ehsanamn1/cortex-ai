@@ -195,6 +195,7 @@ export interface ProvidersStatusDto {
     mode: "neural" | "lexical" | null;
   };
   vectorStore: { provider: "local" | "qdrant"; status: "ready" | "not_configured" };
+  agentHealth?: Array<{agentId:string;state:string;consecutiveFailures:number;openedUntil:string|null;lastCode:string|null;lastStatus:number|null;lastLatencyMs:number|null;lastErrorAt:string|null;lastSuccessAt:string|null}>;
 }
 
 export interface ProviderHealthOkDto {
