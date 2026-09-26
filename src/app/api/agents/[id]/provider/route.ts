@@ -166,10 +166,18 @@ export async function POST(req: Request, { params }: Params) {
     const agent = await loadAgentForSession(session, id);
     rateLimit(req, "agent-provider-health-" + agent.id, 6, 60_000);
 
+    const config = await db.agentProviderConfig.findUnique({ where: { agentId: agent.id } });
+    if (!config?.enabled) {
+      return applyCors(
+        jsonError("ابتدا اتصال هوش مصنوعی همین ایجنت را ذخیره و فعال کنید.", 503),
+        req.headers.get("origin"),
+      );
+    }
+
     const { provider } = await llmManager.resolveForAgent(agent.id, agent.workspaceId);
     if (!provider) {
       return applyCors(
-        jsonError("اتصال هوش مصنوعی این ایجنت پیکربندی نشده است.", 503),
+        jsonError("اتصال هوش مصنوعی این ایجنت معتبر نیست؛ API Key، Base URL و Model ID را بررسی کنید.", 503),
         req.headers.get("origin"),
       );
     }
