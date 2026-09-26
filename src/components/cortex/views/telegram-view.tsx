@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, Bot, CheckCircle2, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi, XCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -244,47 +244,43 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
 }
 
 function TelegramCustomizer({ botId }: { botId: string }) {
-  const queryClient = useQueryClient();
   const q = useQuery({
     queryKey: ["telegram-profile", botId],
     queryFn: () => api.getTelegramBotProfile(botId),
     staleTime: 15_000,
   });
   const profile = q.data?.profile;
-  const [displayName, setDisplayName] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [description, setDescription] = useState("");
-  const [welcomeTitle, setWelcomeTitle] = useState("");
-  const [welcome, setWelcome] = useState("");
-  const [help, setHelp] = useState("");
-  const [newChat, setNewChat] = useState("");
-  const [newChatButton, setNewChatButton] = useState("");
-  const [helpButton, setHelpButton] = useState("");
-  const [usageButton, setUsageButton] = useState("");
-  const [banner, setBanner] = useState("");
-  const [thinking, setThinking] = useState("");
-  const [showThinking, setShowThinking] = useState(true);
-  const [showBanner, setShowBanner] = useState(false);
-  const [commands, setCommands] = useState("");
 
-  useEffect(() => {
-    if (!profile) return;
-    setDisplayName(profile.displayName);
-    setShortDescription(profile.shortDescription);
-    setDescription(profile.description);
-    setWelcomeTitle(profile.welcomeTitle);
-    setWelcome(profile.welcomeText);
-    setHelp(profile.helpText);
-    setNewChat(profile.newChatText);
-    setNewChatButton(profile.newChatButtonText);
-    setHelpButton(profile.helpButtonText);
-    setUsageButton(profile.usageButtonText);
-    setBanner(profile.welcomeBannerUrl ?? "");
-    setThinking(profile.thinkingMessages.join("\n"));
-    setShowThinking(profile.showThinking);
-    setShowBanner(profile.showWelcomeBanner);
-    setCommands(profile.commands.map((item) => item.command + "=" + item.description).join("\n"));
-  }, [profile]);
+  if (q.isLoading || !profile) {
+    return <Card className="border-white/[.06] bg-white/[.02]"><CardContent className="p-5 text-sm text-muted-foreground">در حال بارگذاری مرکز شخصی‌سازی…</CardContent></Card>;
+  }
+
+  return <TelegramCustomizerForm key={profile.updatedAt} botId={botId} profile={profile} />;
+}
+
+function TelegramCustomizerForm({
+  botId,
+  profile,
+}: {
+  botId: string;
+  profile: Awaited<ReturnType<typeof api.getTelegramBotProfile>>["profile"];
+}) {
+  const queryClient = useQueryClient();
+  const [displayName, setDisplayName] = useState(profile.displayName);
+  const [shortDescription, setShortDescription] = useState(profile.shortDescription);
+  const [description, setDescription] = useState(profile.description);
+  const [welcomeTitle, setWelcomeTitle] = useState(profile.welcomeTitle);
+  const [welcome, setWelcome] = useState(profile.welcomeText);
+  const [help, setHelp] = useState(profile.helpText);
+  const [newChat, setNewChat] = useState(profile.newChatText);
+  const [newChatButton, setNewChatButton] = useState(profile.newChatButtonText);
+  const [helpButton, setHelpButton] = useState(profile.helpButtonText);
+  const [usageButton, setUsageButton] = useState(profile.usageButtonText);
+  const [banner, setBanner] = useState(profile.welcomeBannerUrl ?? "");
+  const [thinking, setThinking] = useState(profile.thinkingMessages.join("\n"));
+  const [showThinking, setShowThinking] = useState(profile.showThinking);
+  const [showBanner, setShowBanner] = useState(profile.showWelcomeBanner);
+  const [commands, setCommands] = useState(profile.commands.map((item) => item.command + "=" + item.description).join("\n"));
 
   const save = useMutation({
     mutationFn: () => api.updateTelegramBotProfile(botId, {
@@ -313,10 +309,6 @@ function TelegramCustomizer({ botId }: { botId: string }) {
     },
     onError: (error: Error) => toast.error(error.message),
   });
-
-  if (q.isLoading || !profile) {
-    return <Card className="border-white/[.06] bg-white/[.02]"><CardContent className="p-5 text-sm text-muted-foreground">در حال بارگذاری مرکز شخصی‌سازی…</CardContent></Card>;
-  }
 
   return (
     <Card className="border-primary/15 bg-primary/[.025]">
