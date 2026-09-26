@@ -51,7 +51,8 @@ export class OpenAICompatibleProvider implements LLMProvider {
     if (!this.isConfigured()) throw new ProviderNotConfiguredError(this.name);
     try {
       const base = validateProviderBaseUrl(this.baseUrl);
-      const res = await fetch(new URL('/chat/completions', base), {
+      const endpoint = base.toString().replace(/\/$/, '') + '/chat/completions';
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: this.headers(),
         body: JSON.stringify({
