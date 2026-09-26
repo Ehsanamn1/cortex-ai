@@ -1,4 +1,4 @@
-import { ProviderNotConfiguredError, ProviderUnavailableError, classifyProviderFailure, type GenerateOptions, type GenerateResult, type LLMProvider } from "./types";
+import { ProviderNotConfiguredError, classifyProviderFailure, type GenerateOptions, type GenerateResult, type LLMProvider } from "./types";
 import { assertPublicProviderBaseUrl, validateProviderBaseUrl } from "./provider-url";
 
 export class AnthropicProvider implements LLMProvider {
