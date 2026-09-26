@@ -84,7 +84,8 @@ model Agent {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace        Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  providerConfig   AgentProviderConfig?
   knowledgeSources KnowledgeSource[]
   conversations    Conversation[]
   usageEvents      UsageEvent[]
@@ -94,6 +95,25 @@ model Agent {
   workflows        Workflow[]
   executions       Execution[]
   memoryEntries    MemoryEntry[]
+
+  @@index([workspaceId])
+}
+
+model AgentProviderConfig {
+  id              String   @id @default(cuid())
+  agentId         String   @unique
+  workspaceId     String
+  providerName    String
+  baseUrl         String
+  model           String
+  authMode        String   @default("bearer")
+  apiKeyEncrypted String?
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
 }
