@@ -253,6 +253,18 @@ jobs:
             rm -f "$tmp"
           }
 
+          check_noauth_json() {
+            local path="$1"
+            local expected="$2"
+            local tmp
+            tmp="$(mktemp)"
+            local status
+            status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -o "$tmp" -w "%{http_code}" "$base$path")"
+            echo "GET(no-auth) $base$path -> HTTP $status"
+            test "$status" = "$expected"
+            rm -f "$tmp"
+          }
+
           check_authed_json "/api/workspaces" "200"
           check_authed_json "/api/agents" "200"
           check_authed_json "/api/dashboard?workspaceId=$smoke_workspace_id" "200"
@@ -273,6 +285,7 @@ jobs:
           test -n "$smoke_agent_id"
 
           check_authed_json "/api/agents/$smoke_agent_id" "200"
+          check_noauth_json "/api/agents/$smoke_agent_id" "401"
           check_authed_json "/api/agents/$smoke_agent_id/knowledge" "200"
           check_authed_json "/api/agents/$smoke_agent_id/conversations" "200"
 
@@ -323,6 +336,10 @@ jobs:
             exit 1
           fi
 
+          options_status="$(curl -sS --retry 3 --retry-delay 1 --retry-all-errors --max-time 20 -X OPTIONS -o /dev/null -w "%{http_code}" "$base/api/v1/chat/completions")"
+          echo "OPTIONS /api/v1/chat/completions -> HTTP $options_status"
+          test "$options_status" = "204"
+
           openai_response="$(mktemp)"
           openai_status="$(curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -H "Authorization: Bearer $smoke_api_key" -H "Content-Type: application/json" -d '{"messages":[{"role":"user","content":"Cortex live smoke"}],"clientId":"cloudflare-smoke","newChat":true}' -o "$openai_response" -w "%{http_code}" "$base/api/v1/chat/completions")"
           echo "POST /api/v1/chat/completions (authenticated) -> HTTP $openai_status"
@@ -348,13 +365,14 @@ jobs:
 
       - name: Smoke test live Worker
         run: |
-          set +e
+          set -euo pipefail
           tmp=$(mktemp)
           status=$(curl -sS --retry 5 --retry-delay 3 --retry-all-errors --max-time 30             -o "$tmp" -w "%{http_code}"             "https://cortex-ai.dengxiao445.workers.dev/api/health")
           cat "$tmp" | jq . || cat "$tmp"
           echo "HTTP status: $status"
-          rm -f "$tmp"
           test "$status" = "200"
+          jq -e '(.ok == true) and (.database == "connected") and (has("env") | not) and (has("llm") | not) and (has("embeddings") | not)' "$tmp" >/dev/null
+          rm -f "$tmp"
 
       - name: Cleanup
         if: always()
