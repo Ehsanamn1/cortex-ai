@@ -1,0 +1,26 @@
+name: Cortex Production Release Validation
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  production-load:
+    name: Production load ${{ matrix.concurrency }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        concurrency: [10, 100, 1000]
+    env:
+      CORTEX_BASE_URL: https://cortex-ai.dengxiao445.workers.dev
+      LOAD_CONCURRENCY: ${{ matrix.concurrency }}
+      LOAD_ROUNDS: 1
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Run production smoke
+        run: node scripts/load-smoke.mjs
