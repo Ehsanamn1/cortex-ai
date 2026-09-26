@@ -9,6 +9,8 @@ import { api, type AgentDto, type TelegramBotDto, type TelegramUserDto } from "@
 import { useCortexStore } from "@/components/cortex/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -229,6 +231,8 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
           </Card>
         </div>
 
+        <TelegramCustomizer botId={bot.id} />
+
         {bot.lastError && <div className="rounded-xl border border-destructive/20 bg-destructive/[.05] p-4"><p className="text-xs font-semibold text-destructive">آخرین خطا</p><p className="mt-1 text-xs leading-6 text-destructive/90">{bot.lastError}</p></div>}
         <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
           <Button variant="ghost" onClick={onClose}><Link2 />بستن</Button>
@@ -236,6 +240,86 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function TelegramCustomizer({ botId }: { botId: string }) {
+  const queryClient = useQueryClient();
+  const q = useQuery({
+    queryKey: ["telegram-profile", botId],
+    queryFn: () => api.getTelegramBotProfile(botId),
+    staleTime: 15_000,
+  });
+  const profile = q.data?.profile;
+  const [welcome, setWelcome] = useState("");
+  const [help, setHelp] = useState("");
+  const [newChat, setNewChat] = useState("");
+  const [newChatButton, setNewChatButton] = useState("");
+  const [helpButton, setHelpButton] = useState("");
+  const [usageButton, setUsageButton] = useState("");
+  const [banner, setBanner] = useState("");
+  const [thinking, setThinking] = useState("");
+  const [showThinking, setShowThinking] = useState(true);
+  const [showBanner, setShowBanner] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+    setWelcome(profile.welcomeText);
+    setHelp(profile.helpText);
+    setNewChat(profile.newChatText);
+    setNewChatButton(profile.newChatButtonText);
+    setHelpButton(profile.helpButtonText);
+    setUsageButton(profile.usageButtonText);
+    setBanner(profile.welcomeBannerUrl ?? "");
+    setThinking(profile.thinkingMessages.join("\n"));
+    setShowThinking(profile.showThinking);
+    setShowBanner(profile.showWelcomeBanner);
+  }, [profile]);
+
+  const save = useMutation({
+    mutationFn: () => api.updateTelegramBotProfile(botId, {
+      welcomeText: welcome.trim(),
+      helpText: help.trim(),
+      newChatText: newChat.trim(),
+      newChatButtonText: newChatButton.trim(),
+      helpButtonText: helpButton.trim(),
+      usageButtonText: usageButton.trim(),
+      welcomeBannerUrl: banner.trim(),
+      thinkingMessages: thinking.split("\n").map(v => v.trim()).filter(Boolean),
+      showThinking,
+      showWelcomeBanner: showBanner,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["telegram-profile", botId] });
+      toast.success("شخصی‌سازی ربات ذخیره شد.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  if (q.isLoading || !profile) {
+    return <Card className="border-white/[.06] bg-white/[.02]"><CardContent className="p-5 text-sm text-muted-foreground">در حال بارگذاری مرکز شخصی‌سازی…</CardContent></Card>;
+  }
+
+  return (
+    <Card className="border-primary/15 bg-primary/[.025]">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-sm"><Pencil className="size-4 text-primary" />استودیو شخصی‌سازی ربات</CardTitle>
+        <p className="text-xs leading-6 text-muted-foreground">متن‌های خوش‌آمد، راهنما، دکمه‌ها، پیام‌های «در حال کار» و بنر را برای همین ربات تغییر بده. ذخیره‌سازی روی خود Bot Profile انجام می‌شود.</p>
+      </CardHeader>
+      <CardContent className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2 md:col-span-2"><Label>متن خوش‌آمدگویی</Label><Textarea value={welcome} onChange={(e) => setWelcome(e.target.value)} rows={4} /></div>
+        <div className="space-y-2"><Label>متن راهنما</Label><Textarea value={help} onChange={(e) => setHelp(e.target.value)} rows={4} /></div>
+        <div className="space-y-2"><Label>متن New Chat</Label><Textarea value={newChat} onChange={(e) => setNewChat(e.target.value)} rows={4} /></div>
+        <div className="space-y-2"><Label>دکمه گفتگوی جدید</Label><Input value={newChatButton} onChange={(e) => setNewChatButton(e.target.value)} /></div>
+        <div className="space-y-2"><Label>دکمه راهنما</Label><Input value={helpButton} onChange={(e) => setHelpButton(e.target.value)} /></div>
+        <div className="space-y-2"><Label>دکمه مصرف</Label><Input value={usageButton} onChange={(e) => setUsageButton(e.target.value)} /></div>
+        <div className="space-y-2"><Label>URL بنر خوش‌آمد (اختیاری)</Label><Input dir="ltr" value={banner} onChange={(e) => setBanner(e.target.value)} placeholder="https://..." /></div>
+        <div className="space-y-2 md:col-span-2"><Label>پیام‌های وضعیت کار (هر خط یک پیام)</Label><Textarea value={thinking} onChange={(e) => setThinking(e.target.value)} rows={3} /></div>
+        <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش وضعیت فکر/کار</p><p className="mt-1 text-[10px] text-muted-foreground">پیام مرحله‌ای قبل از پاسخ نمایش داده شود.</p></div><Switch checked={showThinking} onCheckedChange={setShowThinking} /></div>
+        <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش بنر خوش‌آمد</p><p className="mt-1 text-[10px] text-muted-foreground">در /start، بنر https ارسال شود.</p></div><Switch checked={showBanner} onCheckedChange={setShowBanner} /></div>
+        <div className="md:col-span-2"><Button disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "در حال ذخیره…" : "ذخیره شخصی‌سازی"}</Button></div>
+      </CardContent>
+    </Card>
   );
 }
 
