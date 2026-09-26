@@ -88,7 +88,7 @@ export function AgentsView() {
           <div className="max-w-2xl">
             <p className="cortex-kicker">استودیو ایجنت</p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">ایجنت‌هایت را مثل یک محصول بساز.</h2>
-            <p className="mt-3 text-sm leading-8 text-muted-foreground">هویت، شخصیت، دانش، حافظه و رفتار هر دستیار مستقل است؛ از همین‌جا بساز، تنظیم کن و وارد پلی‌گراند شو.</p>
+            <p className="mt-3 text-sm leading-8 text-muted-foreground">هویت، شخصیت، دانش، حافظه و رفتار هر ایجنت مستقل است؛ از همین‌جا بساز، تنظیم کن و وارد پلی‌گراند شو.</p>
           </div>
           <Button className="shrink-0" onClick={() => setView("agent-new")}><Plus />ساخت ایجنت جدید</Button>
         </div>
@@ -117,7 +117,7 @@ export function AgentsView() {
         <EmptyState
           icon={<span className="flex size-14 items-center justify-center rounded-2xl border bg-muted text-primary"><BrainCircuit className="size-7" /></span>}
           title="هنوز ایجنتی نساخته‌اید"
-          description="اولین دستیار خود را بسازید، شخصیت و رفتار آن را تنظیم کنید و بعد دانش واقعی را به آن متصل کنید."
+          description="اولین ایجنت خود را بسازید، شخصیت و رفتار آن را تنظیم کنید و بعد دانش واقعی را به آن متصل کنید."
           action={<Button onClick={() => setView("agent-new")}><Plus />ایجاد ایجنت</Button>}
           className="bg-card"
         />
@@ -137,7 +137,7 @@ export function AgentsView() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-3">
                           <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-[0_0_26px_rgba(59,130,255,.08)]"><Bot className="size-5" /></span>
-                          <div className="min-w-0"><p className="truncate font-semibold">{agent.name}</p><p className="truncate text-xs text-muted-foreground">{agent.orgName || "دستیار مستقل"}</p></div>
+                          <div className="min-w-0"><p className="truncate font-semibold">{agent.name}</p><p className="truncate text-xs text-muted-foreground">{agent.orgName || "ایجنت مستقل"}</p></div>
                         </div>
                         <span className={cn("mt-1 size-2.5 rounded-full", agent.status === "active" ? "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.7)]" : "bg-muted-foreground")} title={agent.status === "active" ? "فعال" : agent.status} />
                       </div>
