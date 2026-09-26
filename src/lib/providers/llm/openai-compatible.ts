@@ -1,5 +1,5 @@
 import { ProviderNotConfiguredError, ProviderUnavailableError, type GenerateOptions, type GenerateResult, type LLMProvider } from './types';
-import { validateProviderBaseUrl } from './provider-url';
+import { assertPublicProviderBaseUrl, validateProviderBaseUrl } from './provider-url';
 
 export type CompatibleAuthMode = 'bearer' | 'x-api-key' | 'none';
 
@@ -50,7 +50,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
   async generateResponse(options: GenerateOptions): Promise<GenerateResult> {
     if (!this.isConfigured()) throw new ProviderNotConfiguredError(this.name);
     try {
-      const base = validateProviderBaseUrl(this.baseUrl);
+      const base = await assertPublicProviderBaseUrl(this.baseUrl);
       const endpoint = base.toString().replace(/\/$/, '') + '/chat/completions';
       const res = await fetch(endpoint, {
         method: 'POST',
