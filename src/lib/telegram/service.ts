@@ -2,7 +2,6 @@ import { db } from '@/lib/db';
 import { decryptSecret } from '@/lib/server/secrets';
 import { estimateTokens } from '@/lib/server/audit';
 import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/usage';
-import { audit } from '@/lib/server/audit';
 import { RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
 import { normalizeTelegramPhone } from '@/lib/telegram/phone';
 import { getTelegramBotProfile } from '@/lib/telegram/profile';
@@ -461,7 +460,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
     reservationId = await reserveUsageWithinLimits(
       bot.workspaceId,
       1,
-      estimatedPromptTokens,
+      estimatedPromptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS,
       botAgent.maxTokens,
       user.id,
     );
