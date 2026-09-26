@@ -7,6 +7,7 @@ vi.mock("@/lib/db", () => ({
     knowledgeSource: { findMany: vi.fn(), count: vi.fn() },
     knowledgeChunk: { count: vi.fn(), findMany: vi.fn() },
     memoryEntry: { findMany: vi.fn() },
+    agentProviderHealth: { upsert: vi.fn(async () => ({})) },
   },
 }));
 
