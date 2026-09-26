@@ -255,7 +255,7 @@ function TelegramCustomizer({ botId }: { botId: string }) {
     return <Card className="border-white/[.06] bg-white/[.02]"><CardContent className="p-5 text-sm text-muted-foreground">در حال بارگذاری مرکز شخصی‌سازی…</CardContent></Card>;
   }
 
-  return <TelegramCustomizerForm key={profile.updatedAt} botId={botId} profile={profile} />;
+  return <TelegramCustomizerForm key={JSON.stringify(profile)} botId={botId} profile={profile} />;
 }
 
 function TelegramCustomizerForm({
