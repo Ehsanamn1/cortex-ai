@@ -55,6 +55,7 @@ const MAX_HISTORY_MESSAGE_CHARS = 700;
 
 export function buildRagMessages(params: {
   persona: AgentPersona;
+  memory: AgentMemoryItem[];
   retrieved: RetrievedChunk[];
   history: Array<{ role: "user" | "assistant"; content: string }>;
   question: string;
