@@ -14,6 +14,7 @@ vi.mock("@/lib/server/secrets", () => ({
 import { db } from "@/lib/db";
 import { ProviderUnavailableError } from "@/lib/providers/llm/types";
 import { OpenAICompatibleProvider } from "@/lib/providers/llm/openai-compatible";
+import { validateProviderBaseUrl } from "@/lib/providers/llm/provider-url";
 import { llmManager } from "@/lib/providers/llm/manager";
 
 const mockAgentConfig = (overrides: Record<string, unknown> = {}) => ({
@@ -186,6 +187,33 @@ describe("OpenAI-compatible provider simulation", () => {
       sample: "OK",
     });
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  test("preserves the configured Base URL path and rejects private targets", async () => {
+    expect(validateProviderBaseUrl("https://provider.example/v1/").toString())
+      .toBe("https://provider.example/v1/");
+    expect(() => validateProviderBaseUrl("http://127.0.0.1:8080/v1")).toThrow();
+    expect(() => validateProviderBaseUrl("http://localhost:3000/v1")).toThrow();
+    expect(() => validateProviderBaseUrl("http://169.254.169.254/latest")).toThrow();
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      expect(String(input)).toBe("https://provider.example/v1/chat/completions");
+      return new Response(JSON.stringify(mockCompletion("مسیر درست")), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new OpenAICompatibleProvider({
+      name: "Path Provider",
+      baseUrl: "https://provider.example/v1/",
+      apiKey: "secret",
+      model: "mock-model",
+    });
+
+    await expect(provider.generateResponse({ messages: [{ role: "user", content: "x" }] }))
+      .resolves.toMatchObject({ content: "مسیر درست" });
   });
 
   test("missing credentials make the provider unusable before any network call", async () => {
