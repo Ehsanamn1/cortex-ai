@@ -98,7 +98,8 @@ export async function POST(req: Request) {
   } catch (e) {
     await releaseUsageReservation(reservationId);
     reservationId = null;
-    if (e instanceof rag.RagConfigError) return applyCors(jsonError(e.message, 503), req.headers.get("origin"));
+    const status = Number((e as { status?: unknown })?.status);
+    if (status === 503) return applyCors(jsonError(e instanceof Error ? e.message : "سرویس هوش مصنوعی در دسترس نیست.", 503), req.headers.get("origin"));
     return toErrorResponse(e, req.headers.get("origin"));
   }
 }
