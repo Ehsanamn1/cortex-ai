@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 export async function loadAgentMemory(agentId: string, limit = 12, conversationId?: string | null) {
   return db.memoryEntry.findMany({
-    where: conversationId ? { agentId, conversationId } : { agentId },
+    where: conversationId ? { agentId, conversationId } : { agentId, conversationId: null },
     orderBy: { updatedAt: "desc" },
     take: Math.min(50, Math.max(1, limit)),
   });
