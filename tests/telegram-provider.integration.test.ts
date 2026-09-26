@@ -5,7 +5,6 @@ vi.mock("@/lib/db", () => ({
     telegramBot: {
       findUnique: vi.fn(),
       update: vi.fn(),
-      update: vi.fn(),
     },
     agent: {
       findUniqueOrThrow: vi.fn(),
@@ -13,6 +12,7 @@ vi.mock("@/lib/db", () => ({
     telegramUser: {
       upsert: vi.fn(),
       findUnique: vi.fn(),
+      update: vi.fn(),
     },
     conversation: {
       findFirst: vi.fn(),
