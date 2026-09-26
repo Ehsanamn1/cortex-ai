@@ -106,6 +106,21 @@ jobs:
           DATABASE_URL="$db_url" npx prisma db push --skip-generate
           echo "Production Prisma schema is synchronized."
 
+      - name: Verify production database contract
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
+          POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
+        run: |
+          set -euo pipefail
+          db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
+          test -n "$db_url" || { echo "Postgres URL missing"; exit 1; }
+          schema="$(DATABASE_URL="$db_url" npx prisma db pull --print --force)"
+          for model in User Workspace Agent AgentApiKey KnowledgeSource KnowledgeDocument KnowledgeChunk VectorPoint Conversation Message ProviderConfig UsagePolicy TelegramBot TelegramUser UsageReservation UsageEvent AuditLog MemoryEntry; do
+            printf "%s" "$schema" | grep -q "model $model" || { echo "Missing Prisma model in production schema: $model"; exit 1; }
+          done
+          echo "Production database contract verified."
+
       - name: Prepare optional R2 bucket and browser CORS
         continue-on-error: true
         env:
