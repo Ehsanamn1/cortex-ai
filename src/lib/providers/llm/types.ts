@@ -8,6 +8,8 @@ export interface ChatTurn {
   content: string;
 }
 
+export type LLMProviderType = "openai-compatible" | "anthropic" | "gemini";
+
 export interface GenerateOptions {
   messages: ChatTurn[];
   temperature?: number;
@@ -39,8 +41,9 @@ export class ProviderNotConfiguredError extends Error {
 }
 
 export class ProviderUnavailableError extends Error {
-  status = 502;
-  constructor() {
-    super("سرویس هوش مصنوعی در حال حاضر در دسترس نیست؛ لطفاً بعداً دوباره تلاش کنید.");
+  status: number;
+  constructor(message = "سرویس هوش مصنوعی در دسترس نیست؛ لطفاً دوباره تلاش کنید.", status = 502) {
+    super(message);
+    this.status = status;
   }
 }
