@@ -20,7 +20,7 @@ Advanced roadmap capabilities remain intentionally out of the active MVP path un
 - **Knowledge files (production):** private Cloudflare R2 through S3-compatible presigned requests. Raw upload bytes do not pass through the Worker in the normal flow.
 - **Knowledge files (local/development):** a small PostgreSQL `db64://` fallback remains available only outside production when R2 is unavailable.
 - **Vector store:** tenant-scoped local PostgreSQL vector records by default, with optional Qdrant adapter.
-- **LLM:** workspace-level OpenAI-compatible provider configuration, with optional environment fallback.
+- **LLM:** each Agent has its own encrypted OpenAI-compatible provider configuration; legacy workspace-level configuration and environment fallback remain only for backward compatibility.
 - **Embeddings:** OpenAI-compatible neural embeddings when configured; otherwise the built-in deterministic lexical engine.
 
 The production Worker runs with `APP_ENV=production` and Node.js compatibility.
@@ -79,7 +79,7 @@ Keep application secrets in Cloudflare Worker Secrets or the protected GitHub En
 
 ## AI provider
 
-New workspaces should configure a real provider in **Settings → اتصال و کنترل AI**. The provider configuration is stored encrypted server-side. When no LLM provider is configured, Cortex deliberately returns a `503` configuration error instead of generating a fake answer.
+New workspaces should configure the real provider **inside each Agent → هوش مصنوعی**. The provider configuration is stored encrypted server-side and belongs to that Agent. Each Agent can use a different provider, Base URL and model. Legacy workspace-level configuration and environment fallback remain only for backward compatibility; an explicitly configured disabled Agent does not silently fall back. When the Agent has no usable provider, Cortex deliberately returns a `503` configuration error instead of generating a fake answer.
 
 The lexical embedding engine is real deterministic retrieval, not a mock. For neural embeddings, configure `OPENAI_API_KEY` and the desired embeddings model.
 
