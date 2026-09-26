@@ -57,7 +57,7 @@ export function validateProviderBaseUrl(raw: string): URL {
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new UnsafeProviderUrlError();
 
   const host = url.hostname.toLowerCase().replace(/\.$/, "");
-  if (!host || host.length > 253) throw new UnsafeProviderUrlError();
+  if (!host || host.length > 253 || url.search || url.hash) throw new UnsafeProviderUrlError();
   if (PRIVATE_HOSTNAMES.has(host) || host.endsWith(".local") || host.endsWith(".internal")) {
     throw new UnsafeProviderUrlError();
   }
