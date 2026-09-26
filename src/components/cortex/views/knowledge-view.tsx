@@ -275,8 +275,18 @@ export function KnowledgeView() {
 
       {selectedAgentId && (
         <>
-          <AddFileDialog agentId={selectedAgentId} open={fileOpen} onOpenChange={setFileOpen} />
-          <AddUrlDialog agentId={selectedAgentId} open={urlOpen} onOpenChange={setUrlOpen} />
+          <AddFileDialog
+            agentId={selectedAgentId}
+            open={fileOpen}
+            onOpenChange={setFileOpen}
+            onCompleted={() => setView("agents")}
+          />
+          <AddUrlDialog
+            agentId={selectedAgentId}
+            open={urlOpen}
+            onOpenChange={setUrlOpen}
+            onCompleted={() => setView("agents")}
+          />
         </>
       )}
     </div>
