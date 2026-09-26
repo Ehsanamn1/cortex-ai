@@ -322,6 +322,7 @@ function ProviderConnectionForm({
     providerName: string;
     baseUrl: string;
     model: string;
+    protocol?: string;
     authMode: string;
     enabled: boolean;
     hasApiKey: boolean;
@@ -333,6 +334,7 @@ function ProviderConnectionForm({
   const [providerName, setProviderName] = useState(config?.providerName ?? "AI Gateway");
   const [baseUrl, setBaseUrl] = useState(config?.baseUrl ?? "");
   const [model, setModel] = useState(config?.model ?? "");
+  const [protocol, setProtocol] = useState(config?.protocol ?? "openai-compatible");
   const [authMode, setAuthMode] = useState(config?.authMode ?? "bearer");
   const [apiKey, setApiKey] = useState("");
   const [enabled, setEnabled] = useState(config?.enabled ?? true);
@@ -342,6 +344,7 @@ function ProviderConnectionForm({
       providerName: providerName.trim(),
       baseUrl: baseUrl.trim(),
       model: model.trim(),
+      protocol,
       authMode,
       apiKey: apiKey.trim() || undefined,
       enabled,
@@ -363,11 +366,12 @@ function ProviderConnectionForm({
   });
 
   const hasKey = Boolean(config?.hasApiKey);
+  const requiresApiKey = protocol !== "openai-compatible" || authMode !== "none";
   const canSave =
     providerName.trim().length >= 2 &&
     /^https?:\/\//i.test(baseUrl.trim()) &&
     model.trim().length > 0 &&
-    (hasKey || apiKey.trim().length > 0 || authMode === "none");
+    (!requiresApiKey || hasKey || apiKey.trim().length > 0);
 
   return (
     <div className="space-y-6">
@@ -408,6 +412,17 @@ function ProviderConnectionForm({
             <Input dir="ltr" value={model} onChange={(e) => setModel(e.target.value)} placeholder="model-name" />
           </div>
           <div className="space-y-2">
+            <Label>نوع سرویس / پروتکل</Label>
+            <Select value={protocol} onValueChange={setProtocol}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="انتخاب نوع اتصال" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="openai-compatible">OpenAI Compatible / OpenRouter / Gateway</SelectItem>
+                <SelectItem value="anthropic">Anthropic Messages</SelectItem>
+                <SelectItem value="gemini">Google Gemini API</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>روش احراز</Label>
             <Select value={authMode} onValueChange={setAuthMode}>
               <SelectTrigger className="w-full"><SelectValue placeholder="انتخاب روش" /></SelectTrigger>
@@ -419,7 +434,7 @@ function ProviderConnectionForm({
             </Select>
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label>API Key {hasKey ? "(برای نگه‌داشتن کلید فعلی خالی بگذارید)" : "*"}</Label>
+            <Label>API Key {requiresApiKey ? (hasKey ? "(برای نگه‌داشتن کلید فعلی خالی بگذارید)" : "*") : "(اختیاری)"}</Label>
             <Input
               dir="ltr"
               type="password"
@@ -461,7 +476,7 @@ function ProviderConnectionForm({
           <div className="space-y-1 text-sm leading-7">
             <p className="font-semibold">فرمت اتصال</p>
             <p className="text-muted-foreground">
-              Provider باید API سازگار با قالب OpenAI Chat Completions داشته باشد؛ Base URL و Model ID را دقیقاً مطابق سرویس‌دهنده وارد کنید.
+              Cortex اکنون اتصال مستقیم به OpenAI-compatible، Anthropic و Gemini را پشتیبانی می‌کند؛ Base URL و Model ID را دقیقاً مطابق سرویس‌دهنده وارد کنید.
             </p>
           </div>
         </CardContent>

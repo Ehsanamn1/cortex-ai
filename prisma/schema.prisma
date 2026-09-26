@@ -107,6 +107,7 @@ model AgentProviderConfig {
   providerName    String
   baseUrl         String
   model           String
+  protocol        String   @default("openai-compatible")
   authMode        String   @default("bearer")
   apiKeyEncrypted String?
   enabled         Boolean  @default(true)
@@ -516,6 +517,8 @@ model MemoryEntry {
   workspaceId    String
   agentId        String
   conversationId String?
+  scope          String   @default("conversation")
+  subjectKey     String?
   type           String   @default("fact")
   key            String
   value          String
@@ -526,6 +529,7 @@ model MemoryEntry {
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
   conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
   @@index([agentId, updatedAt])
+  @@index([agentId, subjectKey, updatedAt])
   @@index([conversationId, updatedAt])
   @@index([workspaceId, updatedAt])
 }

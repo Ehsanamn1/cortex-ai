@@ -3,6 +3,8 @@ import { decryptSecret } from "@/lib/server/secrets";
 import type { LLMProvider } from "./types";
 import { OpenRouterProvider } from "./openrouter";
 import { OpenAICompatibleProvider, type CompatibleAuthMode } from "./openai-compatible";
+import { AnthropicProvider } from "./anthropic";
+import { GeminiProvider } from "./gemini";
 
 export interface ProviderStatus {
   provider: string;
@@ -15,10 +17,31 @@ function buildConfiguredProvider(config: {
   providerName: string;
   baseUrl: string;
   model: string;
+  protocol?: string;
   authMode: string;
   apiKeyEncrypted?: string | null;
 }): LLMProvider {
   const key = config.apiKeyEncrypted ? decryptSecret(config.apiKeyEncrypted) : undefined;
+  const protocol = (config.protocol || "openai-compatible").toLowerCase();
+
+  if (protocol === "anthropic") {
+    return new AnthropicProvider({
+      name: config.providerName,
+      baseUrl: config.baseUrl,
+      apiKey: key,
+      model: config.model,
+    });
+  }
+
+  if (protocol === "gemini") {
+    return new GeminiProvider({
+      name: config.providerName,
+      baseUrl: config.baseUrl,
+      apiKey: key,
+      model: config.model,
+    });
+  }
+
   return new OpenAICompatibleProvider({
     name: config.providerName,
     baseUrl: config.baseUrl,

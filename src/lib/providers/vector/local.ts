@@ -1,11 +1,17 @@
 import { db } from "@/lib/db";
 import { cosineSimilarity, type SearchResult, type UpsertPoint, type VectorStore } from "./types";
 
+type CachedPoint = { id: string; vector: number[]; payload: UpsertPoint["payload"] };
+type CacheEntry = { at: number; points: CachedPoint[] };
+
+const CACHE_TTL_MS = 30_000;
+const MAX_CACHE_POINTS = 8_000;
+const agentCache = new Map<string, CacheEntry>();
+
 /**
- * LocalVectorStore — real vector persistence in PostgreSQL + exact cosine
- * similarity search performed in the query layer. Used automatically when
- * QDRANT_URL is not configured. Every operation is hard-scoped to the
- * owning agent (and workspace) — cross-tenant retrieval is impossible.
+ * LocalVectorStore — PostgreSQL-backed vector persistence with a short-lived
+ * per-worker cache. The cache removes the expensive "load every vector from
+ * Postgres" step from hot chat paths while preserving DB as the source of truth.
  */
 export class LocalVectorStore implements VectorStore {
   readonly name = "local" as const;
@@ -31,25 +37,58 @@ export class LocalVectorStore implements VectorStore {
         })
       )
     );
+
+    const existing = agentCache.get(agentId);
+    if (existing) {
+      const byId = new Map(existing.points.map((point) => [point.id, point]));
+      for (const point of points) {
+        byId.set(point.id, { id: point.id, vector: point.vector, payload: point.payload });
+      }
+      agentCache.set(agentId, { at: Date.now(), points: [...byId.values()].slice(-MAX_CACHE_POINTS) });
+    }
   }
 
-  async search(agentId: string, queryVector: number[], topK: number): Promise<SearchResult[]> {
-    const points = await db.vectorPoint.findMany({
+  private async loadPoints(agentId: string): Promise<CachedPoint[]> {
+    const cached = agentCache.get(agentId);
+    if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.points;
+
+    const total = await db.vectorPoint.count({ where: { agentId } });
+    const rows = await db.vectorPoint.findMany({
       where: { agentId },
       select: { id: true, vector: true, payload: true },
     });
+
+    const points: CachedPoint[] = [];
+    for (const point of rows.slice(0, MAX_CACHE_POINTS)) {
+      try {
+        const vector = JSON.parse(point.vector) as number[];
+        const payload = JSON.parse(point.payload) as UpsertPoint["payload"];
+        if (Array.isArray(vector) && vector.length > 0) {
+          points.push({ id: point.id, vector, payload });
+        }
+      } catch {
+        // Ignore corrupted legacy points rather than breaking the whole agent.
+      }
+    }
+    // Only cache bounded agents. Larger agents stay DB-backed so retrieval never
+    // silently drops knowledge chunks because of a cache cap.
+    if (total <= MAX_CACHE_POINTS) {
+      agentCache.set(agentId, { at: Date.now(), points });
+    }
+    return points;
+  }
+
+  async search(agentId: string, queryVector: number[], topK: number): Promise<SearchResult[]> {
+    const points = await this.loadPoints(agentId);
     const ranked: SearchResult[] = [];
     for (const point of points) {
-      let vector: number[];
-      try {
-        vector = JSON.parse(point.vector) as number[];
-      } catch {
-        continue;
-      }
-      const payload = JSON.parse(point.payload) as UpsertPoint["payload"];
-      // Defense in depth: payload must also match the tenant scope.
+      const payload = point.payload;
       if (payload.workspaceId !== undefined && payload.sourceId !== undefined) {
-        ranked.push({ id: point.id, score: cosineSimilarity(queryVector, vector), payload });
+        ranked.push({
+          id: point.id,
+          score: cosineSimilarity(queryVector, point.vector),
+          payload,
+        });
       }
     }
     ranked.sort((a, b) => b.score - a.score);
@@ -58,10 +97,18 @@ export class LocalVectorStore implements VectorStore {
 
   async deleteByAgent(agentId: string): Promise<void> {
     await db.vectorPoint.deleteMany({ where: { agentId } });
+    agentCache.delete(agentId);
   }
 
   async deleteBySource(agentId: string, sourceId: string): Promise<void> {
     await db.vectorPoint.deleteMany({ where: { agentId, sourceId } });
+    const cached = agentCache.get(agentId);
+    if (cached) {
+      agentCache.set(agentId, {
+        at: Date.now(),
+        points: cached.points.filter((point) => point.payload.sourceId !== sourceId),
+      });
+    }
   }
 
   async isReady(): Promise<boolean> {
