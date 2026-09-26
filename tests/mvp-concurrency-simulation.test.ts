@@ -32,9 +32,9 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
     vi.clearAllMocks();
     vi.stubEnv("LLM_PROVIDER", "none");
 
-    vi.mocked(db.agentProviderConfig.findUnique).mockImplementation(async (args: { where: { agentId: string } }) => ({
+    vi.mocked(db.agentProviderConfig.findUnique).mockImplementation(async (args) => ({
       id: "agent-provider-1",
-      agentId: args.where.agentId,
+      agentId: String(args.where.agentId ?? "agent-shared"),
       workspaceId: "workspace-1",
       providerName: "Simulation Provider",
       baseUrl: "https://provider.example/v1",
