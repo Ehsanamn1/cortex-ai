@@ -111,7 +111,7 @@ export function classifyProviderFailure(
       causeMessage: message,
     });
   }
-  if (status && status >= 500) {
+  if ((status && status >= 500) || /\b5\d{2}\b/.test(message)) {
     return new ProviderUnavailableError({
       code: "provider_5xx",
       provider,
