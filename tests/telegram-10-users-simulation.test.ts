@@ -94,13 +94,13 @@ describe("Telegram 10-user simulation", () => {
       phoneNumber: null,
       dailyMessageLimit: 0, monthlyMessageLimit: 0, dailyTokenLimit: 0, monthlyTokenLimit: 0,
       lastSeenAt: new Date(),
-    } as never));
+    } as never)) as never);
     vi.mocked(db.telegramUser.update).mockResolvedValue({} as never);
-    vi.mocked(db.conversation.findFirst).mockImplementation(async ({ where }: any) => ({
+    vi.mocked(db.conversation.findFirst).mockImplementation((async ({ where }: { where: { externalUserId: string } }) => ({
       id: "conv-" + where.externalUserId,
       agentId: "agent-10", channel: "telegram", externalUserId: where.externalUserId, telegramBotId: "bot-10",
       updatedAt: new Date(),
-    } as never));
+    } as never)) as never);
     vi.mocked(db.message.findMany).mockResolvedValue([]);
     vi.mocked(db.message.create).mockResolvedValue({ id: "message" } as never);
     vi.mocked(db.conversation.update).mockResolvedValue({} as never);
