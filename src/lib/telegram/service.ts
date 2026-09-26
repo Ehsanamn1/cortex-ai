@@ -3,11 +3,10 @@ import { decryptSecret } from '@/lib/server/secrets';
 import { estimateTokens } from '@/lib/server/audit';
 import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/usage';
 import { audit } from '@/lib/server/audit';
-import { answerWithKnowledge, RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
+import { RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
 import { normalizeTelegramPhone } from '@/lib/telegram/phone';
 import { getTelegramBotProfile } from '@/lib/telegram/profile';
 import { runAgentExecution } from '@/lib/runtime/engine';
-import { listAgentTools } from '@/lib/runtime/tools';
 
 const API = 'https://api.telegram.org';
 
@@ -433,7 +432,6 @@ export async function processTelegramUpdate(botId: string, update: any) {
   let progressMessageId: string | number | null = null;
   try {
     const botAgent = await db.agent.findUniqueOrThrow({ where: { id: bot.agentId } });
-    const tools = await listAgentTools(botAgent.id);
 
     let conversation = await db.conversation.findFirst({
       where: {
@@ -500,41 +498,29 @@ export async function processTelegramUpdate(botId: string, update: any) {
     let auxiliaryInputTokens = 0;
     let auxiliaryOutputTokens = 0;
 
-    if (tools.length > 0) {
-      const result = await runAgentExecution({
-        agentId: bot.agentId,
-        workspaceId: bot.workspaceId,
-        conversationId: conversation.id,
-        memorySubjectKey: 'telegram:' + bot.id + ':' + tgId,
-        input: rawText,
-        history: promptHistory.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-        onProgress: progress,
-      });
-      content = result.content;
-      provider = result.provider;
-      model = result.model;
-    } else {
-      await progress(pickThinkingMessage(profile, 1));
-      const answer = await answerWithKnowledge({
-        agentId: bot.agentId,
-        workspaceId: bot.workspaceId,
-        conversationId: conversation.id,
-        memorySubjectKey: 'telegram:' + bot.id + ':' + tgId,
-        persona: botAgent,
-        history: promptHistory.map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })),
-        question: rawText,
-      });
-      await progress(pickThinkingMessage(profile, 2));
-      content = answer.content;
-      provider = answer.provider;
-      model = answer.model;
-      retrieval = answer.retrieval;
-      auxiliaryInputTokens = answer.auxiliaryInputTokens ?? 0;
-      auxiliaryOutputTokens = answer.auxiliaryOutputTokens ?? 0;
-    }
+    await progress(pickThinkingMessage(profile, 1));
+
+    const result = await runAgentExecution({
+      agentId: bot.agentId,
+      workspaceId: bot.workspaceId,
+      conversationId: conversation.id,
+      memorySubjectKey: 'telegram:' + bot.id + ':' + tgId,
+      input: rawText,
+      history: promptHistory.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+      onProgress: progress,
+    });
+
+    content = result.content;
+    provider = result.provider;
+    model = result.model;
+    retrieval = result.retrieval ?? [];
+    auxiliaryInputTokens = result.auxiliaryInputTokens ?? 0;
+    auxiliaryOutputTokens = result.auxiliaryOutputTokens ?? 0;
+
+    await progress(pickThinkingMessage(profile, 2));
 
     const metadata = {
       sources: toSourceRefs(retrieval),
