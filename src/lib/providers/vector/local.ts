@@ -52,10 +52,11 @@ export class LocalVectorStore implements VectorStore {
     const cached = agentCache.get(agentId);
     if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.points;
 
+    const total = await db.vectorPoint.count({ where: { agentId } });
     const rows = await db.vectorPoint.findMany({
       where: { agentId },
       select: { id: true, vector: true, payload: true },
-      take: MAX_CACHE_POINTS + 1,
+      ...(total <= MAX_CACHE_POINTS ? {} : { take: MAX_CACHE_POINTS + 1 }),
     });
 
     const points: CachedPoint[] = [];
@@ -70,7 +71,11 @@ export class LocalVectorStore implements VectorStore {
         // Ignore corrupted legacy points rather than breaking the whole agent.
       }
     }
-    agentCache.set(agentId, { at: Date.now(), points });
+    // Only cache bounded agents. Larger agents stay DB-backed so retrieval never
+    // silently drops knowledge chunks because of a cache cap.
+    if (total <= MAX_CACHE_POINTS) {
+      agentCache.set(agentId, { at: Date.now(), points });
+    }
     return points;
   }
 
