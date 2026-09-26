@@ -299,6 +299,7 @@ model TelegramBot {
   users      TelegramUser[]
   conversations Conversation[]
   usageEvents UsageEvent[]
+  processedUpdates TelegramProcessedUpdate[]
   profile TelegramBotProfile?
 
   @@index([workspaceId])
