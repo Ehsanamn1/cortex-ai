@@ -217,7 +217,7 @@ async function sendWelcome(token: string, chatId: string | number, profile: Awai
   const markup = buttonMarkup(profile);
   if (profile.showWelcomeBanner && profile.welcomeBannerUrl) {
     try {
-      await sendPhoto(token, chatId, profile.welcomeBannerUrl, '<b>' + profile.welcomeTitle + '</b>\n\n' + profile.welcomeText, markup);
+      await sendPhoto(token, chatId, profile.welcomeBannerUrl, '<b>' + escapeTelegramHtml(profile.welcomeTitle) + '</b>\n\n' + escapeTelegramHtml(profile.welcomeText), markup);
       return;
     } catch {}
   }
