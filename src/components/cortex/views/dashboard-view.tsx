@@ -140,6 +140,12 @@ export function DashboardView() {
   useErrorToast(providersQuery.isError ? providersQuery.error : null);
 
   if (dashboardQuery.isPending) return <DashboardSkeleton />;
+  if (dashboardQuery.isError) {
+    const message = dashboardQuery.error instanceof Error
+      ? dashboardQuery.error.message
+      : "دریافت اطلاعات داشبورد با خطا مواجه شد.";
+    return <ErrorState title="داشبورد موقتاً در دسترس نیست" message={message} onRetry={() => void dashboardQuery.refetch()} />;
+  }
 
   const dashboardData = dashboardQuery.data ?? {
     stats: {

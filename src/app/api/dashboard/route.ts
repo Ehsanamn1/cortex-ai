@@ -37,6 +37,7 @@ export async function GET(req: Request) {
     }
 
     const agentFilter = { workspaceId };
+    let degraded = false;
     async function safe<T>(operation: () => Promise<T>, fallback: T, label: string): Promise<T> {
       // A database call must never be allowed to hold the Worker request open.
       // This is especially important on Workers + Neon where a stalled
@@ -49,6 +50,7 @@ export async function GET(req: Request) {
         });
         return await Promise.race([operation(), timeout]);
       } catch (error) {
+        degraded = true;
         console.error('[cortex][dashboard] ' + label + ' failed:', error);
         return fallback;
       } finally {
@@ -71,6 +73,13 @@ export async function GET(req: Request) {
         safe(() => db.auditLog.findMany({ where: { workspaceId }, select: { id: true, action: true, entityType: true, createdAt: true }, orderBy: { createdAt: 'desc' }, take: 6 }), [], 'audit'),
         safe(() => db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: dayStart() } }, _sum: { totalTokens: true }, _count: { _all: true } }), { _count: { _all: 0 }, _sum: { totalTokens: 0 } }, 'today usage')
       ]);
+
+    if (degraded) {
+      return dashboardResponse({
+        error: "اطلاعات داشبورد در حال حاضر کامل در دسترس نیست. لطفاً دوباره تلاش کنید.",
+        degraded: true,
+      }, 503);
+    }
 
     const iso = (value: unknown) => {
       if (value instanceof Date) return value.toISOString();
