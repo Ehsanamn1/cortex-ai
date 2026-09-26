@@ -27,7 +27,7 @@ class ResilientProvider implements LLMProvider {
     if (state && state.openedUntil > Date.now()) {
       throw new ProviderUnavailableError({ code:"provider_circuit_open", provider:this.name, retryable:true, retryAfterMs:state.openedUntil-Date.now() });
     }
-    const maxAttempts = 2;
+    const maxAttempts = this.inner instanceof OpenAICompatibleProvider ? 0 : 2;
     const started = Date.now();
     let last: unknown;
     for (let attempt=0; attempt<=maxAttempts; attempt++) {
