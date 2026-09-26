@@ -6,6 +6,9 @@ vi.mock("@/lib/db", () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    agent: {
+      findUniqueOrThrow: vi.fn(),
+    },
     telegramUser: {
       upsert: vi.fn(),
       findUnique: vi.fn(),
@@ -97,18 +100,16 @@ describe("Telegram -> agent provider simulation", () => {
     vi.mocked(db.conversation.update).mockResolvedValue({ id: "conversation-1" } as never);
     vi.mocked(db.telegramBot.update).mockResolvedValue({ id: "bot-1" } as never);
 
-    vi.mocked(db).agent = {
-      findUniqueOrThrow: vi.fn(async () => ({
-        id: "agent-telegram-1",
-        workspaceId: "workspace-1",
-        maxTokens: 1200,
-        name: "تلگرام",
-        language: "fa",
-        tone: "professional",
-        memoryEnabled: true,
-        citationsEnabled: true,
-      })),
-    } as never;
+    vi.mocked(db.agent.findUniqueOrThrow).mockResolvedValue({
+      id: "agent-telegram-1",
+      workspaceId: "workspace-1",
+      maxTokens: 1200,
+      name: "تلگرام",
+      language: "fa",
+      tone: "professional",
+      memoryEnabled: true,
+      citationsEnabled: true,
+    } as never);
 
     vi.stubGlobal("fetch", vi.fn(async (_input: RequestInfo | URL) =>
       new Response(JSON.stringify({ ok: true, result: {} }), {
