@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { assertWorkspaceAccess, requireSession } from "@/lib/server/auth";
-import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
+import { applyCors, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { forgetMemory, loadAgentMemory } from "@/lib/runtime/memory";
 import { loadAgentForSession } from "@/lib/server/access";
 
