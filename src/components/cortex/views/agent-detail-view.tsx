@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -286,30 +286,56 @@ function ToolsTab({ agentId }: { agentId: string }) {
 
 
 function ProviderTab({ agentId }: { agentId: string }) {
-  const queryClient = useQueryClient();
   const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: ["agent-provider", agentId],
     queryFn: () => api.getAgentProviderConfig(agentId),
   });
 
-  const [providerName, setProviderName] = useState("AI Gateway");
-  const [baseUrl, setBaseUrl] = useState("");
-  const [model, setModel] = useState("");
-  const [authMode, setAuthMode] = useState("bearer");
-  const [apiKey, setApiKey] = useState("");
-  const [enabled, setEnabled] = useState(true);
+  if (isPending) return <Skeleton className="h-96 rounded-2xl" />;
+  if (isError || !data) {
+    return (
+      <ErrorState
+        message={error instanceof Error ? error.message : "دریافت اتصال هوش مصنوعی ناموفق بود."}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
-  // Sync saved configuration into the editable form.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    const config = data?.config;
-    if (!config) return;
-    setProviderName(config.providerName);
-    setBaseUrl(config.baseUrl);
-    setModel(config.model);
-    setAuthMode(config.authMode);
-    setEnabled(config.enabled);
-  }, [data?.config]);
+  return (
+    <ProviderConnectionForm
+      key={data.config?.updatedAt ?? data.config?.id ?? "new"}
+      agentId={agentId}
+      config={data.config}
+      configured={data.status.status === "configured"}
+    />
+  );
+}
+
+function ProviderConnectionForm({
+  agentId,
+  config,
+  configured,
+}: {
+  agentId: string;
+  config: {
+    id: string;
+    providerName: string;
+    baseUrl: string;
+    model: string;
+    authMode: string;
+    enabled: boolean;
+    hasApiKey: boolean;
+    updatedAt?: string;
+  } | null;
+  configured: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [providerName, setProviderName] = useState(config?.providerName ?? "AI Gateway");
+  const [baseUrl, setBaseUrl] = useState(config?.baseUrl ?? "");
+  const [model, setModel] = useState(config?.model ?? "");
+  const [authMode, setAuthMode] = useState(config?.authMode ?? "bearer");
+  const [apiKey, setApiKey] = useState("");
+  const [enabled, setEnabled] = useState(config?.enabled ?? true);
 
   const saveMutation = useMutation({
     mutationFn: () => api.saveAgentProviderConfig(agentId, {
@@ -336,18 +362,7 @@ function ProviderTab({ agentId }: { agentId: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isPending) return <Skeleton className="h-96 rounded-2xl" />;
-  if (isError || !data) {
-    return (
-      <ErrorState
-        message={error instanceof Error ? error.message : "دریافت اتصال هوش مصنوعی ناموفق بود."}
-        onRetry={() => void refetch()}
-      />
-    );
-  }
-
-  const hasKey = Boolean(data.config?.hasApiKey);
-  const providerConfigured = data.status.status === "configured";
+  const hasKey = Boolean(config?.hasApiKey);
   const canSave =
     providerName.trim().length >= 2 &&
     /^https?:\/\//i.test(baseUrl.trim()) &&
@@ -371,10 +386,10 @@ function ProviderTab({ agentId }: { agentId: string }) {
               </CardDescription>
             </div>
             <Badge
-              variant={data.config && data.config.enabled && providerConfigured ? "default" : "outline"}
+              variant={config && config.enabled && configured ? "default" : "outline"}
               className="shrink-0"
             >
-              {data.config && data.config.enabled && providerConfigured ? "پیکربندی‌شده" : data.config ? "نیاز به بررسی" : "متصل نشده"}
+              {config && config.enabled && configured ? "پیکربندی‌شده" : config ? "نیاز به بررسی" : "متصل نشده"}
             </Badge>
           </div>
         </CardHeader>
@@ -384,23 +399,18 @@ function ProviderTab({ agentId }: { agentId: string }) {
             <Label>نام سرویس</Label>
             <Input value={providerName} onChange={(e) => setProviderName(e.target.value)} placeholder="مثلاً OpenRouter یا AI Gateway" />
           </div>
-
           <div className="space-y-2">
             <Label>Base URL</Label>
             <Input dir="ltr" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://.../v1" />
           </div>
-
           <div className="space-y-2">
             <Label>Model ID</Label>
             <Input dir="ltr" value={model} onChange={(e) => setModel(e.target.value)} placeholder="model-name" />
           </div>
-
           <div className="space-y-2">
             <Label>روش احراز</Label>
             <Select value={authMode} onValueChange={setAuthMode}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="انتخاب روش" />
-              </SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder="انتخاب روش" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="bearer">Bearer</SelectItem>
                 <SelectItem value="x-api-key">X-API-Key</SelectItem>
@@ -408,7 +418,6 @@ function ProviderTab({ agentId }: { agentId: string }) {
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-2 md:col-span-2">
             <Label>API Key {hasKey ? "(برای نگه‌داشتن کلید فعلی خالی بگذارید)" : "*"}</Label>
             <Input
@@ -418,17 +427,12 @@ function ProviderTab({ agentId }: { agentId: string }) {
               onChange={(e) => setApiKey(e.target.value)}
               placeholder={hasKey ? "••••••••••••••••" : "کلید API سرویس‌دهنده"}
             />
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              کلید خام هرگز به مرورگر برگردانده نمی‌شود.
-            </p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">کلید خام هرگز به مرورگر برگردانده نمی‌شود.</p>
           </div>
-
           <div className="md:col-span-2 flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.02] p-4">
             <div>
               <p className="text-sm font-medium">استفاده برای پاسخ‌گویی این ایجنت</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                این اتصال برای Playground، تلگرام و API همین ایجنت استفاده می‌شود.
-              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">این اتصال برای Playground، تلگرام و API همین ایجنت استفاده می‌شود.</p>
             </div>
             <input
               aria-label="فعال بودن اتصال ایجنت"
@@ -438,13 +442,8 @@ function ProviderTab({ agentId }: { agentId: string }) {
               className="size-4 accent-primary"
             />
           </div>
-
           <div className="md:col-span-2 flex flex-wrap justify-end gap-2">
-            <Button
-              variant="outline"
-              disabled={testMutation.isPending || !data.config}
-              onClick={() => testMutation.mutate()}
-            >
+            <Button variant="outline" disabled={testMutation.isPending || !config} onClick={() => testMutation.mutate()}>
               {testMutation.isPending ? <Loader2 className="animate-spin" /> : <ShieldCheck />}
               {testMutation.isPending ? "در حال تست..." : "تست اتصال"}
             </Button>
