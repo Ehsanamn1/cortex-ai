@@ -38,7 +38,7 @@ describe("provider resilience simulation", () => {
     } as never);
 
     const fetchMock = vi.mocked(globalThis.fetch);
-    fetchMock.mockResolvedValue(new Response("upstream unavailable", { status: 503 }));
+    fetchMock.mockImplementation(async () => new Response("upstream unavailable", { status: 503 }));
 
     const first = await llmManager.resolveForAgent("agent-1", "ws-1");
     expect(first.provider).not.toBeNull();
