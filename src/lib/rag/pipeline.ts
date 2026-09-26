@@ -5,7 +5,7 @@ import { llmManager } from "@/lib/providers/llm/manager";
 import { ProviderNotConfiguredError, type ChatTurn } from "@/lib/providers/llm/types";
 import { buildRagMessages, type RetrievedChunk } from "./prompt";
 import { estimateTokens } from "@/lib/server/audit";
-import { remember } from "@/lib/runtime/memory";
+import { remember, rememberExplicitUserFacts } from "@/lib/runtime/memory";
 
 export interface RagAnswer {
   content: string;
@@ -58,10 +58,11 @@ export async function answerWithKnowledge(params: {
     citationsEnabled?: boolean;
   };
   conversationId?: string | null;
+  memorySubjectKey?: string | null;
   history: Array<{ role: "user" | "assistant"; content: string }>;
   question: string;
 }): Promise<RagAnswer> {
-  const { agentId, workspaceId, conversationId, persona, history, question } = params;
+  const { agentId, workspaceId, conversationId, memorySubjectKey, persona, history, question } = params;
 
   // 1) Provider gate — honest failure, never a fake answer.
   const { provider: llm } = await llmManager.resolveForAgent(agentId, workspaceId);
@@ -122,7 +123,8 @@ export async function answerWithKnowledge(params: {
         // standard IR practice — no fabricated vectors, just better recall
         // (e.g. a Persian question against English documents).
         const best = searchResults[0]?.score ?? 0;
-        if (best < 0.3) {
+        const queryExpansionEnabled = process.env.RAG_QUERY_EXPANSION?.trim().toLowerCase() === "true";
+        if (queryExpansionEnabled && best < 0.3) {
           try {
             const expansionMessages: ChatTurn[] = [
               {
@@ -183,9 +185,18 @@ export async function answerWithKnowledge(params: {
     persona.memoryEnabled === false || !conversationId
       ? []
       : await db.memoryEntry.findMany({
-          where: { agentId, workspaceId, conversationId },
+          where: {
+            agentId,
+            workspaceId,
+            OR: [
+              { conversationId },
+              ...(memorySubjectKey
+                ? [{ conversationId: null, scope: "user", subjectKey: memorySubjectKey }]
+                : []),
+            ],
+          },
           orderBy: { updatedAt: "desc" },
-          take: 8,
+          take: 16,
           select: { key: true, value: true },
         });
   const messages: ChatTurn[] = buildRagMessages({
@@ -213,15 +224,28 @@ export async function answerWithKnowledge(params: {
   }
 
   if (persona.memoryEnabled !== false && conversationId) {
-    await remember({
-      workspaceId,
-      agentId,
-      conversationId,
-      key: "conversation:" + conversationId + ":last_user",
-      value: question.slice(0, 1000),
-      type: "interaction",
-    }).catch((error) => {
-      console.warn("[cortex][memory] durable interaction memory skipped:", error instanceof Error ? error.message : error);
+    await Promise.all([
+      remember({
+        workspaceId,
+        agentId,
+        conversationId,
+        scope: "conversation",
+        key: "conversation:" + conversationId + ":last_user",
+        value: question.slice(0, 1000),
+        type: "interaction",
+      }),
+      ...(memorySubjectKey
+        ? [
+            rememberExplicitUserFacts({
+              workspaceId,
+              agentId,
+              subjectKey: memorySubjectKey,
+              text: question,
+            }),
+          ]
+        : []),
+    ]).catch((error) => {
+      console.warn("[cortex][memory] durable memory update skipped:", error instanceof Error ? error.message : error);
     });
   }
 
