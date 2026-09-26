@@ -18,6 +18,11 @@ async function one(endpoint) {
         signal: AbortSignal.timeout(15_000),
       });
       const elapsed = performance.now() - started;
+      const retryableStatus = res.status === 429 || res.status >= 500;
+      if (retryableStatus && attempt < 2) {
+        await sleep(200 * (attempt + 1));
+        continue;
+      }
       return { path: endpoint.path, status: res.status, expected: endpoint.expected, ms: elapsed, attempt: attempt + 1 };
     } catch (error) {
       lastError = error;
