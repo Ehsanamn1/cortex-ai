@@ -83,7 +83,7 @@ describe("Telegram 10-user simulation", () => {
       id: "agent-10", workspaceId: "ws-10", maxTokens: 256, name: "10-user Agent",
       memoryEnabled: true, citationsEnabled: true, language: "fa", tone: "friendly",
     } as never);
-    vi.mocked(db.telegramUser.upsert).mockImplementation(async ({ where }: any) => ({
+    vi.mocked(db.telegramUser.upsert).mockImplementation((async ({ where }: { where: { botId_telegramUserId: { telegramUserId: string } } }) => ({
       id: "db-" + where.botId_telegramUserId.telegramUserId,
       botId: "bot-10",
       telegramUserId: where.botId_telegramUserId.telegramUserId,
