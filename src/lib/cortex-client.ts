@@ -205,6 +205,7 @@ export interface ProviderHealthOkDto {
 
 export interface ProviderConfigDto { id:string; providerName:string; baseUrl:string; model:string; protocol?:string; authMode:string; enabled:boolean; hasApiKey:boolean }
 export interface TelegramBotDto { id:string; name:string; agentId:string; agentName:string; username:string|null; status:string; mode:string; lastError:string|null; lastSeenAt:string|null; createdAt:string; updatedAt:string; allowlistCount:number; usersCount:number }
+export interface MemoryDto { id:string; scope:string; subjectKey:string|null; conversationId:string|null; type:string; key:string; value:string; importance:number; confidence:number; source:string; expiresAt:string|null; updatedAt:string; lastAccessedAt:string; }
 export interface TelegramBotProfileDto {
   botId:string;
   displayName:string;
@@ -498,6 +499,8 @@ export const api = {
   getTelegramBots(workspaceId?:string):Promise<{bots:TelegramBotDto[]}>{ return request(`/api/telegram/bots${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:''}`); },
   createTelegramBot(input:{workspaceId?:string;agentId:string;name:string;token:string;mode:'webhook'|'polling'}){ return jsonRequest<{bot:TelegramBotDto}>('/api/telegram/bots','POST',input); },
   updateTelegramBot(id:string,input:Record<string,unknown>){ return jsonRequest<{bot:TelegramBotDto}>(`/api/telegram/bots/${encodeURIComponent(id)}`,'PATCH',input); },
+  getAgentMemory(id:string,params?:{limit?:number;conversationId?:string;subjectKey?:string}){ const q=new URLSearchParams(); if(params?.limit)q.set('limit',String(params.limit)); if(params?.conversationId)q.set('conversationId',params.conversationId); if(params?.subjectKey)q.set('subjectKey',params.subjectKey); return request<{memories:MemoryDto[]}>(`/api/agents/${encodeURIComponent(id)}/memory${q.toString() ? '?' + q.toString() : ''}`); },
+  forgetAgentMemory(id:string,input:{key?:string;subjectKey?:string;conversationId?:string}){ return jsonRequest<{deleted:number}>(`/api/agents/${encodeURIComponent(id)}/memory`,'DELETE',input); },
   getTelegramBotProfile(id:string){ return request<{profile:TelegramBotProfileDto}>(`/api/telegram/bots/${encodeURIComponent(id)}/profile`); },
   updateTelegramBotProfile(id:string,input:Record<string,unknown>){ return jsonRequest<{profile:TelegramBotProfileDto}>(`/api/telegram/bots/${encodeURIComponent(id)}/profile`,'PATCH',input); },
   deleteTelegramBot(id:string){ return jsonRequest<{ok:boolean}>(`/api/telegram/bots/${encodeURIComponent(id)}`,'DELETE'); },
