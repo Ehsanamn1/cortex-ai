@@ -42,6 +42,37 @@ vi.mock("@/lib/server/usage", () => ({
   releaseUsageReservation: vi.fn(async () => undefined),
 }));
 
+vi.mock("@/lib/telegram/profile", () => ({
+  getTelegramBotProfile: vi.fn(async () => ({
+    botId: "bot-1",
+    displayName: "Test Bot",
+    shortDescription: "Test",
+    description: "Test",
+    welcomeTitle: "✨ خوش آمدید",
+    welcomeText: "شروع کن",
+    welcomeBannerUrl: "",
+    helpText: "راهنما",
+    newChatText: "گفتگوی جدید آماده است.",
+    blockedText: "⛔ مسدود",
+    errorText: "خطا",
+    thinkingMessages: ["🧠 فکر"],
+    newChatButtonText: "🆕 جدید",
+    helpButtonText: "❓ راهنما",
+    usageButtonText: "📊 مصرف",
+    showThinking: true,
+    showWelcomeBanner: false,
+    commands: [],
+  })),
+}));
+
+vi.mock("@/lib/runtime/tools", () => ({
+  listAgentTools: vi.fn(async () => []),
+}));
+
+vi.mock("@/lib/runtime/engine", () => ({
+  runAgentExecution: vi.fn(),
+}));
+
 vi.mock("@/lib/rag/pipeline", () => ({
   RAG_QUERY_EXPANSION_RESERVE_TOKENS: 384,
   answerWithKnowledge: vi.fn(async () => ({
