@@ -41,6 +41,19 @@ vi.mock("@/lib/telegram/profile", () => ({
   })),
 }));
 vi.mock("@/lib/runtime/tools", () => ({ listAgentTools: vi.fn(async () => []) }));
+vi.mock("@/lib/runtime/engine", () => ({
+  runAgentExecution: vi.fn(async ({ input }: { input: string }) => ({
+    executionId: "execution-sim",
+    content: "پاسخ برای " + input,
+    provider: "SimProvider",
+    model: "sim-model",
+    latencyMs: 5,
+    retrieval: [],
+    auxiliaryInputTokens: 0,
+    auxiliaryOutputTokens: 0,
+    toolUsed: null,
+  })),
+}));
 vi.mock("@/lib/rag/pipeline", () => ({
   RAG_QUERY_EXPANSION_RESERVE_TOKENS: 384,
   answerWithKnowledge: vi.fn(async ({ question }: { question: string }) => ({
