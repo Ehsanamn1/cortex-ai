@@ -47,6 +47,11 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
     vi.mocked(db.providerConfig.findUnique).mockResolvedValue(null);
     vi.mocked(db.knowledgeSource.findMany).mockResolvedValue([]);
     vi.mocked(db.knowledgeChunk.count).mockResolvedValue(0);
+    vi.mocked(db.memoryEntry.findMany).mockImplementation(async (args) => {
+      const conversationId = String(args.where.conversationId);
+      const userId = conversationId.replace("conversation-", "");
+      return [{ key: "user_marker", value: "کاربر-" + userId }] as never;
+    });
 
     vi.stubGlobal("fetch", vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body)) as {
@@ -54,9 +59,11 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
         messages: Array<{ role: string; content: string }>;
       };
       const question = body.messages.at(-1)?.content ?? "";
+      const system = body.messages.find((message) => message.role === "system")?.content ?? "";
+      const marker = system.match(/کاربر-\d+/)?.[0] ?? "کاربر-unknown";
       await Promise.resolve();
       return new Response(JSON.stringify({
-        choices: [{ message: { content: "پاسخ برای " + question } }],
+        choices: [{ message: { content: marker + " :: " + question } }],
       }), {
         status: 200,
         headers: { "content-type": "application/json" },
@@ -78,7 +85,7 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
             language: "fa",
             tone: "professional",
             instructions: "پاسخ دقیق بده.",
-            memoryEnabled: false,
+            memoryEnabled: true,
             citationsEnabled: true,
           },
           history: [],
@@ -89,7 +96,7 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
 
     expect(results).toHaveLength(1000);
     expect(new Set(results.map((result) => result.content)).size).toBe(1000);
-    expect(results.every((result, index) => result.content === "پاسخ برای سؤال کاربر " + index)).toBe(true);
+    expect(results.every((result, index) => result.content === "کاربر-" + index + " :: سؤال کاربر " + index)).toBe(true);
     expect(results.every((result) => result.provider === "Simulation Provider")).toBe(true);
     expect(results.every((result) => result.model === "simulation-model")).toBe(true);
     expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledTimes(1000);
