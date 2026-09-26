@@ -2,7 +2,6 @@ import {
   ProviderNotConfiguredError,
   ProviderUnavailableError,
   classifyProviderFailure,
-  classifyProviderFailure,
   type GenerateOptions,
   type GenerateResult,
   type LLMProvider,
@@ -65,7 +64,7 @@ export class OpenRouterProvider implements LLMProvider {
       return { content: content.trim(), provider: this.name, model };
     } catch (e) {
       console.error("[cortex][openrouter] generation failed:", e instanceof Error ? e.message : e);
-      throw classifyProviderFailure(error, this.name);
+      throw classifyProviderFailure(e, this.name);
     }
   }
 
