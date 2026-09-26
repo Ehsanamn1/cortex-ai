@@ -17,23 +17,45 @@ export async function POST(req:Request,{params}:Params){
     const update = (await req.json()) as Record<string, unknown>;
     const updateId = Number(update?.update_id);
 
-    // Telegram retries webhook delivery only when the webhook returns a
-    // non-2xx response. We intentionally acknowledge immediately, so failures
-    // in the background handler need their own bounded retry loop. The
-    // lastUpdateId marker is advanced only after successful processing.
+    // Acknowledge the webhook quickly, then process the update in the Worker
+    // background. The DB ledger prevents duplicate delivery from generating a
+    // second user message / model call.
     after(async () => {
       let lastError: unknown = null;
+      let ledgerId: string | null = null;
+
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           if (Number.isInteger(updateId)) {
-            const current = await db.telegramBot.findUnique({
-              where: { id: bot.id },
-              select: { lastUpdateId: true },
+            const existing = await db.telegramProcessedUpdate.findUnique({
+              where: { botId_updateId: { botId: bot.id, updateId } },
             });
-            if (current && updateId <= current.lastUpdateId) return;
+
+            if (existing?.status === "completed") return;
+            if (existing?.status === "processing" && existing.updatedAt.getTime() > Date.now() - 120_000) return;
+
+            if (existing) {
+              const claimed = await db.telegramProcessedUpdate.update({
+                where: { id: existing.id },
+                data: { status: "processing", attempts: { increment: 1 }, lastError: null },
+              });
+              ledgerId = claimed.id;
+            } else {
+              const created = await db.telegramProcessedUpdate.create({
+                data: { botId: bot.id, updateId, status: "processing", attempts: 1 },
+              });
+              ledgerId = created.id;
+            }
           }
 
           await processTelegramUpdate(bot.id, update);
+
+          if (ledgerId) {
+            await db.telegramProcessedUpdate.update({
+              where: { id: ledgerId },
+              data: { status: "completed", completedAt: new Date(), lastError: null },
+            });
+          }
 
           if (Number.isInteger(updateId)) {
             await db.telegramBot.updateMany({
@@ -44,11 +66,18 @@ export async function POST(req:Request,{params}:Params){
           return;
         } catch (error) {
           lastError = error;
+          if (ledgerId) {
+            await db.telegramProcessedUpdate.update({
+              where: { id: ledgerId },
+              data: { status: attempt === 2 ? "failed" : "processing", lastError: error instanceof Error ? error.message.slice(0, 500) : "unknown error" },
+            }).catch(() => undefined);
+          }
           if (attempt < 2) {
             await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
           }
         }
       }
+
       console.error('[cortex][telegram-webhook] background processing failed after retries:', lastError);
     });
     return NextResponse.json({ ok: true });
