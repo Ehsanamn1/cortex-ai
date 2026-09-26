@@ -99,8 +99,8 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
         finalContent = "✅ کار انجام شد. برای ادامه، جزئیات بیشتری لازم دارم.";
       }
       await input.onProgress?.("✍️ در حال جمع‌بندی پاسخ نهایی…");
-      if (execution && agent.memoryEnabled) {
-        await recordStep(execution.id, ++seq, "memory", "Memory update", { input: input.input }, async () => {
+      if (agent.memoryEnabled) {
+        await recordStep(execution?.id ?? null, ++seq, "memory", "Memory update", { input: input.input }, async () => {
           await remember({
             workspaceId: input.workspaceId,
             agentId: agent.id,
