@@ -322,6 +322,24 @@ model TelegramAllowlistEntry {
   @@index([botId, status])
 }
 
+model TelegramProcessedUpdate {
+  id          String   @id @default(cuid())
+  botId       String
+  updateId    Int
+  status      String   @default("processing")
+  attempts    Int      @default(1)
+  lastError   String?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime @updatedAt
+
+  bot TelegramBot @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@unique([botId, updateId])
+  @@index([botId, status])
+  @@index([updatedAt])
+}
+
 model TelegramBotProfile {
   id                    String   @id @default(cuid())
   botId                  String   @unique
