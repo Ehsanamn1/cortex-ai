@@ -1,5 +1,6 @@
 import { ProviderNotConfiguredError, ProviderUnavailableError, type GenerateOptions, type GenerateResult, type LLMProvider } from './types';
 import { assertPublicProviderBaseUrl, validateProviderBaseUrl } from './provider-url';
+import { fetchProviderResponse } from "./request";
 
 export type CompatibleAuthMode = 'bearer' | 'x-api-key' | 'none';
 
@@ -52,8 +53,8 @@ export class OpenAICompatibleProvider implements LLMProvider {
     try {
       const base = await assertPublicProviderBaseUrl(this.baseUrl);
       const endpoint = base.toString().replace(/\/$/, '') + '/chat/completions';
-      const res = await fetch(endpoint, {
-        method: 'POST',
+      const res = await fetchProviderResponse(endpoint, {
+        method: "POST",
         headers: this.headers(),
         body: JSON.stringify({
           model: this.modelId,
@@ -61,22 +62,17 @@ export class OpenAICompatibleProvider implements LLMProvider {
           temperature: options.temperature ?? 0.3,
           max_tokens: options.maxTokens ?? 900,
         }),
-        signal: AbortSignal.timeout(90_000),
-      });
+      }, this.name);
       const text = await res.text();
-      if (!res.ok) {
-        console.error(`[cortex][${this.name}] HTTP ${res.status}`, text.slice(0, 300));
-        throw new Error(`${this.name} http ${res.status}`);
-      }
       const data = JSON.parse(text) as { choices?: Array<{ message?: { content?: string | Array<{type?: string; text?: string}> } }> };
       const raw = data.choices?.[0]?.message?.content;
       const content = Array.isArray(raw) ? raw.map((part) => part.text ?? '').join('') : raw;
       if (!content?.trim()) throw new Error('empty completion');
       return { content: content.trim(), provider: this.name, model: this.modelId };
     } catch (error) {
-      if (error instanceof ProviderNotConfiguredError) throw error;
+      if (error instanceof ProviderNotConfiguredError || error instanceof ProviderUnavailableError) throw error;
       console.error(`[cortex][${this.name}] generation failed`, error instanceof Error ? error.message : error);
-      throw new ProviderUnavailableError();
+      throw new ProviderUnavailableError(`سرویس «${this.name}» پاسخ نامعتبر برگرداند.`, 502);
     }
   }
 
