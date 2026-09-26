@@ -5,6 +5,7 @@ import { loadAgentForSession } from "@/lib/server/access";
 import { encryptSecret } from "@/lib/server/secrets";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { llmManager } from "@/lib/providers/llm/manager";
+import { validateProviderBaseUrl } from "@/lib/providers/llm/provider-url";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export async function GET(req: Request, { params }: Params) {
     const { id } = await params;
     const agent = await loadAgentForSession(session, id);
     const config = await db.agentProviderConfig.findUnique({ where: { agentId: agent.id } });
-    const status = await llmManager.statusForAgent(agent.id, agent.workspaceId);
+    const status = await llmManager.statusForAgent(agent.id);
 
     return applyCors(
       jsonOk({
@@ -88,9 +89,11 @@ export async function PUT(req: Request, { params }: Params) {
       );
     }
 
-    if (!/^https?:\/\//i.test(baseUrl)) {
+    try {
+      validateProviderBaseUrl(baseUrl);
+    } catch {
       return applyCors(
-        jsonError("Base URL باید با http:// یا https:// شروع شود.", 400),
+        jsonError("Base URL باید یک آدرس عمومی http/https باشد و نباید به localhost یا شبکه خصوصی اشاره کند.", 400),
         req.headers.get("origin"),
       );
     }
@@ -150,7 +153,7 @@ export async function PUT(req: Request, { params }: Params) {
     return applyCors(
       jsonOk({
         config: serializeConfig(config),
-        status: await llmManager.statusForAgent(agent.id, agent.workspaceId),
+        status: await llmManager.statusForAgent(agent.id),
       }),
       req.headers.get("origin"),
     );

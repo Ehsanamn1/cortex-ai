@@ -84,4 +84,4 @@ Authentication failures use HTTP 401, invalid requests use 400, quota failures u
 
 ## External requirements
 
-A real AI answer requires an enabled workspace provider or environment provider. R2-backed file ingestion in production requires the four R2 Worker secrets documented in `docs/R2_KNOWLEDGE_STORAGE.md`.
+A real AI answer requires a usable provider configured on the target Agent. Legacy workspace/environment providers may still serve Agents that have no Agent-level configuration. R2-backed file ingestion in production requires the four R2 Worker secrets documented in `docs/R2_KNOWLEDGE_STORAGE.md`.

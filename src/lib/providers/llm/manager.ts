@@ -57,7 +57,19 @@ class ProviderManager {
   async resolveForAgent(agentId: string, workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus }> {
     const agentConfig = await db.agentProviderConfig.findUnique({ where: { agentId } });
 
-    if (agentConfig?.enabled) {
+    if (agentConfig) {
+      if (!agentConfig.enabled) {
+        return {
+          provider: null,
+          status: {
+            provider: agentConfig.providerName,
+            status: "not_configured",
+            model: agentConfig.model || null,
+            source: "none",
+          },
+        };
+      }
+
       const provider = buildConfiguredProvider(agentConfig);
       if (provider.isConfigured()) {
         return { provider, status: this.statusFor(provider, "agent") };
@@ -74,7 +86,7 @@ class ProviderManager {
     }
 
     // Backward compatibility for workspaces that used the old Settings flow.
-    // New agent connections are always preferred.
+    // Only agents without an agent-level config use this legacy fallback.
     if (workspaceId) {
       const legacy = await db.providerConfig.findUnique({ where: { workspaceId } });
       if (legacy?.enabled) {
@@ -125,8 +137,34 @@ class ProviderManager {
     return this.resolveEnvironment();
   }
 
-  async statusForAgent(agentId: string, workspaceId?: string): Promise<ProviderStatus> {
-    return (await this.resolveForAgent(agentId, workspaceId)).status;
+  async statusForAgent(agentId: string): Promise<ProviderStatus> {
+    const config = await db.agentProviderConfig.findUnique({ where: { agentId } });
+    if (!config) {
+      return {
+        provider: "none",
+        status: "not_configured",
+        model: null,
+        source: "none",
+      };
+    }
+    if (!config.enabled) {
+      return {
+        provider: config.providerName,
+        status: "not_configured",
+        model: config.model || null,
+        source: "none",
+      };
+    }
+
+    const provider = buildConfiguredProvider(config);
+    return provider.isConfigured()
+      ? this.statusFor(provider, "agent")
+      : {
+          provider: config.providerName,
+          status: "not_configured",
+          model: config.model || null,
+          source: "none",
+        };
   }
 
   async statusForWorkspace(workspaceId?: string): Promise<ProviderStatus> {

@@ -116,7 +116,7 @@ jobs:
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "Postgres URL missing"; exit 1; }
           schema="$(DATABASE_URL="$db_url" npx prisma db pull --print --force)"
-          for model in User Workspace Agent AgentApiKey KnowledgeSource KnowledgeDocument KnowledgeChunk VectorPoint Conversation Message ProviderConfig UsagePolicy TelegramBot TelegramUser UsageReservation UsageEvent AuditLog MemoryEntry; do
+          for model in User Workspace Agent AgentApiKey KnowledgeSource KnowledgeDocument KnowledgeChunk VectorPoint Conversation Message ProviderConfig UsagePolicy AgentProviderConfig TelegramBot TelegramUser UsageReservation UsageEvent AuditLog MemoryEntry; do
             printf "%s" "$schema" | grep -q "model $model" || { echo "Missing Prisma model in production schema: $model"; exit 1; }
           done
           echo "Production database contract verified."
