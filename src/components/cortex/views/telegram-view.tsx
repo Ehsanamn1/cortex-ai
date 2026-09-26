@@ -261,6 +261,7 @@ function TelegramCustomizer({ botId }: { botId: string }) {
   const [thinking, setThinking] = useState("");
   const [showThinking, setShowThinking] = useState(true);
   const [showBanner, setShowBanner] = useState(false);
+  const [commands, setCommands] = useState("");
 
   useEffect(() => {
     if (!profile) return;
@@ -274,6 +275,7 @@ function TelegramCustomizer({ botId }: { botId: string }) {
     setThinking(profile.thinkingMessages.join("\n"));
     setShowThinking(profile.showThinking);
     setShowBanner(profile.showWelcomeBanner);
+    setCommands(profile.commands.map((item) => item.command + "=" + item.description).join("\n"));
   }, [profile]);
 
   const save = useMutation({
@@ -288,6 +290,10 @@ function TelegramCustomizer({ botId }: { botId: string }) {
       thinkingMessages: thinking.split("\n").map(v => v.trim()).filter(Boolean),
       showThinking,
       showWelcomeBanner: showBanner,
+      commands: commands.split("\n").map(line => line.trim()).filter(Boolean).map(line => {
+        const [command, ...description] = line.split("=");
+        return { command: command.replace(/^\//, "").trim(), description: description.join("=").trim() };
+      }).filter(item => item.command && item.description),
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["telegram-profile", botId] });
@@ -314,6 +320,7 @@ function TelegramCustomizer({ botId }: { botId: string }) {
         <div className="space-y-2"><Label>دکمه راهنما</Label><Input value={helpButton} onChange={(e) => setHelpButton(e.target.value)} /></div>
         <div className="space-y-2"><Label>دکمه مصرف</Label><Input value={usageButton} onChange={(e) => setUsageButton(e.target.value)} /></div>
         <div className="space-y-2"><Label>URL بنر خوش‌آمد (اختیاری)</Label><Input dir="ltr" value={banner} onChange={(e) => setBanner(e.target.value)} placeholder="https://..." /></div>
+        <div className="space-y-2 md:col-span-2"><Label>Commands و منوی ربات (هر خط: command=description)</Label><Textarea value={commands} onChange={(e) => setCommands(e.target.value)} rows={4} placeholder="/start=شروع\n/help=راهنما\n/newchat=گفتگوی جدید" /></div>
         <div className="space-y-2 md:col-span-2"><Label>پیام‌های وضعیت کار (هر خط یک پیام)</Label><Textarea value={thinking} onChange={(e) => setThinking(e.target.value)} rows={3} /></div>
         <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش وضعیت فکر/کار</p><p className="mt-1 text-[10px] text-muted-foreground">پیام مرحله‌ای قبل از پاسخ نمایش داده شود.</p></div><Switch checked={showThinking} onCheckedChange={setShowThinking} /></div>
         <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش بنر خوش‌آمد</p><p className="mt-1 text-[10px] text-muted-foreground">در /start، بنر https ارسال شود.</p></div><Switch checked={showBanner} onCheckedChange={setShowBanner} /></div>
