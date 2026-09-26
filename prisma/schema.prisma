@@ -37,6 +37,7 @@ model Workspace {
   members        WorkspaceMember[]
   agents         Agent[]
   providerConfig ProviderConfig?
+  agentProviderConfigs AgentProviderConfig[]
   telegramBots   TelegramBot[]
   usageEvents    UsageEvent[]
   auditLogs      AuditLog[]
