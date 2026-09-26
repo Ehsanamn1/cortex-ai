@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
   CircleAlert,
-  Cpu,
   Database,
   Info,
   Loader2,
@@ -33,7 +32,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -75,18 +73,10 @@ function ProvidersSection() {
 
   useErrorToast(isError ? error : null);
 
-  const healthMutation = useMutation({
-    mutationFn: ()=>api.testProvidersHealth(workspaceId??undefined),
-    onSuccess: (result) => {
-      toast.success(`اتصال برقرار است — تأخیر ${faNum(result.llm.latencyMs)} میلی‌ثانیه`);
-    },
-    onError: (mutationError: Error) => toast.error(mutationError.message),
-  });
-
   if (isPending) {
     return (
-      <div className="grid gap-4 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
+      <div className="grid gap-4 lg:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
           <Skeleton key={i} className="h-52 rounded-xl" />
         ))}
       </div>
@@ -96,7 +86,7 @@ function ProvidersSection() {
   if (isError || !data) {
     return (
       <ErrorState
-        message={error instanceof Error ? error.message : "دریافت وضعیت سرویس‌ها ناموفق بود."}
+        message={error instanceof Error ? error.message : "دریافت وضعیت زیرساخت ناموفق بود."}
         onRetry={() => void refetch()}
       />
     );
@@ -104,28 +94,7 @@ function ProvidersSection() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* LLM */}
-        <Card className="rounded-xl">
-          <CardHeader className="border-b [.border-b]:pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-lg border bg-primary/10 text-primary">
-                <Cpu className="size-4" />
-              </span>
-              مدل زبانی
-            </CardTitle>
-            <CardDescription>موتور پاسخ‌دهی ایجنت‌ها</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-4">
-            <StatusBadge ok={data.llm.status === "configured"} readyLabel="فعال" />
-            <div className="space-y-2">
-              <ProviderRow label="سرویس‌دهنده" value={data.llm.provider} />
-              <ProviderRow label="مدل" value={data.llm.model ?? "—"} />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Embeddings */}
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card className="rounded-xl">
           <CardHeader className="border-b [.border-b]:pb-4">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -134,7 +103,7 @@ function ProvidersSection() {
               </span>
               جاسازی متن (Embedding)
             </CardTitle>
-            <CardDescription>تبدیل دانش به بردار معنایی</CardDescription>
+            <CardDescription>تبدیل دانش به بردار قابل جست‌وجو</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
             <StatusBadge ok={data.embeddings.status === "configured"} readyLabel="فعال" />
@@ -153,13 +122,12 @@ function ProvidersSection() {
             </div>
             {data.embeddings.mode === "lexical" && (
               <p className="text-[11px] leading-relaxed text-muted-foreground">
-                بازیابی واقعی مبتنی بر شباهت واژگانی است؛ برای جاسازی عصبی، کلید سرویس مربوطه را در سرور پیکربندی کنید.
+                بازیابی دانش در حالت فعلی با موتور واژگانی محلی انجام می‌شود و برای آن کلید جداگانه لازم نیست.
               </p>
             )}
           </CardContent>
         </Card>
 
-        {/* Vector store */}
         <Card className="rounded-xl">
           <CardHeader className="border-b [.border-b]:pb-4">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -168,7 +136,7 @@ function ProvidersSection() {
               </span>
               پایگاه داده برداری
             </CardTitle>
-            <CardDescription>محل ذخیره بردارهای دانش</CardDescription>
+            <CardDescription>محل ذخیره و جست‌وجوی بردارهای دانش</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
             <StatusBadge ok={data.vectorStore.status === "ready"} readyLabel="آماده" />
@@ -187,44 +155,13 @@ function ProvidersSection() {
         </Card>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          وضعیت‌ها واقعی هستند و مستقیماً از سرور خوانده می‌شوند.
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={healthMutation.isPending}
-          onClick={() => healthMutation.mutate()}
-        >
-          {healthMutation.isPending ? <Loader2 aria-hidden="true" className="animate-spin" /> : <Cpu />}
-          {healthMutation.isPending ? "در حال آزمایش..." : "تست اتصال"}
-        </Button>
-      </div>
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        اتصال مدل زبانی دیگر در این بخش انجام نمی‌شود؛ هر ایجنت از تب «هوش مصنوعی» اتصال اختصاصی خودش را مدیریت می‌کند.
+      </p>
     </div>
   );
 }
 
-
-function ProviderConfigSection(){
-  const workspaceId=useCortexStore(s=>s.activeWorkspaceId);
-  const qc=useQueryClient();
-  const q=useQuery({queryKey:['provider-config',workspaceId],queryFn:()=>api.getProviderConfig(workspaceId??undefined),enabled:!!workspaceId});
-  const [providerName,setProviderName]=useState('AI Gateway'); const [baseUrl,setBaseUrl]=useState(''); const [model,setModel]=useState(''); const [authMode,setAuthMode]=useState('bearer'); const [apiKey,setApiKey]=useState(''); const [enabled,setEnabled]=useState(true);
-  // Form state intentionally mirrors the server-loaded provider configuration once it arrives.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(()=>{const c=q.data?.config;if(c){setProviderName(c.providerName);setBaseUrl(c.baseUrl);setModel(c.model);setAuthMode(c.authMode);setEnabled(c.enabled)}},[q.data]);
-  const save=useMutation({mutationFn:()=>api.saveProviderConfig({workspaceId:workspaceId??undefined,providerName,baseUrl,model,authMode,apiKey,enabled}),onSuccess:()=>{setApiKey('');qc.invalidateQueries({queryKey:['provider-config',workspaceId]});qc.invalidateQueries({queryKey:['providers-status']});toast.success('اتصال هوش مصنوعی ذخیره شد')},onError:e=>toast.error(e.message)});
-  return <Card className="cortex-panel"><CardHeader><CardTitle className="text-base">اتصال اختصاصی هوش مصنوعی</CardTitle><CardDescription>هر فضای کاری می‌تواند Gateway مستقل داشته باشد؛ کلید فقط به‌صورت رمزنگاری‌شده سمت سرور نگهداری می‌شود.</CardDescription></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">
-    <div><Label>نام سرویس</Label><Input className="mt-2" value={providerName} onChange={e=>setProviderName(e.target.value)} placeholder="مثلاً AIHubMix"/></div>
-    <div><Label>Base URL</Label><Input dir="ltr" className="mt-2" value={baseUrl} onChange={e=>setBaseUrl(e.target.value)} placeholder="https://.../v1"/></div>
-    <div><Label>Model ID</Label><Input dir="ltr" className="mt-2" value={model} onChange={e=>setModel(e.target.value)} placeholder="model-name"/></div>
-    <div><Label>روش احراز</Label><Select value={authMode} onValueChange={setAuthMode}><SelectTrigger className="mt-2"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="bearer">Bearer</SelectItem><SelectItem value="x-api-key">X-API-Key</SelectItem><SelectItem value="none">بدون کلید</SelectItem></SelectContent></Select></div>
-    <div className="md:col-span-2"><Label>API Key {q.data?.config?.hasApiKey?'(برای نگه‌داشتن کلید فعلی خالی بگذارید)':''}</Label><Input dir="ltr" type="password" className="mt-2" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder={q.data?.config?.hasApiKey?'••••••••••••••••':'sk-...'}/></div>
-    <div className="md:col-span-2 flex items-center justify-between rounded-xl border border-white/5 bg-black/10 p-4"><div><p className="text-sm font-medium">استفاده برای پاسخ‌گویی</p><p className="mt-1 text-xs text-muted-foreground">غیرفعال شود، Cortex به تنظیمات محیطی برمی‌گردد.</p></div><input aria-label="فعال بودن اتصال" type="checkbox" checked={enabled} onChange={e=>setEnabled(e.target.checked)} className="size-4 accent-[#3b82ff]"/></div>
-    <div className="md:col-span-2 flex justify-end"><Button disabled={save.isPending||!baseUrl||!model||!providerName} onClick={()=>save.mutate()}>{save.isPending?'در حال ذخیره…':'ذخیره اتصال'}</Button></div>
-  </CardContent></Card>
-}
 
 function LimitsSection(){
  const ws=useCortexStore(s=>s.activeWorkspaceId); const qc=useQueryClient(); const q=useQuery({queryKey:['limits',ws],queryFn:()=>api.getLimits(ws??undefined),enabled:!!ws}); const [dailyMessageLimit,setD]=useState(0);const [monthlyMessageLimit,setM]=useState(0);const [dailyTokenLimit,setDT]=useState(0);const [monthlyTokenLimit,setMT]=useState(0);
@@ -421,12 +358,12 @@ export function SettingsView() {
 
       <section aria-labelledby="settings-providers" className="space-y-4">
         <h3 id="settings-providers" className="text-base font-semibold text-foreground">
-          وضعیت سرویس‌های هوش مصنوعی
+          وضعیت زیرساخت هوش مصنوعی
         </h3>
         <ProvidersSection />
       </section>
 
-      <section aria-labelledby="settings-ai-config" className="space-y-4"><h3 id="settings-ai-config" className="text-base font-semibold text-foreground">اتصال و کنترل AI</h3><ProviderConfigSection/><LimitsSection/></section>
+      <section aria-labelledby="settings-limits" className="space-y-4"><h3 id="settings-limits" className="text-base font-semibold text-foreground">کنترل مصرف</h3><LimitsSection /></section>
 
       <section aria-labelledby="settings-account" className="space-y-4">
         <h3 id="settings-account" className="text-base font-semibold text-foreground">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -14,6 +14,8 @@ import {
   Trash2,
   Wrench,
   Check,
+  KeyRound,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,12 +40,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AgentApiAccess } from "@/components/cortex/agent-api-access";
 
 const AGENT_TABS: Array<{ value: AgentTab; label: string }> = [
   { value: "overview", label: "نمای کلی" },
   { value: "knowledge", label: "دانش" },
+  { value: "ai", label: "هوش مصنوعی" },
   { value: "tools", label: "ابزارها" },
   { value: "playground", label: "پلی‌گراند" },
   { value: "api", label: "API" },
@@ -278,6 +284,193 @@ function ToolsTab({ agentId }: { agentId: string }) {
   </div>;
 }
 
+
+function ProviderTab({ agentId }: { agentId: string }) {
+  const queryClient = useQueryClient();
+  const { data, isPending, isError, error, refetch } = useQuery({
+    queryKey: ["agent-provider", agentId],
+    queryFn: () => api.getAgentProviderConfig(agentId),
+  });
+
+  const [providerName, setProviderName] = useState("AI Gateway");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [model, setModel] = useState("");
+  const [authMode, setAuthMode] = useState("bearer");
+  const [apiKey, setApiKey] = useState("");
+  const [enabled, setEnabled] = useState(true);
+
+  // Sync saved configuration into the editable form.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    const config = data?.config;
+    if (!config) return;
+    setProviderName(config.providerName);
+    setBaseUrl(config.baseUrl);
+    setModel(config.model);
+    setAuthMode(config.authMode);
+    setEnabled(config.enabled);
+  }, [data?.config]);
+
+  const saveMutation = useMutation({
+    mutationFn: () => api.saveAgentProviderConfig(agentId, {
+      providerName: providerName.trim(),
+      baseUrl: baseUrl.trim(),
+      model: model.trim(),
+      authMode,
+      apiKey: apiKey.trim() || undefined,
+      enabled,
+    }),
+    onSuccess: () => {
+      setApiKey("");
+      queryClient.invalidateQueries({ queryKey: ["agent-provider", agentId] });
+      toast.success("اتصال هوش مصنوعی این ایجنت ذخیره شد");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const testMutation = useMutation({
+    mutationFn: () => api.testAgentProviderHealth(agentId),
+    onSuccess: (result) => {
+      toast.success("اتصال برقرار است — " + faNum(result.llm.latencyMs) + " میلی‌ثانیه");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (isPending) return <Skeleton className="h-96 rounded-2xl" />;
+  if (isError || !data) {
+    return (
+      <ErrorState
+        message={error instanceof Error ? error.message : "دریافت اتصال هوش مصنوعی ناموفق بود."}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
+  const hasKey = Boolean(data.config?.hasApiKey);
+  const providerConfigured = data.status.status === "configured";
+  const canSave =
+    providerName.trim().length >= 2 &&
+    /^https?:\/\//i.test(baseUrl.trim()) &&
+    model.trim().length > 0 &&
+    (hasKey || apiKey.trim().length > 0 || authMode === "none");
+
+  return (
+    <div className="space-y-6">
+      <Card className="cortex-panel rounded-2xl">
+        <CardHeader className="border-b [.border-b]:pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <span className="flex size-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+                  <KeyRound className="size-4" />
+                </span>
+                اتصال اختصاصی هوش مصنوعی
+              </CardTitle>
+              <CardDescription className="mt-2 leading-6">
+                این اتصال فقط برای همین ایجنت استفاده می‌شود. کلید API در سرور به‌صورت رمزنگاری‌شده ذخیره می‌شود و دوباره در رابط کاربری نمایش داده نمی‌شود.
+              </CardDescription>
+            </div>
+            <Badge
+              variant={data.config && data.config.enabled && providerConfigured ? "default" : "outline"}
+              className="shrink-0"
+            >
+              {data.config && data.config.enabled && providerConfigured ? "متصل" : data.config ? "نیاز به بررسی" : "متصل نشده"}
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="grid gap-5 pt-6 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>نام سرویس</Label>
+            <Input value={providerName} onChange={(e) => setProviderName(e.target.value)} placeholder="مثلاً OpenRouter یا AI Gateway" />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Base URL</Label>
+            <Input dir="ltr" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://.../v1" />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Model ID</Label>
+            <Input dir="ltr" value={model} onChange={(e) => setModel(e.target.value)} placeholder="model-name" />
+          </div>
+
+          <div className="space-y-2">
+            <Label>روش احراز</Label>
+            <Select value={authMode} onValueChange={setAuthMode}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="انتخاب روش" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bearer">Bearer</SelectItem>
+                <SelectItem value="x-api-key">X-API-Key</SelectItem>
+                <SelectItem value="none">بدون کلید</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label>API Key {hasKey ? "(برای نگه‌داشتن کلید فعلی خالی بگذارید)" : "*"}</Label>
+            <Input
+              dir="ltr"
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={hasKey ? "••••••••••••••••" : "کلید API سرویس‌دهنده"}
+            />
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              کلید خام هرگز به مرورگر برگردانده نمی‌شود.
+            </p>
+          </div>
+
+          <div className="md:col-span-2 flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.02] p-4">
+            <div>
+              <p className="text-sm font-medium">استفاده برای پاسخ‌گویی این ایجنت</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                این اتصال برای Playground، تلگرام و API همین ایجنت استفاده می‌شود.
+              </p>
+            </div>
+            <input
+              aria-label="فعال بودن اتصال ایجنت"
+              type="checkbox"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+              className="size-4 accent-primary"
+            />
+          </div>
+
+          <div className="md:col-span-2 flex flex-wrap justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={testMutation.isPending || !data.config}
+              onClick={() => testMutation.mutate()}
+            >
+              {testMutation.isPending ? <Loader2 className="animate-spin" /> : <ShieldCheck />}
+              {testMutation.isPending ? "در حال تست..." : "تست اتصال"}
+            </Button>
+            <Button disabled={saveMutation.isPending || !canSave} onClick={() => saveMutation.mutate()}>
+              {saveMutation.isPending && <Loader2 className="animate-spin" />}
+              {saveMutation.isPending ? "در حال ذخیره..." : "ذخیره اتصال"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-amber-500/20 bg-amber-500/[.035]">
+        <CardContent className="flex gap-3 p-4">
+          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-amber-400" />
+          <div className="space-y-1 text-sm leading-7">
+            <p className="font-semibold">فرمت اتصال</p>
+            <p className="text-muted-foreground">
+              Provider باید API سازگار با قالب OpenAI Chat Completions داشته باشد؛ Base URL و Model ID را دقیقاً مطابق سرویس‌دهنده وارد کنید.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function SettingsTab({ agentId }: { agentId: string }) {
   const { data } = useQuery({
     queryKey: ["agent", agentId],
@@ -442,7 +635,7 @@ export function AgentDetailView() {
 
       {/* Tabs */}
       <Tabs value={agentTab} onValueChange={(value) => setAgentTab(value as AgentTab)}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           {AGENT_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -455,6 +648,9 @@ export function AgentDetailView() {
         </TabsContent>
         <TabsContent value="knowledge" className="mt-6">
           <KnowledgeManager agentId={agentId} />
+        </TabsContent>
+        <TabsContent value="ai" className="mt-6">
+          <ProviderTab agentId={agentId} />
         </TabsContent>
         <TabsContent value="tools" className="mt-6">\n          <ToolsTab agentId={agentId} />\n        </TabsContent>\n        <TabsContent value="playground" className="mt-4">
           <Playground agentId={agentId} />

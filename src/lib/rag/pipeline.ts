@@ -64,10 +64,10 @@ export async function answerWithKnowledge(params: {
   const { agentId, workspaceId, conversationId, persona, history, question } = params;
 
   // 1) Provider gate — honest failure, never a fake answer.
-  const { provider: llm } = await llmManager.resolveForWorkspace(workspaceId);
+  const { provider: llm } = await llmManager.resolveForAgent(agentId, workspaceId);
   if (!llm) {
     throw new RagConfigError(
-      "سرویس‌دهنده هوش مصنوعی پیکربندی نشده است. لطفاً از صفحه تنظیمات، وضعیت سرویس‌ها را بررسی کنید."
+      "سرویس‌دهنده هوش مصنوعی برای این ایجنت پیکربندی نشده است. از تب «هوش مصنوعی» همین ایجنت اتصال را ثبت کنید."
     );
   }
 
@@ -206,7 +206,7 @@ export async function answerWithKnowledge(params: {
   } catch (e) {
     if (e instanceof ProviderNotConfiguredError) {
       throw new RagConfigError(
-        "سرویس‌دهنده هوش مصنوعی پیکربندی نشده است. لطفاً از صفحه تنظیمات، وضعیت سرویس‌ها را بررسی کنید."
+        "سرویس‌دهنده هوش مصنوعی برای این ایجنت پیکربندی نشده است. از تب «هوش مصنوعی» همین ایجنت اتصال را ثبت کنید."
       );
     }
     throw e;
