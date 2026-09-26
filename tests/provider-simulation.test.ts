@@ -195,6 +195,8 @@ describe("OpenAI-compatible provider simulation", () => {
     expect(() => validateProviderBaseUrl("http://127.0.0.1:8080/v1")).toThrow();
     expect(() => validateProviderBaseUrl("http://localhost:3000/v1")).toThrow();
     expect(() => validateProviderBaseUrl("http://169.254.169.254/latest")).toThrow();
+    expect(() => validateProviderBaseUrl("https://provider.example/v1?model=bad")).toThrow();
+    expect(() => validateProviderBaseUrl("https://provider.example/v1#fragment")).toThrow();
 
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       expect(String(input)).toBe("https://provider.example/v1/chat/completions");
