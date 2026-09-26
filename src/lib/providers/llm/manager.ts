@@ -1,14 +1,31 @@
-import { db } from '@/lib/db';
-import { decryptSecret } from '@/lib/server/secrets';
-import type { LLMProvider } from './types';
-import { OpenRouterProvider } from './openrouter';
-import { OpenAICompatibleProvider, type CompatibleAuthMode } from './openai-compatible';
+import { db } from "@/lib/db";
+import { decryptSecret } from "@/lib/server/secrets";
+import type { LLMProvider } from "./types";
+import { OpenRouterProvider } from "./openrouter";
+import { OpenAICompatibleProvider, type CompatibleAuthMode } from "./openai-compatible";
 
 export interface ProviderStatus {
   provider: string;
-  status: 'configured' | 'not_configured';
+  status: "configured" | "not_configured";
   model: string | null;
-  source: 'workspace' | 'environment' | 'none';
+  source: "agent" | "workspace" | "environment" | "none";
+}
+
+function buildConfiguredProvider(config: {
+  providerName: string;
+  baseUrl: string;
+  model: string;
+  authMode: string;
+  apiKeyEncrypted?: string | null;
+}): LLMProvider {
+  const key = config.apiKeyEncrypted ? decryptSecret(config.apiKeyEncrypted) : undefined;
+  return new OpenAICompatibleProvider({
+    name: config.providerName,
+    baseUrl: config.baseUrl,
+    apiKey: key,
+    model: config.model,
+    authMode: (config.authMode || "bearer") as CompatibleAuthMode,
+  });
 }
 
 class ProviderManager {
@@ -17,40 +34,99 @@ class ProviderManager {
   private resolveEnvironment(): LLMProvider | null {
     if (this.environmentProvider) return this.environmentProvider;
     const explicit = process.env.LLM_PROVIDER?.trim().toLowerCase();
-    if (explicit === 'openrouter' || (!explicit && process.env.OPENROUTER_API_KEY)) {
+    if (explicit === "openrouter" || (!explicit && process.env.OPENROUTER_API_KEY)) {
       const provider = new OpenRouterProvider();
-      if (provider.isConfigured()) { this.environmentProvider = provider; return provider; }
+      if (provider.isConfigured()) {
+        this.environmentProvider = provider;
+        return provider;
+      }
     }
-    if (explicit && explicit !== 'auto' && explicit !== 'openrouter') return null;
+    if (explicit && explicit !== "auto" && explicit !== "openrouter") return null;
     return null;
+  }
+
+  private statusFor(provider: LLMProvider | null, source: ProviderStatus["source"]): ProviderStatus {
+    return {
+      provider: provider?.name ?? "none",
+      status: provider ? "configured" : "not_configured",
+      model: provider?.model() ?? null,
+      source: provider ? source : "none",
+    };
+  }
+
+  async resolveForAgent(agentId: string, workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus }> {
+    const agentConfig = await db.agentProviderConfig.findUnique({ where: { agentId } });
+
+    if (agentConfig?.enabled) {
+      const provider = buildConfiguredProvider(agentConfig);
+      if (provider.isConfigured()) {
+        return { provider, status: this.statusFor(provider, "agent") };
+      }
+      return {
+        provider: null,
+        status: {
+          provider: agentConfig.providerName,
+          status: "not_configured",
+          model: agentConfig.model || null,
+          source: "none",
+        },
+      };
+    }
+
+    // Backward compatibility for workspaces that used the old Settings flow.
+    // New agent connections are always preferred.
+    if (workspaceId) {
+      const legacy = await db.providerConfig.findUnique({ where: { workspaceId } });
+      if (legacy?.enabled) {
+        const provider = buildConfiguredProvider(legacy);
+        if (provider.isConfigured()) {
+          return { provider, status: this.statusFor(provider, "workspace") };
+        }
+      }
+    }
+
+    const envProvider = this.resolveEnvironment();
+    if (envProvider) {
+      return { provider: envProvider, status: this.statusFor(envProvider, "environment") };
+    }
+
+    return { provider: null, status: this.statusFor(null, "none") };
   }
 
   async resolveForWorkspace(workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus }> {
     if (workspaceId) {
       const config = await db.providerConfig.findUnique({ where: { workspaceId } });
       if (config?.enabled) {
-        const key = config.apiKeyEncrypted ? decryptSecret(config.apiKeyEncrypted) : undefined;
-        const provider = new OpenAICompatibleProvider({
-          name: config.providerName,
-          baseUrl: config.baseUrl,
-          apiKey: key,
-          model: config.model,
-          authMode: (config.authMode || 'bearer') as CompatibleAuthMode,
-        });
+        const provider = buildConfiguredProvider(config);
+        if (provider.isConfigured()) {
+          return { provider, status: this.statusFor(provider, "workspace") };
+        }
         return {
-          provider: provider.isConfigured() ? provider : null,
-          status: { provider: config.providerName, status: provider.isConfigured() ? 'configured' : 'not_configured', model: config.model || null, source: 'workspace' },
+          provider: null,
+          status: {
+            provider: config.providerName,
+            status: "not_configured",
+            model: config.model || null,
+            source: "none",
+          },
         };
       }
     }
+
     const envProvider = this.resolveEnvironment();
-    if (!envProvider) return { provider: null, status: { provider: process.env.LLM_PROVIDER?.trim() || 'none', status: 'not_configured', model: process.env.LLM_MODEL?.trim() || null, source: 'none' } };
-    return { provider: envProvider, status: { provider: envProvider.name, status: 'configured', model: envProvider.model(), source: 'environment' } };
+    if (envProvider) {
+      return { provider: envProvider, status: this.statusFor(envProvider, "environment") };
+    }
+
+    return { provider: null, status: this.statusFor(null, "none") };
   }
 
   resolve(): LLMProvider | null {
-    const provider = this.resolveEnvironment();
-    return provider;
+    return this.resolveEnvironment();
+  }
+
+  async statusForAgent(agentId: string, workspaceId?: string): Promise<ProviderStatus> {
+    return (await this.resolveForAgent(agentId, workspaceId)).status;
   }
 
   async statusForWorkspace(workspaceId?: string): Promise<ProviderStatus> {
@@ -59,7 +135,7 @@ class ProviderManager {
 
   status(): ProviderStatus {
     const p = this.resolve();
-    return { provider: p?.name ?? (process.env.LLM_PROVIDER?.trim() || 'none'), status: p ? 'configured' : 'not_configured', model: p?.model() ?? (process.env.LLM_MODEL?.trim() || null), source: p ? 'environment' : 'none' };
+    return this.statusFor(p, p ? "environment" : "none");
   }
 }
 
