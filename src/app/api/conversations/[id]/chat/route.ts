@@ -93,102 +93,76 @@ export async function POST(req: Request, { params }: Params) {
       });
     }
 
-    const attachedTools = await listAgentTools(agent.id);
-    if (attachedTools.length > 0) {
-      const runtime = await runAgentExecution({
-        workspaceId: agent.workspaceId,
-        agentId: agent.id,
-        input: content,
+    const runtime = await runAgentExecution({
+      workspaceId: agent.workspaceId,
+      agentId: agent.id,
+      input: content,
+      conversationId: conversation.id,
+      memorySubjectKey: "web:" + session.user.id,
+      history,
+    });
+
+    const metadata = {
+      executionId: runtime.executionId,
+      sources: toSourceRefs(runtime.retrieval ?? []),
+      retrieval: toRetrievalDebug(runtime.retrieval ?? []),
+      provider: runtime.provider,
+      model: runtime.model,
+      latencyMs: runtime.latencyMs ?? 0,
+      toolUsed: runtime.toolUsed ?? null,
+    };
+
+    const assistantMessage = await db.message.create({
+      data: {
         conversationId: conversation.id,
-        history,
-      });
-      const metadata = { executionId: runtime.executionId, provider: runtime.provider, model: runtime.model };
-      const assistantMessage = await db.message.create({
-        data: { conversationId: conversation.id, role: "assistant", content: runtime.content, metadata: JSON.stringify(metadata) },
-      });
-      await db.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
-      const inputTokens = estimatedPromptTokens;
-      const outputTokens = estimateTokens(runtime.content);
-      await db.$transaction([
-        db.usageEvent.create({ data: { workspaceId: agent.workspaceId, agentId: agent.id, userId: session.user.id, channel: "web", provider: runtime.provider, model: runtime.model, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens } }),
-        ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
-      ]);
-      reservationId = null;
-      return applyCors(jsonOk({
-        userMessage: { id: userMessage.id, role: "user", content: userMessage.content, createdAt: userMessage.createdAt.toISOString(), metadata: null },
-        assistantMessage: { id: assistantMessage.id, role: "assistant", content: assistantMessage.content, createdAt: assistantMessage.createdAt.toISOString(), metadata },
-      }), req.headers.get("origin"));
-    }
+        role: "assistant",
+        content: runtime.content,
+        metadata: JSON.stringify(metadata),
+      },
+    });
 
-    try {
-      const answer = await answerWithKnowledge({
-        agentId: agent.id,
-        workspaceId: agent.workspaceId,
-        persona: {
-          name: agent.name,
-          orgName: agent.orgName,
-          language: agent.language,
-          tone: agent.tone,
-          customTone: agent.customTone,
-          instructions: agent.instructions,
-          persona: agent.persona,
-          systemPrompt: agent.systemPrompt,
-          temperature: agent.temperature,
-          maxTokens: agent.maxTokens,
-          memoryEnabled: agent.memoryEnabled,
-          citationsEnabled: agent.citationsEnabled,
-        },
-        history,
-        question: content,
-      });
+    await db.conversation.update({
+      where: { id: conversation.id },
+      data: { updatedAt: new Date() },
+    });
 
-      const metadata = {
-        sources: toSourceRefs(answer.retrieval),
-        retrieval: toRetrievalDebug(answer.retrieval),
-        provider: answer.provider,
-        model: answer.model,
-        latencyMs: answer.latencyMs,
-      };
-      const assistantMessage = await db.message.create({
+    const inputTokens = estimatedPromptTokens + (runtime.auxiliaryInputTokens ?? 0);
+    const outputTokens = estimateTokens(runtime.content) + (runtime.auxiliaryOutputTokens ?? 0);
+    await db.$transaction([
+      db.usageEvent.create({
         data: {
-          conversationId: conversation.id,
-          role: "assistant",
-          content: answer.content,
-          metadata: JSON.stringify(metadata),
+          workspaceId: agent.workspaceId,
+          agentId: agent.id,
+          userId: session.user.id,
+          channel: "web",
+          provider: runtime.provider,
+          model: runtime.model,
+          inputTokens,
+          outputTokens,
+          totalTokens: inputTokens + outputTokens,
         },
-      });
-      await db.conversation.update({
-        where: { id: conversation.id },
-        data: { updatedAt: new Date() },
-      });
-      const inputTokens = estimatedPromptTokens + (answer.auxiliaryInputTokens ?? 0);
-      const outputTokens = estimateTokens(answer.content) + (answer.auxiliaryOutputTokens ?? 0);
-      await db.$transaction([
-        db.usageEvent.create({ data: { workspaceId: agent.workspaceId, agentId: agent.id, userId: session.user.id, channel: "web", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens } }),
-        ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
-      ]);
-      reservationId = null;
+      }),
+      ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
+    ]);
+    reservationId = null;
 
-      return applyCors(
-        jsonOk({
-          userMessage: {
-            id: userMessage.id,
-            role: "user",
-            content: userMessage.content,
-            createdAt: userMessage.createdAt.toISOString(),
-            metadata: null,
-          },
-          assistantMessage: {
-            id: assistantMessage.id,
-            role: "assistant",
-            content: assistantMessage.content,
-            createdAt: assistantMessage.createdAt.toISOString(),
-            metadata,
-          },
-        }),
-        req.headers.get("origin")
-      );
-    } catch (e) {
+    return applyCors(jsonOk({
+      userMessage: {
+        id: userMessage.id,
+        role: "user",
+        content: userMessage.content,
+        createdAt: userMessage.createdAt.toISOString(),
+        metadata: null,
+      },
+      assistantMessage: {
+        id: assistantMessage.id,
+        role: "assistant",
+        content: assistantMessage.content,
+        createdAt: assistantMessage.createdAt.toISOString(),
+        metadata,
+      },
+    }), req.headers.get("origin"));
+  } catch (e) {
       await releaseUsageReservation(reservationId);
       reservationId = null;
       if (e instanceof RagConfigError) {
