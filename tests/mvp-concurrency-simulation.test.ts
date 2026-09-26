@@ -32,9 +32,9 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
     vi.clearAllMocks();
     vi.stubEnv("LLM_PROVIDER", "none");
 
-    vi.mocked(db.agentProviderConfig.findUnique).mockImplementation(async (args) => ({
+    vi.mocked(db.agentProviderConfig.findUnique).mockResolvedValue({
       id: "agent-provider-1",
-      agentId: String(args.where.agentId ?? "agent-shared"),
+      agentId: "agent-shared",
       workspaceId: "workspace-1",
       providerName: "Simulation Provider",
       baseUrl: "https://provider.example/v1",
@@ -42,7 +42,7 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
       authMode: "none",
       apiKeyEncrypted: null,
       enabled: true,
-    }) as never);
+    } as never);
 
     vi.mocked(db.providerConfig.findUnique).mockResolvedValue(null);
     vi.mocked(db.knowledgeSource.findMany).mockResolvedValue([]);
@@ -91,7 +91,6 @@ describe("Cortex MVP 1000-user concurrency simulation", () => {
     expect(new Set(results.map((result) => result.content)).size).toBe(1000);
     expect(results.every((result, index) => result.content === "پاسخ برای سؤال کاربر " + index)).toBe(true);
     expect(results.every((result) => result.provider === "Simulation Provider")).toBe(true);
-    expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledTimes(1000);
     expect(results.every((result) => result.model === "simulation-model")).toBe(true);
     expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledTimes(1000);
     expect(vi.mocked(db.agentProviderConfig.findUnique)).toHaveBeenCalledTimes(1000);
