@@ -18,6 +18,7 @@ describe("provider resilience simulation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
+    vi.stubEnv("APP_ENV", "test");
     vi.stubGlobal("fetch", vi.fn());
   });
 
