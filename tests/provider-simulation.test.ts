@@ -39,6 +39,7 @@ function mockCompletion(content: unknown = "سلام از Provider") {
 describe("OpenAI-compatible provider simulation", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   test("sends Bearer authentication, model, messages and generation settings", async () => {
@@ -286,6 +287,7 @@ describe("OpenAI-compatible provider simulation", () => {
 describe("agent-level provider resolution simulation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
     vi.stubEnv("LLM_PROVIDER", "none");
     vi.unstubAllGlobals();
   });
