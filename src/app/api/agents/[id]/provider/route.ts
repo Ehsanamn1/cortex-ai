@@ -16,6 +16,7 @@ function serializeConfig(config: {
   providerName: string;
   baseUrl: string;
   model: string;
+  protocol: string;
   authMode: string;
   enabled: boolean;
   apiKeyEncrypted: string | null;
@@ -25,6 +26,7 @@ function serializeConfig(config: {
     providerName: config.providerName,
     baseUrl: config.baseUrl,
     model: config.model,
+    protocol: config.protocol || "openai-compatible",
     authMode: config.authMode,
     enabled: config.enabled,
     hasApiKey: Boolean(config.apiKeyEncrypted),
@@ -75,10 +77,14 @@ export async function PUT(req: Request, { params }: Params) {
     const model = typeof body.model === "string"
       ? body.model.trim().slice(0, 160)
       : "";
+    const protocol =
+      typeof body.protocol === "string" && ["openai-compatible", "anthropic", "gemini"].includes(body.protocol)
+        ? body.protocol
+        : "openai-compatible";
     const authMode =
       typeof body.authMode === "string" && ["bearer", "x-api-key", "none"].includes(body.authMode)
         ? body.authMode
-        : "bearer";
+        : protocol === "openai-compatible" ? "bearer" : "none";
     const enabled = body.enabled !== false;
     const apiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
 
@@ -100,7 +106,7 @@ export async function PUT(req: Request, { params }: Params) {
 
     const current = await db.agentProviderConfig.findUnique({ where: { agentId: agent.id } });
 
-    if (authMode !== "none" && !apiKey && !current?.apiKeyEncrypted) {
+    if (protocol !== "openai-compatible" && !apiKey && !current?.apiKeyEncrypted) {
       return applyCors(
         jsonError("برای این اتصال، API Key الزامی است.", 400),
         req.headers.get("origin"),
@@ -114,6 +120,7 @@ export async function PUT(req: Request, { params }: Params) {
         providerName,
         baseUrl,
         model,
+        protocol,
         authMode,
         enabled,
         ...(apiKey ? { apiKeyEncrypted: encryptSecret(apiKey) } : {}),
@@ -124,6 +131,7 @@ export async function PUT(req: Request, { params }: Params) {
         providerName,
         baseUrl,
         model,
+        protocol,
         authMode,
         enabled,
         apiKeyEncrypted: apiKey ? encryptSecret(apiKey) : null,
@@ -142,6 +150,7 @@ export async function PUT(req: Request, { params }: Params) {
           providerName,
           baseUrl,
           model,
+          protocol,
           authMode,
           enabled,
           rotatedKey: Boolean(apiKey),
