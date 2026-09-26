@@ -322,7 +322,7 @@ function ProviderConnectionForm({
     providerName: string;
     baseUrl: string;
     model: string;
-    protocol: string;
+    protocol?: string;
     authMode: string;
     enabled: boolean;
     hasApiKey: boolean;
