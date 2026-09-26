@@ -119,6 +119,10 @@ export async function forgetMemory(params: {
   subjectKey?: string;
   conversationId?: string;
 }) {
+  const hasSelector = Boolean(params.key || params.subjectKey || params.conversationId);
+  if (!hasSelector) {
+    throw Object.assign(new Error("برای حذف حافظه حداقل یک محدوده یا کلید مشخص کنید."), { status: 400 });
+  }
   return db.memoryEntry.deleteMany({
     where: {
       workspaceId: params.workspaceId,
