@@ -47,7 +47,7 @@ export async function PATCH(req: Request, { params }: Params) {
     try {
       const token = decryptSecret(bot.tokenEncrypted);
       const info = await getBotInfo(token);
-      await configureBotProfile(token, String(input.displayName || bot.name), {
+      await configureBotProfile(token, String(profile.displayName || bot.name), {
         shortDescription: profile.shortDescription,
         description: profile.description,
         commands: JSON.parse(profile.commandsJson || "[]"),
