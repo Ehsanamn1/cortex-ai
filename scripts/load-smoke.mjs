@@ -2,20 +2,20 @@ const base = (process.env.CORTEX_BASE_URL || "https://cortex-ai.dengxiao445.work
 const concurrency = Number(process.env.LOAD_CONCURRENCY || 10);
 const rounds = Number(process.env.LOAD_ROUNDS || 1);
 const endpoints = [
-  "/api/health",
-  "/api/site-config",
-  "/api/limits",
-  "/api/providers/status",
+  { path: "/api/health", expected: [200] },
+  { path: "/api/site-config", expected: [200] },
+  { path: "/api/providers/status", expected: [401] },
+  { path: "/api/settings/limits", expected: [401] },
 ];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function one(path) {
+async function one(endpoint) {
   const started = performance.now();
   try {
-    const res = await fetch(base + path, { headers: { accept: "application/json" } });
+    const res = await fetch(base + endpoint.path, { headers: { accept: "application/json" } });
     const elapsed = performance.now() - started;
-    return { path, status: res.status, ms: elapsed };
+    return { path: endpoint.path, status: res.status, expected: endpoint.expected, ms: elapsed };
   } catch (error) {
-    return { path, status: 0, ms: performance.now() - started, error: String(error) };
+    return { path: endpoint.path, status: 0, expected: endpoint.expected, ms: performance.now() - started, error: String(error) };
   }
 }
 async function runRound() {
@@ -30,7 +30,7 @@ for (let r = 0; r < rounds; r++) {
 }
 const latencies = results.map(x => x.ms).sort((a,b)=>a-b);
 const pct = p => latencies[Math.min(latencies.length-1, Math.floor(latencies.length*p))];
-const failures = results.filter(x => x.status < 200 || x.status >= 500);
+const failures = results.filter(x => x.status >= 500 || !x.expected?.includes(x.status));
 const summary = {
   base,
   concurrency,
