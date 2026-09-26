@@ -164,7 +164,6 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
     onSuccess: ({ bot: updated }) => { onUpdated(updated); setToken(""); queryClient.invalidateQueries({ queryKey: ["telegram-bots"] }); toast.success(updated.status === "connected" ? "تنظیمات ربات و اتصال به‌روز شد." : "تنظیمات ذخیره شد؛ وضعیت اتصال را بررسی کن."); },
     onError: (error: Error) => toast.error(error.message),
   });
-  const { data: allowlistData } = useQuery({ queryKey: ["allowlist", bot.id], queryFn: () => api.getTelegramAllowlist(bot.id), enabled: !!bot.id });
   const usersQuery = useQuery({
     queryKey: ["telegram-bot-users", bot.id],
     queryFn: () => api.getTelegramBotUsers(bot.id),
@@ -173,19 +172,6 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
     refetchInterval: 20_000,
   });
   const botUsers = (usersQuery.data?.users ?? []).filter((item) => item.botId === bot.id).sort((a, b) => (b.usage?.tokens ?? 0) - (a.usage?.tokens ?? 0));
-  const [phone, setPhone] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const addAllow = useMutation({
-    mutationFn: () => api.addTelegramAllowlist(bot.id, { phoneNumber: phone, displayName }),
-    onSuccess: () => { setPhone(""); setDisplayName(""); queryClient.invalidateQueries({ queryKey: ["allowlist", bot.id] }); toast.success("کاربر به فهرست مجاز اضافه شد."); },
-    onError: (error: Error) => toast.error(error.message),
-  });
-  const removeAllow = useMutation({
-    mutationFn: (entryId: string) => api.removeTelegramAllowlist(bot.id, entryId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["allowlist", bot.id] }); toast.success("دسترسی کاربر حذف شد."); },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
   const meta = statusMeta(bot.status); const Icon = meta.icon;
   const webhookUrl = typeof window === "undefined" ? "" : window.location.origin + "/api/telegram/webhook/" + bot.id;
   async function copyWebhook() {
@@ -199,7 +185,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
       <DialogContent className="w-[calc(100vw-1rem)] max-h-[90dvh] overflow-y-auto max-w-2xl">
         <DialogHeader>
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0"><DialogTitle className="truncate">{bot.name}</DialogTitle><DialogDescription className="mt-1">مدیریت ایجنت، اتصال، Webhook و دسترسی کاربران.</DialogDescription></div>
+            <div className="min-w-0"><DialogTitle className="truncate">{bot.name}</DialogTitle><DialogDescription className="mt-1">مدیریت ایجنت، اتصال، Webhook و کاربران عمومی ربات.</DialogDescription></div>
             <Badge className={cn("shrink-0 font-normal", meta.className)}><Icon className="size-3.5" />{meta.label}</Badge>
           </div>
         </DialogHeader>
@@ -224,10 +210,12 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
           </Card>
 
           <Card className="border-white/[.06] bg-white/[.02]">
-            <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />دسترسی کاربران</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />دسترسی و کاربران</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"><Input dir="ltr" placeholder="+98912..." value={phone} onChange={(event) => setPhone(event.target.value)} /><Input placeholder="نام نمایشی" value={displayName} onChange={(event) => setDisplayName(event.target.value)} /><Button className="sm:self-stretch" disabled={!phone.trim() || addAllow.isPending} onClick={() => addAllow.mutate()}><ShieldCheck />افزودن</Button></div>
-              {allowlistData?.entries?.length ? <div className="space-y-2">{allowlistData.entries.map((entry) => <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[.06] p-3"><div className="min-w-0"><p className="truncate text-sm">{entry.displayName || "بدون نام"}</p><p dir="ltr" className="truncate text-xs text-muted-foreground">{entry.phoneNumber}</p></div><Button size="icon" variant="ghost" className="shrink-0 text-destructive" onClick={() => removeAllow.mutate(entry.id)} aria-label="حذف دسترسی"><Trash2 /></Button></div>)}</div> : <p className="rounded-xl border border-dashed border-white/[.08] p-5 text-center text-xs text-muted-foreground">هنوز کاربری در allowlist نیست.</p>}
+              <div className="rounded-xl border border-emerald-400/15 bg-emerald-400/[.06] p-4">
+                <p className="flex items-center gap-2 text-sm font-semibold text-emerald-200"><ShieldCheck className="size-4" />دسترسی عمومی فعال است</p>
+                <p className="mt-1 text-xs leading-6 text-muted-foreground">کاربران برای شروع گفتگو نیازی به تأیید شماره موبایل یا ثبت در فهرست مجاز ندارند. فقط حساب‌هایی که مدیر صراحتاً مسدود کند نمی‌توانند از ربات استفاده کنند.</p>
+              </div>
               <div className="border-t border-white/[.06] pt-4">
                 <div className="flex items-center justify-between gap-3"><p className="flex items-center gap-2 text-xs font-semibold"><BarChart3 className="size-4 text-primary" />مانیتورینگ مصرف همین ربات</p><span className="text-[10px] text-muted-foreground">{botUsers.length} کاربر شناخته‌شده</span></div>
                 <div className="mt-3 space-y-2">
