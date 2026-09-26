@@ -104,6 +104,7 @@ model AgentProviderConfig {
   id              String   @id @default(cuid())
   agentId         String   @unique
   workspaceId     String
+  providerType    String   @default("openai-compatible")
   providerName    String
   baseUrl         String
   model           String
