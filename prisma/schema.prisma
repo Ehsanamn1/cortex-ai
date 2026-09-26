@@ -97,6 +97,7 @@ model Agent {
   workflows        Workflow[]
   executions       Execution[]
   memoryEntries    MemoryEntry[]
+  providerHealth  AgentProviderHealth?
 
   @@index([workspaceId])
 }
