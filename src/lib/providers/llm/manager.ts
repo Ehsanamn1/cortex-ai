@@ -34,11 +34,13 @@ class ResilientProvider implements LLMProvider {
       try {
         const result = await this.inner.generateResponse(options);
         circuitState.set(key,{failures:0,openedUntil:0});
-        void db.agentProviderHealth.upsert({
-          where:{agentId:this.agentId},
-          update:{workspaceId:this.workspaceId ?? "", state:"healthy", consecutiveFailures:0, openedUntil:null, lastCode:null, lastStatus:null, lastLatencyMs:Date.now()-started, lastError:null, lastSuccessAt:new Date()},
-          create:{agentId:this.agentId, workspaceId:this.workspaceId ?? "", state:"healthy", consecutiveFailures:0, lastLatencyMs:Date.now()-started, lastSuccessAt:new Date()}
-        }).catch(()=>undefined);
+        if (this.workspaceId) {
+          void db.agentProviderHealth.upsert({
+            where:{agentId:this.agentId},
+            update:{workspaceId:this.workspaceId, state:"healthy", consecutiveFailures:0, openedUntil:null, lastCode:null, lastStatus:null, lastLatencyMs:Date.now()-started, lastError:null, lastSuccessAt:new Date()},
+            create:{agentId:this.agentId, workspaceId:this.workspaceId, state:"healthy", consecutiveFailures:0, lastLatencyMs:Date.now()-started, lastSuccessAt:new Date()}
+          }).catch(()=>undefined);
+        }
         return result;
       } catch(error) {
         last = error;
@@ -48,11 +50,13 @@ class ResilientProvider implements LLMProvider {
         const shouldOpen = classified.retryable && failures >= CIRCUIT_THRESHOLD;
         const openedUntil = shouldOpen ? Date.now()+CIRCUIT_COOLDOWN_MS : 0;
         circuitState.set(key,{failures,openedUntil,lastCode:classified.code});
-        void db.agentProviderHealth.upsert({
-          where:{agentId:this.agentId},
-          update:{workspaceId:this.workspaceId ?? "", state:shouldOpen?"open":"degraded", consecutiveFailures:failures, openedUntil:openedUntil?new Date(openedUntil):null, lastCode:classified.code, lastStatus:classified.rawStatus ?? null, lastLatencyMs:Date.now()-started, lastError:(classified.causeMessage ?? classified.message).slice(0,500), lastErrorAt:new Date()},
-          create:{agentId:this.agentId, workspaceId:this.workspaceId ?? "", state:shouldOpen?"open":"degraded", consecutiveFailures:failures, openedUntil:openedUntil?new Date(openedUntil):null, lastCode:classified.code, lastStatus:classified.rawStatus ?? null, lastLatencyMs:Date.now()-started, lastError:(classified.causeMessage ?? classified.message).slice(0,500), lastErrorAt:new Date()}
-        }).catch(()=>undefined);
+        if (this.workspaceId) {
+          void db.agentProviderHealth.upsert({
+            where:{agentId:this.agentId},
+            update:{workspaceId:this.workspaceId, state:shouldOpen?"open":"degraded", consecutiveFailures:failures, openedUntil:openedUntil?new Date(openedUntil):null, lastCode:classified.code, lastStatus:classified.rawStatus ?? null, lastLatencyMs:Date.now()-started, lastError:(classified.causeMessage ?? classified.message).slice(0,500), lastErrorAt:new Date()},
+            create:{agentId:this.agentId, workspaceId:this.workspaceId, state:shouldOpen?"open":"degraded", consecutiveFailures:failures, openedUntil:openedUntil?new Date(openedUntil):null, lastCode:classified.code, lastStatus:classified.rawStatus ?? null, lastLatencyMs:Date.now()-started, lastError:(classified.causeMessage ?? classified.message).slice(0,500), lastErrorAt:new Date()}
+          }).catch(()=>undefined);
+        }
         if (attempt < maxAttempts && classified.retryable) {
           const retryMs = Math.min(1200, classified.retryAfterMs ?? 200 * 2**attempt);
           await new Promise(resolve=>setTimeout(resolve,retryMs));
@@ -186,7 +190,10 @@ class ProviderManager {
 
     const envProvider = this.resolveEnvironment();
     if (envProvider) {
-      return { provider: envProvider, status: this.statusFor(envProvider, "environment") };
+      return {
+        provider: workspaceId ? new ResilientProvider(envProvider, agentId, workspaceId) : envProvider,
+        status: this.statusFor(envProvider, "environment"),
+      };
     }
 
     return { provider: null, status: this.statusFor(null, "none") };
