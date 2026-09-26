@@ -28,14 +28,14 @@ describe("knowledge chunking", () => {
   });
 
   test("splits oversized sentences without dropping content", () => {
-    process.env.CHUNK_SIZE = "50";
-    process.env.CHUNK_OVERLAP = "10";
+    process.env.CHUNK_SIZE = "300";
+    process.env.CHUNK_OVERLAP = "60";
 
-    const source = "الف".repeat(130);
+    const source = "الف".repeat(730);
     const chunks = chunkInputs([{ text: source, page: 1 }]);
 
     expect(chunks.length).toBeGreaterThan(2);
-    expect(chunks.every((chunk) => chunk.text.length <= 50)).toBe(true);
-    expect(chunks.map((chunk) => chunk.text).join("").length).toBeGreaterThanOrEqual(130);
+    expect(chunks.every((chunk) => chunk.text.length <= 300)).toBe(true);
+    expect(chunks.map((chunk) => chunk.text).join("").length).toBeGreaterThanOrEqual(730);
   });
 });
