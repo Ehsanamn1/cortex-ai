@@ -4,7 +4,6 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
 import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
-import { llmManager } from "@/lib/providers/llm/manager";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -23,16 +22,6 @@ export async function POST(req: Request) {
     rateLimit(req, "openai-agent-api-" + auth.id, 60, 60000);
 
     const body = await readJson<Record<string, unknown>>(req);
-
-    let providerReady = false;
-    try {
-      providerReady = Boolean((await llmManager.resolveForWorkspace(auth.agent.workspaceId)).provider);
-    } catch (error) {
-      console.error("[cortex][openai-api] provider preflight failed:", error);
-    }
-    if (!providerReady) {
-      return applyCors(jsonError("سرویس‌دهنده هوش مصنوعی پیکربندی نشده است. لطفاً از تنظیمات، وضعیت سرویس را بررسی کنید.", 503), req.headers.get("origin"));
-    }
 
     let rag: typeof import("@/lib/rag/pipeline");
     try {
