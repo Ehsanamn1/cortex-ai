@@ -42,6 +42,7 @@ vi.mock("@/lib/telegram/profile", () => ({
 }));
 vi.mock("@/lib/runtime/tools", () => ({ listAgentTools: vi.fn(async () => []) }));
 vi.mock("@/lib/rag/pipeline", () => ({
+  RAG_QUERY_EXPANSION_RESERVE_TOKENS: 384,
   answerWithKnowledge: vi.fn(async ({ question }: { question: string }) => ({
     content: "پاسخ برای " + question,
     provider: "SimProvider",
