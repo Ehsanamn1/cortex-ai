@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
 import type { ChatTurn } from "@/lib/providers/llm/types";
-import { answerWithKnowledge, type RetrievedChunk } from "@/lib/rag/pipeline";
+import { answerWithKnowledge } from "@/lib/rag/pipeline";
+import type { RetrievedChunk } from "@/lib/rag/prompt";
 import { loadAgentMemory, remember, rememberExplicitUserFacts } from "./memory";
 import { executeTool, listAgentTools } from "./tools";
 import type { AgentRuntimeInput } from "./types";
