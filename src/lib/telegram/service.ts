@@ -514,7 +514,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
 
     content = result.content;
     provider = result.provider;
-    model = result.model;
+    model = result.model ?? 'unknown';
     retrieval = result.retrieval ?? [];
     auxiliaryInputTokens = result.auxiliaryInputTokens ?? 0;
     auxiliaryOutputTokens = result.auxiliaryOutputTokens ?? 0;
