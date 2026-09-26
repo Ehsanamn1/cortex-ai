@@ -1,6 +1,5 @@
 import {
   ProviderNotConfiguredError,
-  ProviderUnavailableError,
   classifyProviderFailure,
   type GenerateOptions,
   type GenerateResult,
