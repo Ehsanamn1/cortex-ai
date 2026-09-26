@@ -16,7 +16,7 @@ export interface RetrievedChunk {
   score: number;
 }
 
-export interface AgentPersona {
+export interface AgentMemoryItem {\n  key: string;\n  value: string;\n}\n\nexport interface AgentPersona {
   name: string;
   orgName?: string | null;
   language: string; // fa | en
@@ -54,7 +54,7 @@ export function buildRagMessages(params: {
   history: Array<{ role: "user" | "assistant"; content: string }>;
   question: string;
 }): ChatTurn[] {
-  const { persona, retrieved, history, question } = params;
+  const { persona, memory, retrieved, history, question } = params;
   const isFa = persona.language !== "en";
   const toneLabel =
     persona.tone === "custom" && persona.customTone?.trim()
@@ -136,7 +136,7 @@ Safety, secret-protection, and grounding rules remain higher priority.`,
     });
   }
 
-  /* ---- Section 3: retrieved knowledge (bounded top-k) ---- */
+  /* ---- Section 3: long-term memory (context only; never a factual authority) ---- */\n  if (memory.length > 0) {\n    const memoryItems = memory\n      .slice(0, 8)\n      .map((item) => `• ${item.key.slice(0, 120)}: ${item.value.slice(0, 300)}`)\n      .join("\\n");\n    messages.push({\n      role: "system",\n      content: isFa\n        ? `حافظه بلندمدت ایجنت (فقط برای شناخت ترجیحات و پیوستگی گفتگو؛ نباید برای ادعای factual مستقل استفاده شود):\\n---\\n${memoryItems}\\n---`\n        : `Long-term agent memory (context for preferences and continuity only; it must not be used as an independent factual authority):\\n---\\n${memoryItems}\\n---`,\n    });\n  }\n\n  /* ---- Section 4: retrieved knowledge (bounded top-k) ---- */
   let knowledgeBlock = "";
   let used = 0;
   for (const chunk of retrieved) {
@@ -166,7 +166,7 @@ Safety, secret-protection, and grounding rules remain higher priority.`,
     });
   }
 
-  /* ---- Section 4: conversation history (short-term memory) ---- */
+  /* ---- Section 5: conversation history (short-term memory) ---- */
   const windowedHistory = history.slice(-MAX_HISTORY_MESSAGES);
   for (const turn of windowedHistory) {
     messages.push({
@@ -175,7 +175,7 @@ Safety, secret-protection, and grounding rules remain higher priority.`,
     });
   }
 
-  /* ---- Section 5: current question ---- */
+  /* ---- Section 6: current question ---- */
   messages.push({ role: "user", content: question });
 
   return messages;

@@ -1,63 +1,45 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { rateLimit } from "@/lib/server/rate-limit";
-import { llmManager } from "@/lib/providers/llm/manager";
-import { embeddingManager } from "@/lib/providers/embeddings/manager";
 
 export const dynamic = "force-dynamic";
 
-function safeError(e: unknown) {
-  const message = e instanceof Error ? e.message : String(e);
-  return message
-    .replace(/postgresql:\/\/[^\s]+/gi, "postgresql://[redacted]")
-    .replace(/password=[^\s&]+/gi, "password=[redacted]")
-    .slice(0, 800);
-}
-
+/**
+ * Public liveness/readiness endpoint.
+ * Detailed provider/configuration state is intentionally kept out of the
+ * unauthenticated response to avoid leaking infrastructure metadata.
+ */
 export async function GET(req: Request) {
   try {
     rateLimit(req, "public-health", 30, 60_000);
-    const databaseCheck = await db.$queryRaw`SELECT 1`;
-    const llm = llmManager.status();
-    const embeddings = embeddingManager.status();
-
+    await db.$queryRaw`SELECT 1`;
     return NextResponse.json({
       ok: true,
-      database: databaseCheck ? "connected" : "error",
-      storage: "postgresql-inline",
-      llm: {
-        provider: llm.provider,
-        status: llm.status,
-        model: llm.model,
-      },
-      embeddings: {
-        provider: embeddings.provider,
-        status: embeddings.status,
-        model: embeddings.model,
-        mode: embeddings.mode,
-      },
-      env: {
-        DATABASE_URL: process.env.DATABASE_URL ? "set" : "missing",
-        APP_SECRET_KEY: process.env.APP_SECRET_KEY ? "set" : "missing",
-        CORTEX_ADMIN_PASSWORD: process.env.CORTEX_ADMIN_PASSWORD ? "set" : "missing",
-        NODE_ENV: process.env.NODE_ENV ?? null,
+      database: "connected",
+    }, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store",
       },
     });
   } catch (e) {
-    console.error("[cortex/health] dependency check failed", e);
+    const requestId = globalThis.crypto?.randomUUID?.() ?? "health-error";
+    console.error("[cortex][health]", JSON.stringify({
+      requestId,
+      error: e instanceof Error ? e.stack ?? e.message : String(e),
+    }));
     return NextResponse.json(
       {
         ok: false,
         database: "error",
-        error: safeError(e),
-        env: {
-          DATABASE_URL: (process.env.DATABASE_URL || process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL) ? "set" : "missing",
-          APP_SECRET_KEY: process.env.APP_SECRET_KEY ? "set" : "missing",
-          CORTEX_ADMIN_PASSWORD: process.env.CORTEX_ADMIN_PASSWORD ? "set" : "missing",
-          NODE_ENV: process.env.NODE_ENV ?? null,
-        },
+        requestId,
       },
-      { status: 500 }
+      {
+        status: 503,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
     );
   }
 }

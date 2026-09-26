@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-/** Standard JSON error body: { error: "<Persian message>" }. */
-export function jsonError(message: string, status: number): NextResponse {
-  return NextResponse.json({ error: message }, { status });
+/** Standard JSON error body: { error, requestId }. */
+export function jsonError(message: string, status: number, requestId?: string): NextResponse {
+  return NextResponse.json({ error: message, ...(requestId ? { requestId } : {}) }, { status });
 }
 
 export function jsonOk<T>(body: T, status = 200): NextResponse {
@@ -49,19 +49,6 @@ export class HttpError extends Error {
   }
 }
 
-export function toErrorResponse(e: unknown, origin: string | null = null): NextResponse {
-  if (e instanceof HttpError) {
-    return applyCors(jsonError(e.message, e.status), origin);
-  }
-  if (e instanceof Error && typeof (e as Error & { status?: number }).status === "number") {
-    return applyCors(jsonError(e.message, (e as Error & { status: number }).status), origin);
-  }
-  // Technical diagnostics stay in server logs only — users get a safe Persian message.
-  console.error("[cortex] unhandled error:", e instanceof Error ? e.stack ?? e.message : e);
-  return applyCors(jsonError("خطای غیرمنتظره‌ای در سرور رخ داد. لطفاً دوباره تلاش کنید.", 500), origin);
-}
-
-/** Best-effort client IP behind the sandbox gateway. */
 export function clientIp(req: Request): string {
   const cfConnectingIp = req.headers.get("cf-connecting-ip");
   if (cfConnectingIp) return cfConnectingIp.trim();
@@ -69,4 +56,30 @@ export function clientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0]!.trim();
   return req.headers.get("x-real-ip") ?? "unknown";
+}
+
+function correlationId(): string {
+  return globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
+}
+
+export function toErrorResponse(e: unknown, origin: string | null = null): NextResponse {
+  const requestId = correlationId();
+  if (e instanceof HttpError) {
+    console.warn("[cortex][http]", JSON.stringify({ requestId, status: e.status, message: e.message }));
+    return applyCors(jsonError(e.message, e.status, requestId), origin);
+  }
+  if (e instanceof Error && typeof (e as Error & { status?: number }).status === "number") {
+    const status = (e as Error & { status: number }).status;
+    console.warn("[cortex][http]", JSON.stringify({ requestId, status, message: e.message }));
+    return applyCors(jsonError(e.message, status, requestId), origin);
+  }
+  console.error("[cortex][http]", JSON.stringify({
+    requestId,
+    status: 500,
+    error: e instanceof Error ? e.stack ?? e.message : String(e),
+  }));
+  return applyCors(
+    jsonError("خطای غیرمنتظره‌ای در سرور رخ داد. لطفاً دوباره تلاش کنید.", 500, requestId),
+    origin
+  );
 }
