@@ -5,6 +5,7 @@ vi.mock("@/lib/db", () => ({
     telegramBot: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      update: vi.fn(),
     },
     agent: {
       findUniqueOrThrow: vi.fn(),
@@ -77,7 +78,7 @@ describe("Telegram -> agent provider simulation", () => {
       id: "tg-user-1",
       botId: "bot-1",
       telegramUserId: "123",
-      status: "allowed",
+      status: "pending",
       username: "tester",
       firstName: "Test",
       lastName: "User",
@@ -136,7 +137,12 @@ describe("Telegram -> agent provider simulation", () => {
     expect(vi.mocked(rag.answerWithKnowledge)).toHaveBeenCalledWith(expect.objectContaining({
       agentId: "agent-telegram-1",
       workspaceId: "workspace-1",
+      memorySubjectKey: "telegram:bot-1:123",
       question: "سلام، یک سؤال واقعی دارم",
+    }));
+    expect(vi.mocked(db.telegramUser.update)).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "tg-user-1" },
+      data: { status: "allowed" },
     }));
 
     const fetchMock = vi.mocked(globalThis.fetch);
