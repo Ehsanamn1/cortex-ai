@@ -250,7 +250,14 @@ function startOfMonth() {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function formatUsage(value: number, limit: number) {\n  const used = Number(value).toLocaleString("fa-IR");\n  return limit > 0 ? used + " / " + Number(limit).toLocaleString("fa-IR") + " توکن" : used + " توکن";\n}\n\nfunction formatUsdMicros(value: number) {
+function formatUsage(value: number, limit: number) {
+  const used = Number(value).toLocaleString("fa-IR");
+  return limit > 0
+    ? used + " / " + Number(limit).toLocaleString("fa-IR") + " توکن"
+    : used + " توکن";
+}
+
+function formatUsdMicros(value: number) {
   return '$' + (Math.max(0, value) / 1_000_000).toFixed(4);
 }
 
