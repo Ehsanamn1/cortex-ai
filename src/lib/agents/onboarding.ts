@@ -139,7 +139,8 @@ function buildSynthesisPrompt(answers: Array<{ question: OnboardingQuestion; ans
 export async function synthesizeOnboarding(answers: Array<{ question: OnboardingQuestion; answer: string }>, agentId: string, workspaceId: string): Promise<{ result: OnboardingResult; knowledgeSourceId: string }> {
   const resolved = await llmManager.resolveForAgent(agentId, workspaceId);
   if (!resolved.provider) throw Object.assign(new Error("سرویس هوش مصنوعی این ایجنت هنوز پیکربندی نشده است."), { status: 503 });
-  const synthesisPrompt = buildSynthesisPrompt(answers);\n  const completion = await resolved.provider.generateResponse({ messages: [{ role: "system", content: "پاسخ را فقط به صورت JSON معتبر بده و از اطلاعات خارج از مصاحبه استفاده نکن." }, { role: "user", content: synthesisPrompt }], temperature: 0, maxTokens: 2200 });
+  const synthesisPrompt = buildSynthesisPrompt(answers);
+  const completion = await resolved.provider.generateResponse({ messages: [{ role: "system", content: "پاسخ را فقط به صورت JSON معتبر بده و از اطلاعات خارج از مصاحبه استفاده نکن." }, { role: "user", content: synthesisPrompt }], temperature: 0, maxTokens: 2200 });
   const result = parseOnboardingResult(completion.content);
   const inputTokens = estimateTokens(synthesisPrompt);
   const outputTokens = estimateTokens(completion.content);
