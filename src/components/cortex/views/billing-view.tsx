@@ -73,6 +73,7 @@ export function BillingView(){
     </div>
 
     <BillingEstimator models={data.models} monthlyCredits={plan.monthlyCredits} overageCreditPriceToman={plan.overageCreditPriceToman}/>
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/[.06] bg-white/[.012] px-3 py-2 text-[10px] text-muted-foreground"><span>قیمت‌های مرجع مدل‌ها: {new Date(data.pricing.verifiedAt+"T00:00:00Z").toLocaleDateString("fa-IR")} · {data.pricing.mode==="official-provider-snapshot"?"snapshot رسمی تأمین‌کننده":"نرخ سفارشی"}</span><span>هزینه واقعی پس از اجرا از توکن مصرف‌شده ثبت می‌شود.</span></div>
 
     <section className="cortex-panel rounded-2xl p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
