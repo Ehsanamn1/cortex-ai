@@ -372,28 +372,79 @@ export async function processTelegramUpdate(botId: string, update: any) {
     },
   });
 
-  if (user.status !== 'allowed' && user.status !== 'blocked') {
-    await db.telegramUser.update({
-      where: { id: user.id },
-      data: { status: 'allowed' },
-    });
-    user.status = 'allowed';
+  const startToken = typeof msg.text === 'string' ? parseTelegramStartToken(msg.text) : null;
+  if (startToken && user.status !== 'blocked') {
+    const invite = await db.telegramAllowlistEntry.findUnique({ where: { inviteTokenHash: hashTelegramInviteToken(startToken) } });
+    if (invite && invite.botId === bot.id && invite.status === 'allowed' && (!invite.claimedTelegramUserId || invite.claimedTelegramUserId === tgId)) {
+      await db.$transaction([
+        db.telegramAllowlistEntry.update({
+          where: { id: invite.id },
+          data: { claimedTelegramUserId: tgId, claimedAt: new Date(), inviteTokenHash: null },
+        }),
+        db.telegramUser.update({
+          where: { id: user.id },
+          data: {
+            phoneNumber: invite.phoneNumber,
+            status: 'allowed',
+            dailyMessageLimit: invite.dailyMessageLimit,
+            monthlyMessageLimit: invite.monthlyMessageLimit,
+            dailyTokenLimit: invite.dailyTokenLimit,
+            monthlyTokenLimit: invite.monthlyTokenLimit,
+          },
+        }),
+      ]);
+      user.status = 'allowed';
+      user.phoneNumber = invite.phoneNumber;
+      user.dailyMessageLimit = invite.dailyMessageLimit;
+      user.monthlyMessageLimit = invite.monthlyMessageLimit;
+      user.dailyTokenLimit = invite.dailyTokenLimit;
+      user.monthlyTokenLimit = invite.monthlyTokenLimit;
+      await sendWelcome(token, msg.chat.id, profile);
+      return;
+    }
   }
 
   const contactPhone = msg.contact?.phone_number ? normalizeTelegramPhone(msg.contact.phone_number) : '';
-  if (contactPhone) {
-    const sharedUserId = msg.contact?.user_id != null ? String(msg.contact.user_id) : '';
-    if (!sharedUserId || sharedUserId === tgId) {
-      await db.telegramUser.update({
-        where: { id: user.id },
-        data: { phoneNumber: contactPhone, status: 'allowed' },
-      });
+  if (contactPhone && msg.contact?.user_id != null && String(msg.contact.user_id) === tgId && user.status !== 'blocked') {
+    const invite = await db.telegramAllowlistEntry.findUnique({
+      where: { botId_phoneNumber: { botId: bot.id, phoneNumber: contactPhone } },
+    });
+    if (invite?.status === 'allowed' && (!invite.claimedTelegramUserId || invite.claimedTelegramUserId === tgId)) {
+      await db.$transaction([
+        db.telegramAllowlistEntry.update({
+          where: { id: invite.id },
+          data: { claimedTelegramUserId: tgId, claimedAt: new Date(), inviteTokenHash: null },
+        }),
+        db.telegramUser.update({
+          where: { id: user.id },
+          data: {
+            phoneNumber: contactPhone,
+            status: 'allowed',
+            dailyMessageLimit: invite.dailyMessageLimit,
+            monthlyMessageLimit: invite.monthlyMessageLimit,
+            dailyTokenLimit: invite.dailyTokenLimit,
+            monthlyTokenLimit: invite.monthlyTokenLimit,
+          },
+        }),
+      ]);
       user.status = 'allowed';
+      user.phoneNumber = contactPhone;
+      user.dailyMessageLimit = invite.dailyMessageLimit;
+      user.monthlyMessageLimit = invite.monthlyMessageLimit;
+      user.dailyTokenLimit = invite.dailyTokenLimit;
+      user.monthlyTokenLimit = invite.monthlyTokenLimit;
+    } else {
+      await db.telegramUser.update({ where: { id: user.id }, data: { phoneNumber: contactPhone } });
+      user.phoneNumber = contactPhone;
     }
   }
 
   if (user.status === 'blocked') {
     await sendMessage(token, msg.chat.id, profile.blockedText);
+    return;
+  }
+  if (user.status !== 'allowed') {
+    await sendAccessRequired(token, msg.chat.id, profile);
     return;
   }
 
