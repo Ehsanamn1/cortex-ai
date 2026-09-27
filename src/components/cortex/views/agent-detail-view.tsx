@@ -49,6 +49,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AgentApiAccess } from "@/components/cortex/agent-api-access";
 import { TelegramAccessManager, TelegramCustomizer } from "@/components/cortex/views/telegram-view";
+import { TelegramAccessManager, TelegramCustomizer } from "@/components/cortex/views/telegram-view";
 
 const AGENT_TABS: Array<{ value: AgentTab; label: string }> = [
   { value: "overview", label: "نمای کلی" },
@@ -640,6 +641,59 @@ function AgentTelegramTab({ agentId }: { agentId: string }) {
   );
 }
 
+
+function AgentTelegramTab({ agentId }: { agentId: string }) {
+  const { data, isPending } = useQuery({
+    queryKey: ["telegram-bots", "agent", agentId],
+    queryFn: () => api.getTelegramBots(),
+  });
+  const bots = (data?.bots ?? []).filter((bot) => bot.agentId === agentId);
+
+  if (isPending) {
+    return <div className="space-y-3"><Skeleton className="h-24 rounded-2xl" /><Skeleton className="h-48 rounded-2xl" /></div>;
+  }
+
+  if (bots.length === 0) {
+    return (
+      <Card className="rounded-2xl border-primary/15 bg-primary/[.025]">
+        <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+          <span className="flex size-12 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary"><ShieldCheck className="size-5" /></span>
+          <div>
+            <p className="text-sm font-semibold">هنوز ربات تلگرامی به این ایجنت متصل نیست.</p>
+            <p className="mt-1 max-w-md text-xs leading-6 text-muted-foreground">اتصال و ساخت ربات را از بخش تلگرام انجام بده. بعد از اتصال، شخصی‌سازی، دسترسی کاربران و مانیتورینگ مصرف همین‌جا در دسترس است.</p>
+          </div>
+          <Button variant="outline" onClick={() => useCortexStore.getState().setView("telegram")}>ساخت یا اتصال ربات</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {bots.map((bot: TelegramBotDto) => (
+        <Card key={bot.id} className="overflow-hidden rounded-2xl">
+          <CardHeader className="border-b border-white/[.06] pb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <span className="flex size-9 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary"><ShieldCheck className="size-4" /></span>
+                  <span className="truncate">{bot.name}</span>
+                </CardTitle>
+                <CardDescription className="mt-1">{bot.username ? "@" + bot.username : "بدون username"} · {bot.status === "connected" ? "متصل" : bot.status}</CardDescription>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => useCortexStore.getState().setView("telegram")}>مدیریت اتصال</Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 p-4">
+            <TelegramCustomizer botId={bot.id} />
+            <TelegramAccessManager botId={bot.id} />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 function SettingsTab({ agentId }: { agentId: string }) {
   const { data } = useQuery({
     queryKey: ["agent", agentId],
@@ -817,6 +871,9 @@ export function AgentDetailView() {
         </TabsContent>
         <TabsContent value="knowledge" className="mt-6">
           <KnowledgeManager agentId={agentId} />
+        </TabsContent>
+        <TabsContent value="telegram" className="mt-6">
+          <AgentTelegramTab agentId={agentId} />
         </TabsContent>
         <TabsContent value="telegram" className="mt-6">
           <AgentTelegramTab agentId={agentId} />
