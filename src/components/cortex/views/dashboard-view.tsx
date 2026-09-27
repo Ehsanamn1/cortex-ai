@@ -20,6 +20,7 @@ import {
   Server,
   Sparkles,
   Workflow,
+  WalletCards,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
@@ -144,6 +145,13 @@ export function DashboardView() {
     staleTime: 60_000,
   });
 
+  const billingQuery = useQuery({
+    queryKey: ["billing", activeWorkspaceId],
+    queryFn: () => api.getBilling(activeWorkspaceId ?? undefined),
+    enabled: !!activeWorkspaceId,
+    staleTime: 20_000,
+  });
+
   const providersQuery = useQuery({
     queryKey: ["providers-status", activeWorkspaceId],
     queryFn: () => api.getProvidersStatus(activeWorkspaceId ?? undefined),
@@ -232,6 +240,31 @@ export function DashboardView() {
         <StatCard icon={MessagesSquare} label="گفتگوها" value={faNum(stats.conversations)} caption={faNum(stats.messages) + " پیام در مجموع"} tint="border-emerald-400/25 bg-emerald-400/10 text-emerald-300" />
         <StatCard icon={Activity} label="امروز" value={faNum(stats.todayMessages ?? 0)} caption={faNum(stats.todayTokens ?? 0) + " توکن امروز"} tint="border-amber-400/25 bg-amber-400/10 text-amber-300" />
       </section>
+
+      {billingQuery.data && (
+        <motion.button
+          type="button"
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: .99 }}
+          onClick={() => setView("billing")}
+          className="cortex-wallet-mini group relative overflow-hidden rounded-[24px] border border-primary/15 bg-gradient-to-br from-primary/[.09] via-background to-violet-500/[.06] p-5 text-right"
+        >
+          <span className="absolute -end-10 -top-16 size-40 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2"><span className="cortex-kicker">CORTEX WALLET</span><span className="rounded-full border border-primary/15 bg-primary/5 px-2 py-1 text-[9px] text-primary">{billingQuery.data.account.plan.name}</span></div>
+              <p className="mt-3 text-2xl font-black">{faNum(billingQuery.data.account.balanceCredits)} <span className="text-xs font-semibold text-muted-foreground">اعتبار</span></p>
+              <p className="mt-1 text-xs text-muted-foreground">{faNum(billingQuery.data.usage30Days.credits)} اعتبار مصرف‌شده در ۳۰ روز اخیر</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="grid size-16 place-items-center rounded-2xl border border-white/10 bg-black/10 shadow-inner">
+                <WalletCards className="size-7 text-primary transition-transform duration-300 group-hover:rotate-6" />
+              </div>
+              <div className="text-left"><p className="text-xs font-semibold text-primary">مدیریت اعتبار</p><p className="mt-1 text-[10px] text-muted-foreground">شارژ، Ledger و صورتحساب</p></div>
+            </div>
+          </div>
+        </motion.button>
+      )}
 
       <Capabilities onOpen={setView} />
 
