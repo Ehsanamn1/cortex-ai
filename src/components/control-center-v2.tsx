@@ -267,7 +267,8 @@ function Overview({summary}:{summary:any}) {
 function ModelAccessMatrix({plans,models,onSave}:{plans:any[];models:any[];onSave:(body:any)=>void}) {
   const [selectedPlan,setSelectedPlan]=useState(plans[0]?.id ?? "");
   const plan=plans.find((p:any)=>p.id===selectedPlan);
-  const accessByModel=new Map((plan?.modelAccess??[]).map((x:any)=>[x.modelCatalogId,x]));
+  const accessRows = (plan?.modelAccess ?? []) as Array<{ modelCatalogId: string; enabled?: boolean; creditMultiplierBps?: number }>;
+  const accessByModel = new Map<string, { modelCatalogId: string; enabled?: boolean; creditMultiplierBps?: number }>(accessRows.map((x) => [x.modelCatalogId, x]));
   return <Card className="border-border overflow-hidden">
     <CardHeader><CardTitle className="text-sm">دسترسی مدل‌ها در هر پلن</CardTitle><p className="text-[10px] text-muted-foreground">فعال‌سازی و ضریب مصرف هر مدل برای هر پلن از همین‌جا کنترل می‌شود.</p></CardHeader>
     <CardContent className="space-y-3">
