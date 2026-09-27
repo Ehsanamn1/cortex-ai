@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
   Activity, ArrowUpLeft, CheckCircle2, CircleDollarSign, Clock3, CreditCard, FileText,
-  Info, Layers3, Plus, ShieldCheck, WalletCards,
+  Info, Layers3, Plus, ShieldCheck, WalletCards, Sparkles,
 } from "lucide-react";
 import { api } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
