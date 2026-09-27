@@ -140,7 +140,7 @@ export async function POST(req: Request, { params }: Params) {
           inputTokens,
           outputTokens,
           totalTokens: inputTokens + outputTokens,
-          estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, runtime.provider, runtime.model),
+          estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, runtime.provider ?? "unknown", runtime.model ?? "unknown"),
         },
       }),
       ...(reservationId
