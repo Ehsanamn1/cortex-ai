@@ -383,7 +383,13 @@ export async function processTelegramUpdate(botId: string, update: any) {
       const claimed = invite.claimedTelegramUserId;
       if (!claimed || claimed === tgId) {
         const claimResult = await db.telegramAllowlistEntry.updateMany({
-          where: { id: invite.id, botId: bot.id, status: 'allowed', claimedTelegramUserId: null, inviteTokenHash: hashTelegramInviteToken(startToken) },
+          where: {
+            id: invite.id,
+            botId: bot.id,
+            status: 'allowed',
+            inviteTokenHash: hashTelegramInviteToken(startToken),
+            OR: [{ claimedTelegramUserId: null }, { claimedTelegramUserId: tgId }],
+          },
           data: { claimedTelegramUserId: tgId, claimedAt: new Date(), inviteTokenHash: null },
         });
         if (claimResult.count === 1) {
