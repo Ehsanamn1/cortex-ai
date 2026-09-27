@@ -242,11 +242,19 @@ export async function getBillingSnapshot(workspaceId: string) {
   if (existingCatalog === 0) {
     for (const entry of known) await ensureModel(entry.provider, entry.modelId);
   }
-  const [subscription, recentLedger, usage, plans] = await Promise.all([
+  const [subscription, recentLedger, usage, plans, billedUsage] = await Promise.all([
     db.subscription.findFirst({ where: { billingAccountId: account.id, status: "active" }, orderBy: { createdAt: "desc" }, include: { plan: true } }),
     db.creditLedgerEntry.findMany({ where: { billingAccountId: account.id }, orderBy: { createdAt: "desc" }, take: 12 }),
     db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
     db.plan.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
+    db.billingCharge.aggregate({
+      where: {
+        workspaceId,
+        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        status: { in: ["captured", "captured_debt"] },
+      },
+      _sum: { chargedCredits: true },
+    }),
   ]);
 
   const catalog = await db.modelCatalog.findMany({
@@ -288,6 +296,7 @@ export async function getBillingSnapshot(workspaceId: string) {
       events: usage._count._all,
       tokens: usage._sum.totalTokens ?? 0,
       estimatedCostMicros: usage._sum.estimatedCostMicros ?? 0,
+      credits: billedUsage._sum.chargedCredits ?? 0,
     },
     models: catalog.map((item) => ({
       id: item.id,
