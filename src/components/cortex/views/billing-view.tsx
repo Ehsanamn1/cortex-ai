@@ -44,7 +44,7 @@ export function BillingView() {
       </div>
     </section>
 
-    {shadow && <div className="flex items-start gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/[.04] p-4 text-xs leading-6 text-amber-200"><Info className="mt-0.5 size-4 shrink-0"/><span>حساب مالی فعلاً در حالت حسابداری/آزمایشی است؛ مصرف و هزینه ثبت می‌شوند، اما کسر اعتبار و مسدودسازی تا زمان فعال‌سازی <code className="rounded bg-black/20 px-1" dir="ltr">CORTEX_BILLING_ENFORCE</code> انجام نمی‌شود.</span></div>}
+    {shadow && <div className="flex items-start gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/[.04] p-4 text-xs leading-6 text-amber-200"><Info className="mt-0.5 size-4 shrink-0"/><span>حساب مالی فعلاً در حالت حسابداری/آزمایشی است؛ مصرف و هزینه ثبت می‌شوند، اما کسر اعتبار و مسدودسازی تا زمان فعال‌سازی تجاری این workspace انجام نمی‌شود.</span></div>}
 
     <section className="grid gap-3 md:grid-cols-3">
       <Card className="cortex-panel rounded-2xl"><CardContent className="p-5"><div className="flex items-center justify-between"><span className="cortex-icon-box"><Sparkles className="size-[18px]"/></span><span className="text-[10px] text-muted-foreground">اعتبار</span></div><p className="mt-5 text-3xl font-bold">{faNum(data.account.balanceCredits)}</p><p className="mt-1 text-xs text-muted-foreground">اعتبار فعلی</p></CardContent></Card>
