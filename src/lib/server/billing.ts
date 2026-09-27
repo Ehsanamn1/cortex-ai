@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
-import { estimateLlmCostMicros, getKnownModelCatalog, getModelRate } from "@/lib/server/pricing";
+import { getKnownModelCatalog, getModelRate } from "@/lib/server/pricing";
 
 export const DEFAULT_BILLING_PLANS = [
   { key: "free", name: "رایگان", description: "برای شروع و تست Cortex", priceToman: 0, monthlyCredits: 5000, overageCreditPriceToman: 0, sortOrder: 0 },
@@ -384,11 +384,11 @@ export async function reserveBillingCredits(params: {
     creditMultiplierBps: fallbackMultiplier,
   };
 
-  const providerCostMicros = estimateLlmCostMicros(
-    Math.max(0, Math.floor(params.inputTokens)),
-    Math.max(0, Math.floor(params.maxOutputTokens)),
-    params.provider,
-    params.model,
+  const inputTokens = Math.max(0, Math.floor(params.inputTokens));
+  const maxOutputTokens = Math.max(0, Math.floor(params.maxOutputTokens));
+  const providerCostMicros = Math.max(
+    0,
+    Math.ceil(inputTokens * catalog.inputUsdPer1M + maxOutputTokens * catalog.outputUsdPer1M),
   );
   const multiplierBps = Math.max(1, access.creditMultiplierBps || fallbackMultiplier);
   const estimatedCredits = creditsFromProviderCost(providerCostMicros, multiplierBps);
@@ -473,13 +473,13 @@ export async function recordUsageAndCharge(params: {
   }
 
   const account = await ensureWorkspaceBilling(params.usage.workspaceId);
-  const providerCostMicros = estimateLlmCostMicros(
-    Math.max(0, Math.floor(params.usage.inputTokens)),
-    Math.max(0, Math.floor(params.usage.outputTokens)),
-    params.usage.provider,
-    params.usage.model,
-  );
   const { catalog, defaultMultiplierBps } = await ensureModel(params.usage.provider, params.usage.model);
+  const inputTokens = Math.max(0, Math.floor(params.usage.inputTokens));
+  const outputTokens = Math.max(0, Math.floor(params.usage.outputTokens));
+  const providerCostMicros = Math.max(
+    0,
+    Math.ceil(inputTokens * catalog.inputUsdPer1M + outputTokens * catalog.outputUsdPer1M),
+  );
   const access = await db.planModelAccess.findUnique({
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
   });
