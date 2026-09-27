@@ -13,19 +13,42 @@ function envRate(name: string): number | null {
 export function getModelRate(provider: string, model: string): ModelRate {
   const p = provider.toLowerCase();
   const m = model.toLowerCase();
-  if (p.includes("openai")) {
-    if (m.includes("gpt-5-mini")) return { inputUsdPer1M: 0.25, outputUsdPer1M: 2, known: true, label: "OpenAI GPT-5 mini" };
-    if (m.includes("gpt-5")) return { inputUsdPer1M: 1.25, outputUsdPer1M: 10, known: true, label: "OpenAI GPT-5" };
+
+  if (m.includes("gpt-5-mini") || m.includes("gpt-5.4-mini")) {
+    return m.includes("gpt-5.4-mini")
+      ? { inputUsdPer1M: 0.75, outputUsdPer1M: 4.5, known: true, label: "OpenAI GPT-5.4 mini" }
+      : { inputUsdPer1M: 0.25, outputUsdPer1M: 2, known: true, label: "OpenAI GPT-5 mini" };
   }
-  if (p.includes("anthropic") && m.includes("sonnet") && m.includes("5")) {
+  if (m === "gpt-5" || m.startsWith("gpt-5-")) {
+    return { inputUsdPer1M: 1.25, outputUsdPer1M: 10, known: true, label: "OpenAI GPT-5" };
+  }
+
+  if (m.includes("claude-sonnet-5") || m.includes("sonnet-5")) {
     return { inputUsdPer1M: 2, outputUsdPer1M: 10, known: true, label: "Anthropic Claude Sonnet 5" };
   }
-  if ((p.includes("gemini") || p.includes("google")) && m.includes("3.7") && m.includes("flash")) {
-    return { inputUsdPer1M: 0.75, outputUsdPer1M: 3.75, known: true, label: "Google Gemini 3.7 Flash" };
+  if (m.includes("claude-sonnet-4-6") || m.includes("sonnet-4.6")) {
+    return { inputUsdPer1M: 3, outputUsdPer1M: 15, known: true, label: "Anthropic Claude Sonnet 4.6" };
   }
+  if (m.includes("claude-haiku-4-5") || m.includes("haiku-4.5")) {
+    return { inputUsdPer1M: 1, outputUsdPer1M: 5, known: true, label: "Anthropic Claude Haiku 4.5" };
+  }
+
+  if (m.includes("gemini-3.7-flash") || m.includes("gemini-3.6-flash")) {
+    return { inputUsdPer1M: 0.75, outputUsdPer1M: 3.75, known: true, label: "Google Gemini Flash" };
+  }
+  if (m.includes("gemini-2.5-flash-lite")) {
+    return { inputUsdPer1M: 0.10, outputUsdPer1M: 0.40, known: true, label: "Google Gemini 2.5 Flash-Lite" };
+  }
+  if (m.includes("gemini-2.5-flash")) {
+    return { inputUsdPer1M: 0.30, outputUsdPer1M: 2.50, known: true, label: "Google Gemini 2.5 Flash" };
+  }
+
   const input = envRate("CORTEX_INPUT_USD_PER_1M");
   const output = envRate("CORTEX_OUTPUT_USD_PER_1M");
-  if (input !== null && output !== null) return { inputUsdPer1M: input, outputUsdPer1M: output, known: false, label: "Custom Cortex rate" };
+  if (input !== null && output !== null) {
+    return { inputUsdPer1M: input, outputUsdPer1M: output, known: false, label: "Custom Cortex rate" };
+  }
+
   return { inputUsdPer1M: 0, outputUsdPer1M: 0, known: false, label: "Unknown model rate" };
 }
 
