@@ -224,9 +224,9 @@ export function DashboardView() {
           <div className="relative flex min-h-[260px] items-center justify-center lg:min-h-[340px]">
             <div className="absolute size-48 rounded-full bg-primary/10 blur-3xl sm:size-64" />
             <CortexCore />
-            <div className="absolute bottom-3 left-2 hidden rounded-2xl border border-white/10 bg-black/25 px-4 py-3 backdrop-blur-md sm:block">
-              <p className="text-[10px] tracking-[.18em] text-slate-500">زیرساخت</p>
-              <p className="mt-1 text-sm font-semibold text-white">{faNum(providerReadyCount)} از ۳ سرویس آماده</p>
+            <div className="cortex-infra-badge absolute bottom-3 left-2 hidden rounded-2xl px-4 py-3 backdrop-blur-md sm:block">
+              <p className="cortex-infra-label text-[10px] tracking-[.18em]">زیرساخت</p>
+              <p className="cortex-infra-value mt-1 text-sm font-semibold">{faNum(providerReadyCount)} از ۳ سرویس آماده</p>
             </div>
           </div>
         </div>
