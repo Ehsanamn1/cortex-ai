@@ -255,7 +255,6 @@ async function ensureWorkspaceBilling(workspaceId: string) {
 
 export async function getBillingSnapshot(workspaceId: string) {
   const account = await ensureWorkspaceBilling(workspaceId);
-  const known = getKnownModelCatalog();
   await ensureKnownModelCatalog();
   const [subscription, recentLedger, usage, plans, billedUsage, topUpRequests, recentInvoices] = await Promise.all([
     db.subscription.findFirst({ where: { billingAccountId: account.id, status: "active" }, orderBy: { createdAt: "desc" }, include: { plan: true } }),
