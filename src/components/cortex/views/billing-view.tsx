@@ -86,7 +86,7 @@ export function BillingView(){
         {data.topUpPackages.map((item,index)=><button key={item.key} type="button" disabled={topUp.isPending} onClick={()=>topUp.mutate(item.key)} className="cortex-wallet-package rounded-2xl border border-white/[.07] bg-white/[.018] p-4 text-right disabled:opacity-60">
           <div className="flex items-center justify-between"><span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">{index===0?<Plus className="size-4"/>:index===1?<Layers3 className="size-4"/>:<WalletCards className="size-4"/>}</span><ArrowUpLeft className="size-4 text-muted-foreground"/></div>
           <p className="mt-3 text-sm font-bold">{item.label}</p>
-          <p className="mt-1 text-xl font-black">{formatCountCompact(item.credits)}</p><p className="text-[10px] text-muted-foreground">اعتبار · {faNum(item.amountToman)} تومان</p>
+          <p className="mt-1 text-xl font-black">{formatCountCompact(item.credits)}</p><p className="text-[10px] text-muted-foreground">اعتبار · {formatTomanCompact(item.amountToman)}</p>
         </button>)}
       </div>
       {pending>0&&<div className="mt-3 rounded-xl border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[11px] text-amber-200"><Clock3 className="me-1 inline size-3.5"/>{faNum(pending)} درخواست در انتظار بررسی.</div>}
@@ -107,7 +107,7 @@ export function BillingView(){
     <details className="cortex-panel rounded-2xl p-5">
       <summary className="cursor-pointer list-none text-sm font-bold">پلن‌ها و مدل‌های قابل استفاده</summary>
       <div className="mt-5 grid gap-5 xl:grid-cols-2">
-        <div className="space-y-2">{data.plans.map(item=><div key={item.id} className={cn("rounded-xl border p-3",item.key===plan.key?"border-primary/30 bg-primary/5":"border-white/[.06]")}><div className="flex justify-between gap-3"><span className="text-xs font-semibold">{item.name}</span><span className="text-[10px] text-muted-foreground">{item.priceToman?formatTomanCompact(item.priceToman):"سفارشی/رایگان"}</span></div><p className="mt-1 text-[10px] text-muted-foreground">{item.monthlyCredits?faNum(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار سفارشی"}</p></div>)}</div>
+        <div className="space-y-2">{data.plans.map(item=><div key={item.id} className={cn("rounded-xl border p-3",item.key===plan.key?"border-primary/30 bg-primary/5":"border-white/[.06]")}><div className="flex justify-between gap-3"><span className="text-xs font-semibold">{item.name}</span><span className="text-[10px] text-muted-foreground">{item.priceToman?formatTomanCompact(item.priceToman):"سفارشی/رایگان"}</span></div><p className="mt-1 text-[10px] text-muted-foreground">{item.monthlyCredits?formatCountCompact(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار سفارشی"}</p></div>)}</div>
         <div className="space-y-2">{enabledModels.slice(0,12).map(item=><div key={item.id} className="flex items-center justify-between rounded-xl border border-white/[.06] p-3"><div><p className="text-xs font-semibold">{item.displayName}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.provider} · \${item.inputUsdPer1M}/M in · \${item.outputUsdPer1M}/M out</p></div><span className="text-[10px] text-primary">{item.qualityTier}</span></div>)}{enabledModels.length===0&&<p className="text-xs text-muted-foreground">مدل فعالی برای این پلن ثبت نشده است.</p>}</div>
       </div>
     </details>
