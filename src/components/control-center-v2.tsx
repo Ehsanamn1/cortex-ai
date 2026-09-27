@@ -42,9 +42,13 @@ const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof 
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { ...init, credentials: "include", headers: { ...(init?.headers ?? {}) } });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body?.error?.message || body?.message || "درخواست ناموفق بود.");
-  return body.data ?? body;
+  const body = await res.json().catch(() => ({})) as {
+    data?: T;
+    error?: { message?: string };
+    message?: string;
+  };
+  if (!res.ok) throw new Error(body.error?.message || body.message || "درخواست ناموفق بود.");
+  return body.data ?? (body as T);
 }
 
 function Kpi({ title, value, icon: Icon, detail }: { title: string; value: string | number; icon: typeof Bot; detail: string }) {
