@@ -356,7 +356,10 @@ export const api = {
     return request("/api/search?"+params.toString());
   },
   getBilling(workspaceId?:string): Promise<BillingSnapshotDto> { return request(`/api/billing${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
-  getBillingTopUps(workspaceId?:string){ return request<{requests:BillingTopUpRequestDto[];packages:Array<{key:string;credits:number;amountToman:number;label:string} }>}(`/api/billing/topup-request${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
+  getBillingTopUps(workspaceId?:string): Promise<{ requests: BillingTopUpRequestDto[]; packages: Array<{ key:string; credits:number; amountToman:number; label:string }> }> {
+    const query = workspaceId ? "?workspaceId=" + encodeURIComponent(workspaceId) : "";
+    return request("/api/billing/topup-request" + query);
+  },
   requestBillingTopUp(packageKey:string, workspaceId?:string){ return jsonRequest<{request:BillingTopUpRequestDto}>(`/api/billing/topup-request`,"POST",{packageKey,workspaceId}); },
 
   /* AUTH */
