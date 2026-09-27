@@ -20,6 +20,12 @@ describe("Cortex pricing estimates", () => {
   test("uses current documented GPT-5 rate", () => {
     expect(estimateLlmCostMicros(1_000_000, 1_000_000, "OpenAI", "gpt-5")).toBe(11_250_000);
   });
+  test("supports current GPT-6, GLM and DeepSeek models", () => {
+    expect(getModelRate("OpenAI", "gpt-6-astra")).toMatchObject({ inputUsdPer1M: 10, outputUsdPer1M: 50, known: true });
+    expect(getModelRate("OpenAI", "gpt-6-luna")).toMatchObject({ inputUsdPer1M: 0.1, outputUsdPer1M: 0.5, known: true });
+    expect(getModelRate("Z.AI", "glm-5.3")).toMatchObject({ inputUsdPer1M: 1.4, outputUsdPer1M: 4.4, known: true });
+    expect(getModelRate("DeepSeek", "deepseek-flash")).toMatchObject({ inputUsdPer1M: 0.15, outputUsdPer1M: 0.6, known: true });
+  });
   test("uses environment fallback for an unknown configured model", () => {
     vi.stubEnv("CORTEX_INPUT_USD_PER_1M", "0.4");
     vi.stubEnv("CORTEX_OUTPUT_USD_PER_1M", "3");
