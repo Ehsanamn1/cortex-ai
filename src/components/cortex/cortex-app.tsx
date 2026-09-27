@@ -79,7 +79,7 @@ function SessionGate() {
             void import("@/components/cortex/views/analytics-view");
             void import("@/components/cortex/views/conversations-view");
           };
-          if ("requestIdleCallback" in window) window.requestIdleCallback(preload, { timeout: 1200 }); else window.setTimeout(preload, 80);
+          window.setTimeout(preload, 80);
         } else {
           setPhase("auth");
         }
