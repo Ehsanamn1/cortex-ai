@@ -245,7 +245,7 @@ export async function getBillingSnapshot(workspaceId: string) {
   if (existingCatalog === 0) {
     for (const entry of known) await ensureModel(entry.provider, entry.modelId);
   }
-  const [subscription, recentLedger, usage, plans, billedUsage] = await Promise.all([
+  const [subscription, recentLedger, usage, plans, billedUsage, topUpRequests] = await Promise.all([
     db.subscription.findFirst({ where: { billingAccountId: account.id, status: "active" }, orderBy: { createdAt: "desc" }, include: { plan: true } }),
     db.creditLedgerEntry.findMany({ where: { billingAccountId: account.id }, orderBy: { createdAt: "desc" }, take: 12 }),
     db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
@@ -257,6 +257,12 @@ export async function getBillingSnapshot(workspaceId: string) {
         status: { in: ["captured", "captured_debt"] },
       },
       _sum: { chargedCredits: true },
+    }),
+    db.creditTopUpRequest.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: { id:true, packageKey:true, credits:true, amountToman:true, status:true, note:true, createdAt:true, reviewedAt:true },
     }),
   ]);
 
@@ -321,6 +327,16 @@ export async function getBillingSnapshot(workspaceId: string) {
       entryType: entry.entryType,
       description: entry.description,
       createdAt: entry.createdAt.toISOString(),
+    })),
+    topUpRequests: topUpRequests.map((item) => ({
+      id:item.id,
+      packageKey:item.packageKey,
+      credits:item.credits,
+      amountToman:item.amountToman,
+      status:item.status,
+      note:item.note,
+      createdAt:item.createdAt.toISOString(),
+      reviewedAt:item.reviewedAt?.toISOString() ?? null,
     })),
   };
 }
