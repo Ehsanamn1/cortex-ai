@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -127,7 +127,7 @@ function TokenField({
   placeholder,
 }: {
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   value: string;
   setValue: (value: string) => void;
   placeholder: string;
@@ -432,7 +432,7 @@ function ResultCard({
   title: string;
   value: string;
   detail: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   primary?: boolean;
 }) {
   return (
