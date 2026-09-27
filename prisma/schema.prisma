@@ -48,6 +48,11 @@ model Workspace {
   workflows       Workflow[]
   executions      Execution[]
   memoryEntries   MemoryEntry[]
+  wallet          WalletAccount?
+  creditLedgerEntries CreditLedgerEntry[]
+  creditReservations CreditReservation[]
+  subscriptions  Subscription[]
+  invoices       Invoice[]
 
   @@index([ownerId])
 }
@@ -683,3 +688,165 @@ model Plugin {
 
   @@index([enabled])
 }
+
+model Plan {
+  id                String   @id @default(cuid())
+  key               String   @unique
+  name              String
+  description       String?
+  priceMinor        BigInt   @default(0)
+  currency          String   @default("IRR")
+  includedCredits   BigInt   @default(0)
+  monthlyMessages   Int      @default(0)
+  maxAgents         Int      @default(1)
+  maxTelegramUsers  Int      @default(0)
+  maxStorageMb      Int      @default(20)
+  overageEnabled    Boolean  @default(false)
+  customPricing     Boolean  @default(false)
+  active            Boolean  @default(true)
+  metadataJson      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([active])
+}
+
+model WalletAccount {
+  id               String   @id @default(cuid())
+  workspaceId      String   @unique
+  currency         String   @default("CREDITS")
+  balanceCredits   BigInt   @default(0)
+  reservedCredits  BigInt   @default(0)
+  version          Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  workspace        Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  ledgerEntries    CreditLedgerEntry[]
+  reservations     CreditReservation[]
+
+  @@index([workspaceId, updatedAt])
+}
+
+model CreditLedgerEntry {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  walletId        String
+  entryType       String
+  deltaCredits    BigInt
+  balanceAfter    BigInt
+  referenceType   String?
+  referenceId     String?
+  idempotencyKey  String   @unique
+  description     String?
+  metadataJson    String?
+  createdAt       DateTime @default(now())
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  wallet    WalletAccount @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([walletId, createdAt])
+  @@index([referenceType, referenceId])
+}
+
+model CreditReservation {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  walletId        String
+  amountCredits   BigInt
+  status          String   @default("PENDING")
+  referenceType   String?
+  referenceId     String?
+  idempotencyKey  String   @unique
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  committedAt     DateTime?
+  releasedAt      DateTime?
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  wallet    WalletAccount @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status, createdAt])
+  @@index([walletId, status, createdAt])
+  @@index([status, expiresAt])
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  planId               String
+  status               String   @default("ACTIVE")
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean  @default(false)
+  externalCustomerId   String?
+  externalSubscriptionId String?
+  metadataJson         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan      Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+  invoices  Invoice[]
+
+  @@index([workspaceId, status])
+  @@index([planId, status])
+  @@index([currentPeriodEnd])
+}
+
+model ModelCatalog {
+  id                    String   @id @default(cuid())
+  key                   String   @unique
+  provider              String
+  modelId               String
+  displayName           String
+  inputUsdMicrosPer1M   Int      @default(0)
+  outputUsdMicrosPer1M  Int      @default(0)
+  creditMultiplierMilli Int      @default(1000)
+  capabilityTagsJson    String?
+  contextWindow         Int?
+  vision                Boolean  @default(false)
+  tools                 Boolean  @default(false)
+  structuredOutput      Boolean  @default(false)
+  reasoning             Boolean  @default(false)
+  qualityTier           String?
+  speedTier             String?
+  commercialEnabled     Boolean  @default(true)
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([provider, modelId])
+  @@index([active, commercialEnabled])
+}
+
+model Invoice {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  subscriptionId    String?
+  number            String   @unique
+  status            String   @default("DRAFT")
+  subtotalMinor     BigInt   @default(0)
+  taxMinor          BigInt   @default(0)
+  totalMinor        BigInt   @default(0)
+  currency          String   @default("IRR")
+  periodStart       DateTime?
+  periodEnd         DateTime?
+  dueAt             DateTime?
+  paidAt            DateTime?
+  metadataJson      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, status])
+  @@index([subscriptionId, createdAt])
+}
+
