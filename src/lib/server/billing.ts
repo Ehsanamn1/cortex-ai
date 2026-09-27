@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { estimateLlmCostMicros, getKnownModelCatalog, getModelRate } from "@/lib/server/pricing";
+import { llmManager } from "@/lib/providers/llm/manager";
 
 export const DEFAULT_BILLING_PLANS = [
   { key: "free", name: "رایگان", description: "برای شروع و تست Cortex", priceToman: 0, monthlyCredits: 5000, overageCreditPriceToman: 0, sortOrder: 0 },
@@ -296,6 +297,33 @@ export interface BillingReservationResult {
   providerCostMicros: number;
   creditMultiplierBps: number;
   enforcementEnabled: boolean;
+}
+
+export async function reserveBillingForAgentRequest(params: {
+  workspaceId: string;
+  agentId: string;
+  inputTokens: number;
+  maxOutputTokens: number;
+}): Promise<BillingReservationResult> {
+  const resolved = await llmManager.resolveForAgent(params.agentId, params.workspaceId);
+  const provider = resolved.status.provider;
+  const model = resolved.status.model;
+  if (!resolved.provider || !provider || provider === "none" || !model) {
+    return {
+      reservationId: null,
+      estimatedCredits: 0,
+      providerCostMicros: 0,
+      creditMultiplierBps: 100,
+      enforcementEnabled: false,
+    };
+  }
+  return reserveBillingCredits({
+    workspaceId: params.workspaceId,
+    provider,
+    model,
+    inputTokens: params.inputTokens,
+    maxOutputTokens: params.maxOutputTokens,
+  });
 }
 
 export async function reserveBillingCredits(params: {
