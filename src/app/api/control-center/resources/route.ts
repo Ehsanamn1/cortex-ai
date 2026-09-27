@@ -214,10 +214,10 @@ export async function PATCH(req: Request) {
       const scope = body.status === "agent" ? "agent" : "workspace";
       if (scope === "agent") {
         const provider = await db.agentProviderConfig.update({ where: { id }, data: { enabled: body.enabled } });
-        return applyCors(jsonOk({ admin, resource, item: provider }), req.headers.get("origin"));
+        return applyCors(jsonOk({ admin, resource, item: { id: provider.id, providerName: provider.providerName, model: provider.model, enabled: provider.enabled, workspaceId: provider.workspaceId, agentId: provider.agentId } }), req.headers.get("origin"));
       }
       const provider = await db.providerConfig.update({ where: { id }, data: { enabled: body.enabled } });
-      return applyCors(jsonOk({ admin, resource, item: provider }), req.headers.get("origin"));
+      return applyCors(jsonOk({ admin, resource, item: { id: provider.id, providerName: provider.providerName, model: provider.model, enabled: provider.enabled, workspaceId: provider.workspaceId } }), req.headers.get("origin"));
     }
 
     if (resource === "plugins" && typeof body.enabled === "boolean") {
