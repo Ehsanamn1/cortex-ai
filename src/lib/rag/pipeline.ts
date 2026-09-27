@@ -15,6 +15,8 @@ export interface RagAnswer {
   retrieval: RetrievedChunk[];
   auxiliaryInputTokens?: number;
   auxiliaryOutputTokens?: number;
+  promptInputTokens?: number;
+  completionOutputTokens?: number;
 }
 
 export const RAG_QUERY_EXPANSION_RESERVE_TOKENS = 384;
@@ -230,6 +232,9 @@ export async function answerWithKnowledge(params: {
     });
   }
 
+  const promptInputTokens = messages.reduce((sum, item) => sum + estimateTokens(item.content), 0);
+  const completionOutputTokens = estimateTokens(completion.content);
+
   return {
     content: completion.content,
     provider: completion.provider,
@@ -238,6 +243,8 @@ export async function answerWithKnowledge(params: {
     retrieval: retrieved,
     auxiliaryInputTokens,
     auxiliaryOutputTokens,
+    promptInputTokens,
+    completionOutputTokens,
   };
 }
 
