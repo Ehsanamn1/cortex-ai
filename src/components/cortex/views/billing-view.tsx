@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
-  Activity, ArrowUpLeft, CheckCircle2, CircleDollarSign, Clock3, CreditCard, FileText,
+  Activity, ArrowUpLeft, CheckCircle2, ChevronDown, CircleDollarSign, Clock3, CreditCard, FileText, Gauge,
   Info, Layers3, Plus, ShieldCheck, WalletCards, Sparkles,
 } from "lucide-react";
 import { api } from "@/lib/cortex-client";
