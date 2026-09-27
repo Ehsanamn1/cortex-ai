@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
@@ -44,19 +46,23 @@ import { SystemSearch } from "@/components/cortex/system-search";
 import { NotificationCenter } from "@/components/cortex/notification-center";
 import { ThemeToggle } from "@/components/cortex/theme-toggle";
 
-import { DashboardView } from "@/components/cortex/views/dashboard-view";
-import { AgentsView } from "@/components/cortex/views/agents-view";
-import { AgentBuilderView, AgentEditView } from "@/components/cortex/views/agent-form";
-import { AgentDetailView } from "@/components/cortex/views/agent-detail-view";
-import { KnowledgeView } from "@/components/cortex/views/knowledge-view";
-import { ConversationsView } from "@/components/cortex/views/conversations-view";
-import { SettingsView } from "@/components/cortex/views/settings-view";
-import { TelegramView } from "@/components/cortex/views/telegram-view";
-import { AnalyticsView } from "@/components/cortex/views/analytics-view";
-import { AdminView } from "@/components/cortex/views/admin-view";
-import { LearnView } from "@/components/cortex/views/learn-view";
-import { WorkflowsView } from "@/components/cortex/views/workflows-view";
-import { BillingView } from "@/components/cortex/views/billing-view";
+
+const ViewLoading = () => <div className="space-y-4"><div className="h-40 animate-pulse rounded-[28px] bg-muted/70"/><div className="grid gap-3 sm:grid-cols-2"><div className="h-24 animate-pulse rounded-2xl bg-muted/60"/><div className="h-24 animate-pulse rounded-2xl bg-muted/60"/></div></div>;
+
+const DashboardView = dynamic(() => import("@/components/cortex/views/dashboard-view").then(m => m.DashboardView), { ssr:false, loading:ViewLoading });
+const AgentsView = dynamic(() => import("@/components/cortex/views/agents-view").then(m => m.AgentsView), { ssr:false, loading:ViewLoading });
+const AgentBuilderView = dynamic(() => import("@/components/cortex/views/agent-form").then(m => m.AgentBuilderView), { ssr:false, loading:ViewLoading });
+const AgentEditView = dynamic(() => import("@/components/cortex/views/agent-form").then(m => m.AgentEditView), { ssr:false, loading:ViewLoading });
+const AgentDetailView = dynamic(() => import("@/components/cortex/views/agent-detail-view").then(m => m.AgentDetailView), { ssr:false, loading:ViewLoading });
+const KnowledgeView = dynamic(() => import("@/components/cortex/views/knowledge-view").then(m => m.KnowledgeView), { ssr:false, loading:ViewLoading });
+const ConversationsView = dynamic(() => import("@/components/cortex/views/conversations-view").then(m => m.ConversationsView), { ssr:false, loading:ViewLoading });
+const SettingsView = dynamic(() => import("@/components/cortex/views/settings-view").then(m => m.SettingsView), { ssr:false, loading:ViewLoading });
+const TelegramView = dynamic(() => import("@/components/cortex/views/telegram-view").then(m => m.TelegramView), { ssr:false, loading:ViewLoading });
+const AnalyticsView = dynamic(() => import("@/components/cortex/views/analytics-view").then(m => m.AnalyticsView), { ssr:false, loading:ViewLoading });
+const AdminView = dynamic(() => import("@/components/cortex/views/admin-view").then(m => m.AdminView), { ssr:false, loading:ViewLoading });
+const LearnView = dynamic(() => import("@/components/cortex/views/learn-view").then(m => m.LearnView), { ssr:false, loading:ViewLoading });
+const WorkflowsView = dynamic(() => import("@/components/cortex/views/workflows-view").then(m => m.WorkflowsView), { ssr:false, loading:ViewLoading });
+const BillingView = dynamic(() => import("@/components/cortex/views/billing-view").then(m => m.BillingView), { ssr:false, loading:ViewLoading });
 
 /* ---------------- provider status pill ---------------- */
 
