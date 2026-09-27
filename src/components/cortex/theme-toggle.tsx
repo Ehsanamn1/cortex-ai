@@ -25,11 +25,15 @@ export function ThemeToggle({ className }: { className?: string }) {
   const [theme, setTheme] = useState<CortexTheme>("dark");
 
   useEffect(() => {
-    const current = document.documentElement.classList.contains("dark") ? "dark" : "light";
-    setTheme(current);
+    const timer = window.setTimeout(() => {
+      setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    }, 0);
     const sync = () => setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
     window.addEventListener("cortex:theme-change", sync);
-    return () => window.removeEventListener("cortex:theme-change", sync);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("cortex:theme-change", sync);
+    };
   }, []);
 
   const next = theme === "dark" ? "light" : "dark";
