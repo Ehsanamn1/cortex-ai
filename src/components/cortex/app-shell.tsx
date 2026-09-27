@@ -18,6 +18,8 @@ import {
   GraduationCap,
   GitBranch,
   WalletCards,
+  Search,
+  Bell,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
