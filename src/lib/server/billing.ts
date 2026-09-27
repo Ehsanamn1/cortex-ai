@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { Prisma } from "@/generated/prisma/client";
 
 const CREDIT_USD_MICROS = Number(process.env.CORTEX_CREDIT_USD_MICROS ?? 1000);
 
@@ -332,44 +333,84 @@ export async function reserveCredits(input: {
   });
 }
 
-export async function commitCreditReservation(reservationId: string): Promise<void> {
-  await db.$transaction(async (tx) => {
-    const reservation = await tx.creditReservation.findUnique({ where: { id: reservationId } });
-    if (!reservation) return;
-    if (reservation.status === "COMMITTED" || reservation.status === "RELEASED" || reservation.status === "EXPIRED") return;
+export async function getModelCreditMultiplier(provider: string, model: string): Promise<number> {
+  const row = await db.modelCatalog.findFirst({
+    where: {
+      active: true,
+      commercialEnabled: true,
+      OR: [
+        { key: provider + ":" + model },
+        { provider, modelId: model },
+      ],
+    },
+    select: { creditMultiplierMilli: true },
+  });
+  return Math.max(1, row?.creditMultiplierMilli ?? 1000);
+}
 
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${reservation.walletId}))`;
-    const current = await tx.walletAccount.findUniqueOrThrow({ where: { id: reservation.walletId } });
-    if (current.balanceCredits < reservation.amountCredits) {
-      throw new Error("موجودی اعتبار قبل از تسویه رزرو کافی نیست.");
-    }
+export async function commitCreditReservationInTransaction(
+  tx: Prisma.TransactionClient,
+  reservationId: string,
+  actualAmountCredits?: bigint,
+): Promise<void> {
+  const reservation = await tx.creditReservation.findUnique({ where: { id: reservationId } });
+  if (!reservation) return;
+  if (reservation.status === "COMMITTED" || reservation.status === "RELEASED" || reservation.status === "EXPIRED") return;
 
-    const nextBalance = current.balanceCredits - reservation.amountCredits;
-    await tx.walletAccount.update({
-      where: { id: reservation.walletId },
-      data: {
-        balanceCredits: nextBalance,
-        reservedCredits: { decrement: reservation.amountCredits },
-        version: { increment: 1 },
-      },
-    });
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${reservation.walletId}))`;
+  const current = await tx.walletAccount.findUniqueOrThrow({ where: { id: reservation.walletId } });
+
+  const requestedCharge = actualAmountCredits ?? reservation.amountCredits;
+  const charge = requestedCharge < 0n ? 0n : requestedCharge;
+  if (charge > current.balanceCredits) {
+    const err = new Error("موجودی اعتبار برای تسویه مصرف کافی نیست.");
+    (err as Error & { status?: number }).status = 402;
+    throw err;
+  }
+
+  const nextBalance = current.balanceCredits - charge;
+  const nextReserved = current.reservedCredits >= reservation.amountCredits
+    ? current.reservedCredits - reservation.amountCredits
+    : 0n;
+
+  await tx.walletAccount.update({
+    where: { id: reservation.walletId },
+    data: {
+      balanceCredits: nextBalance,
+      reservedCredits: nextReserved,
+      version: { increment: 1 },
+    },
+  });
+
+  if (charge > 0n) {
     await tx.creditLedgerEntry.create({
       data: {
         workspaceId: reservation.workspaceId,
         walletId: reservation.walletId,
         entryType: "USAGE",
-        deltaCredits: -reservation.amountCredits,
+        deltaCredits: -charge,
         balanceAfter: nextBalance,
         referenceType: reservation.referenceType ?? "RESERVATION",
         referenceId: reservation.referenceId ?? reservation.id,
         idempotencyKey: "commit:" + reservation.id,
         description: "مصرف اعتبار برای اجرای Agent",
+        metadataJson: JSON.stringify({
+          reservedCredits: reservation.amountCredits.toString(),
+          chargedCredits: charge.toString(),
+        }),
       },
     });
-    await tx.creditReservation.update({
-      where: { id: reservation.id },
-      data: { status: "COMMITTED", committedAt: new Date() },
-    });
+  }
+
+  await tx.creditReservation.update({
+    where: { id: reservation.id },
+    data: { status: "COMMITTED", committedAt: new Date() },
+  });
+}
+
+export async function commitCreditReservation(reservationId: string, actualAmountCredits?: bigint): Promise<void> {
+  await db.$transaction(async (tx) => {
+    await commitCreditReservationInTransaction(tx, reservationId, actualAmountCredits);
   });
 }
 
@@ -407,7 +448,7 @@ export async function activateFreePlan(workspaceId: string): Promise<void> {
     const now = new Date();
     const periodEnd = new Date(now);
     periodEnd.setMonth(periodEnd.getMonth() + 1);
-    const subscriptionId = crypto.randomUUID();
+    const subscriptionId = globalThis.crypto.randomUUID();
     const wallet = await tx.walletAccount.upsert({
       where: { workspaceId },
       update: {},
