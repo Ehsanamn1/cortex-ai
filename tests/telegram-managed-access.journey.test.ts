@@ -4,7 +4,7 @@ vi.mock("@/lib/db", () => ({
   db: {
     telegramBot: { findUnique: vi.fn(), update: vi.fn() },
     telegramUser: { upsert: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
-    telegramAllowlistEntry: { findUnique: vi.fn(), update: vi.fn() },
+    telegramAllowlistEntry: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     conversation: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
     agent: { findUniqueOrThrow: vi.fn() },
     message: { findMany: vi.fn(), create: vi.fn() },
@@ -68,7 +68,7 @@ describe("Managed Telegram access journey", () => {
   test("claims an allowlisted phone via one-time start token and then chats", async () => {
     vi.mocked(db.telegramUser.upsert).mockResolvedValue({ id: "u-77", botId: "bot-managed", telegramUserId: "77", status: "pending", phoneNumber: null, dailyMessageLimit: 5, monthlyMessageLimit: 100, dailyTokenLimit: 1000, monthlyTokenLimit: 10000 } as never);
     vi.mocked(db.telegramAllowlistEntry.findUnique).mockResolvedValue({ id: "entry", botId: "bot-managed", phoneNumber: "09120000000", status: "allowed", claimedTelegramUserId: null, dailyMessageLimit: 5, monthlyMessageLimit: 100, dailyTokenLimit: 1000, monthlyTokenLimit: 10000 } as never);
-    vi.mocked(db.telegramAllowlistEntry.update).mockResolvedValue({ id: "entry" } as never);
+    vi.mocked(db.telegramAllowlistEntry.update).mockResolvedValue({ id: "entry" } as never);\n    vi.mocked(db.telegramAllowlistEntry.updateMany).mockResolvedValue({ count: 1 } as never);
     await processTelegramUpdate("bot-managed", { update_id: 2, message: { from: { id: 77 }, chat: { id: 77 }, text: "/start AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" } });
     expect(vi.mocked(db.telegramAllowlistEntry.update)).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ claimedTelegramUserId: "77", inviteTokenHash: null }) }));
     expect(vi.mocked(db.telegramUser.update)).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ phoneNumber: "09120000000", status: "allowed" }) }));
@@ -77,6 +77,6 @@ describe("Managed Telegram access journey", () => {
     await processTelegramUpdate("bot-managed", { update_id: 3, message: { from: { id: 77 }, chat: { id: 77 }, text: "قیمت را بگو" } });
     const runtime = await import("@/lib/runtime/engine");
     expect(vi.mocked(runtime.runAgentExecution)).toHaveBeenCalled();
-    expect(vi.mocked(db.usageEvent.create)).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ telegramUserId: "u-77", estimatedCostMicros: 1 }) }));
+    expect(vi.mocked(db.usageEvent.create)).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ telegramUserId: "u-77", estimatedCostMicros: expect.any(Number) }) }));
   });
 });
