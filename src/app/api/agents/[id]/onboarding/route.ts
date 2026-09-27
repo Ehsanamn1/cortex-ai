@@ -13,10 +13,15 @@ function assertAdminRole(role: string) {
 
 function publicSession(session: any) {
   const answers = JSON.parse(session.answersJson) as Array<{ questionId: string; answer: string }>;
-  const question: OnboardingQuestion | null = session.status === "active" && session.currentIndex < BUSINESS_ONBOARDING_QUESTIONS.length
-    ? BUSINESS_ONBOARDING_QUESTIONS[session.currentIndex] ?? null : null;
+  const questionLimit = Math.min(
+    BUSINESS_ONBOARDING_QUESTIONS.length,
+    Math.max(1, Number(session.questionLimit) || BUSINESS_ONBOARDING_QUESTIONS.length),
+  );
+  const questions = BUSINESS_ONBOARDING_QUESTIONS.slice(0, questionLimit);
+  const question: OnboardingQuestion | null = session.status === "active" && session.currentIndex < questionLimit
+    ? questions[session.currentIndex] ?? null : null;
   return {
-    id: session.id, status: session.status, currentIndex: session.currentIndex, totalQuestions: BUSINESS_ONBOARDING_QUESTIONS.length,
+    id: session.id, status: session.status, currentIndex: session.currentIndex, totalQuestions: questionLimit,
     question, answersCount: answers.length, result: session.resultJson ? JSON.parse(session.resultJson) : null, error: session.error ?? null,
     completedAt: session.completedAt?.toISOString() ?? null, createdAt: session.createdAt.toISOString(), updatedAt: session.updatedAt.toISOString(),
   };
@@ -47,7 +52,11 @@ export async function POST(req: Request, { params }: Params) {
 
     if (action === "start") {
       await db.agentOnboardingSession.updateMany({ where: { agentId: agent.id, status: "active" }, data: { status: "cancelled" } });
-      const session = await db.agentOnboardingSession.create({ data: { workspaceId: agent.workspaceId, agentId: agent.id, status: "active", currentIndex: 0, answersJson: "[]" } });
+      const mode = body.mode === "quick" ? "quick" : "full";
+      const questionLimit = mode === "quick" ? Math.min(8, BUSINESS_ONBOARDING_QUESTIONS.length) : BUSINESS_ONBOARDING_QUESTIONS.length;
+      const session = await db.agentOnboardingSession.create({
+        data: { workspaceId: agent.workspaceId, agentId: agent.id, status: "active", currentIndex: 0, questionLimit, answersJson: "[]" },
+      });
       return applyCors(jsonOk({ session: publicSession(session) }, 201), req.headers.get("origin"));
     }
 
@@ -67,27 +76,32 @@ export async function POST(req: Request, { params }: Params) {
     const answer = typeof body.answer === "string" ? body.answer.trim() : "";
     if (!answer) return applyCors(jsonError("پاسخ نمی‌تواند خالی باشد.", 400), req.headers.get("origin"));
     if (answer.length > 6000) return applyCors(jsonError("پاسخ بیش از حد طولانی است. لطفاً خلاصه‌تر پاسخ دهید.", 400), req.headers.get("origin"));
-    const question = BUSINESS_ONBOARDING_QUESTIONS[current.currentIndex];
+    const questionLimit = Math.min(
+      BUSINESS_ONBOARDING_QUESTIONS.length,
+      Math.max(1, Number(current.questionLimit) || BUSINESS_ONBOARDING_QUESTIONS.length),
+    );
+    const questions = BUSINESS_ONBOARDING_QUESTIONS.slice(0, questionLimit);
+    const question = questions[current.currentIndex];
     if (!question) return applyCors(jsonError("سؤال بعدی پیدا نشد.", 409), req.headers.get("origin"));
 
     const answers = JSON.parse(current.answersJson) as Array<{ questionId: string; answer: string }>;
     answers.push({ questionId: question.id, answer });
     const nextIndex = current.currentIndex + 1;
 
-    if (nextIndex < BUSINESS_ONBOARDING_QUESTIONS.length) {
+    if (nextIndex < questionLimit) {
       const updated = await db.agentOnboardingSession.update({ where: { id: current.id }, data: { currentIndex: nextIndex, answersJson: JSON.stringify(answers), error: null } });
       return applyCors(jsonOk({ session: publicSession(updated) }), req.headers.get("origin"));
     }
 
     const answerPairs = answers.map(item => ({
-      question: BUSINESS_ONBOARDING_QUESTIONS.find(q => q.id === item.questionId)!,
+      question: questions.find(q => q.id === item.questionId)!,
       answer: item.answer,
     }));
     try {
       const synthesized = await synthesizeOnboarding(answerPairs, agent.id, agent.workspaceId);
       const completed = await db.agentOnboardingSession.update({
         where: { id: current.id },
-        data: { status: "completed", currentIndex: BUSINESS_ONBOARDING_QUESTIONS.length, answersJson: JSON.stringify(answers), resultJson: JSON.stringify(synthesized.result), error: null, completedAt: new Date() },
+        data: { status: "completed", currentIndex: questionLimit, answersJson: JSON.stringify(answers), resultJson: JSON.stringify(synthesized.result), error: null, completedAt: new Date() },
       });
       return applyCors(jsonOk({ session: publicSession(completed), knowledgeSourceId: synthesized.knowledgeSourceId }), req.headers.get("origin"));
     } catch (error) {
