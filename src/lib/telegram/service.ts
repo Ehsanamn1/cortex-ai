@@ -652,7 +652,11 @@ export async function processTelegramUpdate(botId: string, update: any) {
     billingReservationId = null;
 
     if (reservationId) {
-      await db.usageReservation.delete({ where: { id: reservationId } }).catch(() => undefined);
+      try {
+        await db.usageReservation.delete({ where: { id: reservationId } });
+      } catch {
+        // Cleanup failure must not mask the original Telegram/runtime error.
+      }
     }
     reservationId = null;
 
