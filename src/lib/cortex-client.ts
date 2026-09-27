@@ -247,6 +247,7 @@ export interface WorkflowDto { id:string; workspaceId:string; agentId:string|nul
 
 export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }
 export interface BillingModelDto { id:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number }
+export interface BillingTopUpRequestDto { id:string; packageKey:string; credits:number; amountToman:number; status:string; note:string|null; createdAt:string; reviewedAt:string|null }
 export interface BillingLedgerEntryDto { id:string; amountCredits:number; balanceAfter:number; entryType:string; description:string|null; createdAt:string }
 export interface SearchResultDto { type:"agent"|"knowledge"|"conversation"; id:string; title:string; subtitle:string; agentId:string; }
 
@@ -257,6 +258,7 @@ export interface BillingSnapshotDto {
   usage30Days:{events:number;tokens:number;estimatedCostMicros:number;credits:number};
   models: BillingModelDto[];
   ledger: BillingLedgerEntryDto[];
+  topUpRequests: BillingTopUpRequestDto[];
 }
 
 export interface ExecutionDto { id:string; workspaceId:string; agentId:string|null; triggerType:string; status:string; input:string|null; output:string|null; error:string|null; startedAt:string; completedAt:string|null; steps:Array<{id:string;seq:number;type:string;name:string;status:string;input:string|null;output:string|null;error:string|null;startedAt:string;completedAt:string|null}>; agent?:{id:string;name:string}|null; }
@@ -347,6 +349,8 @@ export const api = {
     return request("/api/search?"+params.toString());
   },
   getBilling(workspaceId?:string): Promise<BillingSnapshotDto> { return request(`/api/billing${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
+  getBillingTopUps(workspaceId?:string){ return request<{requests:BillingTopUpRequestDto[];packages:Array<{key:string;credits:number;amountToman:number;label:string} }>}(`/api/billing/topup-request${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
+  requestBillingTopUp(packageKey:string, workspaceId?:string){ return jsonRequest<{request:BillingTopUpRequestDto}>(`/api/billing/topup-request`,"POST",{packageKey,workspaceId}); },
 
   /* AUTH */
 
