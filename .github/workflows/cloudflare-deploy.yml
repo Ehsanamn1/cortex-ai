@@ -203,6 +203,28 @@ jobs:
           set -euo pipefail
           base="https://cortex-ai.dengxiao445.workers.dev"
 
+          smoke_user_id=""
+          smoke_cookie=""
+          smoke_response=""
+          session_response=""
+          api_key_response=""
+          api_chat_response=""
+          openai_response=""
+          agent_response=""
+          knowledge_response=""
+          knowledge_file=""
+          admin_cookie=""
+          admin_response=""
+          cleanup_smoke() {
+            set +e
+            rm -f "$smoke_response" "$session_response" "$smoke_cookie" "$api_key_response" "$api_chat_response" "$openai_response" "$agent_response" "$knowledge_response" "$knowledge_file" "$admin_response" "$admin_cookie"
+            db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}"
+            if [ -n "$db_url" ] && [ -n "${smoke_user_id:-}" ]; then
+              [[ "$smoke_user_id" =~ ^[A-Za-z0-9]+$ ]] && printf 'DELETE FROM "User" WHERE "id" = %s;' "'$smoke_user_id'" | npx prisma db execute --url "$db_url" --stdin >/dev/null 2>&1 || true
+            fi
+          }
+          trap cleanup_smoke EXIT
+
           check_json() {
             local url="$1"
             local expected="$2"
@@ -415,11 +437,7 @@ jobs:
           curl -sS --retry 3 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -X DELETE "$base/api/agents/$smoke_agent_id/api-keys?keyId=$(jq -r '.keyMeta.id' "$api_key_response")" >/dev/null || true
           rm -f "$api_key_response" "$api_chat_response" "$openai_response" "$agent_response"
 
-          db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
-          test -n "$db_url" || { echo "Postgres URL missing for smoke cleanup"; exit 1; }
-          [[ "$smoke_user_id" =~ ^[A-Za-z0-9]+$ ]] || { echo "Unexpected smoke user id format"; exit 1; }
-          printf 'DELETE FROM "User" WHERE "id" = %s;' "'$smoke_user_id'"             | npx prisma db execute --url "$db_url" --stdin
-          rm -f "$smoke_response" "$session_response" "$smoke_cookie"
+          echo "Smoke cleanup is handled by the EXIT trap."
 
       - name: Smoke test live Worker
         run: |
