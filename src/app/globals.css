@@ -764,3 +764,36 @@ html:not(.dark) .cortex-auth .text-foreground { color:#111827 !important; }
 html:not(.dark) .cortex-auth .text-muted-foreground { color:#657184 !important; }
 html:not(.dark) .cortex-auth-card { background:rgba(255,255,255,.80) !important; border-color:#dfe5ef !important; box-shadow:0 24px 70px rgba(15,23,42,.10) !important; }
 html:not(.dark) .cortex-auth .bg-white/\[\.025\] { background:rgba(255,255,255,.75) !important; }
+
+/* Cortex command-core theme-safe rendering */
+.cortex-core-stage { contain: layout paint; }
+.cortex-core-sphere > div:first-child {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,.48), transparent 12%),
+    radial-gradient(circle at 55% 44%, rgba(59,130,255,.98), transparent 38%),
+    radial-gradient(circle at 72% 72%, rgba(139,92,246,.96), transparent 48%),
+    #07101c !important;
+}
+html:not(.dark) .cortex-core-sphere > div:first-child {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,.98), transparent 12%),
+    radial-gradient(circle at 55% 44%, rgba(91,140,255,.78), transparent 38%),
+    radial-gradient(circle at 72% 72%, rgba(139,92,246,.72), transparent 48%),
+    #edf3fb !important;
+  box-shadow: 0 0 80px rgba(59,130,255,.18), inset 0 1px 0 rgba(255,255,255,.78) !important;
+}
+html:not(.dark) .cortex-core-node {
+  background:#ffffff !important;
+  box-shadow:0 0 15px rgba(59,130,255,.44),0 0 3px rgba(49,64,88,.30) !important;
+}
+html:not(.dark) .cortex-core-shell,
+html:not(.dark) .cortex-core-ring { border-color: rgba(59,130,255,.20) !important; }
+html:not(.dark) .cortex-core-stage .text-slate-400 { color:#5f6d80 !important; }
+
+/* Compact wallet language */
+.cortex-wallet-card .cortex-kicker { letter-spacing:.18em; }
+.cortex-wallet-card { box-shadow:0 22px 55px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.04); }
+@media (max-width: 720px) {
+  .cortex-wallet-card { border-radius:24px; }
+  .cortex-wallet-card .cortex-wallet-orb { width:98px;height:98px; }
+}
