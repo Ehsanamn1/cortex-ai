@@ -245,10 +245,12 @@ export interface AgentApiKeyDto { id:string; name:string; keyPrefix:string; acti
 export interface AgentToolDto { id:string; key:string; name:string; description:string; inputSchema:string; permissions:string; attached:boolean; }
 export interface WorkflowDto { id:string; workspaceId:string; agentId:string|null; name:string; description:string|null; definition:string; status:string; triggers:Array<{id:string;type:string;enabled:boolean}>; agent?:{id:string;name:string}|null; _count?:{executions:number}; }
 
+export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }
 export interface BillingModelDto { id:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number }
 export interface BillingLedgerEntryDto { id:string; amountCredits:number; balanceAfter:number; entryType:string; description:string|null; createdAt:string }
 export interface BillingSnapshotDto {
   account:{ id:string; plan:{ id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }; balanceCredits:number; status:string; enforcementEnabled:boolean; periodStart:string; periodEnd:string };
+  plans: BillingPlanDto[];
   subscription:{ id:string; status:string; periodStart:string; periodEnd:string; cancelAtPeriodEnd:boolean }|null;
   usage30Days:{events:number;tokens:number;estimatedCostMicros:number};
   models: BillingModelDto[];
