@@ -65,6 +65,18 @@ describe("Managed Telegram access journey", () => {
     expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledWith(expect.stringContaining("/sendMessage"), expect.anything());
   });
 
+  test("does not let a rotated invite move a claimed phone to another Telegram account", async () => {
+    vi.mocked(db.telegramUser.upsert).mockResolvedValue({ id: "u-88", botId: "bot-managed", telegramUserId: "88", status: "pending" } as never);
+    vi.mocked(db.telegramAllowlistEntry.findUnique).mockResolvedValue({
+      id: "entry", botId: "bot-managed", phoneNumber: "09120000000", status: "allowed",
+      claimedTelegramUserId: "77", dailyMessageLimit: 5, monthlyMessageLimit: 100, dailyTokenLimit: 1000, monthlyTokenLimit: 10000,
+    } as never);
+    await processTelegramUpdate("bot-managed", { update_id: 4, message: { from: { id: 88 }, chat: { id: 88 }, text: "/start AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" } });
+    expect(vi.mocked(db.telegramAllowlistEntry.updateMany)).not.toHaveBeenCalled();
+    const runtime = await import("@/lib/runtime/engine");
+    expect(vi.mocked(runtime.runAgentExecution)).not.toHaveBeenCalled();
+  });
+
   test("claims an allowlisted phone via one-time start token and then chats", async () => {
     vi.mocked(db.telegramUser.upsert).mockResolvedValue({ id: "u-77", botId: "bot-managed", telegramUserId: "77", status: "pending", phoneNumber: null, dailyMessageLimit: 5, monthlyMessageLimit: 100, dailyTokenLimit: 1000, monthlyTokenLimit: 10000 } as never);
     vi.mocked(db.telegramAllowlistEntry.findUnique).mockResolvedValue({ id: "entry", botId: "bot-managed", phoneNumber: "09120000000", status: "allowed", claimedTelegramUserId: null, dailyMessageLimit: 5, monthlyMessageLimit: 100, dailyTokenLimit: 1000, monthlyTokenLimit: 10000 } as never);
