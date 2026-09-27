@@ -391,6 +391,86 @@ export async function releaseCreditReservation(reservationId: string | null | un
   }).catch(() => undefined);
 }
 
+export async function activateFreePlan(workspaceId: string): Promise<void> {
+  await ensureDefaultPlans();
+  const plan = await db.plan.findUnique({ where: { key: "free" } });
+  if (!plan) throw new Error("پلن رایگان تعریف نشده است.");
+
+  await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${workspaceId}))`;
+    const existing = await tx.subscription.findFirst({
+      where: { workspaceId, status: "ACTIVE" },
+      select: { id: true },
+    });
+    if (existing) return;
+
+    const now = new Date();
+    const periodEnd = new Date(now);
+    periodEnd.setMonth(periodEnd.getMonth() + 1);
+    const subscriptionId = crypto.randomUUID();
+    const wallet = await tx.walletAccount.upsert({
+      where: { workspaceId },
+      update: {},
+      create: { workspaceId, currency: "CREDITS" },
+    });
+    const nextBalance = wallet.balanceCredits + plan.includedCredits;
+
+    await tx.subscription.create({
+      data: {
+        id: subscriptionId,
+        workspaceId,
+        planId: plan.id,
+        status: "ACTIVE",
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+      },
+    });
+
+    await tx.walletAccount.update({
+      where: { id: wallet.id },
+      data: { balanceCredits: nextBalance, version: { increment: 1 } },
+    });
+    await tx.creditLedgerEntry.create({
+      data: {
+        workspaceId,
+        walletId: wallet.id,
+        entryType: "PLAN_GRANT",
+        deltaCredits: plan.includedCredits,
+        balanceAfter: nextBalance,
+        referenceType: "SUBSCRIPTION",
+        referenceId: subscriptionId,
+        idempotencyKey: "plan-grant:" + subscriptionId,
+        description: "اعتبار اولیه پلن Free",
+      },
+    });
+  });
+}
+
+export async function listCommercialModels() {
+  return db.modelCatalog.findMany({
+    where: { active: true, commercialEnabled: true },
+    orderBy: [{ provider: "asc" }, { displayName: "asc" }],
+    select: {
+      id: true,
+      key: true,
+      provider: true,
+      modelId: true,
+      displayName: true,
+      inputUsdMicrosPer1M: true,
+      outputUsdMicrosPer1M: true,
+      creditMultiplierMilli: true,
+      capabilityTagsJson: true,
+      contextWindow: true,
+      vision: true,
+      tools: true,
+      structuredOutput: true,
+      reasoning: true,
+      qualityTier: true,
+      speedTier: true,
+    },
+  });
+}
+
 export function providerCostToCredits(providerCostMicros: number, multiplierMilli = 1000): bigint {
   const safeCost = Math.max(0, Math.floor(Number(providerCostMicros) || 0));
   const safeMultiplier = Math.max(1, Math.floor(Number(multiplierMilli) || 1000));
