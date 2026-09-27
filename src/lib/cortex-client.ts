@@ -255,6 +255,7 @@ export interface SearchResultDto { type:"agent"|"knowledge"|"conversation"; id:s
 
 export interface BillingSnapshotDto {
   account:{ id:string; plan:{ id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }; balanceCredits:number; status:string; enforcementEnabled:boolean; periodStart:string; periodEnd:string };
+  topUpPackages: Array<{key:string;credits:number;amountToman:number;label:string}>;
   plans: BillingPlanDto[];
   subscription:{ id:string; status:string; periodStart:string; periodEnd:string; cancelAtPeriodEnd:boolean }|null;
   usage30Days:{events:number;tokens:number;estimatedCostMicros:number;credits:number};
