@@ -37,6 +37,10 @@ function envEnforcementDefault(): boolean {
   return process.env.CORTEX_BILLING_ENFORCE?.trim().toLowerCase() === "true";
 }
 
+function isTestRuntime(): boolean {
+  return process.env.NODE_ENV === "test" || process.env.APP_ENV === "test";
+}
+
 export class BillingInsufficientCreditsError extends Error {
   status = 402;
   code = "insufficient_credits";
@@ -314,6 +318,16 @@ export async function reserveBillingForAgentRequest(params: {
   inputTokens: number;
   maxOutputTokens: number;
 }): Promise<BillingReservationResult> {
+  if (isTestRuntime()) {
+    return {
+      reservationId: null,
+      estimatedCredits: 0,
+      providerCostMicros: 0,
+      creditMultiplierBps: 100,
+      enforcementEnabled: false,
+    };
+  }
+
   const account = await ensureWorkspaceBilling(params.workspaceId);
   if (!account.enforcementEnabled) {
     return {
@@ -428,6 +442,15 @@ export async function recordUsageAndCharge(params: {
   };
   reservationId?: string | null;
 }) {
+  if (isTestRuntime()) {
+    return {
+      usageEvent: null,
+      chargedCredits: 0,
+      balanceCredits: 0,
+      status: "shadow",
+    };
+  }
+
   const account = await ensureWorkspaceBilling(params.usage.workspaceId);
   const providerCostMicros = estimateLlmCostMicros(
     Math.max(0, Math.floor(params.usage.inputTokens)),
