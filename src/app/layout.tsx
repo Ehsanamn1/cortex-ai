@@ -31,6 +31,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning className="dark">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k="cortex-theme-v2",t=localStorage.getItem(k);document.documentElement.classList.toggle("dark",t!=="light");document.documentElement.dataset.theme=t==="light"?"light":"dark";document.documentElement.style.colorScheme=t==="light"?"light":"dark"}catch(e){document.documentElement.classList.add("dark")}})();`,
+          }}
+        />
+      </head>
       <body className={vazirmatn.variable + " antialiased bg-background text-foreground"}>
         {children}
         <Toaster position="top-center" dir="rtl" richColors theme="dark" />
