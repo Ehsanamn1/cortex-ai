@@ -26,6 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BillingEstimator } from "@/components/cortex/billing-estimator";
 
 function StatusBadge({ status }: { status: string }) {
   const config = status === "approved"
@@ -143,6 +144,12 @@ export function BillingView() {
           </div>
         </div>
       </section>
+
+      <BillingEstimator
+        models={data.models}
+        monthlyCredits={plan.monthlyCredits}
+        overageCreditPriceToman={plan.overageCreditPriceToman}
+      />
 
       {shadow && (
         <div className="flex items-start gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/[.04] p-4 text-xs leading-6 text-amber-100/80">
