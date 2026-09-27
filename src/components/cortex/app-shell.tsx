@@ -45,6 +45,7 @@ import { ViewErrorBoundary } from "@/components/cortex/view-error-boundary";
 import { SystemSearch } from "@/components/cortex/system-search";
 import { NotificationCenter } from "@/components/cortex/notification-center";
 import { ThemeToggle } from "@/components/cortex/theme-toggle";
+import { applyCortexUiSettings } from "@/components/cortex/theme-runtime";
 import { DashboardView } from "@/components/cortex/views/dashboard-view";
 
 
@@ -461,6 +462,10 @@ export function AppShell() {
   const activeWorkspaceName = useCortexStore((s) => s.workspaces.find((w) => w.id === s.activeWorkspaceId)?.name);
   const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
   const navItems = buildNavItems(siteConfig.data?.settings);
+
+  useEffect(() => {
+    if (siteConfig.data?.settings) applyCortexUiSettings(siteConfig.data.settings);
+  }, [siteConfig.data?.settings]);
 
   const [moreOpen, setMoreOpen] = useState(false);
   const title = usePageTitle(siteConfig.data?.settings["site.name"]);
