@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Activity, Bot, Boxes, CreditCard, Database, FileText, Gauge, History, LayoutDashboard,
+  Activity, Bot, Boxes, CheckCircle2, CircleX, Clock3, CreditCard, Database, FileText, Gauge, History, LayoutDashboard,
   LogOut, MessageSquare, Pencil, Plug, Power, RefreshCw, Save, Search, Send, Settings2,
   Users, WalletCards, Workflow
 } from "lucide-react";
@@ -17,7 +17,7 @@ import { toast } from "sonner";
 type Section =
   | "overview" | "users" | "workspaces" | "agents" | "knowledge" | "conversations"
   | "telegram" | "providers" | "workflows" | "executions" | "audit" | "plugins"
-  | "plans" | "models" | "accounts" | "charges" | "invoices" | "settings";
+  | "plans" | "models" | "accounts" | "charges" | "invoices" | "topups" | "settings";
 
 const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof LayoutDashboard }> = [
   { id: "overview", label: "نمای کلی", group: "اصلی", icon: LayoutDashboard },
@@ -37,6 +37,7 @@ const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof 
   { id: "accounts", label: "حساب‌های اعتباری", group: "Billing", icon: WalletCards },
   { id: "charges", label: "شارژهای مصرف", group: "Billing", icon: Activity },
   { id: "invoices", label: "فاکتورها", group: "Billing", icon: FileText },
+  { id: "topups", label: "درخواست‌های شارژ", group: "Billing", icon: WalletCards },
   { id: "settings", label: "تنظیمات", group: "سیستم", icon: Settings2 },
 ];
 
@@ -185,9 +186,44 @@ function BillingPanel({ section }: { section: Section }) {
 
   if (section === "accounts") return <div className="grid gap-3">{(q.data.accounts ?? []).map((account:any) => <AccountEditor key={account.id} account={account} plans={q.data.plans ?? []} onSave={(body) => patch.mutate({action:"update_account",id:account.id,body})}/>)}</div>;
 
+  if (section === "topups") return <TopUpRequestsPanel />;
+
   if (section === "charges") return <Card className="overflow-hidden"><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[900px] text-right text-xs"><thead className="bg-muted/30"><tr>{["فضا","Provider","Model","Credits","Status","زمان"].map(x=><th key={x} className="px-4 py-3">{x}</th>)}</tr></thead><tbody className="divide-y">{(q.data.recentCharges??[]).map((x:any)=><tr key={x.id}><td className="px-4 py-3">{x.workspace?.name}</td><td className="px-4 py-3">{x.provider}</td><td className="px-4 py-3 font-mono">{x.model}</td><td className="px-4 py-3 font-semibold">{Number(x.chargedCredits).toLocaleString("fa-IR")}</td><td className="px-4 py-3">{x.status}</td><td className="px-4 py-3">{new Date(x.createdAt).toLocaleString("fa-IR")}</td></tr>)}</tbody></table></CardContent></Card>;
 
   return <Card className="overflow-hidden"><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[900px] text-right text-xs"><thead className="bg-muted/30"><tr>{["شماره فاکتور","فضا","وضعیت","جمع","ایجاد"].map(x=><th key={x} className="px-4 py-3">{x}</th>)}</tr></thead><tbody className="divide-y">{(q.data.invoices??[]).map((x:any)=><tr key={x.id}><td className="px-4 py-3 font-mono">{x.invoiceNumber}</td><td className="px-4 py-3">{x.workspace?.name}</td><td className="px-4 py-3">{x.status}</td><td className="px-4 py-3">{Number(x.totalToman).toLocaleString("fa-IR")} تومان</td><td className="px-4 py-3">{new Date(x.createdAt).toLocaleString("fa-IR")}</td></tr>)}</tbody></table></CardContent></Card>;
+}
+
+function TopUpRequestsPanel() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey:["cc-topups"], queryFn:()=>jsonFetch<any>("/api/control-center/topups"), staleTime:5_000 });
+  const review = useMutation({
+    mutationFn: ({requestId, action}:{requestId:string;action:"approve"|"reject"}) =>
+      jsonFetch("/api/control-center/topups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({requestId,action})}),
+    onSuccess:(_,vars)=>{qc.invalidateQueries({queryKey:["cc-topups"]});qc.invalidateQueries({queryKey:["cc-summary"]});toast.success(vars.action==="approve"?"شارژ تأیید و به موجودی اضافه شد.":"درخواست شارژ رد شد.");},
+    onError:(e:Error)=>toast.error(e.message),
+  });
+  if(q.isPending) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">در حال بارگذاری درخواست‌های شارژ…</CardContent></Card>;
+  if(q.isError) return <Card><CardContent className="p-8 text-center text-sm text-destructive">{q.error.message}</CardContent></Card>;
+  const rows=q.data?.requests??[];
+  return <Card className="overflow-hidden border-border">
+    <CardHeader className="border-b bg-muted/20"><div className="flex items-center justify-between gap-3"><div><CardTitle className="text-sm">درخواست‌های شارژ اعتبار</CardTitle><p className="mt-1 text-[10px] text-muted-foreground">تأیید این‌جا واقعاً موجودی Workspace را افزایش می‌دهد و Ledger ثبت می‌کند.</p></div><span className="rounded-full border bg-background px-3 py-1 text-[10px]">{Number(rows.filter((x:any)=>x.status==="pending").length).toLocaleString("fa-IR")} در انتظار</span></div></CardHeader>
+    <CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[1050px] text-right text-xs"><thead className="bg-muted/30"><tr>{["فضا","کاربر","بسته","اعتبار","مبلغ","وضعیت","ثبت","بررسی","عملیات"].map(x=><th key={x} className="whitespace-nowrap px-4 py-3">{x}</th>)}</tr></thead>
+      <tbody className="divide-y">
+        {rows.map((x:any)=><tr key={x.id} className="hover:bg-muted/20">
+          <td className="px-4 py-3 font-medium">{x.workspace?.name??"—"}</td>
+          <td className="px-4 py-3"><div>{x.user?.name??"—"}</div><div className="mt-0.5 text-[10px] text-muted-foreground">{x.user?.email??"—"}</div></td>
+          <td className="px-4 py-3 font-mono">{x.packageKey}</td>
+          <td className="px-4 py-3 font-semibold">{Number(x.credits).toLocaleString("fa-IR")}</td>
+          <td className="px-4 py-3">{Number(x.amountToman).toLocaleString("fa-IR")} تومان</td>
+          <td className="px-4 py-3">{x.status==="pending"?<span className="inline-flex items-center gap-1 text-amber-600"><Clock3 className="size-3.5"/>در انتظار</span>:x.status==="approved"?<span className="inline-flex items-center gap-1 text-emerald-600"><CheckCircle2 className="size-3.5"/>تأیید</span>:<span className="inline-flex items-center gap-1 text-rose-600"><CircleX className="size-3.5"/>رد</span>}</td>
+          <td className="px-4 py-3 whitespace-nowrap">{new Date(x.createdAt).toLocaleString("fa-IR")}</td>
+          <td className="px-4 py-3 whitespace-nowrap">{x.reviewedAt?new Date(x.reviewedAt).toLocaleString("fa-IR"):"—"}</td>
+          <td className="px-4 py-3">{x.status==="pending"&&<div className="flex items-center gap-1"><Button size="sm" onClick={()=>review.mutate({requestId:x.id,action:"approve"})} disabled={review.isPending}><CheckCircle2 className="size-3.5"/>تأیید</Button><Button size="sm" variant="outline" onClick={()=>review.mutate({requestId:x.id,action:"reject"})} disabled={review.isPending}><CircleX className="size-3.5"/>رد</Button></div>}</td>
+        </tr>)}
+        {!rows.length&&<tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">درخواست شارژی ثبت نشده است.</td></tr>}
+      </tbody>
+    </table></CardContent>
+  </Card>;
 }
 
 function PlanCreate({onSave}:{onSave:(body:any)=>void}) {
