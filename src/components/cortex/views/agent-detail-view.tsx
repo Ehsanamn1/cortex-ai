@@ -7,7 +7,6 @@ import {
   ArrowRight,
   FileText,
   Library,
-  Loader2,
   MessageSquare,
   MessagesSquare,
   Pencil,
