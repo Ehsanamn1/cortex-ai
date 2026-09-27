@@ -24,7 +24,12 @@ jobs:
           node-version: 22
       - name: Run production load smoke
         run: node scripts/load-smoke.mjs
+      - name: Let Cloudflare rate-limit window recover
+        if: matrix.concurrency != 10
+        run: sleep 65
+
       - name: Run production API contract smoke
+        if: matrix.concurrency == 10
         env:
           SYSTEM_SMOKE_EXPECT_NEW: "true"
         run: node scripts/system-smoke.mjs
