@@ -19,8 +19,17 @@ export function getModelRate(provider: string, model: string): ModelRate {
       ? { inputUsdPer1M: 0.75, outputUsdPer1M: 4.5, known: true, label: "OpenAI GPT-5.4 mini" }
       : { inputUsdPer1M: 0.25, outputUsdPer1M: 2, known: true, label: "OpenAI GPT-5 mini" };
   }
-  if (m === "gpt-5" || m.startsWith("gpt-5-")) {
+  if (m === "gpt-5.4") {
+    return { inputUsdPer1M: 2.5, outputUsdPer1M: 15, known: true, label: "OpenAI GPT-5.4" };
+  }
+  if (m === "gpt-5.4-nano") {
+    return { inputUsdPer1M: 0.20, outputUsdPer1M: 1.25, known: true, label: "OpenAI GPT-5.4 nano" };
+  }
+  if (m === "gpt-5") {
     return { inputUsdPer1M: 1.25, outputUsdPer1M: 10, known: true, label: "OpenAI GPT-5" };
+  }
+  if (m === "gpt-5-nano") {
+    return { inputUsdPer1M: 0.05, outputUsdPer1M: 0.40, known: true, label: "OpenAI GPT-5 nano" };
   }
 
   if (m.includes("claude-sonnet-5") || m.includes("sonnet-5")) {
