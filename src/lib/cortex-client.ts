@@ -248,6 +248,8 @@ export interface WorkflowDto { id:string; workspaceId:string; agentId:string|nul
 export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }
 export interface BillingModelDto { id:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number }
 export interface BillingLedgerEntryDto { id:string; amountCredits:number; balanceAfter:number; entryType:string; description:string|null; createdAt:string }
+export interface SearchResultDto { type:"agent"|"knowledge"|"conversation"; id:string; title:string; subtitle:string; agentId:string; }
+
 export interface BillingSnapshotDto {
   account:{ id:string; plan:{ id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }; balanceCredits:number; status:string; enforcementEnabled:boolean; periodStart:string; periodEnd:string };
   plans: BillingPlanDto[];
@@ -339,6 +341,11 @@ function jsonRequest<T>(path: string, method: "POST" | "PATCH" | "PUT" | "DELETE
 
 export const api = {
   getSiteConfig(): Promise<SiteConfigDto> { return request("/api/site-config"); },
+  searchSystem(query:string, workspaceId?:string): Promise<{results:SearchResultDto[]}> {
+    const params=new URLSearchParams({q:query});
+    if(workspaceId) params.set("workspaceId",workspaceId);
+    return request("/api/search?"+params.toString());
+  },
   getBilling(workspaceId?:string): Promise<BillingSnapshotDto> { return request(`/api/billing${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
 
   /* AUTH */
@@ -537,7 +544,7 @@ export const api = {
   updateTelegramUser(id:string,status:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>('/api/admin/telegram-users','PATCH',{id,status,...limits}); },
   getAnalytics(workspaceId?:string){ return request<AnalyticsDto & {note?:string}>(`/api/admin/analytics${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
   getBusinessOnboarding(agentId:string){ return request<{session:BusinessOnboardingSessionDto|null;questions:BusinessOnboardingQuestionDto[]}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`); },
-  startBusinessOnboarding(agentId:string){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"start"}); },
+  startBusinessOnboarding(agentId:string,mode:"quick"|"full"="full"){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"start",mode}); },
   answerBusinessOnboarding(agentId:string,sessionId:string,answer:string){ return jsonRequest<{session:BusinessOnboardingSessionDto;knowledgeSourceId?:string}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"answer",sessionId,answer}); },
   cancelBusinessOnboarding(agentId:string,sessionId:string){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"cancel",sessionId}); },
 
