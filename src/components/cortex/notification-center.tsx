@@ -17,8 +17,8 @@ export function NotificationCenter() {
   const [seenAt, setSeenAt] = useState(0);
   const [open, setOpen] = useState(false);
   const dashboard = useQuery({
-    queryKey: ["dashboard-notifications", workspaceId],
-    queryFn: () => api.getDashboard(workspaceId ?? undefined),
+    queryKey: ["notifications", workspaceId],
+    queryFn: () => api.getNotifications(workspaceId ?? undefined),
     enabled: !!workspaceId,
     staleTime: 15_000,
     refetchInterval: 30_000,
@@ -30,7 +30,7 @@ export function NotificationCenter() {
     } catch {}
   }, []);
 
-  const items = dashboard.data?.activity ?? [];
+  const items = dashboard.data?.notifications ?? [];
   const unread = useMemo(() => items.filter((item) => new Date(item.createdAt).getTime() > seenAt).length, [items, seenAt]);
 
   function markRead() {
