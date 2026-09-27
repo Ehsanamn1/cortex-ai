@@ -35,40 +35,33 @@ import { Capabilities } from "@/components/cortex/capabilities";
 
 function CortexCore() {
   const nodes = [
-    { left: "17%", top: "31%", delay: 0 },
-    { left: "76%", top: "27%", delay: 0.5 },
-    { left: "83%", top: "58%", delay: 1 },
-    { left: "25%", top: "74%", delay: 1.5 },
-    { left: "52%", top: "12%", delay: 2 },
-    { left: "48%", top: "87%", delay: 2.5 },
+    { x: "18%", y: "31%", delay: "0s" },
+    { x: "77%", y: "26%", delay: ".7s" },
+    { x: "83%", y: "58%", delay: "1.4s" },
+    { x: "24%", y: "74%", delay: "2.1s" },
+    { x: "51%", y: "13%", delay: "2.8s" },
+    { x: "48%", y: "88%", delay: "3.5s" },
   ];
+
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.74, rotateX: -10 }} animate={{ opacity: 1, scale: 1, rotateX: 0 }} transition={{ duration: 0.9, ease: "easeOut" }} className="cortex-core-stage relative mx-auto h-[250px] w-[250px] sm:h-[330px] sm:w-[330px]">
-      <motion.div animate={{ rotateZ: 360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="cortex-core-shell" />
-      <motion.div animate={{ rotateX: [56, 62, 56], rotateZ: 360 }} transition={{ duration: 19, repeat: Infinity, ease: "linear" }} className="absolute inset-[7%] rounded-full border border-violet-400/16" />
-      <div className="cortex-core-ring" />
-      {nodes.map((node, index) => (
-        <motion.span
-          key={index}
-          className="cortex-core-node"
-          style={{ left: node.left, top: node.top }}
-          animate={{ scale: [0.7, 1.35, 0.7], opacity: [0.45, 1, 0.45] }}
-          transition={{ duration: 2.8, delay: node.delay, repeat: Infinity, ease: "easeInOut" }}
-        />
+    <div className="cortex-core-v2" aria-label="هسته Cortex">
+      <div className="cortex-core-v2-haze" />
+      <div className="cortex-core-v2-ring cortex-core-v2-ring-1" />
+      <div className="cortex-core-v2-ring cortex-core-v2-ring-2" />
+      <div className="cortex-core-v2-ring cortex-core-v2-ring-3" />
+      {nodes.map((node, i) => (
+        <span key={i} className="cortex-core-v2-node" style={{ left: node.x, top: node.y, animationDelay: node.delay }} />
       ))}
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 22, repeat: Infinity, ease: "linear" }} className="absolute inset-[16%] rounded-full border border-primary/20" />
-      <motion.div animate={{ scale: [1, 1.045, 1], rotateY: [0, 8, 0], rotateZ: [0, -8, 0] }} transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }} className="cortex-core-sphere absolute inset-[19%] rounded-full">
-        <div className="absolute inset-6 rounded-full border border-white/10 bg-[radial-gradient(circle_at_32%_26%,rgba(255,255,255,.48),transparent_12%),radial-gradient(circle_at_55%_44%,rgba(59,130,255,.98),transparent_38%),radial-gradient(circle_at_72%_72%,rgba(139,92,246,.96),transparent_48%),#07101c] shadow-[0_0_120px_rgba(59,130,255,.33),inset_0_1px_0_rgba(255,255,255,.16)]">
-          <div className="absolute inset-[18%] rounded-full border border-primary/20" />
-          <div className="absolute left-[18%] top-[17%] size-4 rounded-full bg-white/50 blur-[3px]" />
-          <motion.div animate={{ opacity: [0.28, 0.7, 0.28] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }} className="absolute inset-[9%] rounded-full border border-violet-400/30" />
-        </div>
-      </motion.div>
-      <div className="absolute inset-x-0 bottom-1 text-center">
-        <p className="text-[10px] font-bold tracking-[.28em] text-primary/80">هسته Cortex</p>
-        <p className="mt-1 text-xs text-slate-400">مرکز کنترل هوش و دانش</p>
+      <div className="cortex-core-v2-orb">
+        <div className="cortex-core-v2-orb-shine" />
+        <div className="cortex-core-v2-orb-grid" />
+        <div className="cortex-core-v2-orb-dot" />
       </div>
-    </motion.div>
+      <div className="cortex-core-v2-caption">
+        <p>هسته Cortex</p>
+        <span>مرکز کنترل هوش و دانش</span>
+      </div>
+    </div>
   );
 }
 
