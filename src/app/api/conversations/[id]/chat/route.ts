@@ -5,6 +5,7 @@ import { loadAgentForSession } from "@/lib/server/access";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
 import { estimateTokens } from "@/lib/server/audit";
+import { estimateLlmCostMicros } from "@/lib/server/pricing";
 import { runAgentExecution } from "@/lib/runtime/engine";
 import { RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } from "@/lib/rag/pipeline";
 
@@ -139,6 +140,7 @@ export async function POST(req: Request, { params }: Params) {
           inputTokens,
           outputTokens,
           totalTokens: inputTokens + outputTokens,
+          estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, runtime.provider ?? "unknown", runtime.model ?? "unknown"),
         },
       }),
       ...(reservationId

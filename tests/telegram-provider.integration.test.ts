@@ -119,7 +119,7 @@ describe("Telegram -> agent provider simulation", () => {
       id: "tg-user-1",
       botId: "bot-1",
       telegramUserId: "123",
-      status: "pending",
+      status: "allowed",
       username: "tester",
       firstName: "Test",
       lastName: "User",
@@ -182,12 +182,7 @@ describe("Telegram -> agent provider simulation", () => {
       input: "سلام، یک سؤال واقعی دارم",
       conversationId: "conversation-1",
     }));
-    expect(vi.mocked(db.telegramUser.update)).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: "tg-user-1" },
-      data: { status: "allowed" },
-    }));
-
-    const fetchMock = vi.mocked(globalThis.fetch);
+        const fetchMock = vi.mocked(globalThis.fetch);
     expect(fetchMock).toHaveBeenCalled();
     expect(fetchMock.mock.calls.some(([input]) => String(input).includes("/sendMessage"))).toBe(true);
     expect(vi.mocked(db.usageEvent.create)).toHaveBeenCalled();

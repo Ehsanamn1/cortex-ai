@@ -4,7 +4,9 @@ import { estimateTokens } from '@/lib/server/audit';
 import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/usage';
 import { RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
 import { normalizeTelegramPhone } from '@/lib/telegram/phone';
+import { hashTelegramInviteToken, parseTelegramStartToken } from '@/lib/telegram/access';
 import { getTelegramBotProfile } from '@/lib/telegram/profile';
+import { estimateLlmCostMicros } from '@/lib/server/pricing';
 import { runAgentExecution } from '@/lib/runtime/engine';
 
 const API = 'https://api.telegram.org';
@@ -249,10 +251,18 @@ function startOfMonth() {
 }
 
 function formatUsage(value: number, limit: number) {
-  const used = Number(value).toLocaleString('fa-IR');
+  const used = Number(value).toLocaleString("fa-IR");
   return limit > 0
-    ? used + ' / ' + Number(limit).toLocaleString('fa-IR') + ' توکن'
-    : used + ' توکن';
+    ? used + " / " + Number(limit).toLocaleString("fa-IR") + " توکن"
+    : used + " توکن";
+}
+
+function formatUsdMicros(value: number) {
+  return '$' + (Math.max(0, value) / 1_000_000).toFixed(4);
+}
+
+async function sendAccessRequired(token: string, chatId: string | number, profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
+  return sendMessage(token, chatId, escapeTelegramHtml(profile.accessRequiredText), { parse_mode: 'HTML' });
 }
 
 async function sendUsage(token: string, chatId: string | number, telegramUserId: string) {
@@ -262,12 +272,12 @@ async function sendUsage(token: string, chatId: string | number, telegramUserId:
   const [daily, monthly] = await Promise.all([
     db.usageEvent.aggregate({
       where: { telegramUserId: user.id, createdAt: { gte: startOfDay() } },
-      _sum: { totalTokens: true },
+      _sum: { totalTokens: true, estimatedCostMicros: true },
       _count: { _all: true },
     }),
     db.usageEvent.aggregate({
       where: { telegramUserId: user.id, createdAt: { gte: startOfMonth() } },
-      _sum: { totalTokens: true },
+      _sum: { totalTokens: true, estimatedCostMicros: true },
       _count: { _all: true },
     }),
   ]);
@@ -277,7 +287,9 @@ async function sendUsage(token: string, chatId: string | number, telegramUserId:
     chatId,
     '<b>📊 وضعیت مصرف</b>\n\n' +
       'امروز: <b>' + formatUsage(daily._sum.totalTokens ?? 0, user.dailyTokenLimit) + '</b>\n' +
-      'این ماه: <b>' + formatUsage(monthly._sum.totalTokens ?? 0, user.monthlyTokenLimit) + '</b>\n\n' +
+      'این ماه: <b>' + formatUsage(monthly._sum.totalTokens ?? 0, user.monthlyTokenLimit) + '</b>\n' +
+      'هزینه امروز: <b>' + formatUsdMicros(daily._sum.estimatedCostMicros ?? 0) + '</b>\n' +
+      'هزینه این ماه: <b>' + formatUsdMicros(monthly._sum.estimatedCostMicros ?? 0) + '</b>\n\n' +
       'پیام امروز: ' + Number(daily._count._all).toLocaleString('fa-IR') + '\n' +
       'پیام این ماه: ' + Number(monthly._count._all).toLocaleString('fa-IR'),
     {
@@ -320,9 +332,16 @@ export async function processTelegramUpdate(botId: string, update: any) {
     });
     await answerCallback(token, String(callback.id)).catch(() => undefined);
 
-    if (!user) return;
+    if (!user) {
+      await sendAccessRequired(token, chatId, profile);
+      return;
+    }
     if (user.status === 'blocked') {
       await sendMessage(token, chatId, profile.blockedText);
+      return;
+    }
+    if (user.status !== 'allowed') {
+      await sendAccessRequired(token, chatId, profile);
       return;
     }
 
@@ -364,28 +383,88 @@ export async function processTelegramUpdate(botId: string, update: any) {
     },
   });
 
-  if (user.status !== 'allowed' && user.status !== 'blocked') {
-    await db.telegramUser.update({
-      where: { id: user.id },
-      data: { status: 'allowed' },
-    });
-    user.status = 'allowed';
+  const startToken = typeof msg.text === 'string' ? parseTelegramStartToken(msg.text) : null;
+  if (startToken && user.status !== 'blocked') {
+    const invite = await db.telegramAllowlistEntry.findUnique({ where: { inviteTokenHash: hashTelegramInviteToken(startToken) } });
+    if (invite && invite.botId === bot.id && invite.status === 'allowed') {
+      const claimed = invite.claimedTelegramUserId;
+      if (!claimed || claimed === tgId) {
+        const claimResult = await db.telegramAllowlistEntry.updateMany({
+          where: {
+            id: invite.id,
+            botId: bot.id,
+            status: 'allowed',
+            inviteTokenHash: hashTelegramInviteToken(startToken),
+            OR: [{ claimedTelegramUserId: null }, { claimedTelegramUserId: tgId }],
+          },
+          data: { claimedTelegramUserId: tgId, claimedAt: new Date(), inviteTokenHash: null },
+        });
+        if (claimResult.count === 1) {
+          await db.telegramUser.update({
+            where: { id: user.id },
+            data: {
+              phoneNumber: invite.phoneNumber,
+              status: 'allowed',
+              dailyMessageLimit: invite.dailyMessageLimit,
+              monthlyMessageLimit: invite.monthlyMessageLimit,
+              dailyTokenLimit: invite.dailyTokenLimit,
+              monthlyTokenLimit: invite.monthlyTokenLimit,
+            },
+          });
+          user.status = 'allowed';
+          user.phoneNumber = invite.phoneNumber;
+          user.dailyMessageLimit = invite.dailyMessageLimit;
+          user.monthlyMessageLimit = invite.monthlyMessageLimit;
+          user.dailyTokenLimit = invite.dailyTokenLimit;
+          user.monthlyTokenLimit = invite.monthlyTokenLimit;
+          await sendWelcome(token, msg.chat.id, profile);
+          return;
+        }
+      }
+    }
   }
 
   const contactPhone = msg.contact?.phone_number ? normalizeTelegramPhone(msg.contact.phone_number) : '';
-  if (contactPhone) {
-    const sharedUserId = msg.contact?.user_id != null ? String(msg.contact.user_id) : '';
-    if (!sharedUserId || sharedUserId === tgId) {
-      await db.telegramUser.update({
-        where: { id: user.id },
-        data: { phoneNumber: contactPhone, status: 'allowed' },
-      });
+  if (contactPhone && msg.contact?.user_id != null && String(msg.contact.user_id) === tgId && user.status !== 'blocked') {
+    const invite = await db.telegramAllowlistEntry.findUnique({
+      where: { botId_phoneNumber: { botId: bot.id, phoneNumber: contactPhone } },
+    });
+    if (invite?.status === 'allowed' && (!invite.claimedTelegramUserId || invite.claimedTelegramUserId === tgId)) {
+      await db.$transaction([
+        db.telegramAllowlistEntry.update({
+          where: { id: invite.id },
+          data: { claimedTelegramUserId: tgId, claimedAt: new Date(), inviteTokenHash: null },
+        }),
+        db.telegramUser.update({
+          where: { id: user.id },
+          data: {
+            phoneNumber: contactPhone,
+            status: 'allowed',
+            dailyMessageLimit: invite.dailyMessageLimit,
+            monthlyMessageLimit: invite.monthlyMessageLimit,
+            dailyTokenLimit: invite.dailyTokenLimit,
+            monthlyTokenLimit: invite.monthlyTokenLimit,
+          },
+        }),
+      ]);
       user.status = 'allowed';
+      user.phoneNumber = contactPhone;
+      user.dailyMessageLimit = invite.dailyMessageLimit;
+      user.monthlyMessageLimit = invite.monthlyMessageLimit;
+      user.dailyTokenLimit = invite.dailyTokenLimit;
+      user.monthlyTokenLimit = invite.monthlyTokenLimit;
+    } else {
+      await db.telegramUser.update({ where: { id: user.id }, data: { phoneNumber: contactPhone } });
+      user.phoneNumber = contactPhone;
     }
   }
 
   if (user.status === 'blocked') {
     await sendMessage(token, msg.chat.id, profile.blockedText);
+    return;
+  }
+  if (user.status !== 'allowed') {
+    await sendAccessRequired(token, msg.chat.id, profile);
     return;
   }
 
@@ -560,6 +639,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
           inputTokens,
           outputTokens,
           totalTokens: inputTokens + outputTokens,
+          estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, provider, model),
         },
       }),
       ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),

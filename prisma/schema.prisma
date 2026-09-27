@@ -39,6 +39,7 @@ model Workspace {
   providerConfig ProviderConfig?
   agentProviderConfigs AgentProviderConfig[]
   telegramBots   TelegramBot[]
+  onboardingSessions AgentOnboardingSession[]
   providerHealth AgentProviderHealth[]
   usageEvents    UsageEvent[]
   auditLogs      AuditLog[]
@@ -97,6 +98,7 @@ model Agent {
   workflows        Workflow[]
   executions       Execution[]
   memoryEntries    MemoryEntry[]
+  onboardingSessions AgentOnboardingSession[]
   providerHealth  AgentProviderHealth?
 
   @@index([workspaceId])
@@ -308,19 +310,29 @@ model TelegramBot {
 }
 
 model TelegramAllowlistEntry {
-  id          String   @id @default(cuid())
-  botId       String
-  phoneNumber String
-  displayName String?
-  notes       String?
-  status      String   @default("allowed")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  botId                 String
+  phoneNumber           String
+  displayName           String?
+  notes                 String?
+  status                String   @default("allowed")
+  dailyMessageLimit     Int      @default(0)
+  monthlyMessageLimit   Int      @default(0)
+  dailyTokenLimit       Int      @default(0)
+  monthlyTokenLimit     Int      @default(0)
+  inviteTokenHash       String?  @unique
+  inviteCreatedAt       DateTime?
+  claimedTelegramUserId String?
+  claimedAt             DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   bot TelegramBot @relation(fields: [botId], references: [id], onDelete: Cascade)
 
   @@unique([botId, phoneNumber])
   @@index([botId, status])
+  @@index([botId, phoneNumber])
+  @@index([claimedTelegramUserId])
 }
 
 model TelegramProcessedUpdate {
@@ -354,6 +366,7 @@ model TelegramBotProfile {
   newChatText            String   @default("✅ گفتگوی جدید آماده است. پیام بعدی‌تان را بفرستید.")
   blockedText            String   @default("⛔ دسترسی این حساب مسدود است.")
   errorText              String   @default("⚠️ در پردازش این پیام مشکلی پیش آمد. لطفاً چند لحظه بعد دوباره تلاش کنید.")
+  accessRequiredText      String   @default("🔐 برای استفاده از این دستیار، مدیر کسب‌وکار باید شماره شما را در پنل ثبت کند و لینک ورود را برایتان بفرستد.")
   thinkingMessages       String   @default("[\"🧠 در حال فکر کردن…\",\"🔎 در حال بررسی اطلاعات…\",\"✍️ در حال آماده‌سازی پاسخ…\"]")
   newChatButtonText      String   @default("🆕 گفتگوی جدید")
   helpButtonText         String   @default("❓ راهنما")
@@ -365,6 +378,27 @@ model TelegramBotProfile {
   createdAt              DateTime @default(now())
 
   bot TelegramBot @relation(fields: [botId], references: [id], onDelete: Cascade)
+}
+
+model AgentOnboardingSession {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  agentId      String
+  status       String   @default("active")
+  currentIndex Int      @default(0)
+  answersJson  String   @default("[]")
+  resultJson   String?
+  error        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  completedAt  DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([agentId, status])
+  @@index([agentId, createdAt])
 }
 
 model TelegramUser {

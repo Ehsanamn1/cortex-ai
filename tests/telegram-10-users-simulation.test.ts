@@ -31,6 +31,7 @@ vi.mock("@/lib/telegram/profile", () => ({
     newChatText: "گفتگوی جدید آماده است.",
     blockedText: "مسدود",
     errorText: "خطا",
+    accessRequiredText: "ابتدا توسط مدیر ثبت شوید",
     thinkingMessages: ["🧠"],
     newChatButtonText: "🆕 جدید",
     helpButtonText: "❓ راهنما",
@@ -87,7 +88,7 @@ describe("Telegram 10-user simulation", () => {
       id: "db-" + where.botId_telegramUserId.telegramUserId,
       botId: "bot-10",
       telegramUserId: where.botId_telegramUserId.telegramUserId,
-      status: "pending",
+      status: "allowed",
       username: "user" + where.botId_telegramUserId.telegramUserId,
       firstName: "User",
       lastName: where.botId_telegramUserId.telegramUserId,
@@ -110,7 +111,7 @@ describe("Telegram 10-user simulation", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), { status: 200 })));
   });
 
-  test("10 independent users can enter and chat without phone verification", async () => {
+  test("10 independently allowlisted users can enter and chat", async () => {
     await Promise.all(Array.from({ length: 10 }, (_, i) =>
       processTelegramUpdate("bot-10", {
         update_id: 100 + i,
@@ -123,7 +124,6 @@ describe("Telegram 10-user simulation", () => {
     ));
 
     expect(vi.mocked(db.telegramUser.upsert)).toHaveBeenCalledTimes(10);
-    expect(vi.mocked(db.telegramUser.update)).toHaveBeenCalledTimes(10);
     expect(vi.mocked(db.usageEvent.create)).toHaveBeenCalledTimes(10);
 
     const fetchMock = vi.mocked(globalThis.fetch);

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { applyCors, corsPreflight, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
+import { estimateLlmCostMicros } from "@/lib/server/pricing";
 import { runAgentExecution } from "@/lib/runtime/engine";
 import { reserveUsageWithinLimits, releaseUsageReservation } from "@/lib/server/usage";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
@@ -118,6 +119,7 @@ export async function POST(req: Request, { params }: Params) {
             inputTokens,
             outputTokens,
             totalTokens,
+            estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, runtime.provider ?? "unknown", runtime.model ?? "unknown"),
           },
         }),
         ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
