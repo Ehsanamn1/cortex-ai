@@ -1,8 +1,4 @@
-"use client";
-
-import { useEffect } from "react";
 import { CORTEX_UI_CONFIG, normalizeThemeSettings } from "@/config/cortex-ui";
-import { CORTEX_THEME_KEY, applyCortexTheme, type CortexTheme } from "@/components/cortex/theme-toggle";
 
 const CACHE_KEY = "cortex-ui-theme-cache-v1";
 const CACHE_TTL = 5 * 60 * 1000;
