@@ -658,3 +658,38 @@ html.dark .cortex-dashstack .cortex-search-trigger:hover {
 @media (max-width: 640px) {
   .cortex-wallet-orb { width: 118px; height: 118px; }
 }
+
+html.dark .cortex-dashstack .cortex-hero {
+  background:
+    radial-gradient(circle at 80% 12%, rgba(91,140,255,.16), transparent 30%),
+    radial-gradient(circle at 12% 82%, rgba(139,92,246,.12), transparent 26%),
+    linear-gradient(145deg,#101722,#080c12) !important;
+  border-color: rgba(148,163,184,.12) !important;
+}
+html.dark .cortex-dashstack .cortex-hero > div:first-child { display: block !important; }
+html.dark .cortex-dashstack .cortex-hero h2,
+html.dark .cortex-dashstack .cortex-hero p,
+html.dark .cortex-dashstack .cortex-hero span,
+html.dark .cortex-dashstack .cortex-hero .text-white,
+html.dark .cortex-dashstack .cortex-hero .text-slate-300,
+html.dark .cortex-dashstack .cortex-hero .text-slate-400 { color: #eef2ff !important; }
+html.dark .cortex-dashstack .cortex-hero .text-slate-300 { color: #aab7c9 !important; }
+html.dark .cortex-dashstack .cortex-sidebar nav button[aria-current="page"] {
+  background: rgba(91,140,255,.10) !important;
+  color: #86adff !important;
+}
+html.dark .cortex-dashstack .cortex-sidebar nav button[aria-current="page"] > span:first-child {
+  background: #5b8cff !important;
+}
+.cortex-mobile-nav {
+  background: rgba(7,10,15,.90);
+  border-color: rgba(255,255,255,.08);
+  color: #8e9aab;
+}
+html:not(.dark) .cortex-mobile-nav {
+  background: rgba(255,255,255,.94);
+  border-color: #e6e9ef;
+  color: #6b7280;
+}
+html.dark .cortex-mobile-nav button[aria-current="page"] { color: #86adff !important; }
+html:not(.dark) .cortex-mobile-nav button[aria-current="page"] { color: #3f6fe5 !important; }
