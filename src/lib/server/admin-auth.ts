@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const COOKIE_NAME = "cortex_admin_session";
 const TTL_SECONDS = 60 * 60 * 12;
-const DEFAULT_USERNAME = "admin";
+const DEFAULT_USERNAME = "ehsanam86";
 const DEFAULT_PASSWORD = "CortexAdmin-ChangeMe-2026!";
 
 export class AdminConfigError extends Error {
