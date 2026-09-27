@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
+import { releaseBillingReservation, reserveBillingForAgentRequest, recordUsageAndCharge } from "@/lib/server/billing";
 import { estimateTokens } from "@/lib/server/audit";
 import { estimateLlmCostMicros } from "@/lib/server/pricing";
 import { runAgentExecution } from "@/lib/runtime/engine";
@@ -17,6 +18,7 @@ const MAX_QUESTION_CHARS = 4000;
 
 export async function POST(req: Request, { params }: Params) {
   let reservationId: string | null = null;
+  let billingReservationId: string | null = null;
 
   try {
     const session = await requireSession(req);
@@ -74,6 +76,14 @@ export async function POST(req: Request, { params }: Params) {
       agent.maxTokens,
     );
 
+    const billingReservation = await reserveBillingForAgentRequest({
+      workspaceId: agent.workspaceId,
+      agentId: agent.id,
+      inputTokens: estimatedPromptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS,
+      maxOutputTokens: agent.maxTokens,
+    });
+    billingReservationId = billingReservation.reservationId;
+
     const userMessage = await db.message.create({
       data: {
         conversationId: conversation.id,
@@ -128,26 +138,26 @@ export async function POST(req: Request, { params }: Params) {
     const inputTokens = estimatedPromptTokens + (runtime.auxiliaryInputTokens ?? 0);
     const outputTokens = estimateTokens(runtime.content) + (runtime.auxiliaryOutputTokens ?? 0);
 
-    await db.$transaction([
-      db.usageEvent.create({
-        data: {
-          workspaceId: agent.workspaceId,
-          agentId: agent.id,
-          userId: session.user.id,
-          channel: "web",
-          provider: runtime.provider,
-          model: runtime.model,
-          inputTokens,
-          outputTokens,
-          totalTokens: inputTokens + outputTokens,
-          estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, runtime.provider ?? "unknown", runtime.model ?? "unknown"),
-        },
-      }),
-      ...(reservationId
-        ? [db.usageReservation.delete({ where: { id: reservationId } })]
-        : []),
-    ]);
+    const billingResult = await recordUsageAndCharge({
+      usage: {
+        workspaceId: agent.workspaceId,
+        agentId: agent.id,
+        userId: session.user.id,
+        channel: "web",
+        provider: runtime.provider,
+        model: runtime.model,
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+      },
+      reservationId: billingReservationId,
+    });
+    billingReservationId = null;
+    if (reservationId) {
+      await db.usageReservation.delete({ where: { id: reservationId } }).catch(() => undefined);
+    }
     reservationId = null;
+    void billingResult;
 
     return applyCors(
       jsonOk({
@@ -170,7 +180,9 @@ export async function POST(req: Request, { params }: Params) {
     );
   } catch (error) {
     await releaseUsageReservation(reservationId);
+    await releaseBillingReservation(billingReservationId);
     reservationId = null;
+    billingReservationId = null;
     return toErrorResponse(error, req.headers.get("origin"));
   }
 }
