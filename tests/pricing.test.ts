@@ -2,6 +2,11 @@ import { describe, expect, test, vi } from "vitest";
 import { estimateLlmCostMicros, getModelRate, PRICING_VERIFIED_AT } from "@/lib/server/pricing";
 
 describe("Cortex pricing estimates", () => {
+  test("supports current GPT-6 Astra pricing", () => {
+    expect(getModelRate("OpenAI", "gpt-6-astra")).toMatchObject({ inputUsdPer1M: 10, outputUsdPer1M: 50, known: true });
+    expect(estimateLlmCostMicros(1_000_000, 1_000_000, "OpenAI", "gpt-6-astra")).toBe(60_000_000);
+  });
+
   test("uses verified GPT-5.5 pricing snapshot", () => {
     expect(getModelRate("OpenAI", "gpt-5.5")).toMatchObject({ inputUsdPer1M: 5, outputUsdPer1M: 30, known: true });
     expect(estimateLlmCostMicros(1_000_000, 1_000_000, "OpenAI", "gpt-5.5")).toBe(35_000_000);
@@ -19,8 +24,13 @@ describe("Cortex pricing estimates", () => {
     expect(getModelRate("DeepSeek", "deepseek-flash")).toMatchObject({ inputUsdPer1M: 0.15, outputUsdPer1M: 0.6, known: true });
   });
   test("exposes the pricing verification date", () => {
-    expect(PRICING_VERIFIED_AT).toBe("2026-09-27");
+    expect(PRICING_VERIFIED_AT).toBe("2026-09-28");
   });
+  test("publishes a 25-model recognized catalog", () => {
+    const { getKnownModelCatalog } = require("@/lib/server/pricing");
+    expect(getKnownModelCatalog()).toHaveLength(25);
+  });
+
   test("uses environment fallback for an unknown configured model", () => {
     vi.stubEnv("CORTEX_INPUT_USD_PER_1M", "0.4");
     vi.stubEnv("CORTEX_OUTPUT_USD_PER_1M", "3");
