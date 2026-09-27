@@ -249,6 +249,7 @@ export interface BillingPlanDto { id:string; key:string; name:string; descriptio
 export interface BillingModelDto { id:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number }
 export interface BillingTopUpRequestDto { id:string; packageKey:string; credits:number; amountToman:number; status:string; note:string|null; createdAt:string; reviewedAt:string|null }
 export interface BillingLedgerEntryDto { id:string; amountCredits:number; balanceAfter:number; entryType:string; description:string|null; createdAt:string }
+export interface NotificationDto { id:string; action:string; entityType:string; createdAt:string }
 export interface SearchResultDto { type:"agent"|"knowledge"|"conversation"; id:string; title:string; subtitle:string; agentId:string; }
 
 export interface BillingSnapshotDto {
@@ -343,6 +344,9 @@ function jsonRequest<T>(path: string, method: "POST" | "PATCH" | "PUT" | "DELETE
 
 export const api = {
   getSiteConfig(): Promise<SiteConfigDto> { return request("/api/site-config"); },
+  getNotifications(workspaceId?:string): Promise<{notifications:NotificationDto[]}> {
+    return request(`/api/notifications${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`);
+  },
   searchSystem(query:string, workspaceId?:string): Promise<{results:SearchResultDto[]}> {
     const params=new URLSearchParams({q:query});
     if(workspaceId) params.set("workspaceId",workspaceId);
