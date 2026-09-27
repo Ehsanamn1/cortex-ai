@@ -18,8 +18,6 @@ import {
   GraduationCap,
   GitBranch,
   WalletCards,
-  Search,
-  Bell,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
@@ -340,13 +338,11 @@ function SidebarNav({ items }: { items: NavItem[] }) {
 
 /* ---------------- mobile bottom nav ---------------- */
 
-function BottomNav({ onMore, items }: { onMore: () => void; items: NavItem[] }) {
+function BottomNav({ items }: { items: NavItem[] }) {
   const view = useCortexStore((s) => s.view);
   const setView = useCortexStore((s) => s.setView);
 
   const mobileItems = items.filter((item) => item.mobile).slice(0, 4);
-  const moreActive = false;
-
   return (
     <nav
       aria-label="ناوبری موبایل"
@@ -546,7 +542,7 @@ export function AppShell() {
           </div>
         </main>
 
-        <BottomNav items={navItems} onMore={() => setMoreOpen(true)} />
+        <BottomNav items={navItems} />
       </div>
 
       {/* Mobile «بیشتر» sheet */}
