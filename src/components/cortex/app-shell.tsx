@@ -45,11 +45,12 @@ import { ViewErrorBoundary } from "@/components/cortex/view-error-boundary";
 import { SystemSearch } from "@/components/cortex/system-search";
 import { NotificationCenter } from "@/components/cortex/notification-center";
 import { ThemeToggle } from "@/components/cortex/theme-toggle";
+import { DashboardView } from "@/components/cortex/views/dashboard-view";
 
 
 const ViewLoading = () => <div className="space-y-4"><div className="h-40 animate-pulse rounded-[28px] bg-muted/70"/><div className="grid gap-3 sm:grid-cols-2"><div className="h-24 animate-pulse rounded-2xl bg-muted/60"/><div className="h-24 animate-pulse rounded-2xl bg-muted/60"/></div></div>;
 
-const DashboardView = dynamic(() => import("@/components/cortex/views/dashboard-view").then(m => m.DashboardView), { ssr:false, loading:ViewLoading });
+
 const AgentsView = dynamic(() => import("@/components/cortex/views/agents-view").then(m => m.AgentsView), { ssr:false, loading:ViewLoading });
 const AgentBuilderView = dynamic(() => import("@/components/cortex/views/agent-form").then(m => m.AgentBuilderView), { ssr:false, loading:ViewLoading });
 const AgentEditView = dynamic(() => import("@/components/cortex/views/agent-form").then(m => m.AgentEditView), { ssr:false, loading:ViewLoading });
