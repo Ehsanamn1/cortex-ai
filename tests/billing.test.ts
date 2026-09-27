@@ -1,0 +1,44 @@
+import { describe, expect, it } from "vitest";
+import {
+  DEFAULT_BILLING_PLANS,
+  BillingInsufficientCreditsError,
+  creditsFromProviderCost,
+  defaultCreditMultiplierBps,
+} from "@/lib/server/billing";
+
+describe("Cortex commercial billing", () => {
+  it("maps model tiers to deterministic multipliers", () => {
+    expect(defaultCreditMultiplierBps("economy")).toBe(100);
+    expect(defaultCreditMultiplierBps("balanced")).toBe(200);
+    expect(defaultCreditMultiplierBps("premium")).toBe(400);
+    expect(defaultCreditMultiplierBps("deep")).toBe(800);
+    expect(defaultCreditMultiplierBps("unknown")).toBe(200);
+  });
+
+  it("converts provider cost micros into billable credits", () => {
+    expect(creditsFromProviderCost(1000, 100)).toBe(1);
+    expect(creditsFromProviderCost(1000, 400)).toBe(4);
+    expect(creditsFromProviderCost(2501, 200)).toBe(6);
+    expect(creditsFromProviderCost(0, 800)).toBe(0);
+  });
+
+  it("keeps the commercial plan catalog internally consistent", () => {
+    expect(DEFAULT_BILLING_PLANS.map((plan) => plan.key)).toEqual([
+      "free",
+      "starter",
+      "business",
+      "pro",
+      "enterprise",
+    ]);
+    expect(DEFAULT_BILLING_PLANS[0].priceToman).toBe(0);
+    expect(DEFAULT_BILLING_PLANS[1].priceToman).toBeGreaterThan(0);
+    expect(DEFAULT_BILLING_PLANS[2].priceToman).toBeGreaterThan(DEFAULT_BILLING_PLANS[1].priceToman);
+    expect(DEFAULT_BILLING_PLANS[3].priceToman).toBeGreaterThan(DEFAULT_BILLING_PLANS[2].priceToman);
+  });
+
+  it("uses HTTP 402 semantics for insufficient credits", () => {
+    const error = new BillingInsufficientCreditsError();
+    expect(error.status).toBe(402);
+    expect(error.code).toBe("insufficient_credits");
+  });
+});
