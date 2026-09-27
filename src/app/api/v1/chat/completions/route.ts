@@ -3,6 +3,7 @@ import { applyCors, corsPreflight, jsonError, jsonOk, readJson, toErrorResponse 
 import { rateLimit } from "@/lib/server/rate-limit";
 import { estimateTokens } from "@/lib/server/audit";
 import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
+import { releaseBillingReservation, reserveBillingForAgentRequest, recordUsageAndCharge } from "@/lib/server/billing";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export function OPTIONS(req: Request) {
 
 export async function POST(req: Request) {
   let reservationId: string | null = null;
+  let billingReservationId: string | null = null;
   try {
     const key = readAgentApiKey(req);
     if (!key) return applyCors(jsonError("API Key ارسال نشده است.", 401), req.headers.get("origin"));
@@ -56,6 +58,12 @@ export async function POST(req: Request) {
     const promptHistory = existing.slice(-12);
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(last);
     reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens + rag.RAG_QUERY_EXPANSION_RESERVE_TOKENS, auth.agent.maxTokens);
+    billingReservationId = (await reserveBillingForAgentRequest({
+      workspaceId: auth.agent.workspaceId,
+      agentId: auth.agent.id,
+      inputTokens: promptTokens + rag.RAG_QUERY_EXPANSION_RESERVE_TOKENS,
+      maxOutputTokens: auth.agent.maxTokens,
+    })).reservationId;
     const answer = await rag.answerWithKnowledge({
       agentId: auth.agentId,
       workspaceId: auth.agent.workspaceId,
@@ -71,11 +79,23 @@ export async function POST(req: Request) {
     const outputTokens = estimateTokens(answer.content) + (answer.auxiliaryOutputTokens ?? 0);
     const inputTokens = promptTokens + (answer.auxiliaryInputTokens ?? 0);
     const totalTokens = inputTokens + outputTokens;
-    await db.$transaction([
-      db.usageEvent.create({ data: { workspaceId: auth.agent.workspaceId, agentId: auth.agentId, channel: "api", provider: answer.provider, model: answer.model, inputTokens, outputTokens, totalTokens } }),
-      ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
-    ]);
+    const billingResult = await recordUsageAndCharge({
+      usage: {
+        workspaceId: auth.agent.workspaceId,
+        agentId: auth.agentId,
+        channel: "api",
+        provider: answer.provider,
+        model: answer.model,
+        inputTokens,
+        outputTokens,
+        totalTokens,
+      },
+      reservationId: billingReservationId,
+    });
+    billingReservationId = null;
+    if (reservationId) await db.usageReservation.delete({ where: { id: reservationId } }).catch(() => undefined);
     reservationId = null;
+    void billingResult;
     return applyCors(jsonOk({
       id: "chatcmpl-" + assistant.id,
       object: "chat.completion",
@@ -87,7 +107,9 @@ export async function POST(req: Request) {
     }), req.headers.get("origin"));
   } catch (e) {
     await releaseUsageReservation(reservationId);
+    await releaseBillingReservation(billingReservationId);
     reservationId = null;
+    billingReservationId = null;
     const status = Number((e as { status?: unknown })?.status);
     if (status === 503) return applyCors(jsonError(e instanceof Error ? e.message : "سرویس هوش مصنوعی در دسترس نیست.", 503), req.headers.get("origin"));
     return toErrorResponse(e, req.headers.get("origin"));
