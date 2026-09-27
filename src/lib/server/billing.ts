@@ -145,21 +145,31 @@ function planDto(plan: {
 }
 
 export async function ensureDefaultPlans(): Promise<void> {
-  for (const plan of DEFAULT_PLANS) {
-    await db.plan.upsert({
-      where: { key: plan.key },
-      update: {
-        name: plan.name,
-        description: plan.description,
-        currency: "IRR",
-        active: true,
-      },
-      create: {
-        ...plan,
-        currency: "IRR",
-      },
-    });
-  }
+  const existing = await db.plan.findMany({
+    where: { key: { in: DEFAULT_PLANS.map((plan) => plan.key) } },
+    select: { key: true },
+  });
+  const existingKeys = new Set(existing.map((plan) => plan.key));
+  const missing = DEFAULT_PLANS.filter((plan) => !existingKeys.has(plan.key));
+  if (missing.length === 0) return;
+
+  await Promise.all(
+    missing.map((plan) =>
+      db.plan.upsert({
+        where: { key: plan.key },
+        update: {
+          name: plan.name,
+          description: plan.description,
+          currency: "IRR",
+          active: true,
+        },
+        create: {
+          ...plan,
+          currency: "IRR",
+        },
+      }),
+    ),
+  );
 }
 
 export async function ensureWallet(workspaceId: string) {
