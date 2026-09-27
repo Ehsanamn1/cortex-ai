@@ -1,4 +1,4 @@
-export const PRICING_VERIFIED_AT = "2026-09-27";
+export const PRICING_VERIFIED_AT = "2026-09-28";
 export const PRICING_MODE = "official-provider-snapshot";
 
 export interface ModelRate {
@@ -18,7 +18,15 @@ export function getModelRate(provider: string, model: string): ModelRate {
   const m = model.toLowerCase();
   const routedProvider = p === "openrouter" ? m.split("/")[0] : p;
 
-  // Verified public standard API snapshots as of 2026-09-27.
+  // Verified public standard API snapshots as of 2026-09-28.
+  if (routedProvider.includes("openai") && m.includes("gpt-6-astra")) return { inputUsdPer1M: 10, outputUsdPer1M: 50, known: true, label: "OpenAI GPT-6 Astra" };
+  if (routedProvider.includes("openai") && m.includes("gpt-6-sol")) return { inputUsdPer1M: 2, outputUsdPer1M: 10, known: true, label: "OpenAI GPT-6 Sol" };
+  if (routedProvider.includes("openai") && m.includes("gpt-6-luna")) return { inputUsdPer1M: 0.1, outputUsdPer1M: 0.5, known: true, label: "OpenAI GPT-6 Luna" };
+  if (routedProvider.includes("openai") && m.includes("gpt-5.6-cyber")) return { inputUsdPer1M: 12.5, outputUsdPer1M: 75, known: true, label: "OpenAI GPT-5.6 Cyber" };
+  if (routedProvider.includes("openai") && m.includes("gpt-5.6-terra")) return { inputUsdPer1M: 2, outputUsdPer1M: 12, known: true, label: "OpenAI GPT-5.6 Terra" };
+  if (routedProvider.includes("openai") && m.includes("gpt-5.6-sol")) return { inputUsdPer1M: 4, outputUsdPer1M: 20, known: true, label: "OpenAI GPT-5.6 Sol" };
+  if (routedProvider.includes("openai") && m.includes("gpt-5.6-luna")) return { inputUsdPer1M: 0.2, outputUsdPer1M: 1.2, known: true, label: "OpenAI GPT-5.6 Luna" };
+
   if ((routedProvider.includes("openai")) && m.includes("gpt-5.5-pro")) return { inputUsdPer1M: 30, outputUsdPer1M: 180, known: true, label: "OpenAI GPT-5.5 Pro" };
   if ((routedProvider.includes("openai")) && m.includes("gpt-5.5")) return { inputUsdPer1M: 5, outputUsdPer1M: 30, known: true, label: "OpenAI GPT-5.5" };
   if ((routedProvider.includes("openai")) && m.includes("gpt-5.4-pro")) return { inputUsdPer1M: 30, outputUsdPer1M: 180, known: true, label: "OpenAI GPT-5.4 Pro" };
@@ -31,6 +39,7 @@ export function getModelRate(provider: string, model: string): ModelRate {
   if ((routedProvider.includes("anthropic")) && (m.includes("claude-sonnet-4.6") || m.includes("claude-sonnet-4-6"))) return { inputUsdPer1M: 3, outputUsdPer1M: 15, known: true, label: "Anthropic Claude Sonnet 4.6" };
   if ((routedProvider.includes("anthropic")) && (m.includes("claude-haiku-4.5") || m.includes("claude-haiku-4-5"))) return { inputUsdPer1M: 1, outputUsdPer1M: 5, known: true, label: "Anthropic Claude Haiku 4.5" };
 
+  if ((routedProvider.includes("google")) && m.includes("gemini-3.1-pro-preview")) return { inputUsdPer1M: 2, outputUsdPer1M: 12, known: true, label: "Google Gemini 3.1 Pro Preview (≤200K input)" };
   if ((routedProvider.includes("google")) && m.includes("gemini-3.7-flash")) return { inputUsdPer1M: 0.75, outputUsdPer1M: 3.75, known: true, label: "Google Gemini 3.7 Flash" };
   if ((routedProvider.includes("google")) && m.includes("gemini-3.1-flash-lite")) return { inputUsdPer1M: 0.25, outputUsdPer1M: 1.5, known: true, label: "Google Gemini 3.1 Flash-Lite" };
   if ((routedProvider.includes("google")) && m.includes("gemini-3-flash-preview")) return { inputUsdPer1M: 0.5, outputUsdPer1M: 3, known: true, label: "Google Gemini 3 Flash Preview" };
@@ -85,6 +94,15 @@ export interface KnownModelCatalogEntry {
  */
 export function getKnownModelCatalog(): Array<KnownModelCatalogEntry & Pick<ModelRate, "inputUsdPer1M" | "outputUsdPer1M" | "known">> {
   const seeds: KnownModelCatalogEntry[] = [
+    { provider: "OpenAI", modelId: "gpt-6-astra", displayName: "GPT-6 Astra", qualityTier: "deep", speedTier: "deep", reasoning: true, tools: true, structuredOutput: true, contextWindow: 1050000 },
+    { provider: "OpenAI", modelId: "gpt-6-sol", displayName: "GPT-6 Sol", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true, contextWindow: 1050000 },
+    { provider: "OpenAI", modelId: "gpt-6-luna", displayName: "GPT-6 Luna", qualityTier: "economy", speedTier: "fast", reasoning: true, tools: true, structuredOutput: true, contextWindow: 1050000 },
+    { provider: "OpenAI", modelId: "gpt-5.6-terra", displayName: "GPT-5.6 Terra", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true },
+    { provider: "OpenAI", modelId: "gpt-5.6-sol", displayName: "GPT-5.6 Sol", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true },
+    { provider: "OpenAI", modelId: "gpt-5.6-luna", displayName: "GPT-5.6 Luna", qualityTier: "balanced", speedTier: "fast", reasoning: true, tools: true, structuredOutput: true },
+    { provider: "OpenAI", modelId: "gpt-5.6-cyber", displayName: "GPT-5.6 Cyber", qualityTier: "deep", speedTier: "deep", reasoning: true, tools: true, structuredOutput: true },
+    { provider: "Google", modelId: "gemini-3.1-pro-preview", displayName: "Gemini 3.1 Pro Preview", qualityTier: "deep", speedTier: "balanced", reasoning: true, tools: true, vision: true, structuredOutput: true, contextWindow: 1000000 },
+
     { provider: "OpenAI", modelId: "gpt-5.5", displayName: "GPT-5.5", qualityTier: "deep", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true, contextWindow: 1050000 },
     { provider: "OpenAI", modelId: "gpt-5.5-pro", displayName: "GPT-5.5 Pro", qualityTier: "deep", speedTier: "deep", reasoning: true, tools: true, structuredOutput: true, contextWindow: 1050000 },
     { provider: "OpenAI", modelId: "gpt-5.4", displayName: "GPT-5.4", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true, contextWindow: 1050000 },
