@@ -6,7 +6,6 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import { releaseUsageReservation, reserveUsageWithinLimits } from "@/lib/server/usage";
 import { releaseBillingReservation, reserveBillingForAgentRequest, recordUsageAndCharge } from "@/lib/server/billing";
 import { estimateTokens } from "@/lib/server/audit";
-import { estimateLlmCostMicros } from "@/lib/server/pricing";
 import { runAgentExecution } from "@/lib/runtime/engine";
 import { RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } from "@/lib/rag/pipeline";
 
