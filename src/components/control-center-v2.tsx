@@ -145,10 +145,18 @@ function BillingPanel({ section }: { section: Section }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["cc-billing"] }); toast.success("Billing ذخیره شد"); },
     onError: (e: Error) => toast.error(e.message),
   });
+  const create = useMutation({
+    mutationFn: ({ action, body }: { action: string; body: Record<string, unknown> }) =>
+      jsonFetch("/api/control-center/billing", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ action, ...body }) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cc-billing"] }); toast.success("ایجاد شد"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   if (q.isPending) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">در حال بارگذاری Billing…</CardContent></Card>;
   if (q.isError) return <Card><CardContent className="p-8 text-center text-sm text-destructive">{q.error.message}</CardContent></Card>;
 
-  if (section === "plans") return <div className="grid gap-4 xl:grid-cols-2">{(q.data.plans ?? []).map((plan: any) => <Card key={plan.id} className="border-border">
+  if (section === "plans") return <div className="space-y-4">
+    <PlanCreate onSave={(body) => create.mutate({ action: "create_plan", body })}/>
+    <div className="grid gap-4 xl:grid-cols-2">{(q.data.plans ?? []).map((plan: any) => <Card key={plan.id} className="border-border">
     <CardHeader className="flex-row items-center justify-between"><CardTitle className="text-sm">{plan.name}</CardTitle><Button size="sm" variant="ghost" onClick={() => setEditingPlan(editingPlan === plan.id ? null : plan.id)}><Pencil className="size-4"/></Button></CardHeader>
     <CardContent>{editingPlan === plan.id ? <PlanEditor plan={plan} onSave={(body) => patch.mutate({action:"update_plan",id:plan.id,body})}/> :
       <div className="grid grid-cols-2 gap-3 text-xs">
@@ -157,9 +165,10 @@ function BillingPanel({ section }: { section: Section }) {
         <div><span className="text-muted-foreground">اعتبار ماهانه</span><p className="font-semibold">{Number(plan.monthlyCredits).toLocaleString("fa-IR")}</p></div>
         <div><span className="text-muted-foreground">Overage</span><p>{Number(plan.overageCreditPriceToman).toLocaleString("fa-IR")}</p></div>
       </div>}</CardContent>
-  </Card>)}</div>;
+  </Card>)}</div></div>;
 
   if (section === "models") return <div className="space-y-4">
+    <ModelCreate onSave={(body) => create.mutate({ action: "create_model", body })}/>
     <div className="grid gap-3">{(q.data.models ?? []).map((model: any) => <Card key={model.id} className="border-border">
     <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
       <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{model.displayName}</p><p className="mt-1 text-[11px] text-muted-foreground">{model.provider} · <code>{model.modelId}</code></p></div>
@@ -176,6 +185,30 @@ function BillingPanel({ section }: { section: Section }) {
   if (section === "charges") return <Card className="overflow-hidden"><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[900px] text-right text-xs"><thead className="bg-muted/30"><tr>{["فضا","Provider","Model","Credits","Status","زمان"].map(x=><th key={x} className="px-4 py-3">{x}</th>)}</tr></thead><tbody className="divide-y">{(q.data.recentCharges??[]).map((x:any)=><tr key={x.id}><td className="px-4 py-3">{x.workspace?.name}</td><td className="px-4 py-3">{x.provider}</td><td className="px-4 py-3 font-mono">{x.model}</td><td className="px-4 py-3 font-semibold">{Number(x.chargedCredits).toLocaleString("fa-IR")}</td><td className="px-4 py-3">{x.status}</td><td className="px-4 py-3">{new Date(x.createdAt).toLocaleString("fa-IR")}</td></tr>)}</tbody></table></CardContent></Card>;
 
   return <Card className="overflow-hidden"><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[900px] text-right text-xs"><thead className="bg-muted/30"><tr>{["شماره فاکتور","فضا","وضعیت","جمع","ایجاد"].map(x=><th key={x} className="px-4 py-3">{x}</th>)}</tr></thead><tbody className="divide-y">{(q.data.invoices??[]).map((x:any)=><tr key={x.id}><td className="px-4 py-3 font-mono">{x.invoiceNumber}</td><td className="px-4 py-3">{x.workspace?.name}</td><td className="px-4 py-3">{x.status}</td><td className="px-4 py-3">{Number(x.totalToman).toLocaleString("fa-IR")} تومان</td><td className="px-4 py-3">{new Date(x.createdAt).toLocaleString("fa-IR")}</td></tr>)}</tbody></table></CardContent></Card>;
+}
+
+function PlanCreate({onSave}:{onSave:(body:any)=>void}) {
+  const [v,setV]=useState({key:"",name:"",priceToman:"0",monthlyCredits:"0",overageCreditPriceToman:"0",sortOrder:"10"});
+  return <Card className="border-border"><CardHeader><CardTitle className="text-sm">ساخت پلن جدید</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+    <Input placeholder="key" value={v.key} onChange={e=>setV({...v,key:e.target.value})}/>
+    <Input placeholder="نام" value={v.name} onChange={e=>setV({...v,name:e.target.value})}/>
+    <Input type="number" placeholder="قیمت تومان" value={v.priceToman} onChange={e=>setV({...v,priceToman:e.target.value})}/>
+    <Input type="number" placeholder="Credits ماهانه" value={v.monthlyCredits} onChange={e=>setV({...v,monthlyCredits:e.target.value})}/>
+    <Input type="number" placeholder="Overage / credit" value={v.overageCreditPriceToman} onChange={e=>setV({...v,overageCreditPriceToman:e.target.value})}/>
+    <Button onClick={()=>onSave({key:v.key,name:v.name,priceToman:Number(v.priceToman),monthlyCredits:Number(v.monthlyCredits),overageCreditPriceToman:Number(v.overageCreditPriceToman),sortOrder:Number(v.sortOrder)})}><Save/>ساخت پلن</Button>
+  </CardContent></Card>;
+}
+
+function ModelCreate({onSave}:{onSave:(body:any)=>void}) {
+  const [v,setV]=useState({provider:"",modelId:"",displayName:"",inputUsdPer1M:"0",outputUsdPer1M:"0"});
+  return <Card className="border-border"><CardHeader><CardTitle className="text-sm">ثبت مدل جدید</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+    <Input placeholder="Provider" value={v.provider} onChange={e=>setV({...v,provider:e.target.value})}/>
+    <Input placeholder="Model ID" value={v.modelId} onChange={e=>setV({...v,modelId:e.target.value})}/>
+    <Input placeholder="Display name" value={v.displayName} onChange={e=>setV({...v,displayName:e.target.value})}/>
+    <Input type="number" step="0.000001" placeholder="Input USD/1M" value={v.inputUsdPer1M} onChange={e=>setV({...v,inputUsdPer1M:e.target.value})}/>
+    <Input type="number" step="0.000001" placeholder="Output USD/1M" value={v.outputUsdPer1M} onChange={e=>setV({...v,outputUsdPer1M:e.target.value})}/>
+    <Button onClick={()=>onSave({provider:v.provider,modelId:v.modelId,displayName:v.displayName,inputUsdPer1M:Number(v.inputUsdPer1M),outputUsdPer1M:Number(v.outputUsdPer1M)})}><Save/>ثبت مدل</Button>
+  </CardContent></Card>;
 }
 
 function PlanEditor({plan,onSave}:{plan:any;onSave:(body:any)=>void}) {
