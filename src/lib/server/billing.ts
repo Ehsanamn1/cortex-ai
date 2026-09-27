@@ -13,6 +13,8 @@ export const DEFAULT_BILLING_PLANS = [
 const CATALOG_CACHE_MS = 10 * 60 * 1000;
 let catalogReadyAt = 0;
 let catalogPromise: Promise<void> | null = null;
+let modelCatalogReadyAt = 0;
+let modelCatalogPromise: Promise<void> | null = null;
 
 function periodEndFor(start: Date): Date {
   const end = new Date(start);
@@ -104,6 +106,18 @@ async function ensurePlanCatalog() {
     }
   })().then(() => { catalogReadyAt = Date.now(); }).finally(() => { catalogPromise = null; });
   return catalogPromise;
+}
+
+async function ensureKnownModelCatalog() {
+  if (modelCatalogReadyAt && Date.now() - modelCatalogReadyAt < CATALOG_CACHE_MS) return;
+  if (modelCatalogPromise) return modelCatalogPromise;
+  modelCatalogPromise = (async () => {
+    const known = getKnownModelCatalog();
+    for (const entry of known) {
+      await ensureModel(entry.provider, entry.modelId);
+    }
+  })().then(() => { modelCatalogReadyAt = Date.now(); }).finally(() => { modelCatalogPromise = null; });
+  return modelCatalogPromise;
 }
 
 async function ensureModel(provider: string, model: string) {
@@ -242,10 +256,7 @@ async function ensureWorkspaceBilling(workspaceId: string) {
 export async function getBillingSnapshot(workspaceId: string) {
   const account = await ensureWorkspaceBilling(workspaceId);
   const known = getKnownModelCatalog();
-  const existingCatalog = await db.modelCatalog.count();
-  if (existingCatalog === 0) {
-    for (const entry of known) await ensureModel(entry.provider, entry.modelId);
-  }
+  await ensureKnownModelCatalog();
   const [subscription, recentLedger, usage, plans, billedUsage, topUpRequests, recentInvoices] = await Promise.all([
     db.subscription.findFirst({ where: { billingAccountId: account.id, status: "active" }, orderBy: { createdAt: "desc" }, include: { plan: true } }),
     db.creditLedgerEntry.findMany({ where: { billingAccountId: account.id }, orderBy: { createdAt: "desc" }, take: 12 }),
