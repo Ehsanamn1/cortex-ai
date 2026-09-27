@@ -14,6 +14,7 @@ export const TELEGRAM_PROFILE_DEFAULTS = {
   newChatText: "✅ گفتگوی جدید آماده است. پیام بعدی‌تان را بفرستید.",
   blockedText: "⛔ دسترسی این حساب مسدود است.",
   errorText: "⚠️ در پردازش این پیام مشکلی پیش آمد. لطفاً چند لحظه بعد دوباره تلاش کنید.",
+  accessRequiredText: "🔐 برای استفاده از این دستیار، مدیر کسب‌وکار باید شماره شما را در پنل ثبت کند و لینک ورود را برایتان بفرستد.",
   thinkingMessages: ["🧠 در حال فکر کردن…", "🔎 در حال بررسی اطلاعات…", "✍️ در حال آماده‌سازی پاسخ…"],
   newChatButtonText: "🆕 گفتگوی جدید",
   helpButtonText: "❓ راهنما",
@@ -71,6 +72,7 @@ async function loadProfileFromDb(botId: string) {
       newChatText: TELEGRAM_PROFILE_DEFAULTS.newChatText,
       blockedText: TELEGRAM_PROFILE_DEFAULTS.blockedText,
       errorText: TELEGRAM_PROFILE_DEFAULTS.errorText,
+      accessRequiredText: TELEGRAM_PROFILE_DEFAULTS.accessRequiredText,
       thinkingMessages: JSON.stringify(TELEGRAM_PROFILE_DEFAULTS.thinkingMessages),
       newChatButtonText: TELEGRAM_PROFILE_DEFAULTS.newChatButtonText,
       helpButtonText: TELEGRAM_PROFILE_DEFAULTS.helpButtonText,
@@ -99,7 +101,7 @@ export function profileUpdateData(input: Record<string, unknown>): Prisma.Telegr
   const data: Prisma.TelegramBotProfileUpdateInput = {};
   const textFields = [
     "displayName","shortDescription","description","welcomeTitle","welcomeText","welcomeBannerUrl",
-    "helpText","newChatText","blockedText","errorText","newChatButtonText","helpButtonText","usageButtonText",
+    "helpText","newChatText","blockedText","errorText","accessRequiredText","newChatButtonText","helpButtonText","usageButtonText",
   ] as const;
   for (const field of textFields) {
     if (typeof input[field] === "string") {
