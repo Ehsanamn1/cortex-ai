@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Bot, Database, FileCog, LogOut, MessageSquare, Plug, Save, Send, ShieldCheck, Users, Workflow, Puzzle, Power } from "lucide-react";
+import { Activity, Bot, Database, FileCog, LogOut, MessageSquare, Plug, Save, Send, ShieldCheck, Users, Workflow, Puzzle, Power, Search, Bell, ChevronDown } from "lucide-react";
 import { OperationsCenter } from "@/components/operations-center";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -63,15 +63,32 @@ function ControlCenterContent() {
   if(session.isPending)return <div className="min-h-screen bg-background p-8"><Skeleton className="mx-auto h-40 max-w-6xl rounded-3xl"/></div>;
   if(session.isError)return <LoginCard onDone={()=>void session.refetch()}/>;
 
-  return <div className="min-h-screen bg-background text-foreground">
-    <header className="sticky top-0 z-30 border-b border-white/[.06] bg-[#07090d]/85 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 lg:px-8">
-        <div><p className="text-[10px] font-bold tracking-[.24em] text-primary">CONTROL CENTER</p><h1 className="mt-1 text-xl font-bold">مرکز مدیریت Cortex</h1></div>
-        <div className="flex items-center gap-2"><span className="hidden rounded-full border border-emerald-400/15 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-300 sm:inline-flex">مدیر: {session.data?.username}</span><Button variant="outline" size="sm" onClick={()=>logout.mutate()}><LogOut/> خروج</Button></div>
+  return <div className="cortex-control-center min-h-screen bg-background text-foreground">
+    <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-5 py-3 lg:px-8">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold tracking-[.24em] text-primary">CONTROL CENTER</p>
+          <h1 className="mt-0.5 truncate text-xl font-bold">مرکز مدیریت Cortex</h1>
+        </div>
+        <div className="hidden min-w-[250px] items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 md:flex">
+          <Search className="size-4 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">جستجو در کاربران، ایجنت‌ها و تنظیمات…</span>
+          <span className="ms-auto rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">⌘K</span>
+        </div>
+        <Button variant="ghost" size="icon" aria-label="اعلان‌های مدیریت" className="relative rounded-lg">
+          <Bell className="size-[18px]" />
+          <span aria-hidden="true" className="absolute end-2 top-2 size-1.5 rounded-full bg-primary" />
+        </Button>
+        <div className="hidden items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 sm:flex">
+          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">{session.data?.username?.slice(0,2).toUpperCase()}</span>
+          <span className="text-xs font-semibold">{session.data?.username}</span>
+          <ChevronDown className="size-3.5 text-muted-foreground" />
+        </div>
+        <Button variant="outline" size="sm" onClick={()=>logout.mutate()}><LogOut/> خروج</Button>
       </div>
     </header>
     <main className="mx-auto max-w-7xl space-y-7 px-5 py-6 lg:px-8 lg:py-8">
-      <section className="cortex-hero relative overflow-hidden rounded-[30px] border border-white/[.08]">
+      <section className="cortex-hero relative overflow-hidden rounded-2xl border">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_16%,rgba(59,130,255,.16),transparent_28%),radial-gradient(circle_at_20%_78%,rgba(139,92,246,.12),transparent_25%),linear-gradient(145deg,#111824,#070a0f)]"/>
         <div className="relative z-10 grid gap-6 p-6 lg:grid-cols-[1.35fr_.65fr] lg:p-8">
           <div><p className="cortex-kicker">دید کامل سیستم</p><h2 className="mt-3 text-3xl font-bold sm:text-4xl">همه‌چیز یکجا، بدون پنل شلوغ.</h2><p className="mt-3 max-w-2xl text-sm leading-8 text-slate-300">کاربران، فضاها، ایجنت‌ها، دانش، گفتگوها، تلگرام، سرویس‌های مدل، مصرف و تنظیمات محصول را از همین‌جا زیرنظر بگیر.</p></div>
