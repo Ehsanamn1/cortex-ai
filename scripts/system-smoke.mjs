@@ -26,35 +26,45 @@ const cases = [
 ];
 
 async function runOne(testCase) {
-  const started = performance.now();
-  try {
-    const response = await fetch(base + testCase.path, {
-      method: testCase.method,
-      headers: { accept: "application/json" },
-      redirect: "manual",
-      signal: AbortSignal.timeout(15000),
-    });
-    const ms = performance.now() - started;
-    const ok = testCase.expected.includes(response.status);
-    const body = await response.text();
-    return {
-      ...testCase,
-      status: response.status,
-      ok,
-      ms: Number(ms.toFixed(1)),
-      bodyPreview: ok ? undefined : body.slice(0, 500),
-      cache: response.headers.get("cache-control") || "",
-      contentType: response.headers.get("content-type") || "",
-    };
-  } catch (error) {
-    return {
-      ...testCase,
-      status: 0,
-      ok: false,
-      ms: Number((performance.now() - started).toFixed(1)),
-      error: String(error),
-    };
+  const maxAttempts = 3;
+  let last = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const started = performance.now();
+    try {
+      const response = await fetch(base + testCase.path, {
+        method: testCase.method,
+        headers: { accept: "application/json" },
+        redirect: "manual",
+        signal: AbortSignal.timeout(15000),
+      });
+      const ms = performance.now() - started;
+      const body = await response.text();
+      const ok = testCase.expected.includes(response.status);
+      last = {
+        ...testCase,
+        status: response.status,
+        ok,
+        attempts: attempt,
+        ms: Number(ms.toFixed(1)),
+        bodyPreview: ok ? undefined : body.slice(0, 500),
+        cache: response.headers.get("cache-control") || "",
+        contentType: response.headers.get("content-type") || "",
+      };
+      if (ok) return last;
+      if (![408, 429, 500, 502, 503, 504].includes(response.status) || attempt === maxAttempts) return last;
+    } catch (error) {
+      last = {
+        ...testCase,
+        status: 0,
+        ok: false,
+        attempts: attempt,
+        ms: Number((performance.now() - started).toFixed(1)),
+        error: String(error),
+      };
+      if (attempt === maxAttempts) return last;
+    }
   }
+  return last;
 }
 
 const results = await Promise.all(cases.map(runOne));
