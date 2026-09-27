@@ -20,6 +20,7 @@ type Summary = {
   recentAgents: Array<{id:string;name:string;status:string;createdAt:string;workspace:{name:string}}>;
   recentUsers: Array<{id:string;name:string|null;email:string;createdAt:string}>;
   recentConversations: Array<{id:string;title:string;channel:string;updatedAt:string;agent:{name:string}}>;
+  usageSummary: { last30Days:{tokens:number;estimatedCostMicros:number}; models:Array<{provider:string;model:string;channel:string;tokens:number;estimatedCostMicros:number;events:number}> };
 };
 type Settings = Record<string,string>;
 
@@ -35,7 +36,7 @@ function Kpi({icon:Icon,label,value,detail}:{icon:typeof Bot;label:string;value:
 }
 
 function LoginCard({onDone}:{onDone:()=>void}) {
-  const [username,setUsername]=useState("admin");
+  const [username,setUsername]=useState("ehsanam86");
   const [password,setPassword]=useState("");
   const login=useMutation({
     mutationFn:()=>fetchJson<{ok:boolean}>("/api/admin/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})}),
@@ -80,6 +81,11 @@ function ControlCenterContent() {
 
       {m && <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Kpi icon={Users} label="کاربران" value={m.users} detail="حساب‌های ثبت‌شده"/><Kpi icon={Workflow} label="فضاهای کاری" value={m.workspaces} detail="Workspace"/><Kpi icon={Bot} label="ایجنت‌ها" value={m.agents} detail="Agent"/><Kpi icon={Database} label="منابع دانش" value={m.knowledge} detail="Knowledge"/></section>}
       {m && <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Kpi icon={MessageSquare} label="گفتگوها" value={m.conversations} detail="Conversation"/><Kpi icon={Activity} label="پیام‌ها" value={m.messages} detail="Message"/><Kpi icon={Send} label="ربات‌ها" value={m.bots} detail="Telegram"/><Kpi icon={Plug} label="اتصال مدل" value={m.providers} detail="Provider config"/><Kpi icon={FileCog} label="رخدادها" value={m.events} detail="Usage"/></section>}
+
+      <section className="grid gap-5 lg:grid-cols-[.75fr_1.25fr]">
+        <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">هزینه و مصرف AI</CardTitle></CardHeader><CardContent className="space-y-3"><div className="rounded-xl border border-white/[.06] bg-white/[.02] p-4"><p className="text-[11px] text-muted-foreground">۳۰ روز اخیر</p><p className="mt-2 text-2xl font-bold">${((summary.data?.usageSummary.last30Days.estimatedCostMicros??0)/1000000).toFixed(4)}</p><p className="mt-1 text-xs text-muted-foreground">{(summary.data?.usageSummary.last30Days.tokens??0).toLocaleString("fa-IR")} توکن ثبت‌شده</p></div><p className="text-[10px] leading-5 text-muted-foreground">هزینه از UsageEvent واقعی محاسبه شده و قبل از صورتحساب نهایی، فقط برآورد provider/model است.</p></CardContent></Card>
+        <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">مدل‌های پرمصرف</CardTitle></CardHeader><CardContent className="p-0"><div className="divide-y divide-white/[.06]">{(summary.data?.usageSummary.models??[]).slice(0,6).map((row)=> <div key={row.provider+"|"+row.model+"|"+row.channel} className="flex items-center gap-3 p-3.5"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-primary/10 text-primary"><Bot className="size-3.5"/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{row.model}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{row.provider} · {row.channel} · {row.tokens.toLocaleString("fa-IR")} توکن · {row.events.toLocaleString("fa-IR")} رخداد</p></div><span className="shrink-0 text-xs font-semibold">${(row.estimatedCostMicros/1000000).toFixed(4)}</span></div>)}</div></CardContent></Card>
+      </section>
 
       <OperationsCenter />
 
