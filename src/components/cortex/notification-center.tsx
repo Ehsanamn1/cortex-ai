@@ -25,9 +25,12 @@ export function NotificationCenter() {
   });
 
   useEffect(() => {
-    try {
-      setSeenAt(Number(localStorage.getItem(SEEN_KEY)) || 0);
-    } catch {}
+    const timer = window.setTimeout(() => {
+      try {
+        setSeenAt(Number(localStorage.getItem(SEEN_KEY)) || 0);
+      } catch {}
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const items = dashboard.data?.notifications ?? [];
