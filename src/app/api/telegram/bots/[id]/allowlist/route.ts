@@ -81,7 +81,7 @@ export async function POST(req: Request, { params }: Params) {
       monthlyTokenLimit: providedLimits.monthlyTokenLimit ?? 0,
     };
     const regenerate = body.regenerate === true;
-    const results = [];
+    const results: Array<ReturnType<typeof serialize>> = [];
 
     for (const phoneNumber of phones) {
       const existing = await db.telegramAllowlistEntry.findUnique({ where: { botId_phoneNumber: { botId: bot.id, phoneNumber } } });
