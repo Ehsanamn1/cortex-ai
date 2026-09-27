@@ -10,7 +10,6 @@ import {
   Settings2,
   ArrowUpLeft,
   Bot,
-  BookPlus,
   ChevronLeft,
   CircleCheck,
   CircleDashed,
