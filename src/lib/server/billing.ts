@@ -20,7 +20,7 @@ function periodEndFor(start: Date): Date {
   return end;
 }
 
-function defaultMultiplierBps(qualityTier: string): number {
+export function defaultCreditMultiplierBps(qualityTier: string): number {
   switch (qualityTier) {
     case "economy": return 100;
     case "premium": return 400;
@@ -29,7 +29,7 @@ function defaultMultiplierBps(qualityTier: string): number {
   }
 }
 
-function creditsFromProviderCost(providerCostMicros: number, multiplierBps: number): number {
+export function creditsFromProviderCost(providerCostMicros: number, multiplierBps: number): number {
   if (!Number.isFinite(providerCostMicros) || providerCostMicros <= 0) return 0;
   return Math.max(1, Math.ceil((providerCostMicros / 1000) * (multiplierBps / 100)));
 }
@@ -94,7 +94,7 @@ async function ensureModel(provider: string, model: string) {
   );
   const rate = getModelRate(provider, model);
   const qualityTier = known?.qualityTier ?? "balanced";
-  const multiplierBps = defaultMultiplierBps(qualityTier);
+  const multiplierBps = defaultCreditMultiplierBps(qualityTier);
   const catalog = await db.modelCatalog.upsert({
     where: { provider_modelId: { provider, modelId: model } },
     update: {
@@ -278,7 +278,7 @@ export async function getBillingSnapshot(workspaceId: string) {
       speedTier: item.speedTier,
       commercialAvailable: item.commercialAvailable,
       enabledForPlan: accessMap.get(item.id)?.enabled ?? item.commercialAvailable,
-      creditMultiplierBps: accessMap.get(item.id)?.creditMultiplierBps ?? defaultMultiplierBps(item.qualityTier),
+      creditMultiplierBps: accessMap.get(item.id)?.creditMultiplierBps ?? defaultCreditMultiplierBps(item.qualityTier),
     })),
     ledger: recentLedger.map((entry) => ({
       id: entry.id,
