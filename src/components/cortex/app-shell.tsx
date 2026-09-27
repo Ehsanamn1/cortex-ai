@@ -112,6 +112,8 @@ function WorkspaceSwitcher() {
     queryClient.invalidateQueries({ queryKey: ["analytics"] });
     queryClient.invalidateQueries({ queryKey: ["telegram-bots"] });
     queryClient.invalidateQueries({ queryKey: ["providers-status"] });
+    queryClient.invalidateQueries({ queryKey: ["billing"] });
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
   }
 
   return (
@@ -304,20 +306,6 @@ function SidebarNav({ items }: { items: NavItem[] }) {
           </button>
         );
       })}
-      <button
-        type="button"
-        onClick={() => setView("billing")}
-        aria-current={view === "billing" ? "page" : undefined}
-        className={cn(
-          "relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
-          view === "billing"
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground"
-        )}
-      >
-        <WalletCards aria-hidden="true" className="size-[18px]" />
-        اعتبار و صورتحساب
-      </button>
       <button
         type="button"
         onClick={() => setView("settings")}
