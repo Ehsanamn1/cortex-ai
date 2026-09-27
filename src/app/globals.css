@@ -693,3 +693,7 @@ html:not(.dark) .cortex-mobile-nav {
 }
 html.dark .cortex-mobile-nav button[aria-current="page"] { color: #86adff !important; }
 html:not(.dark) .cortex-mobile-nav button[aria-current="page"] { color: #3f6fe5 !important; }
+
+.cortex-wallet-mini { box-shadow: 0 18px 55px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.035); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.cortex-wallet-mini:hover { border-color: rgba(91,140,255,.32) !important; box-shadow: 0 22px 60px rgba(0,0,0,.18), 0 0 34px rgba(91,140,255,.06); }
+html:not(.dark) .cortex-wallet-mini { background: linear-gradient(135deg,#ffffff,#f6f8ff) !important; border-color:#dfe5f0 !important; }
