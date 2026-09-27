@@ -187,7 +187,7 @@ function SignupForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
         />
         <FieldError message={form.formState.errors.password?.message} />
       </div>
-      <Button type="submit" className="w-full" disabled={submitting}>
+      <Button type="submit" className="cortex-auth-submit w-full" disabled={submitting}>
         {submitting && <Loader2 aria-hidden="true" className="animate-spin" />}
         {submitting ? "در حال ساخت حساب..." : "ساخت حساب و شروع"}
       </Button>
