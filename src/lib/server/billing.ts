@@ -449,8 +449,8 @@ export async function recordUsageAndCharge(params: {
     telegramBotId?: string | null;
     telegramUserId?: string | null;
     channel: string;
-    provider: string;
-    model: string;
+    provider?: string | null;
+    model?: string | null;
     inputTokens: number;
     outputTokens: number;
     totalTokens?: number;
@@ -481,6 +481,32 @@ export async function recordUsageAndCharge(params: {
       balanceCredits: 0,
       status: "test_shadow",
     };
+  }
+
+  if (!params.usage.provider || !params.usage.model) {
+    const usageEvent = await db.usageEvent.create({
+      data: {
+        workspaceId: params.usage.workspaceId,
+        agentId: params.usage.agentId ?? null,
+        userId: params.usage.userId ?? null,
+        telegramBotId: params.usage.telegramBotId ?? null,
+        telegramUserId: params.usage.telegramUserId ?? null,
+        channel: params.usage.channel,
+        provider: params.usage.provider ?? null,
+        model: params.usage.model ?? null,
+        inputTokens: params.usage.inputTokens,
+        outputTokens: params.usage.outputTokens,
+        totalTokens: params.usage.totalTokens ?? params.usage.inputTokens + params.usage.outputTokens,
+        estimatedCostMicros: 0,
+      },
+    });
+    if (params.reservationId) {
+      await db.creditReservation.updateMany({
+        where: { id: params.reservationId, status: "active" },
+        data: { status: "released" },
+      });
+    }
+    return { usageEvent, chargedCredits: 0, balanceCredits: 0, status: "unpriced" as const };
   }
 
   const account = await ensureWorkspaceBilling(params.usage.workspaceId);
