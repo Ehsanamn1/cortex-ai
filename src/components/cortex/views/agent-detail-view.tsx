@@ -823,9 +823,6 @@ export function AgentDetailView() {
         <TabsContent value="telegram" className="mt-6">
           <AgentTelegramTab agentId={agentId} />
         </TabsContent>
-        <TabsContent value="telegram" className="mt-6">
-          <AgentTelegramTab agentId={agentId} />
-        </TabsContent>
         <TabsContent value="ai" className="mt-6">
           <ProviderTab agentId={agentId} />
         </TabsContent>
