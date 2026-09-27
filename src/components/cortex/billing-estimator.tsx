@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -162,10 +162,6 @@ export function BillingEstimator({ models, monthlyCredits, plans = [], overageCr
   const [tasks, setTasks] = useState("10");
   const [complexityKey, setComplexityKey] = useState<Complexity["key"]>("standard");
 
-  useEffect(() => {
-    if (!models.some((model) => model.id === modelId)) setModelId(preferred?.id ?? "");
-  }, [modelId, models, preferred?.id]);
-
   const fxQuery = useQuery<FxDto>({
     queryKey: ["billing-fx"],
     queryFn: () => api.getBillingFx(),
@@ -272,7 +268,7 @@ export function BillingEstimator({ models, monthlyCredits, plans = [], overageCr
           <div className="space-y-3">
             <label className="block rounded-2xl border border-border/60 bg-background/55 p-3">
               <span className="flex items-center gap-2 text-[11px] text-muted-foreground"><Gauge className="size-3.5" />مدل هوش مصنوعی</span>
-              <select value={modelId} onChange={(e) => setModelId(e.target.value)} className="mt-2 w-full bg-transparent text-sm font-bold outline-none">
+              <select value={models.some((model) => model.id === modelId) ? modelId : (preferred?.id ?? "")} onChange={(e) => setModelId(e.target.value)} className="mt-2 w-full bg-transparent text-sm font-bold outline-none">
                 {models.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.provider} · {m.displayName}{m.enabledForPlan ? "" : " · خارج از پلن"}
