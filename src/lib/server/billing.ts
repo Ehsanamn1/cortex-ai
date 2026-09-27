@@ -63,15 +63,7 @@ async function ensurePlanCatalog() {
     for (const plan of DEFAULT_BILLING_PLANS) {
       await db.plan.upsert({
         where: { key: plan.key },
-        update: {
-          name: plan.name,
-          description: plan.description,
-          priceToman: plan.priceToman,
-          monthlyCredits: plan.monthlyCredits,
-          overageCreditPriceToman: plan.overageCreditPriceToman,
-          sortOrder: plan.sortOrder,
-          active: true,
-        },
+        update: {},
         create: {
           key: plan.key,
           name: plan.name,
@@ -98,20 +90,7 @@ async function ensureModel(provider: string, model: string) {
   const multiplierBps = defaultCreditMultiplierBps(qualityTier);
   const catalog = await db.modelCatalog.upsert({
     where: { provider_modelId: { provider, modelId: model } },
-    update: {
-      displayName: known?.displayName ?? model,
-      inputUsdPer1M: rate.inputUsdPer1M,
-      outputUsdPer1M: rate.outputUsdPer1M,
-      contextWindow: known?.contextWindow ?? null,
-      vision: known?.vision ?? false,
-      tools: known?.tools ?? false,
-      structuredOutput: known?.structuredOutput ?? false,
-      reasoning: known?.reasoning ?? false,
-      qualityTier,
-      speedTier: known?.speedTier ?? "balanced",
-      commercialAvailable: rate.known,
-      active: true,
-    },
+    update: {},
     create: {
       provider,
       modelId: model,
