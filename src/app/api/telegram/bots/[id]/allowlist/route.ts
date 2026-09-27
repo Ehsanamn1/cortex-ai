@@ -102,6 +102,37 @@ export async function POST(req: Request, { params }: Params) {
   } catch (e) { return toErrorResponse(e); }
 }
 
+export async function PATCH(req: Request, { params }: Params) {
+  try {
+    const { bot } = await loadBot(req, (await params).id);
+    const body = await readJson<Record<string, unknown>>(req);
+    const id = typeof body.id === "string" ? body.id : "";
+    if (!id) return applyCors(jsonError("شناسه دسترسی لازم است.", 400), req.headers.get("origin"));
+    const existing = await db.telegramAllowlistEntry.findFirst({ where: { id, botId: bot.id } });
+    if (!existing) return applyCors(jsonError("کاربر پیدا نشد.", 404), req.headers.get("origin"));
+    const data: Record<string, unknown> = {};
+    if (typeof body.status === "string" && ["allowed", "blocked"].includes(body.status)) data.status = body.status;
+    for (const key of ["dailyMessageLimit", "monthlyMessageLimit", "dailyTokenLimit", "monthlyTokenLimit"]) {
+      const value = safeLimit(body[key]);
+      if (value !== undefined) data[key] = value;
+    }
+    if (!Object.keys(data).length) return applyCors(jsonError("هیچ تغییر معتبری ارسال نشده است.", 400), req.headers.get("origin"));
+    const entry = await db.telegramAllowlistEntry.update({ where: { id: existing.id }, data });
+    const status = entry.status === "allowed" ? "allowed" : "blocked";
+    await db.telegramUser.updateMany({
+      where: { botId: bot.id, phoneNumber: entry.phoneNumber },
+      data: {
+        status,
+        dailyMessageLimit: entry.dailyMessageLimit,
+        monthlyMessageLimit: entry.monthlyMessageLimit,
+        dailyTokenLimit: entry.dailyTokenLimit,
+        monthlyTokenLimit: entry.monthlyTokenLimit,
+      },
+    });
+    return applyCors(jsonOk({ entry: serialize(entry, bot.username) }), req.headers.get("origin"));
+  } catch (e) { return toErrorResponse(e); }
+}
+
 export async function DELETE(req: Request, { params }: Params) {
   try {
     const { session, bot } = await loadBot(req, (await params).id);
