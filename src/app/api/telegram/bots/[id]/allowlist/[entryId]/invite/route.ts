@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: Params) {
     const token = createTelegramInviteToken();
     const updated = await db.telegramAllowlistEntry.update({
       where: { id: entry.id },
-      data: { inviteTokenHash: hashTelegramInviteToken(token), inviteCreatedAt: new Date(), claimedTelegramUserId: null, claimedAt: null, status: "allowed" },
+      data: { inviteTokenHash: hashTelegramInviteToken(token), inviteCreatedAt: new Date(), status: "allowed" },
     });
     await audit(bot.workspaceId, session.user.id, "telegram-access.invite-regenerated", "telegram_allowlist", entry.id, { phoneNumber: entry.phoneNumber });
 
