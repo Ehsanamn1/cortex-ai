@@ -16,6 +16,10 @@ import {
   Check,
   KeyRound,
   ShieldCheck,
+  Sparkles,
+  CheckCircle2,
+  Play,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -185,6 +189,8 @@ function OverviewTab({ agentId }: { agentId: string }) {
         </Card>
       </div>
 
+      <BusinessOnboardingCard agentId={agentId} />
+
       {agent?.instructions?.trim() && (
         <Card className="rounded-xl">
           <CardHeader className="border-b [.border-b]:pb-4">
@@ -244,6 +250,102 @@ function OverviewTab({ agentId }: { agentId: string }) {
       </Card>
     </div>
   );
+}
+
+
+function BusinessOnboardingCard({ agentId }: { agentId: string }) {
+  const queryClient = useQueryClient();
+  const [answer, setAnswer] = useState("");
+  const onboardingQ = useQuery({
+    queryKey: ["business-onboarding", agentId],
+    queryFn: () => api.getBusinessOnboarding(agentId),
+  });
+  const session = onboardingQ.data?.session ?? null;
+
+  const start = useMutation({
+    mutationFn: () => api.startBusinessOnboarding(agentId),
+    onSuccess: ({ session: next }) => {
+      queryClient.setQueryData(["business-onboarding", agentId], (prev: any) => ({ ...(prev ?? {}), session: next }));
+      setAnswer("");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const sendAnswer = useMutation({
+    mutationFn: () => api.answerBusinessOnboarding(agentId, session?.id ?? "", answer.trim()),
+    onSuccess: ({ session: next }) => {
+      queryClient.setQueryData(["business-onboarding", agentId], (prev: any) => ({ ...(prev ?? {}), session: next }));
+      setAnswer("");
+      if (next.status === "completed") {
+        queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
+        queryClient.invalidateQueries({ queryKey: ["knowledge", agentId] });
+        queryClient.invalidateQueries({ queryKey: ["knowledge-all"] });
+        toast.success("دانش اولیه کسب‌وکار ساخته و برای ایجنت فعال شد.");
+      }
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const active = session?.status === "active" && session.question;
+  const result = session?.status === "completed" ? session.result : null;
+
+  return (
+    <Card className="rounded-xl border-primary/15 bg-primary/[.025]">
+      <CardHeader className="border-b [.border-b]:pb-4">
+        <CardTitle className="flex items-center gap-2 text-base"><Sparkles className="size-5 text-primary" />راه‌اندازی هوشمند کسب‌وکار</CardTitle>
+        <CardDescription>به‌جای آپلود ده‌ها فایل، به ۳۰ سؤال ساده جواب بده. Cortex از جواب‌ها دانش اولیه، قواعد پاسخ‌گویی و FAQ می‌سازد.</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-4">
+        {onboardingQ.isPending ? (
+          <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />در حال آماده‌سازی…</div>
+        ) : active ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span>سؤال {faNum((session?.currentIndex ?? 0) + 1)} از {faNum(session?.totalQuestions ?? 30)}</span>
+              <span>{faNum(Math.round(((session?.currentIndex ?? 0) / Math.max(1, session?.totalQuestions ?? 30)) * 100))}٪ تکمیل</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: (((session?.currentIndex ?? 0) / Math.max(1, session?.totalQuestions ?? 30)) * 100) + "%" }} /></div>
+            <div className="rounded-xl border bg-background p-4">
+              <p className="text-[11px] text-primary">{session?.question?.category}</p>
+              <p className="mt-2 text-sm font-semibold leading-7">{session?.question?.question}</p>
+            </div>
+            <textarea
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              rows={5}
+              className="w-full rounded-xl border bg-background px-4 py-3 text-sm leading-7 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-primary"
+              placeholder="جواب را همین‌جا بنویس…"
+            />
+            {session?.error && <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-xs leading-6 text-amber-200">{session.error}</p>}
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => sendAnswer.mutate()} disabled={sendAnswer.isPending || !answer.trim()}>
+                {sendAnswer.isPending ? <Loader2 className="animate-spin" /> : <ChevronRightIcon />}
+                {sendAnswer.isPending ? "در حال ساخت…" : "ثبت جواب و سؤال بعدی"}
+              </Button>
+              <Button variant="ghost" onClick={() => api.cancelBusinessOnboarding(agentId, session.id).then(() => onboardingQ.refetch())}>لغو</Button>
+            </div>
+          </div>
+        ) : result ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 className="size-4" />راه‌اندازی کامل شد</div>
+            <p className="rounded-xl border bg-background p-4 text-sm leading-7 text-muted-foreground">{result.businessSummary}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border bg-background p-4"><p className="text-xs font-semibold">خدمات</p><p className="mt-2 text-xs leading-6 text-muted-foreground">{(result.services ?? []).slice(0, 6).join("، ")}</p></div>
+              <div className="rounded-xl border bg-background p-4"><p className="text-xs font-semibold">مخاطب</p><p className="mt-2 text-xs leading-6 text-muted-foreground">{(result.targetAudience ?? []).slice(0, 4).join("، ")}</p></div>
+            </div>
+            <Button variant="outline" onClick={() => start.mutate()} disabled={start.isPending}><Play />اجرای دوباره مصاحبه</Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-sm font-medium">هنوز پروفایل کسب‌وکار ساخته نشده.</p><p className="mt-1 text-xs leading-6 text-muted-foreground">حدود ۳۰ سؤال درباره فروش، خدمات، قوانین، مشتری و پشتیبانی.</p></div>
+            <Button onClick={() => start.mutate()} disabled={start.isPending}><Sparkles />شروع ۳۰ سؤال</Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChevronRightIcon() {
+  return <ArrowRight className="rotate-180" />;
 }
 
 function ToolsTab({ agentId }: { agentId: string }) {
