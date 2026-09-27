@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useCortexStore } from "@/components/cortex/store";
 import { zodResolver } from "@/components/cortex/zod-resolver";
 import { CortexLogo } from "@/components/cortex/logo";
+import { ThemeToggle } from "@/components/cortex/theme-toggle";
 import { firstNameOf } from "@/components/cortex/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,7 +112,7 @@ function LoginForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
         />
         <FieldError message={form.formState.errors.password?.message} />
       </div>
-      <Button type="submit" className="w-full" disabled={submitting}>
+      <Button type="submit" className="cortex-auth-submit w-full" disabled={submitting}>
         {submitting && <Loader2 aria-hidden="true" className="animate-spin" />}
         {submitting ? "در حال ورود..." : "ورود به حساب"}
       </Button>
@@ -245,6 +246,7 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }
 
         {/* Auth card */}
         <div className="relative flex items-center justify-center p-5 sm:p-10 lg:bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,255,.05),transparent_28%)]">
+          <div className="absolute end-5 top-5 z-20"><ThemeToggle /></div>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
