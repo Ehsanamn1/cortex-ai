@@ -619,6 +619,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
           inputTokens,
           outputTokens,
           totalTokens: inputTokens + outputTokens,
+          estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, provider, model),
         },
       }),
       ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
