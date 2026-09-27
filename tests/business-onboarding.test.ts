@@ -8,7 +8,7 @@ describe("Business onboarding", () => {
     expect(BUSINESS_ONBOARDING_QUESTIONS.map(q => q.category)).toEqual(expect.arrayContaining(["فروش", "قوانین", "پشتیبانی", "ارجاع"]));
   });
   test("parses JSON from a model response and rejects empty synthesis", () => {
-    const raw = ````json\n{"businessSummary":"فروشگاه قطعات","services":["فروش قطعات"],"faq":[{"question":"ارسال؟","answer":"تهران"}]}\n```;
+    const raw = "```json\n{\"businessSummary\":\"فروشگاه قطعات\",\"services\":[\"فروش قطعات\"],\"faq\":[{\"question\":\"ارسال؟\",\"answer\":\"تهران\"}]}\n```";
     const result = parseOnboardingResult(raw);
     expect(result.businessSummary).toBe("فروشگاه قطعات");
     expect(result.services).toEqual(["فروش قطعات"]);
