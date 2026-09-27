@@ -14,7 +14,10 @@ const SEEN_KEY = "cortex-notifications-seen-v1";
 
 export function NotificationCenter() {
   const workspaceId = useCortexStore((s) => s.activeWorkspaceId);
-  const [seenAt, setSeenAt] = useState(0);
+  const [seenAt, setSeenAt] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    try { return Number(localStorage.getItem(SEEN_KEY)) || 0; } catch { return 0; }
+  });
   const [open, setOpen] = useState(false);
   const dashboard = useQuery({
     queryKey: ["notifications", workspaceId],
