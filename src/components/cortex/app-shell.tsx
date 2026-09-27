@@ -346,7 +346,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
   return (
     <nav
       aria-label="ناوبری موبایل"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/[.08] bg-[#0b0f16]/96 shadow-[0_-12px_35px_rgba(0,0,0,.28)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#0b0f16]/88 lg:hidden"
+      className="cortex-mobile-nav fixed inset-x-0 bottom-0 z-50 border-t shadow-[0_-12px_35px_rgba(0,0,0,.18)] backdrop-blur-xl lg:hidden"
     >
       <div className="mx-auto flex w-full max-w-lg items-stretch pb-[max(env(safe-area-inset-bottom),6px)]">
         {mobileItems.map((item) => {
@@ -507,6 +507,7 @@ export function AppShell() {
 
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <SystemSearch triggerClassName="cortex-search-trigger hidden min-w-[220px] items-center gap-2 rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-xs text-muted-foreground xl:flex" />
+            <SystemSearch compact triggerClassName="cortex-search-trigger flex size-10 items-center justify-center rounded-xl border border-border/70 bg-muted/35 text-muted-foreground xl:hidden" />
             <NotificationCenter />
             <ThemeToggle />
             <Button variant="ghost" size="icon" aria-label="منوی بیشتر" title="منوی بیشتر" className="rounded-xl lg:hidden" onClick={() => setMoreOpen(true)}>
