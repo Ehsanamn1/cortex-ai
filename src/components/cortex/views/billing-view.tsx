@@ -27,12 +27,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const TOP_UP_PACKAGES = [
-  { key: "starter", title: "Launch", credits: 10_000, amountToman: 1_990_000, caption: "برای شروع سریع" },
-  { key: "growth", title: "Growth", credits: 50_000, amountToman: 8_900_000, caption: "برای مصرف جدی" },
-  { key: "scale", title: "Scale", credits: 100_000, amountToman: 15_900_000, caption: "برای تیم‌های پرترافیک" },
-] as const;
-
 function StatusBadge({ status }: { status: string }) {
   const config = status === "approved"
     ? { label: "تأیید شده", className: "border-emerald-400/25 bg-emerald-400/10 text-emerald-300", icon: CheckCircle2 }
@@ -174,7 +168,7 @@ export function BillingView() {
         </div>
 
         <div className="mt-5 grid gap-3 lg:grid-cols-3">
-          {TOP_UP_PACKAGES.map((item, index) => (
+          {data.topUpPackages.map((item, index) => (
             <button
               key={item.key}
               type="button"
@@ -188,8 +182,8 @@ export function BillingView() {
                 </span>
                 <ArrowUpLeft className="size-4 text-muted-foreground transition-transform group-hover:-translate-x-1 group-hover:-translate-y-1" />
               </div>
-              <p className="mt-5 text-lg font-bold">{item.title}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{item.caption}</p>
+              <p className="mt-5 text-lg font-bold">{item.label}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{index === 0 ? "برای شروع سریع" : index === 1 ? "برای مصرف جدی" : "برای تیم‌های پرترافیک"}</p>
               <p className="mt-4 text-2xl font-black">{faNum(item.credits)}</p>
               <p className="mt-1 text-xs text-muted-foreground">اعتبار</p>
               <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[.06] pt-3">
