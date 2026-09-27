@@ -251,11 +251,11 @@ function startOfMonth() {
 }
 
 function formatUsdMicros(value: number) {
-  return '
-  const used = Number(value).toLocaleString('fa-IR');
-  return limit > 0
-    ? used + ' / ' + Number(limit).toLocaleString('fa-IR') + ' توکن'
-    : used + ' توکن';
+  return '$' + (Math.max(0, value) / 1_000_000).toFixed(4);
+}
+
+async function sendAccessRequired(token: string, chatId: string | number, profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
+  return sendMessage(token, chatId, escapeTelegramHtml(profile.accessRequiredText), { parse_mode: 'HTML' });
 }
 
 async function sendUsage(token: string, chatId: string | number, telegramUserId: string) {
@@ -270,7 +270,7 @@ async function sendUsage(token: string, chatId: string | number, telegramUserId:
     }),
     db.usageEvent.aggregate({
       where: { telegramUserId: user.id, createdAt: { gte: startOfMonth() } },
-      _sum: { totalTokens: true },
+      _sum: { totalTokens: true, estimatedCostMicros: true },
       _count: { _all: true },
     }),
   ]);
