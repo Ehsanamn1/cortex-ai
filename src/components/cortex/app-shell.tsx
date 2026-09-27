@@ -336,7 +336,9 @@ function BottomNav({ items }: { items: NavItem[] }) {
   const view = useCortexStore((s) => s.view);
   const setView = useCortexStore((s) => s.setView);
 
-  const mobileItems = items.filter((item) => item.mobile).slice(0, 4);
+  const mobileItems = (["dashboard", "agents", "knowledge", "billing"] as View[])
+    .map((view) => items.find((item) => item.view === view))
+    .filter((item): item is NavItem => Boolean(item));
   return (
     <nav
       aria-label="ناوبری موبایل"
@@ -573,10 +575,6 @@ function MoreSheet({ open, onOpenChange, items }: { open: boolean; onOpenChange:
               </div>
             )}
             <div className="flex flex-col gap-2">
-              <Button variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView("billing"); }}>
-                <WalletCards aria-hidden="true" className="size-4" />
-                اعتبار و صورتحساب
-              </Button>
               <Button variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView("settings"); }}>
                 <Settings aria-hidden="true" className="size-4" />
                 تنظیمات
