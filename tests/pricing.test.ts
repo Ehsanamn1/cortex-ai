@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { estimateLlmCostMicros, getModelRate, PRICING_VERIFIED_AT } from "@/lib/server/pricing";
+import { estimateLlmCostMicros, getKnownModelCatalog, getModelRate, PRICING_VERIFIED_AT } from "@/lib/server/pricing";
 
 describe("Cortex pricing estimates", () => {
   test("supports current GPT-6 Astra pricing", () => {
@@ -27,7 +27,6 @@ describe("Cortex pricing estimates", () => {
     expect(PRICING_VERIFIED_AT).toBe("2026-09-28");
   });
   test("publishes a 25-model recognized catalog", () => {
-    const { getKnownModelCatalog } = require("@/lib/server/pricing");
     expect(getKnownModelCatalog()).toHaveLength(25);
   });
 
