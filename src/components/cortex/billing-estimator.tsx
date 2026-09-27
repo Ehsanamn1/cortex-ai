@@ -44,6 +44,7 @@ type Props = {
   monthlyCredits: number;
   overageCreditPriceToman: number;
   plans?: Plan[];
+  pricingVerifiedAt?: string;
 };
 
 type Complexity = {
@@ -148,7 +149,7 @@ function TokenField({
   );
 }
 
-export function BillingEstimator({ models, monthlyCredits, plans = [], overageCreditPriceToman }: Props) {
+export function BillingEstimator({ models, monthlyCredits, plans = [], overageCreditPriceToman, pricingVerifiedAt }: Props) {
   const available = models.filter((m) => m.enabledForPlan);
   const preferred = available.find((m) => m.modelId.toLowerCase().includes("gpt-6-astra"))
     ?? available[0]
@@ -408,7 +409,7 @@ export function BillingEstimator({ models, monthlyCredits, plans = [], overageCr
             ))}
           </div>
           <p className="mt-3 border-t border-border/50 pt-3 text-[9px] leading-5 text-muted-foreground">
-            مرجع قیمت مدل‌ها در Cortex: {api.getPricingVerifiedDateLabel()} · نرخ‌های مدل از snapshot تأمین‌کننده و نرخ ارز از منبع FX سیستم می‌آید. قیمت نهایی هر provider ممکن است با نوع سرویس، cache، batch، منطقه و تغییرات لحظه‌ای متفاوت باشد.
+            مرجع قیمت مدل‌ها در Cortex: {pricingVerifiedAt ? new Date(pricingVerifiedAt + "T00:00:00Z").toLocaleDateString("fa-IR") : "آخرین snapshot ثبت‌شده"} · نرخ‌های مدل از snapshot تأمین‌کننده و نرخ ارز از منبع FX سیستم می‌آید. قیمت نهایی هر provider ممکن است با نوع سرویس، cache، batch، منطقه و تغییرات لحظه‌ای متفاوت باشد.
           </p>
         </details>
 
