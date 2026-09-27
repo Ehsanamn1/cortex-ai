@@ -28,11 +28,7 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
   }, []);
 
   useEffect(() => {
-    if (!open || !workspaceId || query.trim().length < 2) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
+    if (!open || !workspaceId || query.trim().length < 2) return;
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       if (controller.signal.aborted) return;
@@ -78,7 +74,7 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
       <CommandDialog open={open} onOpenChange={setOpen} title="جستجو در Cortex" description="ایجنت، دانش یا گفتگو را پیدا کنید.">
         <CommandInput placeholder="نام ایجنت، فایل دانش یا گفتگوی خود را بنویسید…" value={query} onValueChange={setQuery} />
         <CommandList className="max-h-[55vh] p-1">
-          {loading && <div className="px-4 py-8 text-center text-sm text-muted-foreground">در حال جستجو در فضای کاری…</div>}
+          {loading && query.trim().length >= 2 && <div className="px-4 py-8 text-center text-sm text-muted-foreground">در حال جستجو در فضای کاری…</div>}
           {!loading && query.trim().length >= 2 && visibleResults.length === 0 && <CommandEmpty>نتیجه‌ای در فضای کاری فعلی پیدا نشد.</CommandEmpty>}
           {grouped.agents.length > 0 && (
             <CommandGroup heading="ایجنت‌ها">
