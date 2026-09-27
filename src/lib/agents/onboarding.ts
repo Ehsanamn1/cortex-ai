@@ -4,6 +4,8 @@ import { llmManager } from "@/lib/providers/llm/manager";
 import { getVectorStore } from "@/lib/providers/vector";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs } from "@/lib/knowledge/chunk";
+import { estimateTokens } from "@/lib/server/audit";
+import { estimateLlmCostMicros } from "@/lib/server/pricing";
 import { deleteSourceCompletely } from "@/lib/knowledge/pipeline";
 
 export interface OnboardingQuestion { id: string; category: string; question: string; }
@@ -132,6 +134,21 @@ export async function synthesizeOnboarding(answers: Array<{ question: Onboarding
   if (!resolved.provider) throw Object.assign(new Error("سرویس هوش مصنوعی این ایجنت هنوز پیکربندی نشده است."), { status: 503 });
   const completion = await resolved.provider.generateResponse({ messages: [{ role: "system", content: "پاسخ را فقط به صورت JSON معتبر بده و از اطلاعات خارج از مصاحبه استفاده نکن." }, { role: "user", content: buildSynthesisPrompt(answers) }], temperature: 0, maxTokens: 2200 });
   const result = parseOnboardingResult(completion.content);
+  const inputTokens = estimateTokens(synthesisPrompt);
+  const outputTokens = estimateTokens(completion.content);
+  await db.usageEvent.create({
+    data: {
+      workspaceId,
+      agentId,
+      channel: "onboarding",
+      provider: completion.provider,
+      model: completion.model,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, completion.provider, completion.model),
+    },
+  });
   const knowledgeSourceId = await indexBusinessKnowledge(agentId, workspaceId, result);
   await db.agent.update({ where: { id: agentId }, data: { description: result.businessSummary.slice(0, 4000), persona: result.tone.slice(0, 2000) || null, instructions: result.instructions.slice(0, 8000) || null } });
   return { result, knowledgeSourceId };
