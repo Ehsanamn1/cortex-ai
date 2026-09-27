@@ -20,6 +20,12 @@ function periodEndFor(start: Date): Date {
   return end;
 }
 
+export const CREDIT_TOP_UP_PACKAGES = {
+  starter: { credits: 10_000, amountToman: 1_990_000, label: "۱۰ هزار اعتبار" },
+  growth: { credits: 50_000, amountToman: 8_900_000, label: "۵۰ هزار اعتبار" },
+  scale: { credits: 100_000, amountToman: 15_900_000, label: "۱۰۰ هزار اعتبار" },
+} as const;
+
 export function defaultCreditMultiplierBps(qualityTier: string): number {
   switch (qualityTier) {
     case "economy": return 100;
