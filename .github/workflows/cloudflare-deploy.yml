@@ -218,7 +218,7 @@ jobs:
           cleanup_smoke() {
             set +e
             rm -f "$smoke_response" "$session_response" "$smoke_cookie" "$api_key_response" "$api_chat_response" "$openai_response" "$agent_response" "$knowledge_response" "$knowledge_file" "$admin_response" "$admin_cookie"
-            db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}"
+            db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
             if [ -n "$db_url" ] && [ -n "${smoke_user_id:-}" ]; then
               [[ "$smoke_user_id" =~ ^[A-Za-z0-9]+$ ]] && printf 'DELETE FROM "User" WHERE "id" = %s;' "'$smoke_user_id'" | npx prisma db execute --url "$db_url" --stdin >/dev/null 2>&1 || true
             fi
