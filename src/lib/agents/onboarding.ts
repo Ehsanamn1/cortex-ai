@@ -82,12 +82,13 @@ export function parseOnboardingResult(raw: string): OnboardingResult {
   return result;
 }
 
-function buildKnowledgeText(result: OnboardingResult): string {
+function buildKnowledgeText(result: OnboardingResult, answers: Array<{ question: OnboardingQuestion; answer: string }>): string {
   const section = (title: string, value: string | string[]) => {
     if (Array.isArray(value)) return value.length ? "## " + title + "\n- " + value.join("\n- ") : "";
     return value ? "## " + title + "\n" + value : "";
   };
   const faq = result.faq.map(x => x.question + "\nپاسخ: " + x.answer);
+  const rawOwnerAnswers = answers.map((item, index) => (index + 1) + ". " + item.question.question + "\nپاسخ مالک: " + item.answer).join("\n\n");
   return [
     section("خلاصه کسب‌وکار", result.businessSummary), section("محصولات و خدمات", result.services),
     section("مخاطبان", result.targetAudience), section("پیشنهاد ارزش", result.valueProposition),
@@ -95,16 +96,22 @@ function buildKnowledgeText(result: OnboardingResult): string {
     section("راه‌های ارتباطی", result.contactChannels), section("قوانین و سیاست‌ها", result.policies),
     section("پرسش‌های متداول", faq), section("قواعد فروش", result.salesRules), section("قواعد ارجاع", result.escalationRules),
     section("موارد ممنوع از ادعا", result.forbiddenClaims), section("لحن برند", result.tone), section("اطلاعات تکمیلی", result.additionalFacts),
+    rawOwnerAnswers ? "## پاسخ‌های مستقیم مالک\n" + rawOwnerAnswers : "",
   ].filter(Boolean).join("\n\n");
 }
 
-async function indexBusinessKnowledge(agentId: string, workspaceId: string, result: OnboardingResult): Promise<string> {
+async function indexBusinessKnowledge(
+  agentId: string,
+  workspaceId: string,
+  result: OnboardingResult,
+  answers: Array<{ question: OnboardingQuestion; answer: string }>,
+): Promise<string> {
   const previous = await db.knowledgeSource.findFirst({ where: { agentId, type: "business_interview" }, select: { id: true } });
   if (previous) await deleteSourceCompletely(previous.id);
   const source = await db.knowledgeSource.create({ data: { agentId, name: "دانش مصاحبه کسب‌وکار", type: "business_interview", status: "processing" } });
   try {
     const document = await db.knowledgeDocument.create({ data: { sourceId: source.id, name: "پروفایل کسب‌وکار و قواعد پاسخ‌گویی", mimeType: "text/plain", status: "processing" } });
-    const chunks = chunkInputs([{ text: buildKnowledgeText(result), page: 1, section: "business-profile" }]);
+    const chunks = chunkInputs([{ text: buildKnowledgeText(result, answers), page: 1, section: "business-profile" }]);
     const embedder = embeddingManager.resolve();
     if (!embedder) throw new Error("سرویس Embedding برای ساخت دانش فعال نیست.");
     const vectors = await embedder.embedDocuments(chunks.map(x => x.text));
@@ -149,7 +156,7 @@ export async function synthesizeOnboarding(answers: Array<{ question: Onboarding
       estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, completion.provider, completion.model),
     },
   });
-  const knowledgeSourceId = await indexBusinessKnowledge(agentId, workspaceId, result);
+  const knowledgeSourceId = await indexBusinessKnowledge(agentId, workspaceId, result, answers);
   await db.agent.update({ where: { id: agentId }, data: { description: result.businessSummary.slice(0, 4000), persona: result.tone.slice(0, 2000) || null, instructions: result.instructions.slice(0, 8000) || null } });
   return { result, knowledgeSourceId };
 }
