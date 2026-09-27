@@ -50,7 +50,7 @@ export async function GET(req: Request) {
           select: {
             id: true, name: true, ownerId: true, createdAt: true, updatedAt: true,
             owner: { select: { id: true, name: true, email: true } },
-            _count: { select: { members: true, agents: true, telegramBots: true, workflows: true, conversations: true } },
+            _count: { select: { members: true, agents: true, telegramBots: true, workflows: true } },
             billingAccount: { select: { balanceCredits: true, status: true, enforcementEnabled: true, plan: { select: { key: true, name: true } } } },
           },
         });
