@@ -68,11 +68,17 @@ export async function POST(req: Request, { params }: Params) {
 
     const displayName = typeof body.displayName === "string" ? body.displayName.trim().slice(0, 80) : null;
     const notes = typeof body.notes === "string" ? body.notes.trim().slice(0, 300) : null;
-    const defaultLimits = {
-      dailyMessageLimit: safeLimit(body.dailyMessageLimit) ?? 0,
-      monthlyMessageLimit: safeLimit(body.monthlyMessageLimit) ?? 0,
-      dailyTokenLimit: safeLimit(body.dailyTokenLimit) ?? 0,
-      monthlyTokenLimit: safeLimit(body.monthlyTokenLimit) ?? 0,
+    const providedLimits = {
+      dailyMessageLimit: safeLimit(body.dailyMessageLimit),
+      monthlyMessageLimit: safeLimit(body.monthlyMessageLimit),
+      dailyTokenLimit: safeLimit(body.dailyTokenLimit),
+      monthlyTokenLimit: safeLimit(body.monthlyTokenLimit),
+    };
+    const newLimits = {
+      dailyMessageLimit: providedLimits.dailyMessageLimit ?? 0,
+      monthlyMessageLimit: providedLimits.monthlyMessageLimit ?? 0,
+      dailyTokenLimit: providedLimits.dailyTokenLimit ?? 0,
+      monthlyTokenLimit: providedLimits.monthlyTokenLimit ?? 0,
     };
     const regenerate = body.regenerate === true;
     const results = [];
@@ -88,13 +94,13 @@ export async function POST(req: Request, { params }: Params) {
               displayName: displayName ?? existing.displayName,
               notes: notes ?? existing.notes,
               status: "allowed",
-              ...defaultLimits,
+              ...providedLimits,
               ...(needsToken ? { inviteTokenHash: hashTelegramInviteToken(plainToken!), inviteCreatedAt: new Date(), claimedTelegramUserId: null, claimedAt: null } : {}),
             },
           })
         : await db.telegramAllowlistEntry.create({
             data: {
-              botId: bot.id, phoneNumber, displayName, notes, status: "allowed", ...defaultLimits,
+              botId: bot.id, phoneNumber, displayName, notes, status: "allowed", ...newLimits,
               inviteTokenHash: hashTelegramInviteToken(plainToken!), inviteCreatedAt: new Date(),
             },
           });
