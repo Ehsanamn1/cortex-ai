@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
-import { getVectorStore, type UpsertPoint } from "@/lib/providers/vector";
+import { getVectorStore } from "@/lib/providers/vector";
+import type { UpsertPoint } from "@/lib/providers/vector/types";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs } from "@/lib/knowledge/chunk";
 import { estimateTokens } from "@/lib/server/audit";
