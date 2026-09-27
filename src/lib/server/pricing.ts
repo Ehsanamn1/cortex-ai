@@ -16,30 +16,31 @@ function envRate(name: string): number | null {
 export function getModelRate(provider: string, model: string): ModelRate {
   const p = provider.toLowerCase();
   const m = model.toLowerCase();
+  const routedProvider = p === "openrouter" ? m.split("/")[0] : p;
 
   // Verified public standard API snapshots as of 2026-09-27.
-  if (p.includes("openai") && m.includes("gpt-5.5-pro")) return { inputUsdPer1M: 30, outputUsdPer1M: 180, known: true, label: "OpenAI GPT-5.5 Pro" };
-  if (p.includes("openai") && m.includes("gpt-5.5")) return { inputUsdPer1M: 5, outputUsdPer1M: 30, known: true, label: "OpenAI GPT-5.5" };
-  if (p.includes("openai") && m.includes("gpt-5.4-pro")) return { inputUsdPer1M: 30, outputUsdPer1M: 180, known: true, label: "OpenAI GPT-5.4 Pro" };
-  if (p.includes("openai") && m.includes("gpt-5.4")) return { inputUsdPer1M: 2.5, outputUsdPer1M: 15, known: true, label: "OpenAI GPT-5.4" };
-  if (p.includes("openai") && m.includes("gpt-5.4-mini")) return { inputUsdPer1M: 0.75, outputUsdPer1M: 4.5, known: true, label: "OpenAI GPT-5.4 mini" };
+  if ((routedProvider.includes("openai")) && m.includes("gpt-5.5-pro")) return { inputUsdPer1M: 30, outputUsdPer1M: 180, known: true, label: "OpenAI GPT-5.5 Pro" };
+  if ((routedProvider.includes("openai")) && m.includes("gpt-5.5")) return { inputUsdPer1M: 5, outputUsdPer1M: 30, known: true, label: "OpenAI GPT-5.5" };
+  if ((routedProvider.includes("openai")) && m.includes("gpt-5.4-pro")) return { inputUsdPer1M: 30, outputUsdPer1M: 180, known: true, label: "OpenAI GPT-5.4 Pro" };
+  if ((routedProvider.includes("openai")) && m.includes("gpt-5.4")) return { inputUsdPer1M: 2.5, outputUsdPer1M: 15, known: true, label: "OpenAI GPT-5.4" };
+  if ((routedProvider.includes("openai")) && m.includes("gpt-5.4-mini")) return { inputUsdPer1M: 0.75, outputUsdPer1M: 4.5, known: true, label: "OpenAI GPT-5.4 mini" };
 
-  if (p.includes("anthropic") && m.includes("claude-opus-5-5")) return { inputUsdPer1M: 4, outputUsdPer1M: 20, known: true, label: "Anthropic Claude Opus 5.5" };
-  if (p.includes("anthropic") && m.includes("claude-opus-5")) return { inputUsdPer1M: 5, outputUsdPer1M: 25, known: true, label: "Anthropic Claude Opus 5" };
-  if (p.includes("anthropic") && m.includes("claude-sonnet-5")) return { inputUsdPer1M: 2, outputUsdPer1M: 10, known: true, label: "Anthropic Claude Sonnet 5" };
-  if (p.includes("anthropic") && (m.includes("claude-sonnet-4.6") || m.includes("claude-sonnet-4-6"))) return { inputUsdPer1M: 3, outputUsdPer1M: 15, known: true, label: "Anthropic Claude Sonnet 4.6" };
-  if (p.includes("anthropic") && (m.includes("claude-haiku-4.5") || m.includes("claude-haiku-4-5"))) return { inputUsdPer1M: 1, outputUsdPer1M: 5, known: true, label: "Anthropic Claude Haiku 4.5" };
+  if ((routedProvider.includes("anthropic")) && m.includes("claude-opus-5-5")) return { inputUsdPer1M: 4, outputUsdPer1M: 20, known: true, label: "Anthropic Claude Opus 5.5" };
+  if ((routedProvider.includes("anthropic")) && m.includes("claude-opus-5")) return { inputUsdPer1M: 5, outputUsdPer1M: 25, known: true, label: "Anthropic Claude Opus 5" };
+  if ((routedProvider.includes("anthropic")) && m.includes("claude-sonnet-5")) return { inputUsdPer1M: 2, outputUsdPer1M: 10, known: true, label: "Anthropic Claude Sonnet 5" };
+  if ((routedProvider.includes("anthropic")) && (m.includes("claude-sonnet-4.6") || m.includes("claude-sonnet-4-6"))) return { inputUsdPer1M: 3, outputUsdPer1M: 15, known: true, label: "Anthropic Claude Sonnet 4.6" };
+  if ((routedProvider.includes("anthropic")) && (m.includes("claude-haiku-4.5") || m.includes("claude-haiku-4-5"))) return { inputUsdPer1M: 1, outputUsdPer1M: 5, known: true, label: "Anthropic Claude Haiku 4.5" };
 
-  if (p.includes("google") && m.includes("gemini-3.7-flash")) return { inputUsdPer1M: 0.75, outputUsdPer1M: 3.75, known: true, label: "Google Gemini 3.7 Flash" };
-  if (p.includes("google") && m.includes("gemini-3.1-flash-lite")) return { inputUsdPer1M: 0.25, outputUsdPer1M: 1.5, known: true, label: "Google Gemini 3.1 Flash-Lite" };
-  if (p.includes("google") && m.includes("gemini-3-flash-preview")) return { inputUsdPer1M: 0.5, outputUsdPer1M: 3, known: true, label: "Google Gemini 3 Flash Preview" };
-  if (p.includes("google") && m.includes("gemini-2.5-flash-lite")) return { inputUsdPer1M: 0.1, outputUsdPer1M: 0.4, known: true, label: "Google Gemini 2.5 Flash-Lite" };
-  if (p.includes("google") && m.includes("gemini-2.5-flash")) return { inputUsdPer1M: 0.3, outputUsdPer1M: 2.5, known: true, label: "Google Gemini 2.5 Flash" };
+  if ((routedProvider.includes("google")) && m.includes("gemini-3.7-flash")) return { inputUsdPer1M: 0.75, outputUsdPer1M: 3.75, known: true, label: "Google Gemini 3.7 Flash" };
+  if ((routedProvider.includes("google")) && m.includes("gemini-3.1-flash-lite")) return { inputUsdPer1M: 0.25, outputUsdPer1M: 1.5, known: true, label: "Google Gemini 3.1 Flash-Lite" };
+  if ((routedProvider.includes("google")) && m.includes("gemini-3-flash-preview")) return { inputUsdPer1M: 0.5, outputUsdPer1M: 3, known: true, label: "Google Gemini 3 Flash Preview" };
+  if ((routedProvider.includes("google")) && m.includes("gemini-2.5-flash-lite")) return { inputUsdPer1M: 0.1, outputUsdPer1M: 0.4, known: true, label: "Google Gemini 2.5 Flash-Lite" };
+  if ((routedProvider.includes("google")) && m.includes("gemini-2.5-flash")) return { inputUsdPer1M: 0.3, outputUsdPer1M: 2.5, known: true, label: "Google Gemini 2.5 Flash" };
 
-  if (p.includes("deepseek") && (m.includes("deepseek-flash") || m.includes("deepseek-v4-flash") || m.includes("deepseek-v4.1-flash"))) {
+  if ((routedProvider.includes("deepseek")) && (m.includes("deepseek-flash") || m.includes("deepseek-v4-flash") || m.includes("deepseek-v4.1-flash"))) {
     return { inputUsdPer1M: 0.15, outputUsdPer1M: 0.6, known: true, label: "DeepSeek Flash (off-peak base)" };
   }
-  if (p.includes("deepseek") && (m.includes("deepseek-v4-pro") || m === "deepseek-v4")) {
+  if ((routedProvider.includes("deepseek")) && (m.includes("deepseek-v4-pro") || m === "deepseek-v4")) {
     return { inputUsdPer1M: 0.66, outputUsdPer1M: 1.98, known: true, label: "DeepSeek V4 Pro (off-peak base)" };
   }
 
