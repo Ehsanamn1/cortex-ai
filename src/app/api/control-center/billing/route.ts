@@ -203,7 +203,18 @@ export async function PATCH(req: Request) {
         if (!plan) return applyCors(jsonError("پلن پیدا نشد.", 404), req.headers.get("origin"));
         data.planId = plan.id;
       }
-      if (Object.keys(data).length) await db.workspaceBillingAccount.update({ where: { id }, data });
+      if (Object.keys(data).length) {
+        await db.$transaction(async (tx) => {
+          const updated = await tx.workspaceBillingAccount.update({ where: { id }, data });
+          if (data.planId) {
+            await tx.subscription.updateMany({
+              where: { billingAccountId: id, status: "active" },
+              data: { planId: String(data.planId) },
+            });
+          }
+          return updated;
+        });
+      }
       if (body.creditAdjustment !== undefined) {
         const amount = intValue(body.creditAdjustment, -10_000_000_000, 10_000_000_000);
         if (amount == null || amount === 0) return applyCors(jsonError("تغییر اعتبار نامعتبر است.", 400), req.headers.get("origin"));
