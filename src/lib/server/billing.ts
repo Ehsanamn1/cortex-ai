@@ -443,11 +443,27 @@ export async function recordUsageAndCharge(params: {
   reservationId?: string | null;
 }) {
   if (isTestRuntime()) {
+    const usageEvent = await db.usageEvent.create({
+      data: {
+        workspaceId: params.usage.workspaceId,
+        agentId: params.usage.agentId ?? null,
+        userId: params.usage.userId ?? null,
+        telegramBotId: params.usage.telegramBotId ?? null,
+        telegramUserId: params.usage.telegramUserId ?? null,
+        channel: params.usage.channel ?? "web",
+        provider: params.usage.provider ?? null,
+        model: params.usage.model ?? null,
+        inputTokens: params.usage.inputTokens ?? 0,
+        outputTokens: params.usage.outputTokens ?? 0,
+        totalTokens: params.usage.totalTokens ?? 0,
+        estimatedCostMicros: params.usage.estimatedCostMicros ?? 0,
+      },
+    });
     return {
-      usageEvent: null,
+      usageEvent,
       chargedCredits: 0,
       balanceCredits: 0,
-      status: "shadow",
+      status: "test_shadow",
     };
   }
 
