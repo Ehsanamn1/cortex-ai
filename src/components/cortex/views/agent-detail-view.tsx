@@ -264,7 +264,7 @@ function BusinessOnboardingCard({ agentId }: { agentId: string }) {
   const session = onboardingQ.data?.session ?? null;
 
   const start = useMutation({
-    mutationFn: () => api.startBusinessOnboarding(agentId),
+    mutationFn: (mode: "quick" | "full") => api.startBusinessOnboarding(agentId, mode),
     onSuccess: ({ session: next }) => {
       queryClient.setQueryData(["business-onboarding", agentId], (prev: any) => ({ ...(prev ?? {}), session: next }));
       setAnswer("");
@@ -280,64 +280,98 @@ function BusinessOnboardingCard({ agentId }: { agentId: string }) {
         queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
         queryClient.invalidateQueries({ queryKey: ["knowledge", agentId] });
         queryClient.invalidateQueries({ queryKey: ["knowledge-all"] });
-        toast.success("دانش اولیه کسب‌وکار ساخته و برای ایجنت فعال شد.");
+        toast.success("پروفایل دانشی کسب‌وکار ساخته و برای ایجنت آماده شد.");
       }
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
   const active = session?.status === "active" && session.question;
   const result = session?.status === "completed" ? session.result : null;
+  const total = Math.max(1, session?.totalQuestions ?? 30);
+  const current = Math.min(total, session?.currentIndex ?? 0);
+  const progress = Math.round((current / total) * 100);
 
   return (
-    <Card className="rounded-xl border-primary/15 bg-primary/[.025]">
-      <CardHeader className="border-b [.border-b]:pb-4">
-        <CardTitle className="flex items-center gap-2 text-base"><Sparkles className="size-5 text-primary" />راه‌اندازی هوشمند کسب‌وکار</CardTitle>
-        <CardDescription>به‌جای آپلود ده‌ها فایل، به ۳۰ سؤال ساده جواب بده. Cortex از جواب‌ها دانش اولیه، قواعد پاسخ‌گویی و FAQ می‌سازد.</CardDescription>
+    <Card className="cortex-panel overflow-hidden rounded-[22px] border-primary/15 bg-primary/[.025]">
+      <CardHeader className="border-b border-white/[.06] pb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <span className="cortex-icon-box"><Sparkles className="size-4" /></span>
+              راه‌اندازی هوشمند کسب‌وکار
+            </CardTitle>
+            <CardDescription className="mt-2 leading-6">
+              کاملاً اختیاری؛ Cortex از پاسخ‌ها پروفایل کسب‌وکار، قوانین پاسخ‌گویی، خدمات و FAQ می‌سازد.
+            </CardDescription>
+          </div>
+          <Badge variant="outline" className="w-fit border-primary/20 bg-primary/5 text-primary">اختیاری</Badge>
+        </div>
       </CardHeader>
-      <CardContent className="pt-4">
+
+      <CardContent className="pt-5">
         {onboardingQ.isPending ? (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />در حال آماده‌سازی…</div>
         ) : active ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-              <span>سؤال {faNum((session?.currentIndex ?? 0) + 1)} از {faNum(session?.totalQuestions ?? 30)}</span>
-              <span>{faNum(Math.round(((session?.currentIndex ?? 0) / Math.max(1, session?.totalQuestions ?? 30)) * 100))}٪ تکمیل</span>
+              <span>سؤال {faNum((session?.currentIndex ?? 0) + 1)} از {faNum(total)}</span>
+              <span>{faNum(progress)}٪ تکمیل</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: (((session?.currentIndex ?? 0) / Math.max(1, session?.totalQuestions ?? 30)) * 100) + "%" }} /></div>
-            <div className="rounded-xl border bg-background p-4">
-              <p className="text-[11px] text-primary">{session?.question?.category}</p>
-              <p className="mt-2 text-sm font-semibold leading-7">{session?.question?.question}</p>
+            <div className="h-2 overflow-hidden rounded-full bg-muted/70">
+              <div className="h-full rounded-full bg-gradient-to-r from-primary via-sky-400 to-violet-400 transition-all duration-500" style={{ width: progress + "%" }} />
+            </div>
+            <div className="rounded-2xl border border-primary/10 bg-background/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,.03)]">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[10px] font-bold tracking-[.18em] text-primary">{session?.question?.category}</p>
+                <span className="rounded-full border border-border/70 px-2 py-1 text-[9px] text-muted-foreground">پاسخ آزاد</span>
+              </div>
+              <p className="mt-3 text-base font-bold leading-8">{session?.question?.question}</p>
             </div>
             <textarea
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               rows={5}
-              className="w-full rounded-xl border bg-background px-4 py-3 text-sm leading-7 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-primary"
-              placeholder="جواب را همین‌جا بنویس…"
+              className="w-full rounded-2xl border border-border/80 bg-background px-4 py-3 text-sm leading-7 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-primary"
+              placeholder="پاسخ را طبیعی و کامل بنویس؛ لازم نیست رسمی باشد…"
+              aria-label="پاسخ سؤال راه‌اندازی"
             />
             {session?.error && <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-xs leading-6 text-amber-200">{session.error}</p>}
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => sendAnswer.mutate()} disabled={sendAnswer.isPending || !answer.trim()}>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+              <Button variant="ghost" onClick={() => api.cancelBusinessOnboarding(agentId, session.id).then(() => onboardingQ.refetch())}>بعداً ادامه می‌دهم</Button>
+              <Button onClick={() => sendAnswer.mutate()} disabled={sendAnswer.isPending || !answer.trim()} className="shadow-[0_10px_28px_rgba(59,130,246,.16)]">
                 {sendAnswer.isPending ? <Loader2 className="animate-spin" /> : <ChevronRightIcon />}
-                {sendAnswer.isPending ? "در حال ساخت…" : "ثبت جواب و سؤال بعدی"}
+                {sendAnswer.isPending ? "در حال پردازش…" : current + 1 === total ? "ساخت پروفایل" : "ثبت و سؤال بعدی"}
               </Button>
-              <Button variant="ghost" onClick={() => api.cancelBusinessOnboarding(agentId, session.id).then(() => onboardingQ.refetch())}>لغو</Button>
             </div>
           </div>
         ) : result ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 className="size-4" />راه‌اندازی کامل شد</div>
-            <p className="rounded-xl border bg-background p-4 text-sm leading-7 text-muted-foreground">{result.businessSummary}</p>
+            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 className="size-4" />پروفایل کسب‌وکار آماده است</div>
+            <p className="rounded-2xl border bg-background p-4 text-sm leading-7 text-muted-foreground">{result.businessSummary}</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border bg-background p-4"><p className="text-xs font-semibold">خدمات</p><p className="mt-2 text-xs leading-6 text-muted-foreground">{(result.services ?? []).slice(0, 6).join("، ")}</p></div>
-              <div className="rounded-xl border bg-background p-4"><p className="text-xs font-semibold">مخاطب</p><p className="mt-2 text-xs leading-6 text-muted-foreground">{(result.targetAudience ?? []).slice(0, 4).join("، ")}</p></div>
+              <div className="rounded-2xl border bg-background p-4"><p className="text-xs font-semibold">خدمات</p><p className="mt-2 text-xs leading-6 text-muted-foreground">{(result.services ?? []).slice(0, 6).join("، ") || "—"}</p></div>
+              <div className="rounded-2xl border bg-background p-4"><p className="text-xs font-semibold">مخاطب هدف</p><p className="mt-2 text-xs leading-6 text-muted-foreground">{(result.targetAudience ?? []).slice(0, 4).join("، ") || "—"}</p></div>
             </div>
-            <Button variant="outline" onClick={() => start.mutate()} disabled={start.isPending}><Play />اجرای دوباره مصاحبه</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => start.mutate("quick")} disabled={start.isPending}><Sparkles />اجرای نسخه سریع</Button>
+              <Button variant="outline" onClick={() => start.mutate("full")} disabled={start.isPending}>اجرای مصاحبه کامل</Button>
+            </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="text-sm font-medium">هنوز پروفایل کسب‌وکار ساخته نشده.</p><p className="mt-1 text-xs leading-6 text-muted-foreground">حدود ۳۰ سؤال درباره فروش، خدمات، قوانین، مشتری و پشتیبانی.</p></div>
-            <Button onClick={() => start.mutate()} disabled={start.isPending}><Sparkles />شروع ۳۰ سؤال</Button>
+          <div className="grid gap-3 lg:grid-cols-[1.1fr_.9fr]">
+            <div className="rounded-2xl border border-white/[.07] bg-white/[.018] p-5">
+              <p className="text-sm font-semibold">بدون اجبار، با دو مسیر متفاوت</p>
+              <p className="mt-2 text-xs leading-7 text-muted-foreground">نسخه سریع برای شروع فوری است و نسخه کامل برای استخراج دقیق‌تر سیاست‌ها، خدمات، مشتری، فروش و پشتیبانی.</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button onClick={() => start.mutate("quick")} disabled={start.isPending}><Sparkles />شروع سریع · ۸ سؤال</Button>
+                <Button variant="outline" onClick={() => start.mutate("full")} disabled={start.isPending}>شروع کامل · ۳۰ سؤال</Button>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-dashed border-white/[.10] bg-background/50 p-5">
+              <p className="text-xs font-semibold text-muted-foreground">فعلاً آماده‌سازی نکن</p>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">می‌توانی فعلاً از این مرحله عبور کنی، بعداً از همین صفحه مصاحبه را شروع کنی.</p>
+            </div>
           </div>
         )}
       </CardContent>

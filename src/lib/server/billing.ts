@@ -20,6 +20,12 @@ function periodEndFor(start: Date): Date {
   return end;
 }
 
+export const CREDIT_TOP_UP_PACKAGES = {
+  starter: { credits: 10_000, amountToman: 1_990_000, label: "۱۰ هزار اعتبار" },
+  growth: { credits: 50_000, amountToman: 8_900_000, label: "۵۰ هزار اعتبار" },
+  scale: { credits: 100_000, amountToman: 15_900_000, label: "۱۰۰ هزار اعتبار" },
+} as const;
+
 export function defaultCreditMultiplierBps(qualityTier: string): number {
   switch (qualityTier) {
     case "economy": return 100;
@@ -239,7 +245,7 @@ export async function getBillingSnapshot(workspaceId: string) {
   if (existingCatalog === 0) {
     for (const entry of known) await ensureModel(entry.provider, entry.modelId);
   }
-  const [subscription, recentLedger, usage, plans, billedUsage] = await Promise.all([
+  const [subscription, recentLedger, usage, plans, billedUsage, topUpRequests, recentInvoices] = await Promise.all([
     db.subscription.findFirst({ where: { billingAccountId: account.id, status: "active" }, orderBy: { createdAt: "desc" }, include: { plan: true } }),
     db.creditLedgerEntry.findMany({ where: { billingAccountId: account.id }, orderBy: { createdAt: "desc" }, take: 12 }),
     db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
@@ -251,6 +257,18 @@ export async function getBillingSnapshot(workspaceId: string) {
         status: { in: ["captured", "captured_debt"] },
       },
       _sum: { chargedCredits: true },
+    }),
+    db.creditTopUpRequest.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: { id:true, packageKey:true, credits:true, amountToman:true, status:true, note:true, createdAt:true, reviewedAt:true },
+    }),
+    db.invoice.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: { id:true, invoiceNumber:true, status:true, currency:true, subtotalToman:true, overageToman:true, totalToman:true, periodStart:true, periodEnd:true, issuedAt:true, dueAt:true, paidAt:true, createdAt:true },
     }),
   ]);
 
@@ -272,6 +290,7 @@ export async function getBillingSnapshot(workspaceId: string) {
       periodStart: account.periodStart.toISOString(),
       periodEnd: account.periodEnd.toISOString(),
     },
+    topUpPackages: Object.entries(CREDIT_TOP_UP_PACKAGES).map(([key,item]) => ({ key, ...item })),
     plans: plans.map((plan) => ({
       id: plan.id,
       key: plan.key,
@@ -315,6 +334,31 @@ export async function getBillingSnapshot(workspaceId: string) {
       entryType: entry.entryType,
       description: entry.description,
       createdAt: entry.createdAt.toISOString(),
+    })),
+    topUpRequests: topUpRequests.map((item) => ({
+      id:item.id,
+      packageKey:item.packageKey,
+      credits:item.credits,
+      amountToman:item.amountToman,
+      status:item.status,
+      note:item.note,
+      createdAt:item.createdAt.toISOString(),
+      reviewedAt:item.reviewedAt?.toISOString() ?? null,
+    })),
+    invoices: recentInvoices.map((item) => ({
+      id:item.id,
+      invoiceNumber:item.invoiceNumber,
+      status:item.status,
+      currency:item.currency,
+      subtotalToman:item.subtotalToman,
+      overageToman:item.overageToman,
+      totalToman:item.totalToman,
+      periodStart:item.periodStart.toISOString(),
+      periodEnd:item.periodEnd.toISOString(),
+      issuedAt:item.issuedAt?.toISOString() ?? null,
+      dueAt:item.dueAt?.toISOString() ?? null,
+      paidAt:item.paidAt?.toISOString() ?? null,
+      createdAt:item.createdAt.toISOString(),
     })),
   };
 }

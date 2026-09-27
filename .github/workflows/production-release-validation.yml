@@ -26,5 +26,5 @@ jobs:
         run: node scripts/load-smoke.mjs
       - name: Run production API contract smoke
         env:
-          SYSTEM_SMOKE_EXPECT_NEW: "false"
+          SYSTEM_SMOKE_EXPECT_NEW: "true"
         run: node scripts/system-smoke.mjs

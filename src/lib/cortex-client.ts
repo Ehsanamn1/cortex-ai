@@ -247,14 +247,22 @@ export interface WorkflowDto { id:string; workspaceId:string; agentId:string|nul
 
 export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }
 export interface BillingModelDto { id:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number }
+export interface BillingInvoiceDto { id:string; invoiceNumber:string; status:string; currency:string; subtotalToman:number; overageToman:number; totalToman:number; periodStart:string; periodEnd:string; issuedAt:string|null; dueAt:string|null; paidAt:string|null; createdAt:string }
+export interface BillingTopUpRequestDto { id:string; packageKey:string; credits:number; amountToman:number; status:string; note:string|null; createdAt:string; reviewedAt:string|null }
 export interface BillingLedgerEntryDto { id:string; amountCredits:number; balanceAfter:number; entryType:string; description:string|null; createdAt:string }
+export interface NotificationDto { id:string; action:string; entityType:string; createdAt:string }
+export interface SearchResultDto { type:"agent"|"knowledge"|"conversation"; id:string; title:string; subtitle:string; agentId:string; }
+
 export interface BillingSnapshotDto {
   account:{ id:string; plan:{ id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }; balanceCredits:number; status:string; enforcementEnabled:boolean; periodStart:string; periodEnd:string };
+  topUpPackages: Array<{key:string;credits:number;amountToman:number;label:string}>;
   plans: BillingPlanDto[];
   subscription:{ id:string; status:string; periodStart:string; periodEnd:string; cancelAtPeriodEnd:boolean }|null;
   usage30Days:{events:number;tokens:number;estimatedCostMicros:number;credits:number};
   models: BillingModelDto[];
   ledger: BillingLedgerEntryDto[];
+  topUpRequests: BillingTopUpRequestDto[];
+  invoices: BillingInvoiceDto[];
 }
 
 export interface ExecutionDto { id:string; workspaceId:string; agentId:string|null; triggerType:string; status:string; input:string|null; output:string|null; error:string|null; startedAt:string; completedAt:string|null; steps:Array<{id:string;seq:number;type:string;name:string;status:string;input:string|null;output:string|null;error:string|null;startedAt:string;completedAt:string|null}>; agent?:{id:string;name:string}|null; }
@@ -339,7 +347,17 @@ function jsonRequest<T>(path: string, method: "POST" | "PATCH" | "PUT" | "DELETE
 
 export const api = {
   getSiteConfig(): Promise<SiteConfigDto> { return request("/api/site-config"); },
+  getNotifications(workspaceId?:string): Promise<{notifications:NotificationDto[]}> {
+    return request(`/api/notifications${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`);
+  },
+  searchSystem(query:string, workspaceId?:string): Promise<{results:SearchResultDto[]}> {
+    const params=new URLSearchParams({q:query});
+    if(workspaceId) params.set("workspaceId",workspaceId);
+    return request("/api/search?"+params.toString());
+  },
   getBilling(workspaceId?:string): Promise<BillingSnapshotDto> { return request(`/api/billing${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
+  getBillingTopUps(workspaceId?:string){ return request<{requests:BillingTopUpRequestDto[];packages:Array<{key:string;credits:number;amountToman:number;label:string} }>}(`/api/billing/topup-request${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
+  requestBillingTopUp(packageKey:string, workspaceId?:string){ return jsonRequest<{request:BillingTopUpRequestDto}>(`/api/billing/topup-request`,"POST",{packageKey,workspaceId}); },
 
   /* AUTH */
 
@@ -537,7 +555,7 @@ export const api = {
   updateTelegramUser(id:string,status:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>('/api/admin/telegram-users','PATCH',{id,status,...limits}); },
   getAnalytics(workspaceId?:string){ return request<AnalyticsDto & {note?:string}>(`/api/admin/analytics${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
   getBusinessOnboarding(agentId:string){ return request<{session:BusinessOnboardingSessionDto|null;questions:BusinessOnboardingQuestionDto[]}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`); },
-  startBusinessOnboarding(agentId:string){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"start"}); },
+  startBusinessOnboarding(agentId:string,mode:"quick"|"full"="full"){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"start",mode}); },
   answerBusinessOnboarding(agentId:string,sessionId:string,answer:string){ return jsonRequest<{session:BusinessOnboardingSessionDto;knowledgeSourceId?:string}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"answer",sessionId,answer}); },
   cancelBusinessOnboarding(agentId:string,sessionId:string){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"cancel",sessionId}); },
 

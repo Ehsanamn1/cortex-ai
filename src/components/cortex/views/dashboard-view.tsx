@@ -20,6 +20,7 @@ import {
   Server,
   Sparkles,
   Workflow,
+  WalletCards,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
@@ -33,13 +34,30 @@ import { cn } from "@/lib/utils";
 import { Capabilities } from "@/components/cortex/capabilities";
 
 function CortexCore() {
+  const nodes = [
+    { left: "17%", top: "31%", delay: 0 },
+    { left: "76%", top: "27%", delay: 0.5 },
+    { left: "83%", top: "58%", delay: 1 },
+    { left: "25%", top: "74%", delay: 1.5 },
+    { left: "52%", top: "12%", delay: 2 },
+    { left: "48%", top: "87%", delay: 2.5 },
+  ];
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.82 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, ease: "easeOut" }} className="relative mx-auto h-[250px] w-[250px] sm:h-[310px] sm:w-[310px]">
-      <div className="cortex-core-orbit cortex-orbit-a" />
-      <div className="cortex-core-orbit cortex-orbit-b" />
-      <div className="cortex-core-orbit cortex-orbit-c" />
+    <motion.div initial={{ opacity: 0, scale: 0.74, rotateX: -10 }} animate={{ opacity: 1, scale: 1, rotateX: 0 }} transition={{ duration: 0.9, ease: "easeOut" }} className="cortex-core-stage relative mx-auto h-[250px] w-[250px] sm:h-[330px] sm:w-[330px]">
+      <motion.div animate={{ rotateZ: 360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="cortex-core-shell" />
+      <motion.div animate={{ rotateX: [56, 62, 56], rotateZ: 360 }} transition={{ duration: 19, repeat: Infinity, ease: "linear" }} className="absolute inset-[7%] rounded-full border border-violet-400/16" />
+      <div className="cortex-core-ring" />
+      {nodes.map((node, index) => (
+        <motion.span
+          key={index}
+          className="cortex-core-node"
+          style={{ left: node.left, top: node.top }}
+          animate={{ scale: [0.7, 1.35, 0.7], opacity: [0.45, 1, 0.45] }}
+          transition={{ duration: 2.8, delay: node.delay, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ))}
       <motion.div animate={{ rotate: 360 }} transition={{ duration: 22, repeat: Infinity, ease: "linear" }} className="absolute inset-[16%] rounded-full border border-primary/20" />
-      <motion.div animate={{ scale: [1, 1.04, 1], rotate: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="cortex-core-sphere absolute inset-[19%] rounded-full">
+      <motion.div animate={{ scale: [1, 1.045, 1], rotateY: [0, 8, 0], rotateZ: [0, -8, 0] }} transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }} className="cortex-core-sphere absolute inset-[19%] rounded-full">
         <div className="absolute inset-6 rounded-full border border-white/10 bg-[radial-gradient(circle_at_32%_26%,rgba(255,255,255,.48),transparent_12%),radial-gradient(circle_at_55%_44%,rgba(59,130,255,.98),transparent_38%),radial-gradient(circle_at_72%_72%,rgba(139,92,246,.96),transparent_48%),#07101c] shadow-[0_0_120px_rgba(59,130,255,.33),inset_0_1px_0_rgba(255,255,255,.16)]">
           <div className="absolute inset-[18%] rounded-full border border-primary/20" />
           <div className="absolute left-[18%] top-[17%] size-4 rounded-full bg-white/50 blur-[3px]" />
@@ -125,6 +143,13 @@ export function DashboardView() {
     queryKey: ["site-config"],
     queryFn: api.getSiteConfig,
     staleTime: 60_000,
+  });
+
+  const billingQuery = useQuery({
+    queryKey: ["billing", activeWorkspaceId],
+    queryFn: () => api.getBilling(activeWorkspaceId ?? undefined),
+    enabled: !!activeWorkspaceId,
+    staleTime: 20_000,
   });
 
   const providersQuery = useQuery({
@@ -215,6 +240,31 @@ export function DashboardView() {
         <StatCard icon={MessagesSquare} label="گفتگوها" value={faNum(stats.conversations)} caption={faNum(stats.messages) + " پیام در مجموع"} tint="border-emerald-400/25 bg-emerald-400/10 text-emerald-300" />
         <StatCard icon={Activity} label="امروز" value={faNum(stats.todayMessages ?? 0)} caption={faNum(stats.todayTokens ?? 0) + " توکن امروز"} tint="border-amber-400/25 bg-amber-400/10 text-amber-300" />
       </section>
+
+      {billingQuery.data && (
+        <motion.button
+          type="button"
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: .99 }}
+          onClick={() => setView("billing")}
+          className="cortex-wallet-mini group relative overflow-hidden rounded-[24px] border border-primary/15 bg-gradient-to-br from-primary/[.09] via-background to-violet-500/[.06] p-5 text-right"
+        >
+          <span className="absolute -end-10 -top-16 size-40 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2"><span className="cortex-kicker">CORTEX WALLET</span><span className="rounded-full border border-primary/15 bg-primary/5 px-2 py-1 text-[9px] text-primary">{billingQuery.data.account.plan.name}</span></div>
+              <p className="mt-3 text-2xl font-black">{faNum(billingQuery.data.account.balanceCredits)} <span className="text-xs font-semibold text-muted-foreground">اعتبار</span></p>
+              <p className="mt-1 text-xs text-muted-foreground">{faNum(billingQuery.data.usage30Days.credits)} اعتبار مصرف‌شده در ۳۰ روز اخیر</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="grid size-16 place-items-center rounded-2xl border border-white/10 bg-black/10 shadow-inner">
+                <WalletCards className="size-7 text-primary transition-transform duration-300 group-hover:rotate-6" />
+              </div>
+              <div className="text-left"><p className="text-xs font-semibold text-primary">مدیریت اعتبار</p><p className="mt-1 text-[10px] text-muted-foreground">شارژ، Ledger و صورتحساب</p></div>
+            </div>
+          </div>
+        </motion.button>
+      )}
 
       <Capabilities onOpen={setView} />
 

@@ -18,8 +18,6 @@ import {
   GraduationCap,
   GitBranch,
   WalletCards,
-  Search,
-  Bell,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
@@ -42,6 +40,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ViewErrorBoundary } from "@/components/cortex/view-error-boundary";
+import { SystemSearch } from "@/components/cortex/system-search";
+import { NotificationCenter } from "@/components/cortex/notification-center";
+import { ThemeToggle } from "@/components/cortex/theme-toggle";
 
 import { DashboardView } from "@/components/cortex/views/dashboard-view";
 import { AgentsView } from "@/components/cortex/views/agents-view";
@@ -111,6 +112,8 @@ function WorkspaceSwitcher() {
     queryClient.invalidateQueries({ queryKey: ["analytics"] });
     queryClient.invalidateQueries({ queryKey: ["telegram-bots"] });
     queryClient.invalidateQueries({ queryKey: ["providers-status"] });
+    queryClient.invalidateQueries({ queryKey: ["billing"] });
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
   }
 
   return (
@@ -305,20 +308,6 @@ function SidebarNav({ items }: { items: NavItem[] }) {
       })}
       <button
         type="button"
-        onClick={() => setView("billing")}
-        aria-current={view === "billing" ? "page" : undefined}
-        className={cn(
-          "relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
-          view === "billing"
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground"
-        )}
-      >
-        <WalletCards aria-hidden="true" className="size-[18px]" />
-        اعتبار و صورتحساب
-      </button>
-      <button
-        type="button"
         onClick={() => setView("settings")}
         aria-current={view === "settings" ? "page" : undefined}
         className={cn(
@@ -337,17 +326,15 @@ function SidebarNav({ items }: { items: NavItem[] }) {
 
 /* ---------------- mobile bottom nav ---------------- */
 
-function BottomNav({ onMore, items }: { onMore: () => void; items: NavItem[] }) {
+function BottomNav({ items }: { items: NavItem[] }) {
   const view = useCortexStore((s) => s.view);
   const setView = useCortexStore((s) => s.setView);
 
-  const mobileItems = items.filter((item) => item.mobile);
-  const moreActive = !mobileItems.some((item) => item.matches.includes(view));
-
+  const mobileItems = items.filter((item) => item.mobile).slice(0, 4);
   return (
     <nav
       aria-label="ناوبری موبایل"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/[.08] bg-[#0b0f16]/96 shadow-[0_-12px_35px_rgba(0,0,0,.28)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#0b0f16]/88 lg:hidden"
+      className="cortex-mobile-nav fixed inset-x-0 bottom-0 z-50 border-t shadow-[0_-12px_35px_rgba(0,0,0,.18)] backdrop-blur-xl lg:hidden"
     >
       <div className="mx-auto flex w-full max-w-lg items-stretch pb-[max(env(safe-area-inset-bottom),6px)]">
         {mobileItems.map((item) => {
@@ -369,19 +356,7 @@ function BottomNav({ onMore, items }: { onMore: () => void; items: NavItem[] }) 
             </button>
           );
         })}
-        <button
-          type="button"
-          onClick={onMore}
-          aria-label="بیشتر"
-          aria-current={moreActive ? "page" : undefined}
-          className={cn(
-            "relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-medium transition-colors active:scale-[.96]",
-            moreActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <MoreHorizontal aria-hidden="true" className="size-[19px]" />
-          بیشتر
-        </button>
+
       </div>
     </nav>
   );
@@ -519,14 +494,12 @@ export function AppShell() {
           <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><Bot className="size-4" /></span><div className="min-w-0"><p className="truncate text-[9px] font-bold tracking-[.18em] text-primary/75">CORTEX WORKSPACE</p><h1 className="truncate text-lg font-bold text-foreground">{title}</h1></div></div>
 
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <div className="hidden min-w-[220px] items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 xl:flex">
-              <Search className="size-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">جستجو در Cortex…</span>
-              <span className="ms-auto rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">⌘K</span>
-            </div>
-            <Button variant="ghost" size="icon" aria-label="اعلان‌ها" className="relative rounded-lg">
-              <Bell className="size-[18px]" />
-              <span aria-hidden="true" className="absolute end-2 top-2 size-1.5 rounded-full bg-primary" />
+            <SystemSearch triggerClassName="cortex-search-trigger hidden min-w-[220px] items-center gap-2 rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-xs text-muted-foreground xl:flex" />
+            <SystemSearch compact triggerClassName="cortex-search-trigger flex size-10 items-center justify-center rounded-xl border border-border/70 bg-muted/35 text-muted-foreground xl:hidden" />
+            <NotificationCenter />
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" aria-label="منوی بیشتر" title="منوی بیشتر" className="rounded-xl lg:hidden" onClick={() => setMoreOpen(true)}>
+              <MoreHorizontal className="size-[18px]" />
             </Button>
             {showCta && (
               <Button size="sm" className="hidden sm:inline-flex" onClick={() => setView("agent-new")}>
@@ -558,7 +531,7 @@ export function AppShell() {
           </div>
         </main>
 
-        <BottomNav items={navItems} onMore={() => setMoreOpen(true)} />
+        <BottomNav items={navItems} />
       </div>
 
       {/* Mobile «بیشتر» sheet */}

@@ -331,6 +331,9 @@ jobs:
           check_authed_json "/api/admin/overview?workspaceId=$smoke_workspace_id" "200"
           check_authed_json "/api/admin/analytics?workspaceId=$smoke_workspace_id" "200"
           check_authed_json "/api/billing?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/notifications?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/search?q=Cortex&workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/billing/topup-request?workspaceId=$smoke_workspace_id" "200"
 
           check_noauth_json "/api/control-center/settings" "401"
           check_noauth_json "/api/control-center/plugins" "401"
@@ -338,6 +341,10 @@ jobs:
           check_noauth_json "/api/control-center/resources?resource=workspaces" "401"
           check_noauth_json "/api/control-center/resources?resource=agents" "401"
           check_noauth_json "/api/control-center/billing" "401"
+          check_noauth_json "/api/control-center/topups" "401"
+          check_noauth_json "/api/search?q=Cortex&workspaceId=$smoke_workspace_id" "401"
+          check_noauth_json "/api/notifications?workspaceId=$smoke_workspace_id" "401"
+          check_noauth_json "/api/billing/topup-request?workspaceId=$smoke_workspace_id" "401"
 
           if [ -n "$CORTEX_ADMIN_USERNAME" ] && [ -n "$CORTEX_ADMIN_PASSWORD" ]; then
             admin_cookie="$(mktemp)"
@@ -367,6 +374,7 @@ jobs:
             check_admin_json "/api/control-center/resources?resource=workspaces" "200"
             check_admin_json "/api/control-center/resources?resource=agents" "200"
             check_admin_json "/api/control-center/billing" "200"
+            check_admin_json "/api/control-center/topups" "200"
             rm -f "$admin_response" "$admin_cookie"
           else
             echo "Admin credentials are not duplicated into GitHub Actions; unauthenticated admin route guards were verified above."
@@ -385,6 +393,27 @@ jobs:
           check_noauth_json "/api/agents/$smoke_agent_id" "401"
           check_authed_json "/api/agents/$smoke_agent_id/knowledge" "200"
           check_authed_json "/api/agents/$smoke_agent_id/conversations" "200"
+
+          onboarding_start_response="$(mktemp)"
+          onboarding_start_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d '{"action":"start","mode":"quick"}' -o "$onboarding_start_response" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/onboarding")"
+          echo "POST /api/agents/$smoke_agent_id/onboarding (quick) -> HTTP $onboarding_start_status"
+          test "$onboarding_start_status" = "201"
+          jq -e '.session.totalQuestions == 8 and .session.status == "active"' "$onboarding_start_response" >/dev/null
+          onboarding_session_id="$(jq -r '.session.id // empty' "$onboarding_start_response")"
+          test -n "$onboarding_session_id"
+          onboarding_cancel_response="$(mktemp)"
+          onboarding_cancel_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d "$(jq -nc --arg id "$onboarding_session_id" '{action:"cancel",sessionId:$id}')" -o "$onboarding_cancel_response" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/onboarding")"
+          echo "POST /api/agents/$smoke_agent_id/onboarding (cancel) -> HTTP $onboarding_cancel_status"
+          test "$onboarding_cancel_status" = "200"
+          jq -e '.session.status == "cancelled"' "$onboarding_cancel_response" >/dev/null
+          rm -f "$onboarding_start_response" "$onboarding_cancel_response"
+
+          topup_response="$(mktemp)"
+          topup_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d '{"packageKey":"starter","workspaceId":"'"$smoke_workspace_id"'"}' -o "$topup_response" -w "%{http_code}" "$base/api/billing/topup-request")"
+          echo "POST /api/billing/topup-request -> HTTP $topup_status"
+          test "$topup_status" = "201"
+          jq -e '.request.status == "pending" and .request.credits == 10000' "$topup_response" >/dev/null
+          rm -f "$topup_response"
 
           knowledge_response="$(mktemp)"
           knowledge_file="$(mktemp --suffix=.txt)"
