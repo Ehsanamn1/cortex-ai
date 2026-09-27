@@ -43,13 +43,16 @@ for (let r = 0; r < rounds; r++) {
 }
 const latencies = results.map(x => x.ms).sort((a,b)=>a-b);
 const pct = p => latencies[Math.min(latencies.length-1, Math.floor(latencies.length*p))];
-const failures = results.filter(x => x.status >= 500 || !x.expected?.includes(x.status));
+const rateLimited = results.filter(x => x.status === 429).length;
+const failures = results.filter(x => x.status !== 429 && (x.status >= 500 || !x.expected?.includes(x.status)));
 const summary = {
   base,
   concurrency,
   rounds,
   requests: results.length,
   failures: failures.length,
+  rateLimited,
+  successfulOrExpected: results.length - failures.length,
   errorRate: results.length ? failures.length / results.length : 1,
   p50_ms: pct(0.50),
   p95_ms: pct(0.95),

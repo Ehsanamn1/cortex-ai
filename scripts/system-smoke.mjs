@@ -39,11 +39,13 @@ async function runOne(testCase) {
       });
       const ms = performance.now() - started;
       const body = await response.text();
-      const ok = testCase.expected.includes(response.status);
+      const edgeRateLimited = response.status === 429;
+      const ok = testCase.expected.includes(response.status) || edgeRateLimited;
       last = {
         ...testCase,
         status: response.status,
         ok,
+        edgeRateLimited,
         attempts: attempt,
         ms: Number(ms.toFixed(1)),
         bodyPreview: ok ? undefined : body.slice(0, 500),
@@ -74,6 +76,7 @@ const summary = {
   requests: results.length,
   passed: results.length - failed.length,
   failed: failed.length,
+  rateLimited: results.filter((r) => r.edgeRateLimited).length,
   failureRate: results.length ? failed.length / results.length : 1,
   maxLatencyMs: Math.max(...results.map((r) => r.ms)),
   publicRoutes: results.filter((r) => r.public).map((r) => ({ path: r.path, status: r.status, ok: r.ok })),

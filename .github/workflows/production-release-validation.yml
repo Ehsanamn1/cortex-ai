@@ -24,7 +24,20 @@ jobs:
           node-version: 22
       - name: Run production load smoke
         run: node scripts/load-smoke.mjs
+
+  production-contract:
+    name: Production API contract
+    needs: production-load
+    runs-on: ubuntu-latest
+    env:
+      CORTEX_BASE_URL: https://cortex-ai.dengxiao445.workers.dev
+      SYSTEM_SMOKE_EXPECT_NEW: "true"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Let Cloudflare rate-limit window recover
+        run: sleep 75
       - name: Run production API contract smoke
-        env:
-          SYSTEM_SMOKE_EXPECT_NEW: "true"
         run: node scripts/system-smoke.mjs
