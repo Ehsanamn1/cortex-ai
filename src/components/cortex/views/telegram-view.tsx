@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BarChart3, Bot, CheckCircle2, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi, XCircle } from "lucide-react";
+import { BarChart3, Bot, CheckCircle2, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi, XCircle, CopyPlus, Link, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 import { api, type AgentDto, type TelegramBotDto, type TelegramUserDto } from "@/lib/cortex-client";
@@ -231,6 +231,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
           </Card>
         </div>
 
+        <TelegramAccessManager botId={bot.id} />
         <TelegramCustomizer botId={bot.id} />
 
         {bot.lastError && <div className="rounded-xl border border-destructive/20 bg-destructive/[.05] p-4"><p className="text-xs font-semibold text-destructive">آخرین خطا</p><p className="mt-1 text-xs leading-6 text-destructive/90">{bot.lastError}</p></div>}
@@ -240,6 +241,177 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+
+function TelegramAccessManager({ botId }: { botId: string }) {
+  const queryClient = useQueryClient();
+  const [phones, setPhones] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [notes, setNotes] = useState("");
+  const [dailyTokens, setDailyTokens] = useState("0");
+  const [monthlyTokens, setMonthlyTokens] = useState("0");
+  const [dailyMessages, setDailyMessages] = useState("0");
+  const [monthlyMessages, setMonthlyMessages] = useState("0");
+  const [freshInvites, setFreshInvites] = useState<TelegramUserDto extends never ? never : Array<any>>([]);
+
+  const q = useQuery({
+    queryKey: ["telegram-allowlist", botId],
+    queryFn: () => api.getTelegramAllowlist(botId),
+    staleTime: 10_000,
+  });
+
+  const add = useMutation({
+    mutationFn: () => api.addTelegramAllowlistBulk(botId, {
+      phoneNumbers: phones.split(/[\n,;]+/).map(v => v.trim()).filter(Boolean),
+      displayName: displayName.trim() || undefined,
+      notes: notes.trim() || undefined,
+    }),
+    onSuccess: ({ entries }) => {
+      setFreshInvites(entries.filter(item => item.inviteLink));
+      setPhones("");
+      queryClient.invalidateQueries({ queryKey: ["telegram-allowlist", botId] });
+      queryClient.invalidateQueries({ queryKey: ["telegram-bot-users", botId] });
+      toast.success(entries.length + " شماره ثبت شد.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const update = useMutation({
+    mutationFn: (input: { id: string; status?: "allowed" | "blocked"; dailyTokenLimit?: number; monthlyTokenLimit?: number; dailyMessageLimit?: number; monthlyMessageLimit?: number }) =>
+      api.updateTelegramAllowlist(botId, input.id, {
+        status: input.status,
+        dailyTokenLimit: input.dailyTokenLimit,
+        monthlyTokenLimit: input.monthlyTokenLimit,
+        dailyMessageLimit: input.dailyMessageLimit,
+        monthlyMessageLimit: input.monthlyMessageLimit,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["telegram-allowlist", botId] });
+      queryClient.invalidateQueries({ queryKey: ["telegram-bot-users", botId] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const regenerate = useMutation({
+    mutationFn: (entryId: string) => api.regenerateTelegramInvite(botId, entryId),
+    onSuccess: ({ entry }) => {
+      setFreshInvites(current => [entry, ...current.filter(x => x.id !== entry.id)]);
+      queryClient.invalidateQueries({ queryKey: ["telegram-allowlist", botId] });
+      toast.success("لینک ورود جدید ساخته شد.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const entries = q.data?.entries ?? [];
+  const parseLimit = (value: string) => Math.max(0, Math.min(10_000_000, Math.floor(Number(value) || 0)));
+
+  return (
+    <Card className="border-white/[.06] bg-white/[.02]">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />مدیریت دسترسی کاربران</CardTitle>
+        <p className="text-xs leading-6 text-muted-foreground">شماره‌ها را یکی‌یکی یا فله‌ای وارد کن. برای هر شماره، دسترسی و سقف مصرف جداگانه نگه داشته می‌شود.</p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-2 md:col-span-2"><Label>شماره موبایل‌ها</Label><Textarea dir="ltr" value={phones} onChange={e => setPhones(e.target.value)} rows={4} placeholder={"مثال:\n09121234567\n09351234567\n+989121234567"} className="text-left" /><p className="text-[10px] text-muted-foreground">هر خط یک شماره؛ حداکثر ۵۰۰ شماره در هر نوبت.</p></div>
+          <div className="space-y-2"><Label>نام مشترک (اختیاری)</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="مثلاً واحد فروش" /></div>
+          <div className="space-y-2"><Label>یادداشت (اختیاری)</Label><Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="مثلاً مشتری VIP" /></div>
+        </div>
+
+        <div className="rounded-xl border bg-background p-3">
+          <p className="text-xs font-semibold">سقف اولیه برای شماره‌های جدید</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Input inputMode="numeric" value={dailyMessages} onChange={e => setDailyMessages(e.target.value)} placeholder="پیام/روز" aria-label="پیام روزانه اولیه" />
+            <Input inputMode="numeric" value={monthlyMessages} onChange={e => setMonthlyMessages(e.target.value)} placeholder="پیام/ماه" aria-label="پیام ماهانه اولیه" />
+            <Input inputMode="numeric" value={dailyTokens} onChange={e => setDailyTokens(e.target.value)} placeholder="توکن/روز" aria-label="توکن روزانه اولیه" />
+            <Input inputMode="numeric" value={monthlyTokens} onChange={e => setMonthlyTokens(e.target.value)} placeholder="توکن/ماه" aria-label="توکن ماهانه اولیه" />
+          </div>
+          <Button className="mt-3" onClick={async () => {
+            if (!phones.trim()) return;
+            try {
+              const result = await api.addTelegramAllowlistBulk(botId, {
+                phoneNumbers: phones.split(/[\n,;]+/).map(v => v.trim()).filter(Boolean),
+                displayName: displayName.trim() || undefined,
+                notes: notes.trim() || undefined,
+              });
+              for (const entry of result.entries) {
+                await api.updateTelegramAllowlist(botId, entry.id, {
+                  dailyMessageLimit: parseLimit(dailyMessages),
+                  monthlyMessageLimit: parseLimit(monthlyMessages),
+                  dailyTokenLimit: parseLimit(dailyTokens),
+                  monthlyTokenLimit: parseLimit(monthlyTokens),
+                });
+              }
+              setFreshInvites(result.entries.filter(item => item.inviteLink));
+              setPhones("");
+              queryClient.invalidateQueries({ queryKey: ["telegram-allowlist", botId] });
+              queryClient.invalidateQueries({ queryKey: ["telegram-bot-users", botId] });
+              toast.success(result.entries.length + " شماره ثبت شد و سقف مصرف اعمال شد.");
+            } catch (error) { toast.error(error instanceof Error ? error.message : "افزودن شماره ناموفق بود."); }
+          }} disabled={add.isPending || !phones.trim()}><CopyPlus />ثبت شماره‌ها و ساخت لینک</Button>
+        </div>
+
+        {freshInvites.length > 0 && <div className="rounded-xl border border-primary/20 bg-primary/[.04] p-4 space-y-2">
+          <p className="text-xs font-semibold">لینک‌های ورود تازه</p>
+          {freshInvites.map((entry: any) => <div key={entry.id} className="flex items-center gap-2 rounded-lg border bg-background p-2">
+            <div className="min-w-0 flex-1"><p dir="ltr" className="truncate text-[11px]">{entry.phoneNumber}</p><p dir="ltr" className="truncate text-[10px] text-muted-foreground">{entry.inviteLink}</p></div>
+            <Button size="sm" variant="outline" onClick={() => entry.inviteLink && navigator.clipboard.writeText(entry.inviteLink).then(() => toast.success("لینک کپی شد."))}><Link className="size-3.5" />کپی</Button>
+          </div>)}
+          <p className="text-[10px] text-muted-foreground">این لینک یک‌بارمصرف است. بعد از اولین استفاده، لینک قبلی دیگر قابل استفاده نیست.</p>
+        </div>}
+
+        <div className="space-y-2">
+          {entries.map(entry => (
+            <AccessEntryRow key={entry.id} entry={entry} onUpdate={(input) => update.mutate({ id: entry.id, ...input })} onRegenerate={() => regenerate.mutate(entry.id)} busy={update.isPending || regenerate.isPending} />
+          ))}
+          {!entries.length && <p className="rounded-xl border border-dashed p-5 text-center text-xs text-muted-foreground">هنوز شماره‌ای ثبت نشده است.</p>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AccessEntryRow({
+  entry,
+  onUpdate,
+  onRegenerate,
+  busy,
+}: {
+  entry: any;
+  onUpdate: (input: any) => void;
+  onRegenerate: () => void;
+  busy: boolean;
+}) {
+  const [dailyTokenLimit, setDailyTokenLimit] = useState(String(entry.dailyTokenLimit ?? 0));
+  const [monthlyTokenLimit, setMonthlyTokenLimit] = useState(String(entry.monthlyTokenLimit ?? 0));
+  const [dailyMessageLimit, setDailyMessageLimit] = useState(String(entry.dailyMessageLimit ?? 0));
+  const [monthlyMessageLimit, setMonthlyMessageLimit] = useState(String(entry.monthlyMessageLimit ?? 0));
+  const save = () => onUpdate({
+    status: entry.status === "allowed" ? "allowed" : "blocked",
+    dailyTokenLimit: Math.max(0, Math.floor(Number(dailyTokenLimit) || 0)),
+    monthlyTokenLimit: Math.max(0, Math.floor(Number(monthlyTokenLimit) || 0)),
+    dailyMessageLimit: Math.max(0, Math.floor(Number(dailyMessageLimit) || 0)),
+    monthlyMessageLimit: Math.max(0, Math.floor(Number(monthlyMessageLimit) || 0)),
+  });
+  return (
+    <div className="rounded-xl border p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1"><p dir="ltr" className="text-xs font-semibold">{entry.phoneNumber}</p><p className="text-[10px] text-muted-foreground">{entry.claimedTelegramUserId ? "متصل به حساب تلگرام" : "هنوز وارد نشده"} · {entry.status === "allowed" ? "مجاز" : "مسدود"}</p></div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={onRegenerate} disabled={busy}><RefreshCw className="size-3.5" />لینک جدید</Button>
+          <Button size="sm" variant={entry.status === "allowed" ? "destructive" : "outline"} onClick={() => onUpdate({ status: entry.status === "allowed" ? "blocked" : "allowed" })} disabled={busy}>{entry.status === "allowed" ? <UserX /> : <UserCheck />}{entry.status === "allowed" ? "مسدود" : "فعال"}</Button>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Input inputMode="numeric" value={dailyMessageLimit} onChange={e => setDailyMessageLimit(e.target.value)} placeholder="پیام/روز" />
+        <Input inputMode="numeric" value={monthlyMessageLimit} onChange={e => setMonthlyMessageLimit(e.target.value)} placeholder="پیام/ماه" />
+        <Input inputMode="numeric" value={dailyTokenLimit} onChange={e => setDailyTokenLimit(e.target.value)} placeholder="توکن/روز" />
+        <Input inputMode="numeric" value={monthlyTokenLimit} onChange={e => setMonthlyTokenLimit(e.target.value)} placeholder="توکن/ماه" />
+      </div>
+      <div className="mt-2 flex justify-end"><Button size="sm" onClick={save} disabled={busy}>ذخیره سقف مصرف</Button></div>
+    </div>
   );
 }
 
