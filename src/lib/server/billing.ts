@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
-import { getKnownModelCatalog, getModelRate } from "@/lib/server/pricing";
+import { getKnownModelCatalog, getModelRate, PRICING_VERIFIED_AT, PRICING_MODE } from "@/lib/server/pricing";
 
 export const DEFAULT_BILLING_PLANS = [
   { key: "free", name: "رایگان", description: "برای شروع و تست Cortex", priceToman: 0, monthlyCredits: 5000, overageCreditPriceToman: 0, sortOrder: 0 },
@@ -282,6 +282,7 @@ export async function getBillingSnapshot(workspaceId: string) {
   const accessMap = new Map(access.map((item) => [item.modelCatalogId, item]));
 
   return {
+    pricing: { verifiedAt: PRICING_VERIFIED_AT, mode: PRICING_MODE },
     account: {
       id: account.id,
       plan: account.plan,
