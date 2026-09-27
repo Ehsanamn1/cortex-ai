@@ -10,6 +10,7 @@ import {
   CircleDollarSign,
   Clock3,
   CreditCard,
+  FileText,
   Info,
   Layers3,
   Plus,
@@ -204,6 +205,30 @@ export function BillingView() {
             <Clock3 className="me-1 inline size-3.5 text-amber-300" />{faNum(pendingRequests)} درخواست شارژ در انتظار بررسی مدیریت است.
           </div>
         )}
+      </section>
+
+      <section className="cortex-panel rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div><p className="cortex-kicker">INVOICES</p><h3 className="mt-2 text-xl font-bold">صورتحساب‌ها</h3><p className="mt-1 text-xs leading-6 text-muted-foreground">سوابق صورتحساب همین workspace از Backend خوانده می‌شود.</p></div>
+          <div className="flex items-center gap-2 rounded-xl border border-white/[.06] bg-white/[.02] px-3 py-2 text-[10px] text-muted-foreground"><FileText className="size-3.5 text-primary"/>{faNum(data.invoices.length)} رکورد اخیر</div>
+        </div>
+        <div className="mt-5 overflow-x-auto rounded-2xl border border-white/[.06]">
+          <table className="w-full min-w-[720px] text-right text-xs">
+            <thead className="bg-white/[.02] text-muted-foreground"><tr><th className="px-4 py-3">شماره</th><th className="px-4 py-3">وضعیت</th><th className="px-4 py-3">دوره</th><th className="px-4 py-3">مبلغ</th><th className="px-4 py-3">پرداخت</th></tr></thead>
+            <tbody className="divide-y divide-white/[.05]">
+              {data.invoices.map((invoice) => (
+                <tr key={invoice.id}>
+                  <td className="px-4 py-3 font-mono">{invoice.invoiceNumber}</td>
+                  <td className="px-4 py-3"><Badge variant="outline">{invoice.status}</Badge></td>
+                  <td className="px-4 py-3 text-muted-foreground">{new Date(invoice.periodStart).toLocaleDateString("fa-IR")} تا {new Date(invoice.periodEnd).toLocaleDateString("fa-IR")}</td>
+                  <td className="px-4 py-3 font-semibold">{faNum(invoice.totalToman)} تومان</td>
+                  <td className="px-4 py-3">{invoice.paidAt ? <span className="text-emerald-300">{new Date(invoice.paidAt).toLocaleDateString("fa-IR")}</span> : <span className="text-muted-foreground">—</span>}</td>
+                </tr>
+              ))}
+              {data.invoices.length===0 && <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">هنوز صورتحساب ثبت نشده است.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
