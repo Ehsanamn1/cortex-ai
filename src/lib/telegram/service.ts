@@ -265,7 +265,7 @@ async function sendUsage(token: string, chatId: string | number, telegramUserId:
   const [daily, monthly] = await Promise.all([
     db.usageEvent.aggregate({
       where: { telegramUserId: user.id, createdAt: { gte: startOfDay() } },
-      _sum: { totalTokens: true },
+      _sum: { totalTokens: true, estimatedCostMicros: true },
       _count: { _all: true },
     }),
     db.usageEvent.aggregate({
@@ -280,7 +280,9 @@ async function sendUsage(token: string, chatId: string | number, telegramUserId:
     chatId,
     '<b>📊 وضعیت مصرف</b>\n\n' +
       'امروز: <b>' + formatUsage(daily._sum.totalTokens ?? 0, user.dailyTokenLimit) + '</b>\n' +
-      'این ماه: <b>' + formatUsage(monthly._sum.totalTokens ?? 0, user.monthlyTokenLimit) + '</b>\n\n' +
+      'این ماه: <b>' + formatUsage(monthly._sum.totalTokens ?? 0, user.monthlyTokenLimit) + '</b>\n' +
+      'هزینه امروز: <b>' + formatUsdMicros(daily._sum.estimatedCostMicros ?? 0) + '</b>\n' +
+      'هزینه این ماه: <b>' + formatUsdMicros(monthly._sum.estimatedCostMicros ?? 0) + '</b>\n\n' +
       'پیام امروز: ' + Number(daily._count._all).toLocaleString('fa-IR') + '\n' +
       'پیام این ماه: ' + Number(monthly._count._all).toLocaleString('fa-IR'),
     {
