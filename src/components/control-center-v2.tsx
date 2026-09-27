@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity, Bot, Boxes, CreditCard, Database, FileText, Gauge, History, LayoutDashboard,
   LogOut, MessageSquare, Pencil, Plug, Power, RefreshCw, Save, Search, Send, Settings2,
@@ -230,6 +230,16 @@ function AccountEditor({account,plans,onSave}:{account:any;plans:any[];onSave:(b
 }
 
 export function ControlCenterV2() {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: { retry: 1, refetchOnWindowFocus: false },
+      mutations: { retry: false },
+    },
+  }));
+  return <QueryClientProvider client={queryClient}><ControlCenterRuntime /></QueryClientProvider>;
+}
+
+function ControlCenterRuntime() {
   const [section,setSection]=useState<Section>("overview"); const [search,setSearch]=useState("");
   const qc=useQueryClient();
   const session=useQuery<{username:string}>({queryKey:["cc-auth"],queryFn:()=>jsonFetch("/api/admin/auth/me"),retry:false});
