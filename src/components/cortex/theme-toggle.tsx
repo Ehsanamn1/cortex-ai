@@ -22,7 +22,7 @@ export function applyCortexTheme(theme: CortexTheme) {
 }
 
 export function ThemeToggle({ className }: { className?: string }) {
-  const [theme, setTheme] = useState<CortexTheme>(() => typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "dark");
+  const [theme, setTheme] = useState<CortexTheme>(() => typeof document === "undefined" ? "dark" : (document.documentElement.classList.contains("dark") ? "dark" : "light"));
 
   useEffect(() => {
     const sync = () => setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
