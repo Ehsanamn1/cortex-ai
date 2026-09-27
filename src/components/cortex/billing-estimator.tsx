@@ -83,7 +83,7 @@ function parseInteger(value: string): number {
   if (!value.trim()) return 0;
   const normalized = value
     .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
-    .replace(/[٬،,s]/g, "");
+    .replace(/[٬،,\s]/g, "");
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
 }
@@ -98,15 +98,6 @@ function moneyUsd(value: number): string {
   if (value >= 1) return value.toFixed(2);
   if (value >= 0.01) return value.toFixed(4);
   return value.toFixed(6);
-}
-
-function formatTomanCompact(value: number): string {
-  const amount = Math.max(0, Math.round(value));
-  const nf = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 2 });
-  if (amount >= 1_000_000_000) return `${nf.format(amount / 1_000_000_000)} میلیارد تومان`;
-  if (amount >= 1_000_000) return `${nf.format(amount / 1_000_000)} میلیون تومان`;
-  if (amount >= 1_000) return `${nf.format(amount / 1_000)} هزار تومان`;
-  return `${faNum(amount)} تومان`;
 }
 
 function formatTomanExact(value: number): string {
