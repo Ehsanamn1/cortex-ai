@@ -25,6 +25,7 @@ export const CREDIT_TOP_UP_PACKAGES = {
   growth: { credits: 50_000, amountToman: 8_900_000, label: "۵۰ هزار اعتبار" },
   scale: { credits: 100_000, amountToman: 15_900_000, label: "۱۰۰ هزار اعتبار" },
 } as const;
+export type CreditTopUpPackageKey = keyof typeof CREDIT_TOP_UP_PACKAGES;
 
 export function defaultCreditMultiplierBps(qualityTier: string): number {
   switch (qualityTier) {
