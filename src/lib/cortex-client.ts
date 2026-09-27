@@ -247,6 +247,7 @@ export interface WorkflowDto { id:string; workspaceId:string; agentId:string|nul
 
 export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }
 export interface BillingModelDto { id:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number }
+export interface BillingInvoiceDto { id:string; invoiceNumber:string; status:string; currency:string; subtotalToman:number; overageToman:number; totalToman:number; periodStart:string; periodEnd:string; issuedAt:string|null; dueAt:string|null; paidAt:string|null; createdAt:string }
 export interface BillingTopUpRequestDto { id:string; packageKey:string; credits:number; amountToman:number; status:string; note:string|null; createdAt:string; reviewedAt:string|null }
 export interface BillingLedgerEntryDto { id:string; amountCredits:number; balanceAfter:number; entryType:string; description:string|null; createdAt:string }
 export interface NotificationDto { id:string; action:string; entityType:string; createdAt:string }
@@ -260,6 +261,7 @@ export interface BillingSnapshotDto {
   models: BillingModelDto[];
   ledger: BillingLedgerEntryDto[];
   topUpRequests: BillingTopUpRequestDto[];
+  invoices: BillingInvoiceDto[];
 }
 
 export interface ExecutionDto { id:string; workspaceId:string; agentId:string|null; triggerType:string; status:string; input:string|null; output:string|null; error:string|null; startedAt:string; completedAt:string|null; steps:Array<{id:string;seq:number;type:string;name:string;status:string;input:string|null;output:string|null;error:string|null;startedAt:string;completedAt:string|null}>; agent?:{id:string;name:string}|null; }
