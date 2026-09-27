@@ -233,6 +233,18 @@ export interface TelegramUserDto { id:string; botId:string; telegramUserId:strin
 export interface BusinessOnboardingQuestionDto { id:string; category:string; question:string }
 export interface BusinessOnboardingSessionDto { id:string; status:string; currentIndex:number; totalQuestions:number; question:BusinessOnboardingQuestionDto|null; answersCount:number; result:any; error:string|null; completedAt:string|null; createdAt:string; updatedAt:string }
 
+export interface AgentAnalyticsDto {
+  conversations: number;
+  messages: number;
+  telegramUsers: number;
+  usage: { events: number; totalTokens: number; inputTokens: number; outputTokens: number; estimatedCostMicros: number };
+  knowledge: { sources: number; ready: number; onboardingComplete: boolean };
+  trend: Array<{ date: string; requests: number; tokens: number }>;
+  topQuestions: Array<{ question: string; count: number }>;
+  unanswered: number;
+  unansweredQuestions: Array<{ question: string; count: number }>;
+}
+
 export interface AnalyticsDto { users:number; bots:number; usage:{events:number;tokens:number;inputTokens:number;outputTokens:number;estimatedCostMicros:number}; trend:Array<{date:string;messages:number;tokens:number}>; topQuestions:Array<{question:string;count:number}>; unanswered:number; unansweredQuestions:Array<{question:string;count:number}> }
 
 export interface SessionDto {
@@ -522,6 +534,7 @@ export const api = {
   getTelegramUsers(workspaceId?:string){ return request<{users:TelegramUserDto[]}>(`/api/admin/telegram-users${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
   updateTelegramUser(id:string,status:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>('/api/admin/telegram-users','PATCH',{id,status,...limits}); },
   getAnalytics(workspaceId?:string){ return request<AnalyticsDto & {note?:string}>(`/api/admin/analytics${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
+  getAgentAnalytics(agentId:string){ return request<AgentAnalyticsDto>(`/api/agents/${encodeURIComponent(agentId)}/analytics`); },
   getBusinessOnboarding(agentId:string){ return request<{session:BusinessOnboardingSessionDto|null;questions:BusinessOnboardingQuestionDto[]}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`); },
   startBusinessOnboarding(agentId:string){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"start"}); },
   answerBusinessOnboarding(agentId:string,sessionId:string,answer:string){ return jsonRequest<{session:BusinessOnboardingSessionDto;knowledgeSourceId?:string}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"answer",sessionId,answer}); },
