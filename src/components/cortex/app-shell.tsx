@@ -17,6 +17,7 @@ import {
   BarChart3,
   GraduationCap,
   GitBranch,
+  WalletCards,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
@@ -52,6 +53,7 @@ import { AnalyticsView } from "@/components/cortex/views/analytics-view";
 import { AdminView } from "@/components/cortex/views/admin-view";
 import { LearnView } from "@/components/cortex/views/learn-view";
 import { WorkflowsView } from "@/components/cortex/views/workflows-view";
+import { BillingView } from "@/components/cortex/views/billing-view";
 
 /* ---------------- provider status pill ---------------- */
 
@@ -237,6 +239,7 @@ const ICONS = {
   analytics: BarChart3,
   admin: ShieldCheck,
   learn: GraduationCap,
+  billing: WalletCards,
 } as const;
 
 function settingEnabled(settings: Record<string, string> | undefined, key: string, fallback = true) {
@@ -298,6 +301,20 @@ function SidebarNav({ items }: { items: NavItem[] }) {
           </button>
         );
       })}
+      <button
+        type="button"
+        onClick={() => setView("billing")}
+        aria-current={view === "billing" ? "page" : undefined}
+        className={cn(
+          "relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+          view === "billing"
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+        )}
+      >
+        <WalletCards aria-hidden="true" className="size-[18px]" />
+        اعتبار و صورتحساب
+      </button>
       <button
         type="button"
         onClick={() => setView("settings")}
@@ -403,6 +420,8 @@ function usePageTitle(siteName?: string): string {
       return "تلگرام";
     case "analytics":
       return "تحلیل و بینش";
+    case "billing":
+      return "اعتبار و صورتحساب";
     case "admin":
       return "مدیریت";
     case "learn":
@@ -436,6 +455,8 @@ function renderView(view: View) {
       return <TelegramView />;
     case "analytics":
       return <AnalyticsView />;
+    case "billing":
+      return <BillingView />;
     case "admin":
       return <AdminView />;
     case "learn":
@@ -563,6 +584,10 @@ function MoreSheet({ open, onOpenChange, items }: { open: boolean; onOpenChange:
               </div>
             )}
             <div className="flex flex-col gap-2">
+              <Button variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView("billing"); }}>
+                <WalletCards aria-hidden="true" className="size-4" />
+                اعتبار و صورتحساب
+              </Button>
               <Button variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView("settings"); }}>
                 <Settings aria-hidden="true" className="size-4" />
                 تنظیمات
