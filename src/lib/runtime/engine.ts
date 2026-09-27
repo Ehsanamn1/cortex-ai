@@ -6,6 +6,15 @@ import type { RetrievedChunk } from "@/lib/rag/prompt";
 import { loadAgentMemory, remember, rememberExplicitUserFacts } from "./memory";
 import { executeTool, listAgentTools } from "./tools";
 import type { AgentRuntimeInput } from "./types";
+import { estimateTokens } from "@/lib/server/audit";
+import { estimateLlmCostMicros } from "@/lib/server/pricing";
+import {
+  commitCreditReservation,
+  getModelCreditMultiplier,
+  providerCostToCredits,
+  releaseCreditReservation,
+  reserveCredits,
+} from "@/lib/server/billing";
 
 function parseToolCall(content: string): { tool: string; arguments: Record<string, unknown> } | null {
   const match = content.match(/\{[\s\S]*\}/)?.[0];
@@ -46,13 +55,56 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
   let execution: { id: string } | null = null;
   try { execution = await db.execution.create({ data: { workspaceId: input.workspaceId, agentId: agent.id, triggerType: "manual", status: "RUNNING", input: JSON.stringify(input.input) } }); } catch { execution = null; }
 
+  let creditReservationId: string | null = null;
+
   try {
     let finalContent = "";
     let toolUsed: string | null = null;
     let retrieval: RetrievedChunk[] = [];
     let auxiliaryInputTokens = 0;
     let auxiliaryOutputTokens = 0;
+    let measuredInputTokens = 0;
+    let measuredOutputTokens = 0;
     let latencyMs = 0;
+
+    const activeSubscription = await db.subscription.findFirst({
+      where: { workspaceId: input.workspaceId, status: "ACTIVE" },
+      select: { id: true },
+    });
+
+    if (activeSubscription) {
+      const multiplier = await getModelCreditMultiplier(resolved.status.provider, resolved.status.model);
+      const configuredInputReserve = Number(process.env.CORTEX_BILLING_INPUT_RESERVE_TOKENS ?? 6000);
+      const baseInputEstimate =
+        estimateTokens(system) +
+        history.reduce((sum, item) => sum + estimateTokens(item.content), 0) +
+        estimateTokens(input.input);
+      const inputReservePerCall = Math.max(
+        1,
+        Number.isFinite(configuredInputReserve) && configuredInputReserve > 0
+          ? Math.floor(configuredInputReserve)
+          : 6000,
+        baseInputEstimate,
+      );
+      const maxModelCalls = tools.length === 0 ? 2 : 4;
+      const pessimisticInputTokens = inputReservePerCall * maxModelCalls;
+      const pessimisticOutputTokens = Math.max(128, agent.maxTokens) * maxModelCalls;
+      const pessimisticCostMicros = estimateLlmCostMicros(
+        pessimisticInputTokens,
+        pessimisticOutputTokens,
+        resolved.status.provider,
+        resolved.status.model,
+      );
+      const reservedCredits = providerCostToCredits(pessimisticCostMicros, multiplier);
+      creditReservationId = await reserveCredits({
+        workspaceId: input.workspaceId,
+        amountCredits: reservedCredits,
+        referenceType: "AGENT_EXECUTION",
+        referenceId: execution?.id ?? null,
+        idempotencyKey: "agent-execution:" + (execution?.id ?? globalThis.crypto.randomUUID()),
+        ttlMs: 10 * 60_000,
+      });
+    }
 
     if (tools.length === 0) {
       await input.onProgress?.("🔎 در حال بررسی دانش و زمینه گفتگو…");
@@ -62,6 +114,8 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
       retrieval = answer.retrieval;
       auxiliaryInputTokens = answer.auxiliaryInputTokens ?? 0;
       auxiliaryOutputTokens = answer.auxiliaryOutputTokens ?? 0;
+      measuredInputTokens = (answer.promptInputTokens ?? 0) + auxiliaryInputTokens;
+      measuredOutputTokens = (answer.completionOutputTokens ?? estimateTokens(answer.content)) + auxiliaryOutputTokens;
       latencyMs = answer.latencyMs || (Date.now() - generationStartedAt);
     } else {
       let seq = 0;
@@ -79,6 +133,8 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
             maxTokens: agent.maxTokens,
           }));
         const plannedContent = (planned as { content: string }).content;
+        measuredInputTokens += modelMessages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
+        measuredOutputTokens += estimateTokens(plannedContent);
         const call = parseToolCall(plannedContent);
         if (!call) {
           finalContent = plannedContent;
@@ -97,6 +153,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
       }
       if (!finalContent) {
         finalContent = "✅ کار انجام شد. برای ادامه، جزئیات بیشتری لازم دارم.";
+        measuredOutputTokens += estimateTokens(finalContent);
       }
       await input.onProgress?.("✍️ در حال جمع‌بندی پاسخ نهایی…");
       if (agent.memoryEnabled) {
@@ -122,6 +179,19 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
       }
     }
 
+    if (creditReservationId) {
+      const multiplier = await getModelCreditMultiplier(resolved.status.provider, resolved.status.model);
+      const providerCostMicros = estimateLlmCostMicros(
+        measuredInputTokens,
+        measuredOutputTokens,
+        resolved.status.provider,
+        resolved.status.model,
+      );
+      const actualCredits = providerCostToCredits(providerCostMicros, multiplier);
+      await commitCreditReservation(creditReservationId, actualCredits);
+      creditReservationId = null;
+    }
+
     if (execution) {
       await db.execution.update({ where: { id: execution.id }, data: { status: "COMPLETED", output: finalContent, completedAt: new Date(), metadata: JSON.stringify({ provider: resolved.status.provider, model: resolved.status.model, toolUsed }) } }).catch(() => undefined);
     }
@@ -137,6 +207,8 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
       toolUsed,
     };
   } catch (error) {
+    await releaseCreditReservation(creditReservationId);
+    creditReservationId = null;
     if (execution) await db.execution.update({ where: { id: execution.id }, data: { status: "FAILED", error: error instanceof Error ? error.message : "unknown error", completedAt: new Date() } }).catch(() => undefined);
     throw error;
   }
