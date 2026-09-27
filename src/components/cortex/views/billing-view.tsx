@@ -73,30 +73,8 @@ export function BillingView(){
       <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">پایان چرخه</span><CircleDollarSign className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{new Date(data.account.periodEnd).toLocaleDateString("fa-IR")}</p><p className="mt-1 text-xs text-muted-foreground">{data.account.enforcementEnabled?"کنترل اعتبار فعال":"حالت آزمایشی"}</p></CardContent></Card>
     </div>
 
-    <BillingEstimator models={data.models} monthlyCredits={plan.monthlyCredits} overageCreditPriceToman={plan.overageCreditPriceToman}/>
+    <BillingEstimator models={data.models} monthlyCredits={plan.monthlyCredits} overageCreditPriceToman={plan.overageCreditPriceToman} plans={data.plans} pricingVerifiedAt={data.pricingVerifiedAt}/>
 
-    <section className="cortex-model-guide rounded-[24px] border border-border/60 p-5 sm:p-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div><p className="cortex-kicker">MODEL GUIDE</p><h2 className="mt-2 text-xl font-black">هر مدل برای چه کاری ساخته شده؟</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">توضیحات محصول برای انتخاب سریع از کاتالوگ Cortex است؛ مستندات رسمی مدل مبنای نهایی قابلیت‌ها و قیمت هستند.</p></div>
-        <span className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-[10px] text-primary">{faNum(enabledModels.length)} مدل فعال</span>
-      </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {enabledModels.slice(0,8).map((model)=>{
-          const p=model.provider.toLowerCase();
-          const family=p.includes("deepseek")?"DeepSeek":p.includes("anthropic")?"Claude":p.includes("google")?"Gemini":p.includes("openai")?"OpenAI":model.provider;
-          const role=p.includes("deepseek")?"اقتصادی برای استدلال، کدنویسی و حجم بالا":p.includes("anthropic")?"مناسب متن عمیق، تحلیل و پاسخ‌های طولانی":p.includes("google")?"مناسب سرعت بالا و سناریوهای چندرسانه‌ای":p.includes("openai")?"مناسب اتوماسیون، ابزار و گردش‌کارهای پیچیده":"مدل عمومی برای سناریوی تعریف‌شده";
-          const tradeoff=model.speedTier==="fast"?"تمرکز روی سرعت":model.qualityTier==="deep"?"مصرف بالاتر برای کارهای سنگین":"تعادل سرعت و کیفیت";
-          return <motion.div key={model.id} whileHover={{y:-2}} className="group rounded-2xl border border-border/60 bg-background/35 p-4 transition-shadow hover:shadow-[0_15px_40px_rgba(0,0,0,.08)]">
-            <div className="flex items-start justify-between gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Sparkles className="size-4"/></span><span className="rounded-full border border-border/60 px-2 py-1 text-[9px] text-muted-foreground">{model.speedTier}</span></div>
-            <p className="mt-4 text-sm font-black">{family} · {model.displayName}</p>
-            <p className="mt-1 text-[10px] text-muted-foreground">{model.provider}</p>
-            <p className="mt-3 text-xs leading-6 text-foreground/90">{role}</p>
-            <p className="mt-3 text-[10px] leading-5 text-muted-foreground">نکته انتخاب: {tradeoff}</p>
-            <div className="mt-4 border-t border-border/50 pt-3 text-[9px] text-muted-foreground"><span>{"$"}{model.inputUsdPer1M}/M in</span><span className="mx-2">·</span><span>{"$"}{model.outputUsdPer1M}/M out</span></div>
-          </motion.div>;
-        })}
-      </div>
-    </section>
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/[.06] bg-white/[.012] px-3 py-2 text-[10px] text-muted-foreground"><span>قیمت‌های مرجع مدل‌ها: {new Date(data.pricing.verifiedAt+"T00:00:00Z").toLocaleDateString("fa-IR")} · {data.pricing.mode==="official-provider-snapshot"?"snapshot رسمی تأمین‌کننده":"نرخ سفارشی"}</span><span>هزینه واقعی پس از اجرا از توکن مصرف‌شده ثبت می‌شود.</span></div>
 
     <section className="cortex-panel rounded-2xl p-5 sm:p-6">
