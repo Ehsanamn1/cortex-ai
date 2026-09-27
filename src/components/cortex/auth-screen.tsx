@@ -207,7 +207,7 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }
     <div className="cortex-auth flex min-h-screen flex-col bg-background">
       <div className={cn("relative grid flex-1 overflow-hidden", showBrandPanel ? "lg:grid-cols-[1.18fr_.82fr]" : "lg:grid-cols-1")}>
         {/* Brand panel — right side in RTL */}
-        <aside className="relative hidden min-h-full flex-col justify-between overflow-hidden border-l border-white/10 bg-[#080b11] p-10 lg:flex xl:p-14">
+        <aside className="relative hidden min-h-full flex-col justify-between overflow-hidden border-l border-border/70 bg-[color:var(--auth-brand)] p-10 lg:flex xl:p-14">
           <div aria-hidden="true" className="cortex-grid-bg absolute inset-0 opacity-70" />
           <div aria-hidden="true" className="cortex-auth-core absolute end-[12%] top-[18%] size-48 rounded-full lg:size-64">
             <div className="cortex-auth-core-ring cortex-auth-core-ring-a" />
@@ -239,7 +239,7 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }
             </h1></div>
             <ul className="space-y-5">
               {FEATURES.map((feature) => (
-                <li key={feature.title} className="group flex items-start gap-4 rounded-2xl border border-white/[.07] bg-white/[.025] p-4 backdrop-blur-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white/[.04]">
+                <li key={feature.title} className="group flex items-start gap-4 rounded-2xl border border-border/60 bg-muted/25 p-4 backdrop-blur-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white/[.04]">
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary shadow-[0_8px_30px_rgba(59,130,255,.08)]">
                     <feature.icon aria-hidden="true" className="size-5" />
                   </span>
@@ -255,7 +255,7 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }
         </aside>
 
         {/* Auth card */}
-        <div className="relative flex items-center justify-center p-5 sm:p-10 lg:bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,255,.05),transparent_28%)]">
+        <div className="relative flex items-center justify-center p-5 sm:p-10 lg:bg-[radial-gradient(circle_at_20%_20%,var(--auth-glow),transparent_28%)]">
           <div className="absolute end-5 top-5 z-20"><ThemeToggle /></div>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -267,7 +267,7 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }
               <CortexLogo markSize={44} />
             </div>
 
-            <div className="cortex-auth-card rounded-[28px] border border-white/[.09] bg-white/[.035] p-6 shadow-[0_28px_90px_rgba(0,0,0,.32)] backdrop-blur-2xl sm:p-8 lg:p-9">
+            <div className="cortex-auth-card rounded-[28px] border border-border/70 bg-card/80 p-6 shadow-[0_28px_90px_rgba(0,0,0,.32)] backdrop-blur-2xl sm:p-8 lg:p-9">
               <div className="mb-7 space-y-2 text-center">
                 <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold tracking-[.15em] text-primary">{settings?.["site.name"] || CORTEX_UI_CONFIG.brand.name} <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.75)]" /></div><h2 className="text-2xl font-bold tracking-tight text-foreground">{settings?.["site.authTitle"] || CORTEX_UI_CONFIG.copy.authTitle}</h2>
                 <p className="text-sm text-muted-foreground">{settings?.["site.authDescription"] || CORTEX_UI_CONFIG.copy.authDescription}</p>
@@ -281,7 +281,7 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }
               )}
 
               <Tabs defaultValue={defaultTab}>
-                <TabsList className="mb-7 grid h-12 w-full grid-cols-2 rounded-xl border border-white/[.07] bg-black/20 p-1">
+                <TabsList className="mb-7 grid h-12 w-full grid-cols-2 rounded-xl border border-border/60 bg-muted/50 p-1">
                   <TabsTrigger className="rounded-lg text-sm" value="login">ورود</TabsTrigger>
                   <TabsTrigger className="rounded-lg text-sm" value="signup">ثبت‌نام</TabsTrigger>
                 </TabsList>

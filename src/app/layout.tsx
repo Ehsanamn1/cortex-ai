@@ -12,7 +12,7 @@ const vazirmatn = Vazirmatn({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#07090D",
+  themeColor: "#070a0f",
   colorScheme: "dark",
 };
 
