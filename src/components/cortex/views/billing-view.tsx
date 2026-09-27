@@ -73,9 +73,8 @@ export function BillingView(){
       <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">پایان چرخه</span><CircleDollarSign className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{new Date(data.account.periodEnd).toLocaleDateString("fa-IR")}</p><p className="mt-1 text-xs text-muted-foreground">{data.account.enforcementEnabled?"کنترل اعتبار فعال":"حالت آزمایشی"}</p></CardContent></Card>
     </div>
 
-    <BillingEstimator models={data.models} monthlyCredits={plan.monthlyCredits} overageCreditPriceToman={plan.overageCreditPriceToman} plans={data.plans} pricingVerifiedAt={data.pricingVerifiedAt}/>
+    <details className="cortex-panel rounded-2xl overflow-hidden"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-bold"><span className="flex items-center gap-2"><Gauge className="size-4 text-primary"/>تخمین مصرف، توکن و هزینه</span><ChevronDown className="size-4"/></summary><div className="border-t border-border/60 p-3 sm:p-4"><BillingEstimator models={data.models} monthlyCredits={plan.monthlyCredits} overageCreditPriceToman={plan.overageCreditPriceToman} plans={data.plans} pricingVerifiedAt={data.pricingVerifiedAt}/></div></details>
 
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/[.06] bg-white/[.012] px-3 py-2 text-[10px] text-muted-foreground"><span>قیمت‌های مرجع مدل‌ها: {new Date(data.pricing.verifiedAt+"T00:00:00Z").toLocaleDateString("fa-IR")} · {data.pricing.mode==="official-provider-snapshot"?"snapshot رسمی تأمین‌کننده":"نرخ سفارشی"}</span><span>هزینه واقعی پس از اجرا از توکن مصرف‌شده ثبت می‌شود.</span></div>
 
     <section className="cortex-panel rounded-2xl p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
