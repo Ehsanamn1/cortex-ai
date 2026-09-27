@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
-import { faNum } from "@/components/cortex/format";
+import { faNum, formatTomanCompact, formatCountCompact } from "@/components/cortex/format";
 import { BillingEstimator } from "@/components/cortex/billing-estimator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,8 +58,8 @@ export function BillingView(){
           <h1 className="mt-3 text-2xl font-black sm:text-3xl">اعتبار، مصرف و شارژ</h1>
           <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">موجودی، مصرف واقعی، درخواست شارژ و صورتحساب همین فضای کاری را یکجا ببین.</p>
           <div className="mt-6 flex flex-wrap items-end gap-x-10 gap-y-4">
-            <div><p className="text-[10px] text-muted-foreground">موجودی فعلی</p><p className="mt-1 text-4xl font-black">{faNum(data.account.balanceCredits)}</p><p className="mt-1 text-[10px] text-muted-foreground">اعتبار</p></div>
-            <div><p className="text-[10px] text-muted-foreground">مصرف ۳۰ روز</p><p className="mt-1 text-2xl font-bold">{faNum(data.usage30Days.credits)}</p><p className="mt-1 text-[10px] text-muted-foreground">اعتبار مصرف‌شده</p></div>
+            <div><p className="text-[10px] text-muted-foreground">موجودی فعلی</p><p className="mt-1 text-4xl font-black">{formatCountCompact(data.account.balanceCredits)}</p><p className="mt-1 text-[10px] text-muted-foreground">اعتبار</p></div>
+            <div><p className="text-[10px] text-muted-foreground">مصرف ۳۰ روز</p><p className="mt-1 text-2xl font-bold">{formatCountCompact(data.usage30Days.credits)}</p><p className="mt-1 text-[10px] text-muted-foreground">اعتبار مصرف‌شده</p></div>
           </div>
           <div className="mt-5 max-w-xl"><div className="flex justify-between text-[10px] text-muted-foreground"><span>نسبت موجودی به اعتبار ماهانه</span><span>{faNum(balancePct)}٪</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400" style={{width:balancePct+"%"}}/></div></div>
         </div>
@@ -68,8 +68,8 @@ export function BillingView(){
     </section>
 
     <div className="grid gap-3 md:grid-cols-3">
-      <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">پلن</span><CreditCard className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{plan.name}</p><p className="mt-1 text-xs text-muted-foreground">{plan.monthlyCredits?faNum(plan.monthlyCredits)+" اعتبار ماهانه":"اعتبار سفارشی"}</p></CardContent></Card>
-      <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">مصرف توکن</span><Activity className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{faNum(data.usage30Days.tokens)}</p><p className="mt-1 text-xs text-muted-foreground">۳۰ روز اخیر</p></CardContent></Card>
+      <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">پلن</span><CreditCard className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{plan.name}</p><p className="mt-1 text-xs text-muted-foreground">{plan.monthlyCredits?formatCountCompact(plan.monthlyCredits)+" اعتبار ماهانه":"اعتبار سفارشی"}</p></CardContent></Card>
+      <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">مصرف توکن</span><Activity className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{formatCountCompact(data.usage30Days.tokens)}</p><p className="mt-1 text-xs text-muted-foreground">۳۰ روز اخیر</p></CardContent></Card>
       <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">پایان چرخه</span><CircleDollarSign className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{new Date(data.account.periodEnd).toLocaleDateString("fa-IR")}</p><p className="mt-1 text-xs text-muted-foreground">{data.account.enforcementEnabled?"کنترل اعتبار فعال":"حالت آزمایشی"}</p></CardContent></Card>
     </div>
 
@@ -86,7 +86,7 @@ export function BillingView(){
         {data.topUpPackages.map((item,index)=><button key={item.key} type="button" disabled={topUp.isPending} onClick={()=>topUp.mutate(item.key)} className="cortex-wallet-package rounded-2xl border border-white/[.07] bg-white/[.018] p-4 text-right disabled:opacity-60">
           <div className="flex items-center justify-between"><span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">{index===0?<Plus className="size-4"/>:index===1?<Layers3 className="size-4"/>:<WalletCards className="size-4"/>}</span><ArrowUpLeft className="size-4 text-muted-foreground"/></div>
           <p className="mt-3 text-sm font-bold">{item.label}</p>
-          <p className="mt-1 text-xl font-black">{faNum(item.credits)}</p><p className="text-[10px] text-muted-foreground">اعتبار · {faNum(item.amountToman)} تومان</p>
+          <p className="mt-1 text-xl font-black">{formatCountCompact(item.credits)}</p><p className="text-[10px] text-muted-foreground">اعتبار · {faNum(item.amountToman)} تومان</p>
         </button>)}
       </div>
       {pending>0&&<div className="mt-3 rounded-xl border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[11px] text-amber-200"><Clock3 className="me-1 inline size-3.5"/>{faNum(pending)} درخواست در انتظار بررسی.</div>}
@@ -96,10 +96,10 @@ export function BillingView(){
       <summary className="cursor-pointer list-none text-sm font-bold">سوابق مالی و صورتحساب <span className="float-left text-xs text-muted-foreground group-open:rotate-180">⌄</span></summary>
       <div className="mt-5 grid gap-5 xl:grid-cols-2">
         <div><div className="mb-3 flex items-center gap-2"><CreditCard className="size-4 text-primary"/><h3 className="text-sm font-bold">درخواست‌های شارژ</h3></div>
-          {data.topUpRequests.length===0?<p className="rounded-xl border border-white/[.06] p-4 text-xs text-muted-foreground">هنوز درخواستی ثبت نشده.</p>:<div className="space-y-2">{data.topUpRequests.map(x=><div key={x.id} className="flex items-center gap-3 rounded-xl border border-white/[.06] p-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{faNum(x.credits)} اعتبار · {faNum(x.amountToman)} تومان</p><p className="mt-1 text-[10px] text-muted-foreground">{new Date(x.createdAt).toLocaleString("fa-IR")}</p></div><StatusBadge status={x.status}/></div>)}</div>}
+          {data.topUpRequests.length===0?<p className="rounded-xl border border-white/[.06] p-4 text-xs text-muted-foreground">هنوز درخواستی ثبت نشده.</p>:<div className="space-y-2">{data.topUpRequests.map(x=><div key={x.id} className="flex items-center gap-3 rounded-xl border border-white/[.06] p-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{formatCountCompact(x.credits)} اعتبار · {formatTomanCompact(x.amountToman)}</p><p className="mt-1 text-[10px] text-muted-foreground">{new Date(x.createdAt).toLocaleString("fa-IR")}</p></div><StatusBadge status={x.status}/></div>)}</div>}
         </div>
         <div><div className="mb-3 flex items-center gap-2"><FileText className="size-4 text-primary"/><h3 className="text-sm font-bold">صورتحساب‌ها</h3></div>
-          {data.invoices.length===0?<p className="rounded-xl border border-white/[.06] p-4 text-xs text-muted-foreground">هنوز صورتحسابی ثبت نشده.</p>:<div className="space-y-2">{data.invoices.map(x=><div key={x.id} className="flex items-center gap-3 rounded-xl border border-white/[.06] p-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{x.invoiceNumber}</p><p className="mt-1 text-[10px] text-muted-foreground">{faNum(x.totalToman)} تومان · {new Date(x.periodEnd).toLocaleDateString("fa-IR")}</p></div><Badge variant="outline">{x.status}</Badge></div>)}</div>}
+          {data.invoices.length===0?<p className="rounded-xl border border-white/[.06] p-4 text-xs text-muted-foreground">هنوز صورتحسابی ثبت نشده.</p>:<div className="space-y-2">{data.invoices.map(x=><div key={x.id} className="flex items-center gap-3 rounded-xl border border-white/[.06] p-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{x.invoiceNumber}</p><p className="mt-1 text-[10px] text-muted-foreground">{formatTomanCompact(x.totalToman)} · {new Date(x.periodEnd).toLocaleDateString("fa-IR")}</p></div><Badge variant="outline">{x.status}</Badge></div>)}</div>}
         </div>
       </div>
     </details>
@@ -107,7 +107,7 @@ export function BillingView(){
     <details className="cortex-panel rounded-2xl p-5">
       <summary className="cursor-pointer list-none text-sm font-bold">پلن‌ها و مدل‌های قابل استفاده</summary>
       <div className="mt-5 grid gap-5 xl:grid-cols-2">
-        <div className="space-y-2">{data.plans.map(item=><div key={item.id} className={cn("rounded-xl border p-3",item.key===plan.key?"border-primary/30 bg-primary/5":"border-white/[.06]")}><div className="flex justify-between gap-3"><span className="text-xs font-semibold">{item.name}</span><span className="text-[10px] text-muted-foreground">{item.priceToman?faNum(item.priceToman)+" تومان":"سفارشی/رایگان"}</span></div><p className="mt-1 text-[10px] text-muted-foreground">{item.monthlyCredits?faNum(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار سفارشی"}</p></div>)}</div>
+        <div className="space-y-2">{data.plans.map(item=><div key={item.id} className={cn("rounded-xl border p-3",item.key===plan.key?"border-primary/30 bg-primary/5":"border-white/[.06]")}><div className="flex justify-between gap-3"><span className="text-xs font-semibold">{item.name}</span><span className="text-[10px] text-muted-foreground">{item.priceToman?formatTomanCompact(item.priceToman):"سفارشی/رایگان"}</span></div><p className="mt-1 text-[10px] text-muted-foreground">{item.monthlyCredits?faNum(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار سفارشی"}</p></div>)}</div>
         <div className="space-y-2">{enabledModels.slice(0,12).map(item=><div key={item.id} className="flex items-center justify-between rounded-xl border border-white/[.06] p-3"><div><p className="text-xs font-semibold">{item.displayName}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.provider} · \${item.inputUsdPer1M}/M in · \${item.outputUsdPer1M}/M out</p></div><span className="text-[10px] text-primary">{item.qualityTier}</span></div>)}{enabledModels.length===0&&<p className="text-xs text-muted-foreground">مدل فعالی برای این پلن ثبت نشده است.</p>}</div>
       </div>
     </details>
