@@ -289,6 +289,12 @@ jobs:
           check_authed_json "/api/telegram/bots?workspaceId=$smoke_workspace_id" "200"
           check_authed_json "/api/admin/overview?workspaceId=$smoke_workspace_id" "200"
           check_authed_json "/api/admin/analytics?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/billing?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/control-center/settings" "200"
+          check_authed_json "/api/control-center/plugins" "200"
+          check_authed_json "/api/control-center/resources?resource=users" "200"
+          check_authed_json "/api/control-center/resources?resource=workspaces" "200"
+          check_authed_json "/api/control-center/billing" "200"
 
           agent_body="$(jq -nc '{name:"Cortex Smoke Agent",language:"fa",tone:"professional",temperature:0.2,topP:1,maxTokens:256}')"
           agent_response="$(mktemp)"
