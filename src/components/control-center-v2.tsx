@@ -295,7 +295,7 @@ function ControlCenterRuntime() {
         {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-[10px] font-medium",section===s.id?"bg-[#eef3ff] text-[#3f6fe5]":"text-slate-600")}>{s.label}</button>)}
       </div>
       <main className="mx-auto max-w-[1400px] space-y-5 p-4 lg:p-7">
-        {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:["plans","models","accounts","charges","invoices"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>}
+        {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>}
       </main>
     </div>
   </div></div>;
