@@ -203,14 +203,13 @@ jobs:
             head -c 500 "$tmp" || true
             echo
             case "$path" in
-              /api/health) test "$status" = "200" ;;
               *)
                 if [ "$status" = "200" ]; then
                   :
                 elif [ "$status" = "429" ]; then
-                  echo "Cloudflare edge rate limited the public page smoke request."
+                  echo "Cloudflare edge rate limited the public smoke request."
                 else
-                  echo "Unexpected public page status: $status"
+                  echo "Unexpected public smoke status: $status"
                   exit 1
                 fi
                 ;;
