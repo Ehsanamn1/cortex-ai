@@ -1,16 +1,9 @@
 import { db } from "@/lib/db";
+import { CREDIT_TOP_UP_PACKAGES, type CreditTopUpPackageKey } from "@/lib/server/billing";
 import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 
 export const dynamic = "force-dynamic";
-
-export const CREDIT_TOP_UP_PACKAGES = {
-  starter: { credits: 10_000, amountToman: 1_990_000, label: "۱۰ هزار اعتبار" },
-  growth: { credits: 50_000, amountToman: 8_900_000, label: "۵۰ هزار اعتبار" },
-  scale: { credits: 100_000, amountToman: 15_900_000, label: "۱۰۰ هزار اعتبار" },
-} as const;
-
-export type CreditTopUpPackageKey = keyof typeof CREDIT_TOP_UP_PACKAGES;
 
 export async function GET(req: Request) {
   try {
