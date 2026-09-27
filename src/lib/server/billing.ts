@@ -34,6 +34,20 @@ export function creditsFromProviderCost(providerCostMicros: number, multiplierBp
   return Math.max(1, Math.ceil((providerCostMicros / 1000) * (multiplierBps / 100)));
 }
 
+export function catalogCostMicros(
+  inputTokens: number,
+  outputTokens: number,
+  inputUsdPer1M: number,
+  outputUsdPer1M: number,
+): number {
+  const input = Math.max(0, Math.floor(inputTokens));
+  const output = Math.max(0, Math.floor(outputTokens));
+  const inputRate = Number.isFinite(inputUsdPer1M) && inputUsdPer1M > 0 ? inputUsdPer1M : 0;
+  const outputRate = Number.isFinite(outputUsdPer1M) && outputUsdPer1M > 0 ? outputUsdPer1M : 0;
+  return Math.max(0, Math.ceil(input * inputRate + output * outputRate));
+}
+
+
 function envEnforcementDefault(): boolean {
   return process.env.CORTEX_BILLING_ENFORCE?.trim().toLowerCase() === "true";
 }
@@ -386,10 +400,7 @@ export async function reserveBillingCredits(params: {
 
   const inputTokens = Math.max(0, Math.floor(params.inputTokens));
   const maxOutputTokens = Math.max(0, Math.floor(params.maxOutputTokens));
-  const providerCostMicros = Math.max(
-    0,
-    Math.ceil(inputTokens * catalog.inputUsdPer1M + maxOutputTokens * catalog.outputUsdPer1M),
-  );
+  const providerCostMicros = catalogCostMicros(inputTokens, maxOutputTokens, catalog.inputUsdPer1M, catalog.outputUsdPer1M);
   const multiplierBps = Math.max(1, access.creditMultiplierBps || fallbackMultiplier);
   const estimatedCredits = creditsFromProviderCost(providerCostMicros, multiplierBps);
 
@@ -476,10 +487,7 @@ export async function recordUsageAndCharge(params: {
   const { catalog, defaultMultiplierBps } = await ensureModel(params.usage.provider, params.usage.model);
   const inputTokens = Math.max(0, Math.floor(params.usage.inputTokens));
   const outputTokens = Math.max(0, Math.floor(params.usage.outputTokens));
-  const providerCostMicros = Math.max(
-    0,
-    Math.ceil(inputTokens * catalog.inputUsdPer1M + outputTokens * catalog.outputUsdPer1M),
-  );
+  const providerCostMicros = catalogCostMicros(inputTokens, outputTokens, catalog.inputUsdPer1M, catalog.outputUsdPer1M);
   const access = await db.planModelAccess.findUnique({
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
   });
