@@ -30,6 +30,11 @@ export function AnalyticsView(){
   const totalQuestions=data.topQuestions.reduce((n,q)=>n+q.count,0);
   const unansweredRate=totalQuestions?Math.min(100,Math.round((data.unanswered/Math.max(totalQuestions,1))*100)):0;
   const maxMessages=Math.max(...trend.map(x=>x.messages),1);
+  const totalMessages=trend.reduce((sum,x)=>sum+x.messages,0);
+  const averageDailyMessages=Math.round(totalMessages/Math.max(1,trend.length));
+  const busiestDay=trend.reduce((best,current)=>current.messages>best.messages?current:best,trend[0]??{date:"—",messages:0,tokens:0});
+  const coverageScore=Math.max(0,100-unansweredRate);
+  const topQuestionShare=totalQuestions&&data.topQuestions[0]?Math.min(100,Math.round((data.topQuestions[0].count/totalQuestions)*100)):0;
 
   return <div className="space-y-7">
     <section className="cortex-panel relative overflow-hidden rounded-[28px] p-6 sm:p-8">
@@ -46,6 +51,25 @@ export function AnalyticsView(){
       <K title="توکن مصرف‌شده" value={faNum(data.usage.tokens)} detail={`ورودی ${faNum(data.usage.inputTokens)}`} icon={Sparkles}/>
       <K title="هزینه ثبت‌شده" value={faNum(data.usage.estimatedCostMicros)} detail="میکرو" icon={CircleDollarSign}/>
       <K title="پرسش‌های بدون پاسخ کافی" value={faNum(data.unanswered)} detail={faNum(unansweredRate)+"٪ از پرسش‌ها"} icon={HelpCircle}/>
+    </section>
+
+    <section className="grid gap-3 md:grid-cols-3">
+      <Card className="cortex-panel rounded-2xl overflow-hidden"><CardContent className="p-5">
+        <div className="flex items-center justify-between"><span className="cortex-icon-box"><Sparkles className="size-[18px]"/></span><span className="text-[10px] text-muted-foreground">پوشش دانشی</span></div>
+        <div className="mt-5 flex items-end justify-between gap-3"><p className="text-3xl font-black">{faNum(coverageScore)}٪</p><p className="text-xs text-muted-foreground">بر اساس پرسش‌های ثبت‌شده</p></div>
+        <div className="mt-3 h-2 rounded-full bg-muted"><div className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400" style={{width:coverageScore+"%"}} /></div>
+      </CardContent></Card>
+      <Card className="cortex-panel rounded-2xl"><CardContent className="p-5">
+        <div className="flex items-center justify-between"><span className="cortex-icon-box"><Activity className="size-[18px]"/></span><span className="text-[10px] text-muted-foreground">ریتم تعامل</span></div>
+        <p className="mt-5 text-3xl font-black">{faNum(averageDailyMessages)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">میانگین پیام روزانه در ۱۴ روز اخیر</p>
+        <p className="mt-3 text-[11px] text-primary">اوج ثبت‌شده: {faNum(busiestDay.messages)} پیام</p>
+      </CardContent></Card>
+      <Card className="cortex-panel rounded-2xl"><CardContent className="p-5">
+        <div className="flex items-center justify-between"><span className="cortex-icon-box"><MessageSquare className="size-[18px]"/></span><span className="text-[10px] text-muted-foreground">تمرکز تقاضا</span></div>
+        <p className="mt-5 text-3xl font-black">{faNum(topQuestionShare)}٪</p>
+        <p className="mt-1 text-xs text-muted-foreground">سهم پرتکرارترین پرسش از پرسش‌های پرتکرار</p>
+      </CardContent></Card>
     </section>
 
     <section className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
