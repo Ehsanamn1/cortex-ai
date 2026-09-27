@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, Bot, CheckCircle2, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi, XCircle, CopyPlus, Link, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 
-import { api, type AgentDto, type TelegramBotDto, type TelegramUserDto } from "@/lib/cortex-client";
+import { api, type AgentDto, type TelegramAllowlistDto, type TelegramBotDto, type TelegramUserDto } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -254,28 +254,12 @@ function TelegramAccessManager({ botId }: { botId: string }) {
   const [monthlyTokens, setMonthlyTokens] = useState("0");
   const [dailyMessages, setDailyMessages] = useState("0");
   const [monthlyMessages, setMonthlyMessages] = useState("0");
-  const [freshInvites, setFreshInvites] = useState<TelegramUserDto extends never ? never : Array<any>>([]);
+  const [freshInvites, setFreshInvites] = useState<TelegramAllowlistDto[]>([]);
 
   const q = useQuery({
     queryKey: ["telegram-allowlist", botId],
     queryFn: () => api.getTelegramAllowlist(botId),
     staleTime: 10_000,
-  });
-
-  const add = useMutation({
-    mutationFn: () => api.addTelegramAllowlistBulk(botId, {
-      phoneNumbers: phones.split(/[\n,;]+/).map(v => v.trim()).filter(Boolean),
-      displayName: displayName.trim() || undefined,
-      notes: notes.trim() || undefined,
-    }),
-    onSuccess: ({ entries }) => {
-      setFreshInvites(entries.filter(item => item.inviteLink));
-      setPhones("");
-      queryClient.invalidateQueries({ queryKey: ["telegram-allowlist", botId] });
-      queryClient.invalidateQueries({ queryKey: ["telegram-bot-users", botId] });
-      toast.success(entries.length + " شماره ثبت شد.");
-    },
-    onError: (error: Error) => toast.error(error.message),
   });
 
   const update = useMutation({
@@ -346,12 +330,12 @@ function TelegramAccessManager({ botId }: { botId: string }) {
               queryClient.invalidateQueries({ queryKey: ["telegram-bot-users", botId] });
               toast.success(result.entries.length + " شماره ثبت شد و سقف مصرف اعمال شد.");
             } catch (error) { toast.error(error instanceof Error ? error.message : "افزودن شماره ناموفق بود."); }
-          }} disabled={add.isPending || !phones.trim()}><CopyPlus />ثبت شماره‌ها و ساخت لینک</Button>
+          }} disabled={!phones.trim()}><CopyPlus />ثبت شماره‌ها و ساخت لینک</Button>
         </div>
 
         {freshInvites.length > 0 && <div className="rounded-xl border border-primary/20 bg-primary/[.04] p-4 space-y-2">
           <p className="text-xs font-semibold">لینک‌های ورود تازه</p>
-          {freshInvites.map((entry: any) => <div key={entry.id} className="flex items-center gap-2 rounded-lg border bg-background p-2">
+          {freshInvites.map((entry) => <div key={entry.id} className="flex items-center gap-2 rounded-lg border bg-background p-2">
             <div className="min-w-0 flex-1"><p dir="ltr" className="truncate text-[11px]">{entry.phoneNumber}</p><p dir="ltr" className="truncate text-[10px] text-muted-foreground">{entry.inviteLink}</p></div>
             <Button size="sm" variant="outline" onClick={() => entry.inviteLink && navigator.clipboard.writeText(entry.inviteLink).then(() => toast.success("لینک کپی شد."))}><Link className="size-3.5" />کپی</Button>
           </div>)}
@@ -564,7 +548,7 @@ function TelegramUserMonitorCard({ botId, user, onChanged }: { botId: string; us
           <span>پیام امروز: {faNum(user.dailyUsage?.events ?? 0)}</span>
           <span>پیام ماه: {faNum(user.monthlyUsage?.events ?? 0)}</span>
           <span>آخرین فعالیت: {user.lastSeenAt ? new Date(user.lastSeenAt).toLocaleString("fa-IR") : "—"}</span>
-          <span>هزینه برآوردی: {faNum(user.usage?.estimatedCostMicros ?? 0)}</span>
+          <span>هزینه برآوردی: ${((user.usage?.estimatedCostMicros ?? 0) / 1_000_000).toFixed(4)}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
