@@ -472,6 +472,7 @@ model UsageEvent {
   user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   telegramBot TelegramBot? @relation(fields: [telegramBotId], references: [id], onDelete: SetNull)
   telegramUser TelegramUser? @relation(fields: [telegramUserId], references: [id], onDelete: SetNull)
+  billingCharge BillingCharge? @relation("UsageEventBillingCharge")
 
   @@index([workspaceId, createdAt])
   @@index([agentId, createdAt])
