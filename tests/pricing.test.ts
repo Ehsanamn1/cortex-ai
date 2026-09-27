@@ -13,6 +13,10 @@ describe("Cortex pricing estimates", () => {
     expect(getModelRate("Anthropic", "claude-sonnet-5")).toMatchObject({ inputUsdPer1M: 2, outputUsdPer1M: 10, known: true });
     expect(getModelRate("Google", "gemini-2.5-flash-lite")).toMatchObject({ inputUsdPer1M: 0.10, outputUsdPer1M: 0.40, known: true });
   });
+  test("keeps GPT-5 family model rates distinct", () => {
+    expect(getModelRate("OpenAI", "gpt-5.4")).toMatchObject({ inputUsdPer1M: 2.5, outputUsdPer1M: 15, known: true });
+    expect(getModelRate("OpenAI", "gpt-5-nano")).toMatchObject({ inputUsdPer1M: 0.05, outputUsdPer1M: 0.4, known: true });
+  });
   test("uses current documented GPT-5 rate", () => {
     expect(estimateLlmCostMicros(1_000_000, 1_000_000, "OpenAI", "gpt-5")).toBe(11_250_000);
   });
