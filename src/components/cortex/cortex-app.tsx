@@ -10,7 +10,6 @@ import { useCortexStore } from "@/components/cortex/store";
 import { CortexMark } from "@/components/cortex/logo";
 import { AppShell } from "@/components/cortex/app-shell";
 import { AuthScreen } from "@/components/cortex/auth-screen";
-import { CortexThemeRuntime } from "@/components/cortex/theme-runtime";
 
 function makeQueryClient(): QueryClient {
   return new QueryClient({
@@ -105,7 +104,6 @@ export function CortexApp() {
   const [queryClient] = useState(makeQueryClient);
   return (
     <QueryClientProvider client={queryClient}>
-      <CortexThemeRuntime />
       <SessionGate />
     </QueryClientProvider>
   );

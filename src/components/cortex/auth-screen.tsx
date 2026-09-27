@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -15,6 +15,7 @@ import { useCortexStore } from "@/components/cortex/store";
 import { zodResolver } from "@/components/cortex/zod-resolver";
 import { CortexLogo } from "@/components/cortex/logo";
 import { ThemeToggle } from "@/components/cortex/theme-toggle";
+import { applyCortexUiSettings } from "@/components/cortex/theme-runtime";
 import { firstNameOf } from "@/components/cortex/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -198,6 +199,9 @@ function SignupForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
 export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }: { defaultTab?: "login" | "signup"; onAuthenticated?: () => void; bootNotice?: string }) {
   const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
   const settings = siteConfig.data?.settings;
+  useEffect(() => {
+    if (settings) applyCortexUiSettings(settings);
+  }, [settings]);
   const showBrandPanel = settings?.["feature.authBrandPanel"] === undefined ? true : settings["feature.authBrandPanel"] !== "false";
   return (
     <div className="cortex-auth flex min-h-screen flex-col bg-background">
@@ -205,6 +209,12 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }
         {/* Brand panel — right side in RTL */}
         <aside className="relative hidden min-h-full flex-col justify-between overflow-hidden border-l border-white/10 bg-[#080b11] p-10 lg:flex xl:p-14">
           <div aria-hidden="true" className="cortex-grid-bg absolute inset-0 opacity-70" />
+          <div aria-hidden="true" className="cortex-auth-core absolute end-[12%] top-[18%] size-48 rounded-full lg:size-64">
+            <div className="cortex-auth-core-ring cortex-auth-core-ring-a" />
+            <div className="cortex-auth-core-ring cortex-auth-core-ring-b" />
+            <div className="cortex-auth-core-orb" />
+          </div>
+
           <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,rgba(59,130,255,.16),transparent_24%),radial-gradient(circle_at_18%_78%,rgba(139,92,246,.12),transparent_26%)]" />
           <div
             aria-hidden="true"

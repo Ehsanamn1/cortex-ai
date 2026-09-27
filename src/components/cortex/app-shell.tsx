@@ -45,11 +45,13 @@ import { ViewErrorBoundary } from "@/components/cortex/view-error-boundary";
 import { SystemSearch } from "@/components/cortex/system-search";
 import { NotificationCenter } from "@/components/cortex/notification-center";
 import { ThemeToggle } from "@/components/cortex/theme-toggle";
+import { applyCortexUiSettings } from "@/components/cortex/theme-runtime";
+import { DashboardView } from "@/components/cortex/views/dashboard-view";
 
 
 const ViewLoading = () => <div className="space-y-4"><div className="h-40 animate-pulse rounded-[28px] bg-muted/70"/><div className="grid gap-3 sm:grid-cols-2"><div className="h-24 animate-pulse rounded-2xl bg-muted/60"/><div className="h-24 animate-pulse rounded-2xl bg-muted/60"/></div></div>;
 
-const DashboardView = dynamic(() => import("@/components/cortex/views/dashboard-view").then(m => m.DashboardView), { ssr:false, loading:ViewLoading });
+
 const AgentsView = dynamic(() => import("@/components/cortex/views/agents-view").then(m => m.AgentsView), { ssr:false, loading:ViewLoading });
 const AgentBuilderView = dynamic(() => import("@/components/cortex/views/agent-form").then(m => m.AgentBuilderView), { ssr:false, loading:ViewLoading });
 const AgentEditView = dynamic(() => import("@/components/cortex/views/agent-form").then(m => m.AgentEditView), { ssr:false, loading:ViewLoading });
@@ -336,7 +338,9 @@ function BottomNav({ items }: { items: NavItem[] }) {
   const view = useCortexStore((s) => s.view);
   const setView = useCortexStore((s) => s.setView);
 
-  const mobileItems = items.filter((item) => item.mobile).slice(0, 4);
+  const mobileItems = (["dashboard", "agents", "knowledge", "billing"] as View[])
+    .map((view) => items.find((item) => item.view === view))
+    .filter((item): item is NavItem => Boolean(item));
   return (
     <nav
       aria-label="ناوبری موبایل"
@@ -358,7 +362,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
               )}
             >
               <item.icon aria-hidden="true" className="size-[19px]" />
-              {item.label}
+              {item.view === "dashboard" ? "داشبورد" : item.view === "agents" ? "ایجنت" : item.view === "knowledge" ? "مغز سیستم" : "اعتبار"}
             </button>
           );
         })}
@@ -458,6 +462,10 @@ export function AppShell() {
   const activeWorkspaceName = useCortexStore((s) => s.workspaces.find((w) => w.id === s.activeWorkspaceId)?.name);
   const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
   const navItems = buildNavItems(siteConfig.data?.settings);
+
+  useEffect(() => {
+    if (siteConfig.data?.settings) applyCortexUiSettings(siteConfig.data.settings);
+  }, [siteConfig.data?.settings]);
 
   const [moreOpen, setMoreOpen] = useState(false);
   const title = usePageTitle(siteConfig.data?.settings["site.name"]);
@@ -573,10 +581,6 @@ function MoreSheet({ open, onOpenChange, items }: { open: boolean; onOpenChange:
               </div>
             )}
             <div className="flex flex-col gap-2">
-              <Button variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView("billing"); }}>
-                <WalletCards aria-hidden="true" className="size-4" />
-                اعتبار و صورتحساب
-              </Button>
               <Button variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView("settings"); }}>
                 <Settings aria-hidden="true" className="size-4" />
                 تنظیمات

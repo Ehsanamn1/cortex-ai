@@ -22,18 +22,12 @@ export function applyCortexTheme(theme: CortexTheme) {
 }
 
 export function ThemeToggle({ className }: { className?: string }) {
-  const [theme, setTheme] = useState<CortexTheme>("dark");
+  const [theme, setTheme] = useState<CortexTheme>(() => typeof document === "undefined" ? "dark" : (document.documentElement.classList.contains("dark") ? "dark" : "light"));
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
-    }, 0);
     const sync = () => setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
     window.addEventListener("cortex:theme-change", sync);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener("cortex:theme-change", sync);
-    };
+    return () => window.removeEventListener("cortex:theme-change", sync);
   }, []);
 
   const next = theme === "dark" ? "light" : "dark";
@@ -49,7 +43,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label={next === "light" ? "فعال کردن حالت روشن" : "فعال کردن حالت تاریک"}
       aria-pressed={theme === "dark"}
       title={theme === "dark" ? "حالت تاریک فعال است" : "حالت روشن فعال است"}
-      className={cn("cortex-theme-toggle", className)}
+      suppressHydrationWarning className={cn("cortex-theme-toggle", className)}
     >
       <span className="cortex-theme-toggle-track" aria-hidden="true">
         <motion.span

@@ -797,3 +797,133 @@ html:not(.dark) .cortex-core-stage .text-slate-400 { color:#5f6d80 !important; }
   .cortex-wallet-card { border-radius:24px; }
   .cortex-wallet-card .cortex-wallet-orb { width:98px;height:98px; }
 }
+
+
+/* ===== Final theme contract: eliminate legacy light utility leakage in dark mode ===== */
+html.dark .cortex-dashstack,
+html.dark .cortex-dashstack main,
+html.dark .cortex-dashstack header,
+html.dark .cortex-dashstack aside,
+html.dark .cortex-dashstack [data-slot="card"],
+html.dark .cortex-dashstack [data-slot="sheet-content"],
+html.dark .cortex-dashstack [data-slot="popover-content"] {
+  color-scheme: dark;
+}
+html.dark .cortex-dashstack [class*="bg-white"],
+html.dark .cortex-dashstack [class*="bg-slate-50"],
+html.dark .cortex-dashstack [class*="bg-slate-100"],
+html.dark .cortex-dashstack [class*="bg-gray-50"],
+html.dark .cortex-dashstack [class*="bg-gray-100"] {
+  background-color: #0d121a !important;
+  background-image: none !important;
+}
+html.dark .cortex-dashstack [class*="bg-gray-200"],
+html.dark .cortex-dashstack [class*="bg-slate-200"] {
+  background-color: #141b25 !important;
+}
+html.dark .cortex-dashstack [class*="border-white"],
+html.dark .cortex-dashstack [class*="border-gray-"],
+html.dark .cortex-dashstack [class*="border-slate-"] {
+  border-color: #202a38 !important;
+}
+html.dark .cortex-dashstack [class*="text-gray-"],
+html.dark .cortex-dashstack [class*="text-slate-"] {
+  color: #9aa8bb !important;
+}
+html.dark .cortex-dashstack [class*="text-black"] {
+  color: #eef2ff !important;
+}
+html.dark .cortex-dashstack input,
+html.dark .cortex-dashstack textarea,
+html.dark .cortex-dashstack select,
+html.dark .cortex-dashstack [data-slot="select-trigger"] {
+  color: #eef2ff !important;
+  background-color: #0d121a !important;
+  border-color: #263244 !important;
+}
+html.dark .cortex-dashstack input::placeholder,
+html.dark .cortex-dashstack textarea::placeholder {
+  color: #738095 !important;
+}
+html.dark .cortex-dashstack [data-slot="dialog-content"],
+html.dark .cortex-dashstack [data-slot="popover-content"],
+html.dark .cortex-dashstack [data-slot="select-content"],
+html.dark .cortex-dashstack [data-slot="sheet-content"] {
+  background: #0b1017 !important;
+  color: #eef2ff !important;
+  border-color: #202a38 !important;
+}
+html:not(.dark) .cortex-dashstack [class*="bg-slate-950"],
+html:not(.dark) .cortex-dashstack [class*="bg-gray-950"] {
+  background-color: #ffffff !important;
+}
+html:not(.dark) .cortex-dashstack [class*="text-white"] {
+  color: #111827 !important;
+}
+
+/* Core colors are theme-owned, not utility-owned. */
+html.dark .cortex-core-stage .text-slate-400 { color: #90a0b4 !important; }
+html:not(.dark) .cortex-core-stage .text-slate-400 { color: #5f6d80 !important; }
+html.dark .cortex-core-node {
+  background: #d9e7ff !important;
+  box-shadow: 0 0 18px rgba(91,140,255,.95), 0 0 4px rgba(255,255,255,.95) !important;
+}
+html.dark .cortex-core-shell,
+html.dark .cortex-core-ring,
+html.dark .cortex-core-stage > div:nth-child(2) {
+  border-color: rgba(91,140,255,.24) !important;
+}
+html:not(.dark) .cortex-core-stage > div:nth-child(2) { border-color: rgba(91,140,255,.20) !important; }
+
+/* Reduce visual work during boot and page transitions. */
+.cortex-splash-mark {
+  filter: drop-shadow(0 0 22px rgba(91,140,255,.18));
+}
+@media (prefers-reduced-motion: reduce) {
+  .cortex-splash-mark { animation: none !important; }
+}
+
+/* Lightweight auth command-core visual */
+.cortex-auth-core {
+  pointer-events: none;
+  perspective: 900px;
+  transform-style: preserve-3d;
+  opacity: .82;
+}
+.cortex-auth-core-orb {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 31% 24%, rgba(255,255,255,.70), transparent 9%),
+    radial-gradient(circle at 54% 46%, rgba(91,140,255,.92), transparent 34%),
+    radial-gradient(circle at 70% 70%, rgba(139,92,246,.82), transparent 52%),
+    #08101a;
+  box-shadow: 0 0 85px rgba(91,140,255,.20), inset -16px -18px 32px rgba(0,0,0,.34), inset 10px 10px 24px rgba(255,255,255,.06);
+  animation: cortex-auth-orb-pulse 7s ease-in-out infinite;
+}
+.cortex-auth-core-ring {
+  position:absolute;
+  inset: 8%;
+  border-radius:50%;
+  border:1px solid rgba(91,140,255,.18);
+  transform-style:preserve-3d;
+}
+.cortex-auth-core-ring-a { transform:rotateX(68deg); animation:cortex-auth-ring-a 13s linear infinite; }
+.cortex-auth-core-ring-b { transform:rotateY(66deg); animation:cortex-auth-ring-b 17s linear infinite reverse; border-color:rgba(139,92,246,.16); }
+@keyframes cortex-auth-orb-pulse { 50% { transform:scale(1.035) translateZ(8px); } }
+@keyframes cortex-auth-ring-a { to { transform:rotateX(68deg) rotateZ(360deg); } }
+@keyframes cortex-auth-ring-b { to { transform:rotateY(66deg) rotateZ(360deg); } }
+html:not(.dark) .cortex-auth-core-orb {
+  background:
+    radial-gradient(circle at 31% 24%, rgba(255,255,255,.96), transparent 9%),
+    radial-gradient(circle at 54% 46%, rgba(91,140,255,.72), transparent 34%),
+    radial-gradient(circle at 70% 70%, rgba(139,92,246,.56), transparent 52%),
+    #edf3fb;
+  box-shadow:0 0 72px rgba(91,140,255,.14), inset -12px -14px 24px rgba(100,116,139,.14), inset 10px 10px 24px rgba(255,255,255,.90);
+}
+html:not(.dark) .cortex-auth-core-ring { border-color:rgba(63,111,229,.16); }
+@media (max-width: 1023px) { .cortex-auth-core { display:none; } }
+@media (prefers-reduced-motion: reduce) {
+  .cortex-auth-core-orb,.cortex-auth-core-ring-a,.cortex-auth-core-ring-b { animation:none !important; }
+}
