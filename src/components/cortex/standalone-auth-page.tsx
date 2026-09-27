@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthScreen } from "@/components/cortex/auth-screen";
-import { CortexThemeRuntime } from "@/components/cortex/theme-runtime";
 
 export function StandaloneAuthPage({ defaultTab }: { defaultTab: "login" | "signup" }) {
   const router = useRouter();
