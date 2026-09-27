@@ -252,7 +252,7 @@ export interface BillingSnapshotDto {
   account:{ id:string; plan:{ id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }; balanceCredits:number; status:string; enforcementEnabled:boolean; periodStart:string; periodEnd:string };
   plans: BillingPlanDto[];
   subscription:{ id:string; status:string; periodStart:string; periodEnd:string; cancelAtPeriodEnd:boolean }|null;
-  usage30Days:{events:number;tokens:number;estimatedCostMicros:number};
+  usage30Days:{events:number;tokens:number;estimatedCostMicros:number;credits:number};
   models: BillingModelDto[];
   ledger: BillingLedgerEntryDto[];
 }
