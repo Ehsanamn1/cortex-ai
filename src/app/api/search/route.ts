@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     const contains = q.slice(0, 120);
     const [agents, knowledge, conversations] = await Promise.all([
       db.agent.findMany({
-        where: { workspaceId, OR: [{ name: { contains } }, { description: { contains } }, { orgName: { contains } }] },
+        where: { workspaceId, OR: [{ name: { contains, mode: "insensitive" } }, { description: { contains, mode: "insensitive" } }, { orgName: { contains, mode: "insensitive" } }] },
         select: { id: true, name: true, description: true },
         orderBy: { updatedAt: "desc" },
         take: 8,
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
         take: 8,
       }),
       db.conversation.findMany({
-        where: { agent: { workspaceId }, title: { contains } },
+        where: { agent: { workspaceId }, title: { contains, mode: "insensitive" } },
         select: { id: true, title: true, channel: true, agentId: true, agent: { select: { name: true } } },
         orderBy: { updatedAt: "desc" },
         take: 8,
