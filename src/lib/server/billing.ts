@@ -245,7 +245,7 @@ export async function getBillingSnapshot(workspaceId: string) {
   if (existingCatalog === 0) {
     for (const entry of known) await ensureModel(entry.provider, entry.modelId);
   }
-  const [subscription, recentLedger, usage, plans, billedUsage, topUpRequests] = await Promise.all([
+  const [subscription, recentLedger, usage, plans, billedUsage, topUpRequests, recentInvoices] = await Promise.all([
     db.subscription.findFirst({ where: { billingAccountId: account.id, status: "active" }, orderBy: { createdAt: "desc" }, include: { plan: true } }),
     db.creditLedgerEntry.findMany({ where: { billingAccountId: account.id }, orderBy: { createdAt: "desc" }, take: 12 }),
     db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
@@ -263,6 +263,12 @@ export async function getBillingSnapshot(workspaceId: string) {
       orderBy: { createdAt: "desc" },
       take: 8,
       select: { id:true, packageKey:true, credits:true, amountToman:true, status:true, note:true, createdAt:true, reviewedAt:true },
+    }),
+    db.invoice.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: { id:true, invoiceNumber:true, status:true, currency:true, subtotalToman:true, overageToman:true, totalToman:true, periodStart:true, periodEnd:true, issuedAt:true, dueAt:true, paidAt:true, createdAt:true },
     }),
   ]);
 
@@ -337,6 +343,21 @@ export async function getBillingSnapshot(workspaceId: string) {
       note:item.note,
       createdAt:item.createdAt.toISOString(),
       reviewedAt:item.reviewedAt?.toISOString() ?? null,
+    })),
+    invoices: recentInvoices.map((item) => ({
+      id:item.id,
+      invoiceNumber:item.invoiceNumber,
+      status:item.status,
+      currency:item.currency,
+      subtotalToman:item.subtotalToman,
+      overageToman:item.overageToman,
+      totalToman:item.totalToman,
+      periodStart:item.periodStart.toISOString(),
+      periodEnd:item.periodEnd.toISOString(),
+      issuedAt:item.issuedAt?.toISOString() ?? null,
+      dueAt:item.dueAt?.toISOString() ?? null,
+      paidAt:item.paidAt?.toISOString() ?? null,
+      createdAt:item.createdAt.toISOString(),
     })),
   };
 }
