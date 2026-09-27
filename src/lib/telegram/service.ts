@@ -379,32 +379,35 @@ export async function processTelegramUpdate(botId: string, update: any) {
   const startToken = typeof msg.text === 'string' ? parseTelegramStartToken(msg.text) : null;
   if (startToken && user.status !== 'blocked') {
     const invite = await db.telegramAllowlistEntry.findUnique({ where: { inviteTokenHash: hashTelegramInviteToken(startToken) } });
-    if (invite && invite.botId === bot.id && invite.status === 'allowed' && (!invite.claimedTelegramUserId || invite.claimedTelegramUserId === tgId)) {
-      await db.$transaction([
-        db.telegramAllowlistEntry.update({
-          where: { id: invite.id },
+    if (invite && invite.botId === bot.id && invite.status === 'allowed') {
+      const claimed = invite.claimedTelegramUserId;
+      if (!claimed || claimed === tgId) {
+        const claimResult = await db.telegramAllowlistEntry.updateMany({
+          where: { id: invite.id, botId: bot.id, status: 'allowed', claimedTelegramUserId: null, inviteTokenHash: hashTelegramInviteToken(startToken) },
           data: { claimedTelegramUserId: tgId, claimedAt: new Date(), inviteTokenHash: null },
-        }),
-        db.telegramUser.update({
-          where: { id: user.id },
-          data: {
-            phoneNumber: invite.phoneNumber,
-            status: 'allowed',
-            dailyMessageLimit: invite.dailyMessageLimit,
-            monthlyMessageLimit: invite.monthlyMessageLimit,
-            dailyTokenLimit: invite.dailyTokenLimit,
-            monthlyTokenLimit: invite.monthlyTokenLimit,
-          },
-        }),
-      ]);
-      user.status = 'allowed';
-      user.phoneNumber = invite.phoneNumber;
-      user.dailyMessageLimit = invite.dailyMessageLimit;
-      user.monthlyMessageLimit = invite.monthlyMessageLimit;
-      user.dailyTokenLimit = invite.dailyTokenLimit;
-      user.monthlyTokenLimit = invite.monthlyTokenLimit;
-      await sendWelcome(token, msg.chat.id, profile);
-      return;
+        });
+        if (claimResult.count === 1) {
+          await db.telegramUser.update({
+            where: { id: user.id },
+            data: {
+              phoneNumber: invite.phoneNumber,
+              status: 'allowed',
+              dailyMessageLimit: invite.dailyMessageLimit,
+              monthlyMessageLimit: invite.monthlyMessageLimit,
+              dailyTokenLimit: invite.dailyTokenLimit,
+              monthlyTokenLimit: invite.monthlyTokenLimit,
+            },
+          });
+          user.status = 'allowed';
+          user.phoneNumber = invite.phoneNumber;
+          user.dailyMessageLimit = invite.dailyMessageLimit;
+          user.monthlyMessageLimit = invite.monthlyMessageLimit;
+          user.dailyTokenLimit = invite.dailyTokenLimit;
+          user.monthlyTokenLimit = invite.monthlyTokenLimit;
+          await sendWelcome(token, msg.chat.id, profile);
+          return;
+        }
+      }
     }
   }
 
