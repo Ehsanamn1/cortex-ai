@@ -219,6 +219,7 @@ export interface TelegramBotProfileDto {
   newChatText:string;
   blockedText:string;
   errorText:string;
+  accessRequiredText:string;
   thinkingMessages:string[];
   newChatButtonText:string;
   helpButtonText:string;
@@ -227,8 +228,11 @@ export interface TelegramBotProfileDto {
   showWelcomeBanner:boolean;
   commands:Array<{command:string;description:string}>;
 }
-export interface TelegramAllowlistDto { id:string; botId:string; phoneNumber:string; displayName:string|null; notes:string|null; status:string; createdAt:string; updatedAt:string }
+export interface TelegramAllowlistDto { id:string; botId:string; phoneNumber:string; displayName:string|null; notes:string|null; status:string; dailyMessageLimit:number; monthlyMessageLimit:number; dailyTokenLimit:number; monthlyTokenLimit:number; inviteTokenHash?:string|null; inviteCreatedAt:string|null; claimedTelegramUserId:string|null; claimedAt:string|null; inviteLink?:string|null; createdAt:string; updatedAt:string }
 export interface TelegramUserDto { id:string; botId:string; telegramUserId:string; phoneNumber:string|null; username:string|null; firstName:string|null; lastName:string|null; status:string; dailyMessageLimit:number; monthlyMessageLimit:number; dailyTokenLimit:number; monthlyTokenLimit:number; lastSeenAt:string|null; createdAt:string; updatedAt:string; usage?:{events:number;tokens:number;inputTokens:number;outputTokens:number;estimatedCostMicros?:number;lastUsedAt?:string|null}; dailyUsage?:{events:number;tokens:number}; monthlyUsage?:{events:number;tokens:number}; bot?:{name:string} }
+export interface BusinessOnboardingQuestionDto { id:string; category:string; question:string }
+export interface BusinessOnboardingSessionDto { id:string; status:string; currentIndex:number; totalQuestions:number; question:BusinessOnboardingQuestionDto|null; answersCount:number; result:any; error:string|null; completedAt:string|null; createdAt:string; updatedAt:string }
+
 export interface AnalyticsDto { users:number; bots:number; usage:{events:number;tokens:number;inputTokens:number;outputTokens:number;estimatedCostMicros:number}; trend:Array<{date:string;messages:number;tokens:number}>; topQuestions:Array<{question:string;count:number}>; unanswered:number; unansweredQuestions:Array<{question:string;count:number}> }
 
 export interface SessionDto {
@@ -507,6 +511,9 @@ export const api = {
   updateTelegramBotProfile(id:string,input:Record<string,unknown>){ return jsonRequest<{profile:TelegramBotProfileDto}>(`/api/telegram/bots/${encodeURIComponent(id)}/profile`,'PATCH',input); },
   deleteTelegramBot(id:string){ return jsonRequest<{ok:boolean}>(`/api/telegram/bots/${encodeURIComponent(id)}`,'DELETE'); },
   getTelegramAllowlist(botId:string){ return request<{entries:TelegramAllowlistDto[]}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`); },
+  addTelegramAllowlistBulk(botId:string,input:{phoneNumbers:string[];displayName?:string;notes?:string;regenerate?:boolean}){ return jsonRequest<{entries:TelegramAllowlistDto[];count:number}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`,"POST",input); },
+  updateTelegramAllowlist(botId:string,entryId:string,input:Partial<Pick<TelegramAllowlistDto,"status"|"dailyMessageLimit"|"monthlyMessageLimit"|"dailyTokenLimit"|"monthlyTokenLimit">>){ return jsonRequest<{entry:TelegramAllowlistDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`,"PATCH",{id:entryId,...input}); },
+  regenerateTelegramInvite(botId:string,entryId:string){ return jsonRequest<{entry:TelegramAllowlistDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist/${encodeURIComponent(entryId)}/invite`,"POST"); },
   getTelegramBotUsers(botId:string){ return request<{users:TelegramUserDto[]}>(`/api/telegram/bots/${encodeURIComponent(botId)}/users`); },
   updateTelegramBotUser(botId:string,userId:string,status?:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/users`,'PATCH',{id:userId,status,...limits}); },
   addTelegramAllowlist(botId:string,input:{phoneNumber:string;displayName?:string;notes?:string}){ return jsonRequest<{entry:TelegramAllowlistDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`,'POST',input); },
@@ -515,6 +522,10 @@ export const api = {
   getTelegramUsers(workspaceId?:string){ return request<{users:TelegramUserDto[]}>(`/api/admin/telegram-users${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
   updateTelegramUser(id:string,status:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>('/api/admin/telegram-users','PATCH',{id,status,...limits}); },
   getAnalytics(workspaceId?:string){ return request<AnalyticsDto & {note?:string}>(`/api/admin/analytics${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
+  getBusinessOnboarding(agentId:string){ return request<{session:BusinessOnboardingSessionDto|null;questions:BusinessOnboardingQuestionDto[]}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`); },
+  startBusinessOnboarding(agentId:string){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"start"}); },
+  answerBusinessOnboarding(agentId:string,sessionId:string,answer:string){ return jsonRequest<{session:BusinessOnboardingSessionDto;knowledgeSourceId?:string}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"answer",sessionId,answer}); },
+  cancelBusinessOnboarding(agentId:string,sessionId:string){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"cancel",sessionId}); },
 
   testProvidersHealth(workspaceId?: string): Promise<ProviderHealthOkDto> {
     const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
