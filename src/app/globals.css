@@ -43,79 +43,79 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Cortex identity — always dark (light values are intentionally identical). */
+/* Cortex/DashStack design system: light operational workspace by default. */
 :root {
-  --radius: 0.75rem;
-  --background: #07090d;
-  --foreground: #f8fafc;
-  --card: #11151c;
-  --card-foreground: #f8fafc;
-  --popover: #11151c;
-  --popover-foreground: #f8fafc;
-  --primary: #3b82ff;
+  --radius: 0.65rem;
+  --background: #f6f7fb;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+  --popover: #ffffff;
+  --popover-foreground: #1f2937;
+  --primary: #4880ff;
   --primary-foreground: #ffffff;
-  --secondary: #8b5cf6;
-  --secondary-foreground: #ffffff;
-  --muted: #161b24;
-  --muted-foreground: #94a3b8;
-  --accent: #181e29;
-  --accent-foreground: #f8fafc;
-  --destructive: #ef4444;
-  --border: rgba(148, 163, 184, 0.12);
-  --input: rgba(148, 163, 184, 0.14);
-  --ring: #3b82ff;
-  --chart-1: #3b82ff;
-  --chart-2: #8b5cf6;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
-  --chart-5: #ef4444;
-  --sidebar: #0a0d13;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #3b82ff;
+  --secondary: #eef2ff;
+  --secondary-foreground: #334155;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #f4f6fa;
+  --accent-foreground: #1f2937;
+  --destructive: #e05260;
+  --border: #e6e9ef;
+  --input: #e1e5ec;
+  --ring: #4880ff;
+  --chart-1: #4880ff;
+  --chart-2: #6f5ce7;
+  --chart-3: #22a06b;
+  --chart-4: #e6a23c;
+  --chart-5: #e05260;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1f2937;
+  --sidebar-primary: #4880ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #161b24;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: rgba(148, 163, 184, 0.12);
-  --sidebar-ring: #3b82ff;
-  --surface-glow: rgba(59, 130, 255, 0.15);
-  --surface-2: #161b24;
+  --sidebar-accent: #eef3ff;
+  --sidebar-accent-foreground: #2f62d6;
+  --sidebar-border: #e6e9ef;
+  --sidebar-ring: #4880ff;
+  --surface-glow: rgba(72, 128, 255, 0.08);
+  --surface-2: #f7f8fb;
 }
 
 .dark {
-  --radius: 0.75rem;
-  --background: #07090d;
-  --foreground: #f8fafc;
-  --card: #11151c;
-  --card-foreground: #f8fafc;
-  --popover: #11151c;
-  --popover-foreground: #f8fafc;
-  --primary: #3b82ff;
+  --radius: 0.65rem;
+  --background: #f6f7fb;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+  --popover: #ffffff;
+  --popover-foreground: #1f2937;
+  --primary: #4880ff;
   --primary-foreground: #ffffff;
-  --secondary: #8b5cf6;
-  --secondary-foreground: #ffffff;
-  --muted: #161b24;
-  --muted-foreground: #94a3b8;
-  --accent: #181e29;
-  --accent-foreground: #f8fafc;
-  --destructive: #ef4444;
-  --border: rgba(148, 163, 184, 0.12);
-  --input: rgba(148, 163, 184, 0.14);
-  --ring: #3b82ff;
-  --chart-1: #3b82ff;
-  --chart-2: #8b5cf6;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
-  --chart-5: #ef4444;
-  --sidebar: #0a0d13;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #3b82ff;
+  --secondary: #eef2ff;
+  --secondary-foreground: #334155;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #f4f6fa;
+  --accent-foreground: #1f2937;
+  --destructive: #e05260;
+  --border: #e6e9ef;
+  --input: #e1e5ec;
+  --ring: #4880ff;
+  --chart-1: #4880ff;
+  --chart-2: #6f5ce7;
+  --chart-3: #22a06b;
+  --chart-4: #e6a23c;
+  --chart-5: #e05260;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1f2937;
+  --sidebar-primary: #4880ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #161b24;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: rgba(148, 163, 184, 0.12);
-  --sidebar-ring: #3b82ff;
-  --surface-glow: rgba(59, 130, 255, 0.15);
-  --surface-2: #161b24;
+  --sidebar-accent: #eef3ff;
+  --sidebar-accent-foreground: #2f62d6;
+  --sidebar-border: #e6e9ef;
+  --sidebar-ring: #4880ff;
+  --surface-glow: rgba(72, 128, 255, 0.08);
+  --surface-2: #f7f8fb;
 }
 
 @layer base {
@@ -301,4 +301,130 @@
   .cortex-hero { border-radius: 22px; }
   .cortex-hero h2 { font-size: clamp(1.65rem, 8vw, 2.25rem); line-height: 1.35; }
   .cortex-panel { min-width: 0; }
+}
+
+
+/* DashStack-inspired admin workspace: clean light canvas, white cards, compact sidebar, blue active state. */
+.cortex-dashstack,
+.cortex-control-center {
+  background: #f6f7fb !important;
+  color: #1f2937 !important;
+}
+.cortex-dashstack .cortex-sidebar {
+  background: #ffffff !important;
+  border-color: #e6e9ef !important;
+  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.035);
+}
+.cortex-dashstack .cortex-sidebar nav button {
+  border-radius: 8px;
+}
+.cortex-dashstack .cortex-sidebar nav button[aria-current="page"] {
+  background: #eef3ff !important;
+  color: #3f6fe5 !important;
+}
+.cortex-dashstack .cortex-sidebar nav button[aria-current="page"] > span:first-child {
+  background: #4880ff !important;
+}
+.cortex-dashstack .cortex-topbar {
+  background: rgba(255,255,255,.96) !important;
+  border-color: #e6e9ef !important;
+  box-shadow: 0 1px 0 rgba(15,23,42,.025), 0 8px 24px rgba(15,23,42,.035) !important;
+}
+.cortex-dashstack .cortex-status-line {
+  background: linear-gradient(90deg, transparent, rgba(72,128,255,.24), transparent);
+}
+.cortex-dashstack .cortex-panel,
+.cortex-dashstack [data-slot="card"],
+.cortex-control-center [data-slot="card"] {
+  background: #ffffff !important;
+  border-color: #e6e9ef !important;
+  box-shadow: 0 4px 18px rgba(15,23,42,.035);
+}
+.cortex-dashstack .cortex-action {
+  background: #ffffff !important;
+  border-color: #e6e9ef !important;
+}
+.cortex-dashstack .cortex-action:hover {
+  background: #fafbfe !important;
+  border-color: #cbd8f6 !important;
+}
+.cortex-dashstack .cortex-hero {
+  background: #ffffff !important;
+  border: 1px solid #e6e9ef !important;
+  box-shadow: 0 8px 28px rgba(15,23,42,.045) !important;
+}
+.cortex-dashstack .cortex-hero > div:first-child {
+  display: none;
+}
+.cortex-dashstack .cortex-hero h2,
+.cortex-dashstack .cortex-hero p,
+.cortex-dashstack .cortex-hero span,
+.cortex-dashstack .cortex-hero .text-white,
+.cortex-dashstack .cortex-hero .text-slate-300,
+.cortex-dashstack .cortex-hero .text-slate-400 {
+  color: #1f2937 !important;
+}
+.cortex-dashstack .cortex-hero [class*="bg-black/25"],
+.cortex-dashstack .cortex-hero [class*="bg-white/[.035]"] {
+  background: #f8fafc !important;
+  border-color: #e6e9ef !important;
+}
+.cortex-dashstack .cortex-core-sphere {
+  filter: drop-shadow(0 18px 40px rgba(72,128,255,.15));
+}
+.cortex-dashstack .cortex-topbar .border,
+.cortex-dashstack .cortex-sidebar .border,
+.cortex-dashstack .cortex-panel .border {
+  border-color: #e6e9ef !important;
+}
+.cortex-control-center header {
+  background: rgba(255,255,255,.95) !important;
+  border-color: #e6e9ef !important;
+  box-shadow: 0 1px 0 rgba(15,23,42,.025), 0 8px 24px rgba(15,23,42,.035);
+}
+.cortex-control-center main {
+  background: #f6f7fb;
+}
+.cortex-control-center .cortex-hero {
+  background: #ffffff !important;
+  border-color: #e6e9ef !important;
+  box-shadow: 0 8px 28px rgba(15,23,42,.045) !important;
+}
+.cortex-control-center .cortex-hero > div:first-child {
+  display: none;
+}
+.cortex-control-center .cortex-hero .text-slate-300,
+.cortex-control-center .cortex-hero .text-slate-500,
+.cortex-control-center .cortex-hero .text-white,
+.cortex-control-center .cortex-hero h2 {
+  color: #1f2937 !important;
+}
+.cortex-control-center .cortex-hero > div:last-child > div {
+  background: #f8fafc !important;
+  border-color: #e6e9ef !important;
+}
+.cortex-control-center .cortex-icon-box {
+  background: #eef3ff !important;
+  color: #4880ff !important;
+  border-color: #dbe5ff !important;
+}
+.cortex-dashstack button,
+.cortex-control-center button {
+  transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.cortex-dashstack [data-slot="select-trigger"],
+.cortex-control-center [data-slot="select-trigger"],
+.cortex-control-center input,
+.cortex-control-center textarea {
+  background: #ffffff !important;
+  border-color: #dfe4ec !important;
+}
+html { color-scheme: light; }
+body {
+  background: #f6f7fb !important;
+  background-image: none !important;
+}
+::selection {
+  background: rgba(72,128,255,.18);
+  color: #1f2937;
 }
