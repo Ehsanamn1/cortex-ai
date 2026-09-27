@@ -5,6 +5,7 @@ import { estimateTokens } from "@/lib/server/audit";
 import { estimateLlmCostMicros } from "@/lib/server/pricing";
 import { runAgentExecution } from "@/lib/runtime/engine";
 import { reserveUsageWithinLimits, releaseUsageReservation } from "@/lib/server/usage";
+import { releaseBillingReservation, reserveBillingForAgentRequest, recordUsageAndCharge } from "@/lib/server/billing";
 import { authenticateAgentApiKey, readAgentApiKey } from "@/lib/server/agent-api-key";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, { params }: Params) {
   let reservationId: string | null = null;
+  let billingReservationId: string | null = null;
   try {
     const agentId = (await params).id;
     const apiKey = readAgentApiKey(req);
@@ -56,6 +58,12 @@ export async function POST(req: Request, { params }: Params) {
     const promptTokens = promptHistory.reduce((n, m) => n + estimateTokens(m.content), 0) + estimateTokens(message);
 
     reservationId = await reserveUsageWithinLimits(auth.agent.workspaceId, 1, promptTokens + 384, auth.agent.maxTokens);
+    billingReservationId = (await reserveBillingForAgentRequest({
+      workspaceId: auth.agent.workspaceId,
+      agentId,
+      inputTokens: promptTokens + 384,
+      maxOutputTokens: auth.agent.maxTokens,
+    })).reservationId;
 
     await db.message.create({ data: { conversationId: conversation.id, role: "user", content: message } });
 
@@ -108,23 +116,23 @@ export async function POST(req: Request, { params }: Params) {
       const inputTokens = promptTokens + (runtime.auxiliaryInputTokens ?? 0);
       const outputTokens = estimateTokens(runtime.content) + (runtime.auxiliaryOutputTokens ?? 0);
       const totalTokens = inputTokens + outputTokens;
-      await db.$transaction([
-        db.usageEvent.create({
-          data: {
-            workspaceId: auth.agent.workspaceId,
-            agentId,
-            channel: "api",
-            provider: runtime.provider,
-            model: runtime.model,
-            inputTokens,
-            outputTokens,
-            totalTokens,
-            estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, runtime.provider ?? "unknown", runtime.model ?? "unknown"),
-          },
-        }),
-        ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
-      ]);
+      const billingResult = await recordUsageAndCharge({
+        usage: {
+          workspaceId: auth.agent.workspaceId,
+          agentId,
+          channel: "api",
+          provider: runtime.provider,
+          model: runtime.model,
+          inputTokens,
+          outputTokens,
+          totalTokens,
+        },
+        reservationId: billingReservationId,
+      });
+      billingReservationId = null;
+      if (reservationId) await db.usageReservation.delete({ where: { id: reservationId } }).catch(() => undefined);
       reservationId = null;
+      void billingResult;
 
       return applyCors(jsonOk({
         id: assistant.id,
@@ -143,7 +151,9 @@ export async function POST(req: Request, { params }: Params) {
       }), req.headers.get("origin"));
     } catch (e) {
       await releaseUsageReservation(reservationId);
+      await releaseBillingReservation(billingReservationId);
       reservationId = null;
+      billingReservationId = null;
       if (e && typeof e === "object" && "status" in e && Number((e as { status?: unknown }).status) === 503) {
         return applyCors(jsonError(e instanceof Error ? e.message : "سرویس پاسخ‌گویی در دسترس نیست.", 503), req.headers.get("origin"));
       }
@@ -151,7 +161,9 @@ export async function POST(req: Request, { params }: Params) {
     }
   } catch (e) {
     await releaseUsageReservation(reservationId);
+    await releaseBillingReservation(billingReservationId);
     reservationId = null;
+    billingReservationId = null;
     return toErrorResponse(e, req.headers.get("origin"));
   }
 }
