@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { llmManager } from "@/lib/providers/llm/manager";
 import { estimateLlmCostMicros, getKnownModelCatalog, getModelRate } from "@/lib/server/pricing";
 
 export const DEFAULT_BILLING_PLANS = [
@@ -439,6 +440,7 @@ export async function recordUsageAndCharge(params: {
     inputTokens: number;
     outputTokens: number;
     totalTokens?: number;
+    estimatedCostMicros?: number;
   };
   reservationId?: string | null;
 }) {
