@@ -16,16 +16,16 @@ function makeQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 15_000,
+        staleTime: 60_000,
         refetchOnWindowFocus: false,
         retry: (failureCount, error) => {
           if (error instanceof ApiError) {
             const retryable = error.status === 0 || error.status >= 500 || error.status === 408 || error.status === 429;
             if (!retryable) return false;
           }
-          return failureCount < 2;
+          return failureCount < 1;
         },
-        retryDelay: (attemptIndex) => Math.min(8000, 600 * 2 ** attemptIndex),
+        retryDelay: () => 400,
       },
     },
   });
@@ -33,11 +33,11 @@ function makeQueryClient(): QueryClient {
 
 function Splash() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background">
+    <div className="cortex-splash flex min-h-screen flex-col items-center justify-center gap-5 bg-background">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: [0.75, 1, 0.75], scale: [1, 1.06, 1] }}
-        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
       >
         <CortexMark size={64} />
       </motion.div>
