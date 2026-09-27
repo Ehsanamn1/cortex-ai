@@ -315,6 +315,17 @@ export async function reserveBillingForAgentRequest(params: {
   inputTokens: number;
   maxOutputTokens: number;
 }): Promise<BillingReservationResult> {
+  const account = await ensureWorkspaceBilling(params.workspaceId);
+  if (!account.enforcementEnabled) {
+    return {
+      reservationId: null,
+      estimatedCredits: 0,
+      providerCostMicros: 0,
+      creditMultiplierBps: 100,
+      enforcementEnabled: false,
+    };
+  }
+
   const resolved = await llmManager.resolveForAgent(params.agentId, params.workspaceId);
   const provider = resolved.status.provider;
   const model = resolved.status.model;
@@ -324,9 +335,10 @@ export async function reserveBillingForAgentRequest(params: {
       estimatedCredits: 0,
       providerCostMicros: 0,
       creditMultiplierBps: 100,
-      enforcementEnabled: false,
+      enforcementEnabled: true,
     };
   }
+
   return reserveBillingCredits({
     workspaceId: params.workspaceId,
     provider,
