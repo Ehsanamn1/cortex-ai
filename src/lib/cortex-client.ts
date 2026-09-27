@@ -240,6 +240,46 @@ export interface SessionDto {
   workspaces: WorkspaceDto[];
 }
 
+export interface BillingPlanDto {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  priceMinor: string;
+  currency: string;
+  includedCredits: string;
+  monthlyMessages: number;
+  maxAgents: number;
+  maxTelegramUsers: number;
+  maxStorageMb: number;
+  overageEnabled: boolean;
+  customPricing: boolean;
+  active: boolean;
+}
+
+export interface WalletDto {
+  id: string;
+  currency: string;
+  balanceCredits: string;
+  reservedCredits: string;
+  availableCredits: string;
+}
+
+export interface BillingSummaryDto {
+  wallet: WalletDto;
+  subscription: {
+    id: string;
+    status: string;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    cancelAtPeriodEnd: boolean;
+    plan: BillingPlanDto;
+  } | null;
+  plans: BillingPlanDto[];
+  modelCount: number;
+}
+
+
 export interface SiteConfigDto { settings: Record<string, string> }
 export interface AgentApiKeyDto { id:string; name:string; keyPrefix:string; active:boolean; lastUsedAt:string|null; createdAt:string }
 export interface AgentToolDto { id:string; key:string; name:string; description:string; inputSchema:string; permissions:string; attached:boolean; }
@@ -467,6 +507,17 @@ export const api = {
 
   chat(conversationId: string, content: string): Promise<ChatResponse> {
     return jsonRequest(`/api/conversations/${encodeURIComponent(conversationId)}/chat`, "POST", { content });
+  },
+
+  /* BILLING */
+
+  getBilling(workspaceId?: string): Promise<{ workspaceId: string; billing: BillingSummaryDto }> {
+    return request(`/api/billing${workspaceId ? "?workspaceId=" + encodeURIComponent(workspaceId) : ""}`);
+  },
+
+  activateBillingPlan(planKey: string, workspaceId?: string): Promise<{ workspaceId: string; billing: BillingSummaryDto }> {
+    const query = workspaceId ? "?workspaceId=" + encodeURIComponent(workspaceId) : "";
+    return jsonRequest(`/api/billing${query}`, "POST", { action: "activate_plan", planKey });
   },
 
   /* DASHBOARD */
