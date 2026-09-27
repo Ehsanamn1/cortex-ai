@@ -167,7 +167,9 @@ function BillingPanel({ section }: { section: Section }) {
       <Button size="sm" variant="ghost" onClick={() => setEditingModel(editingModel === model.id ? null : model.id)}><Pencil className="size-4"/></Button>
       {editingModel === model.id && <div className="w-full lg:basis-full"><ModelEditor model={model} onSave={(body) => patch.mutate({action:"update_model",id:model.id,body})}/></div>}
     </CardContent>
-  </Card>)}</div>;
+  </Card>)}</div>
+    <ModelAccessMatrix plans={q.data.plans ?? []} models={q.data.models ?? []} onSave={(body) => patch.mutate({action:"set_access",id:"access",body})}/>
+  </div>;
 
   if (section === "accounts") return <div className="grid gap-3">{(q.data.accounts ?? []).map((account:any) => <AccountEditor key={account.id} account={account} plans={q.data.plans ?? []} onSave={(body) => patch.mutate({action:"update_account",id:account.id,body})}/>)}</div>;
 
