@@ -32,14 +32,10 @@ function makeQueryClient(): QueryClient {
 
 function Splash() {
   return (
-    <div className="cortex-splash flex min-h-screen flex-col items-center justify-center gap-5 bg-background">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: [0.75, 1, 0.75], scale: [1, 1.06, 1] }}
-        transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <CortexMark size={64} />
-      </motion.div>
+    <div className="cortex-splash flex min-h-screen flex-col items-center justify-center gap-4 bg-background" aria-label="در حال بارگذاری Cortex">
+      <div className="cortex-splash-mark">
+        <CortexMark size={56} />
+      </div>
       <div className="flex flex-col items-center gap-1">
         <span className="text-sm font-bold tracking-tight text-foreground">Cortex AI</span>
         <span className="text-xs text-muted-foreground">محیط مدیریت ایجنت‌ها</span>
@@ -62,6 +58,12 @@ function SessionGate() {
     return () => window.removeEventListener("cortex:session-expired", handleSessionExpired);
   }, []);
 
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    void queryClient.prefetchQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000 });
+  }, [queryClient]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -73,6 +75,13 @@ function SessionGate() {
           hydrate(session.user, session.workspaces);
           setRecoveryNotice("");
           setPhase("ready");
+          const preload = () => {
+            void import("@/components/cortex/views/agents-view");
+            void import("@/components/cortex/views/billing-view");
+            void import("@/components/cortex/views/analytics-view");
+            void import("@/components/cortex/views/conversations-view");
+          };
+          if ("requestIdleCallback" in window) window.requestIdleCallback(preload, { timeout: 1200 }); else window.setTimeout(preload, 80);
         } else {
           setPhase("auth");
         }
