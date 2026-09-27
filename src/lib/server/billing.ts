@@ -1,6 +1,5 @@
 import { db } from "@/lib/db";
 import { estimateLlmCostMicros, getKnownModelCatalog, getModelRate } from "@/lib/server/pricing";
-import { llmManager } from "@/lib/providers/llm/manager";
 
 export const DEFAULT_BILLING_PLANS = [
   { key: "free", name: "رایگان", description: "برای شروع و تست Cortex", priceToman: 0, monthlyCredits: 5000, overageCreditPriceToman: 0, sortOrder: 0 },
