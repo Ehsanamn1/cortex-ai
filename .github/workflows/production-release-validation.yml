@@ -22,5 +22,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - name: Run production smoke
+      - name: Run production load smoke
         run: node scripts/load-smoke.mjs
+      - name: Run production API contract smoke
+        run: node scripts/system-smoke.mjs
