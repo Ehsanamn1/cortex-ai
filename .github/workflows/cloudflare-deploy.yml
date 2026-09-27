@@ -204,7 +204,16 @@ jobs:
             echo
             case "$path" in
               /api/health) test "$status" = "200" ;;
-              *) test "$status" = "200" ;;
+              *)
+                if [ "$status" = "200" ]; then
+                  :
+                elif [ "$status" = "429" ]; then
+                  echo "Cloudflare edge rate limited the public page smoke request."
+                else
+                  echo "Unexpected public page status: $status"
+                  exit 1
+                fi
+                ;;
             esac
             rm -f "$tmp"
           done
