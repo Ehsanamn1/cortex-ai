@@ -73,3 +73,23 @@ export function initialsOf(name: string | null | undefined, fallback = "ک"): st
 export function firstNameOf(name: string | null | undefined): string {
   return (name ?? "").trim().split(/\s+/)[0] ?? "";
 }
+
+
+/** خوانایی مبالغ تومان: از هزار/میلیون/میلیارد استفاده می‌کند تا صفرها شمردنی نباشند. */
+export function formatTomanCompact(value: number): string {
+  const amount = Math.max(0, Math.round(value));
+  const nf = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 2 });
+  if (amount >= 1_000_000_000) return `${nf.format(amount / 1_000_000_000)} میلیارد تومان`;
+  if (amount >= 1_000_000) return `${nf.format(amount / 1_000_000)} میلیون تومان`;
+  if (amount >= 1_000) return `${nf.format(amount / 1_000)} هزار تومان`;
+  return `${faNum(amount)} تومان`;
+}
+
+export function formatCountCompact(value: number): string {
+  const amount = Math.max(0, Math.round(value));
+  const nf = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 2 });
+  if (amount >= 1_000_000_000) return `${nf.format(amount / 1_000_000_000)} میلیارد`;
+  if (amount >= 1_000_000) return `${nf.format(amount / 1_000_000)} میلیون`;
+  if (amount >= 1_000) return `${nf.format(amount / 1_000)} هزار`;
+  return faNum(amount);
+}
