@@ -245,6 +245,18 @@ export interface AgentApiKeyDto { id:string; name:string; keyPrefix:string; acti
 export interface AgentToolDto { id:string; key:string; name:string; description:string; inputSchema:string; permissions:string; attached:boolean; }
 export interface WorkflowDto { id:string; workspaceId:string; agentId:string|null; name:string; description:string|null; definition:string; status:string; triggers:Array<{id:string;type:string;enabled:boolean}>; agent?:{id:string;name:string}|null; _count?:{executions:number}; }
 
+export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }
+export interface BillingModelDto { id:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number }
+export interface BillingLedgerEntryDto { id:string; amountCredits:number; balanceAfter:number; entryType:string; description:string|null; createdAt:string }
+export interface BillingSnapshotDto {
+  account:{ id:string; plan:{ id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }; balanceCredits:number; status:string; enforcementEnabled:boolean; periodStart:string; periodEnd:string };
+  plans: BillingPlanDto[];
+  subscription:{ id:string; status:string; periodStart:string; periodEnd:string; cancelAtPeriodEnd:boolean }|null;
+  usage30Days:{events:number;tokens:number;estimatedCostMicros:number;credits:number};
+  models: BillingModelDto[];
+  ledger: BillingLedgerEntryDto[];
+}
+
 export interface ExecutionDto { id:string; workspaceId:string; agentId:string|null; triggerType:string; status:string; input:string|null; output:string|null; error:string|null; startedAt:string; completedAt:string|null; steps:Array<{id:string;seq:number;type:string;name:string;status:string;input:string|null;output:string|null;error:string|null;startedAt:string;completedAt:string|null}>; agent?:{id:string;name:string}|null; }
 
 export interface AgentApiAccessDto { keys:AgentApiKeyDto[]; baseUrl:string; endpoint:string; openAiEndpoint:string }
@@ -327,6 +339,8 @@ function jsonRequest<T>(path: string, method: "POST" | "PATCH" | "PUT" | "DELETE
 
 export const api = {
   getSiteConfig(): Promise<SiteConfigDto> { return request("/api/site-config"); },
+  getBilling(workspaceId?:string): Promise<BillingSnapshotDto> { return request(`/api/billing${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
+
   /* AUTH */
 
   signup(input: { name?: string; email: string; password: string }): Promise<SessionDto> {

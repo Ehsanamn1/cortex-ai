@@ -17,6 +17,9 @@ import {
   BarChart3,
   GraduationCap,
   GitBranch,
+  WalletCards,
+  Search,
+  Bell,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
@@ -52,6 +55,7 @@ import { AnalyticsView } from "@/components/cortex/views/analytics-view";
 import { AdminView } from "@/components/cortex/views/admin-view";
 import { LearnView } from "@/components/cortex/views/learn-view";
 import { WorkflowsView } from "@/components/cortex/views/workflows-view";
+import { BillingView } from "@/components/cortex/views/billing-view";
 
 /* ---------------- provider status pill ---------------- */
 
@@ -237,6 +241,7 @@ const ICONS = {
   analytics: BarChart3,
   admin: ShieldCheck,
   learn: GraduationCap,
+  billing: WalletCards,
 } as const;
 
 function settingEnabled(settings: Record<string, string> | undefined, key: string, fallback = true) {
@@ -298,6 +303,20 @@ function SidebarNav({ items }: { items: NavItem[] }) {
           </button>
         );
       })}
+      <button
+        type="button"
+        onClick={() => setView("billing")}
+        aria-current={view === "billing" ? "page" : undefined}
+        className={cn(
+          "relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+          view === "billing"
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+        )}
+      >
+        <WalletCards aria-hidden="true" className="size-[18px]" />
+        اعتبار و صورتحساب
+      </button>
       <button
         type="button"
         onClick={() => setView("settings")}
@@ -403,6 +422,8 @@ function usePageTitle(siteName?: string): string {
       return "تلگرام";
     case "analytics":
       return "تحلیل و بینش";
+    case "billing":
+      return "اعتبار و صورتحساب";
     case "admin":
       return "مدیریت";
     case "learn":
@@ -436,6 +457,8 @@ function renderView(view: View) {
       return <TelegramView />;
     case "analytics":
       return <AnalyticsView />;
+    case "billing":
+      return <BillingView />;
     case "admin":
       return <AdminView />;
     case "learn":
@@ -462,7 +485,7 @@ export function AppShell() {
   const showCta = (view === "dashboard" || view === "agents") && settingEnabled(siteConfig.data?.settings, "feature.createAgentCta");
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
+    <div className="cortex-dashstack flex h-dvh overflow-hidden bg-background">
       {/* Sidebar — first in DOM = right side in RTL */}
       <aside className="cortex-sidebar hidden w-[268px] shrink-0 flex-col gap-5 border-l p-4 lg:flex">
         <div className="px-1 pt-1">
@@ -495,7 +518,16 @@ export function AppShell() {
 
           <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><Bot className="size-4" /></span><div className="min-w-0"><p className="truncate text-[9px] font-bold tracking-[.18em] text-primary/75">CORTEX WORKSPACE</p><h1 className="truncate text-lg font-bold text-foreground">{title}</h1></div></div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <div className="hidden min-w-[220px] items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 xl:flex">
+              <Search className="size-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">جستجو در Cortex…</span>
+              <span className="ms-auto rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">⌘K</span>
+            </div>
+            <Button variant="ghost" size="icon" aria-label="اعلان‌ها" className="relative rounded-lg">
+              <Bell className="size-[18px]" />
+              <span aria-hidden="true" className="absolute end-2 top-2 size-1.5 rounded-full bg-primary" />
+            </Button>
             {showCta && (
               <Button size="sm" className="hidden sm:inline-flex" onClick={() => setView("agent-new")}>
                 <Plus />
@@ -563,6 +595,10 @@ function MoreSheet({ open, onOpenChange, items }: { open: boolean; onOpenChange:
               </div>
             )}
             <div className="flex flex-col gap-2">
+              <Button variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView("billing"); }}>
+                <WalletCards aria-hidden="true" className="size-4" />
+                اعتبار و صورتحساب
+              </Button>
               <Button variant="outline" className="h-12 w-full justify-start gap-3" onClick={() => { onOpenChange(false); setView("settings"); }}>
                 <Settings aria-hidden="true" className="size-4" />
                 تنظیمات

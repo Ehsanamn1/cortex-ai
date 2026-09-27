@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   try {
     const admin = requireAdmin(req);
     const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [users, workspaces, agents, knowledge, conversations, messages, bots, providers, events, logs, recentAgents, recentUsers, recentConversations, usage30, usageModels] = await Promise.all([
+    const [users, workspaces, agents, knowledge, conversations, messages, bots, providers, events, logs, recentAgents, recentUsers, recentConversations, usage30, usageModels, billingAccounts, activeSubscriptions, billedCredits30, bookedPlanValue] = await Promise.all([
       db.user.count(),
       db.workspace.count(),
       db.agent.count(),
@@ -24,6 +24,10 @@ export async function GET(req: Request) {
       db.conversation.findMany({ take: 8, orderBy: { updatedAt: "desc" }, select: { id:true,title:true,channel:true,updatedAt:true,agent:{select:{name:true}} } }),
       db.usageEvent.aggregate({ where: { createdAt: { gte: since30 } }, _sum: { totalTokens: true, estimatedCostMicros: true } }),
       db.usageEvent.groupBy({ by: ["provider", "model", "channel"], where: { createdAt: { gte: since30 } }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
+      db.workspaceBillingAccount.count(),
+      db.subscription.count({ where: { status: "active" } }),
+      db.billingCharge.aggregate({ where: { createdAt: { gte: since30 }, status: { in: ["captured", "captured_debt"] } }, _sum: { chargedCredits: true, providerCostMicros: true } }),
+      db.subscription.findMany({ where: { status: "active", plan: { priceToman: { gt: 0 } } }, select: { plan: { select: { priceToman: true } } } }).then(rows => rows.reduce((sum, row) => sum + row.plan.priceToman, 0)),
     ]);
 
     return applyCors(jsonOk({
@@ -45,6 +49,18 @@ export async function GET(req: Request) {
           }))
           .sort((a, b) => b.estimatedCostMicros - a.estimatedCostMicros)
           .slice(0, 12),
+      },
+      financial: {
+        billingAccounts,
+        activeSubscriptions,
+        last30Days: {
+          creditsConsumed: billedCredits30._sum.chargedCredits ?? 0,
+          providerCostMicros: billedCredits30._sum.providerCostMicros ?? 0,
+          bookedMonthlyPlanValueToman: bookedPlanValue,
+          cashRevenueToman: null,
+          grossMarginToman: null,
+        },
+        note: "درآمد نقدی و حاشیه سود نهایی تا اتصال درگاه پرداخت و settlement مالی قابل محاسبه نیستند.",
       },
     }), req.headers.get("origin"));
   } catch (e) {

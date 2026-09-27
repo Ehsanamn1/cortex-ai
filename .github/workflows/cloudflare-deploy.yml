@@ -116,7 +116,7 @@ jobs:
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "Postgres URL missing"; exit 1; }
           schema="$(DATABASE_URL="$db_url" npx prisma db pull --print --force)"
-          for model in User Workspace Agent AgentApiKey KnowledgeSource KnowledgeDocument KnowledgeChunk VectorPoint Conversation Message ProviderConfig UsagePolicy AgentProviderConfig TelegramBot TelegramUser UsageReservation UsageEvent AuditLog MemoryEntry; do
+          for model in User Workspace Agent AgentApiKey KnowledgeSource KnowledgeDocument KnowledgeChunk VectorPoint Conversation Message ProviderConfig UsagePolicy AgentProviderConfig TelegramBot TelegramUser UsageReservation UsageEvent AuditLog MemoryEntry Plan ModelCatalog PlanModelAccess WorkspaceBillingAccount Subscription CreditLedgerEntry CreditReservation BillingCharge Invoice; do
             printf "%s" "$schema" | grep -q "model $model" || { echo "Missing Prisma model in production schema: $model"; exit 1; }
           done
           echo "Production database contract verified."
@@ -197,6 +197,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
+          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
+          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
         run: |
           set -euo pipefail
           base="https://cortex-ai.dengxiao445.workers.dev"
@@ -289,6 +291,38 @@ jobs:
           check_authed_json "/api/telegram/bots?workspaceId=$smoke_workspace_id" "200"
           check_authed_json "/api/admin/overview?workspaceId=$smoke_workspace_id" "200"
           check_authed_json "/api/admin/analytics?workspaceId=$smoke_workspace_id" "200"
+          check_authed_json "/api/billing?workspaceId=$smoke_workspace_id" "200"
+
+          test -n "$CORTEX_ADMIN_USERNAME" || { echo "CORTEX_ADMIN_USERNAME is required for post-deploy admin smoke"; exit 1; }
+          test -n "$CORTEX_ADMIN_PASSWORD" || { echo "CORTEX_ADMIN_PASSWORD is required for post-deploy admin smoke"; exit 1; }
+          admin_cookie="$(mktemp)"
+          admin_response="$(mktemp)"
+          admin_body="$(jq -nc --arg username "$CORTEX_ADMIN_USERNAME" --arg password "$CORTEX_ADMIN_PASSWORD" '{username:$username,password:$password}')"
+          admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$admin_body" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/login")"
+          echo "POST $base/api/admin/auth/login -> HTTP $admin_status"
+          cat "$admin_response" | jq . || cat "$admin_response"
+          test "$admin_status" = "200"
+          check_admin_json() {
+            local path="$1"
+            local expected="$2"
+            local tmp
+            tmp="$(mktemp)"
+            local status
+            status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$tmp" -w "%{http_code}" "$base$path")"
+            echo "GET $base$path (admin) -> HTTP $status"
+            head -c 800 "$tmp" || true
+            echo
+            test "$status" = "$expected"
+            rm -f "$tmp"
+          }
+          check_admin_json "/api/admin/auth/me" "200"
+          check_admin_json "/api/control-center/settings" "200"
+          check_admin_json "/api/control-center/plugins" "200"
+          check_admin_json "/api/control-center/resources?resource=users" "200"
+          check_admin_json "/api/control-center/resources?resource=workspaces" "200"
+          check_admin_json "/api/control-center/resources?resource=agents" "200"
+          check_admin_json "/api/control-center/billing" "200"
+          rm -f "$admin_response" "$admin_cookie"
 
           agent_body="$(jq -nc '{name:"Cortex Smoke Agent",language:"fa",tone:"professional",temperature:0.2,topP:1,maxTokens:256}')"
           agent_response="$(mktemp)"

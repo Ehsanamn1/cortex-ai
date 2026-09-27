@@ -45,6 +45,12 @@ model Workspace {
   auditLogs      AuditLog[]
   usagePolicy    UsagePolicy?
   usageReservations UsageReservation[]
+  billingAccount  WorkspaceBillingAccount?
+  subscriptions   Subscription[]
+  creditLedger    CreditLedgerEntry[]
+  creditReservations CreditReservation[]
+  billingCharges  BillingCharge[]
+  invoices        Invoice[]
   workflows       Workflow[]
   executions      Execution[]
   memoryEntries   MemoryEntry[]
@@ -466,6 +472,7 @@ model UsageEvent {
   user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   telegramBot TelegramBot? @relation(fields: [telegramBotId], references: [id], onDelete: SetNull)
   telegramUser TelegramUser? @relation(fields: [telegramUserId], references: [id], onDelete: SetNull)
+  billingCharge BillingCharge? @relation("UsageEventBillingCharge")
 
   @@index([workspaceId, createdAt])
   @@index([agentId, createdAt])
@@ -682,4 +689,211 @@ model Plugin {
   updatedAt   DateTime @updatedAt
 
   @@index([enabled])
+}
+
+
+model Plan {
+  id                         String   @id @default(cuid())
+  key                        String   @unique
+  name                       String
+  description                String?
+  priceToman                 Int      @default(0)
+  currency                   String   @default("TOMAN")
+  monthlyCredits             Int      @default(0)
+  overageCreditPriceToman    Int      @default(0)
+  active                     Boolean  @default(true)
+  sortOrder                  Int      @default(0)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  billingAccounts WorkspaceBillingAccount[]
+  subscriptions   Subscription[]
+  modelAccess     PlanModelAccess[]
+
+  @@index([active, sortOrder])
+}
+
+model ModelCatalog {
+  id                    String   @id @default(cuid())
+  provider              String
+  modelId               String
+  displayName           String
+  inputUsdPer1M         Float
+  outputUsdPer1M        Float
+  contextWindow         Int?
+  vision                Boolean  @default(false)
+  tools                 Boolean  @default(false)
+  structuredOutput      Boolean  @default(false)
+  reasoning             Boolean  @default(false)
+  qualityTier           String   @default("balanced")
+  speedTier             String   @default("balanced")
+  commercialAvailable   Boolean  @default(true)
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  planAccess PlanModelAccess[]
+
+  @@unique([provider, modelId])
+  @@index([active, commercialAvailable])
+  @@index([provider])
+}
+
+model PlanModelAccess {
+  id                  String   @id @default(cuid())
+  planId              String
+  modelCatalogId      String
+  enabled             Boolean  @default(true)
+  creditMultiplierBps  Int      @default(100)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  plan        Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  modelCatalog ModelCatalog @relation(fields: [modelCatalogId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, modelCatalogId])
+  @@index([planId, enabled])
+}
+
+model WorkspaceBillingAccount {
+  id                    String   @id @default(cuid())
+  workspaceId           String   @unique
+  planId                String
+  balanceCredits        Int      @default(0)
+  status                String   @default("active")
+  enforcementEnabled    Boolean  @default(false)
+  periodStart           DateTime
+  periodEnd             DateTime
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan            Plan              @relation(fields: [planId], references: [id], onDelete: Restrict)
+  subscriptions  Subscription[] @relation("WorkspaceSubscriptionAccount")
+  ledgerEntries  CreditLedgerEntry[]
+  reservations   CreditReservation[]
+  charges        BillingCharge[]
+  invoices       Invoice[]
+
+  @@index([planId])
+  @@index([status, periodEnd])
+}
+
+model Subscription {
+  id                  String   @id @default(cuid())
+  workspaceId         String
+  billingAccountId    String
+  planId              String
+  status              String   @default("active")
+  provider            String   @default("manual")
+  externalId          String?
+  periodStart         DateTime
+  periodEnd           DateTime
+  cancelAtPeriodEnd   Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  workspace      WorkspaceBillingAccount @relation("WorkspaceSubscriptionAccount", fields: [billingAccountId], references: [id], onDelete: Cascade)
+  workspaceOwner Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan           Plan                    @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, status, periodEnd])
+  @@index([billingAccountId, status])
+  @@index([planId])
+  @@unique([provider, externalId])
+}
+
+model CreditLedgerEntry {
+  id                 String   @id @default(cuid())
+  workspaceId        String
+  billingAccountId   String
+  amountCredits      Int
+  balanceAfter       Int
+  entryType          String
+  referenceType      String?
+  referenceId        String?
+  description        String?
+  metadata           String?
+  idempotencyKey     String   @unique
+  createdAt          DateTime @default(now())
+
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  billingAccount WorkspaceBillingAccount @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([billingAccountId, createdAt])
+  @@index([referenceType, referenceId])
+}
+
+model CreditReservation {
+  id                 String   @id @default(cuid())
+  workspaceId        String
+  billingAccountId   String
+  provider           String?
+  model              String?
+  reservedCredits    Int
+  status             String   @default("active")
+  expiresAt          DateTime
+  idempotencyKey     String?  @unique
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  billingAccount WorkspaceBillingAccount @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status, expiresAt])
+  @@index([billingAccountId, status, expiresAt])
+  @@index([expiresAt])
+}
+
+model BillingCharge {
+  id                    String   @id @default(cuid())
+  workspaceId           String
+  billingAccountId      String
+  usageEventId          String   @unique
+  provider               String
+  model                 String
+  providerCostMicros    Int
+  creditMultiplierBps   Int
+  chargedCredits        Int
+  status                String   @default("captured")
+  idempotencyKey        String   @unique
+  createdAt             DateTime @default(now())
+
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  billingAccount WorkspaceBillingAccount @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+  usageEvent     UsageEvent             @relation("UsageEventBillingCharge", fields: [usageEventId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([billingAccountId, createdAt])
+  @@index([provider, model, createdAt])
+  @@index([status, createdAt])
+}
+
+model Invoice {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  billingAccountId  String
+  subscriptionId    String?
+  invoiceNumber     String   @unique
+  status            String   @default("draft")
+  currency          String   @default("TOMAN")
+  periodStart       DateTime
+  periodEnd         DateTime
+  subtotalToman     Int      @default(0)
+  overageToman      Int      @default(0)
+  totalToman        Int      @default(0)
+  issuedAt          DateTime?
+  dueAt             DateTime?
+  paidAt            DateTime?
+  metadata          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  billingAccount WorkspaceBillingAccount @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, periodEnd])
+  @@index([billingAccountId, periodEnd])
+  @@index([status, dueAt])
 }
