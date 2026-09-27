@@ -508,6 +508,8 @@ export async function recordUsageAndCharge(params: {
     }
     return { usageEvent, chargedCredits: 0, balanceCredits: 0, status: "unpriced" as const };
   }
+  const provider = params.usage.provider;
+  const model = params.usage.model;
 
   const account = await ensureWorkspaceBilling(params.usage.workspaceId);
   const { catalog, defaultMultiplierBps } = await ensureModel(params.usage.provider, params.usage.model);
@@ -531,8 +533,8 @@ export async function recordUsageAndCharge(params: {
         telegramBotId: params.usage.telegramBotId ?? null,
         telegramUserId: params.usage.telegramUserId ?? null,
         channel: params.usage.channel,
-        provider: params.usage.provider,
-        model: params.usage.model,
+        provider,
+        model,
         inputTokens: params.usage.inputTokens,
         outputTokens: params.usage.outputTokens,
         totalTokens,
@@ -548,8 +550,8 @@ export async function recordUsageAndCharge(params: {
           workspaceId: params.usage.workspaceId,
           billingAccountId: fresh.id,
           usageEventId: usageEvent.id,
-          provider: params.usage.provider,
-          model: params.usage.model,
+          provider,
+          model,
           providerCostMicros,
           creditMultiplierBps: multiplierBps,
           chargedCredits,
@@ -592,8 +594,8 @@ export async function recordUsageAndCharge(params: {
           workspaceId: params.usage.workspaceId,
           billingAccountId: fresh.id,
           usageEventId: usageEvent.id,
-          provider: params.usage.provider,
-          model: params.usage.model,
+          provider,
+          model,
           providerCostMicros,
           creditMultiplierBps: multiplierBps,
           chargedCredits,
@@ -625,8 +627,8 @@ export async function recordUsageAndCharge(params: {
         workspaceId: params.usage.workspaceId,
         billingAccountId: fresh.id,
         usageEventId: usageEvent.id,
-        provider: params.usage.provider,
-        model: params.usage.model,
+        provider,
+        model,
         providerCostMicros,
         creditMultiplierBps: multiplierBps,
         chargedCredits,
