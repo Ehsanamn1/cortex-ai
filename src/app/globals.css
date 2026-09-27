@@ -882,3 +882,48 @@ html:not(.dark) .cortex-core-stage > div:nth-child(2) { border-color: rgba(91,14
 @media (prefers-reduced-motion: reduce) {
   .cortex-splash-mark { animation: none !important; }
 }
+
+/* Lightweight auth command-core visual */
+.cortex-auth-core {
+  pointer-events: none;
+  perspective: 900px;
+  transform-style: preserve-3d;
+  opacity: .82;
+}
+.cortex-auth-core-orb {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 31% 24%, rgba(255,255,255,.70), transparent 9%),
+    radial-gradient(circle at 54% 46%, rgba(91,140,255,.92), transparent 34%),
+    radial-gradient(circle at 70% 70%, rgba(139,92,246,.82), transparent 52%),
+    #08101a;
+  box-shadow: 0 0 85px rgba(91,140,255,.20), inset -16px -18px 32px rgba(0,0,0,.34), inset 10px 10px 24px rgba(255,255,255,.06);
+  animation: cortex-auth-orb-pulse 7s ease-in-out infinite;
+}
+.cortex-auth-core-ring {
+  position:absolute;
+  inset: 8%;
+  border-radius:50%;
+  border:1px solid rgba(91,140,255,.18);
+  transform-style:preserve-3d;
+}
+.cortex-auth-core-ring-a { transform:rotateX(68deg); animation:cortex-auth-ring-a 13s linear infinite; }
+.cortex-auth-core-ring-b { transform:rotateY(66deg); animation:cortex-auth-ring-b 17s linear infinite reverse; border-color:rgba(139,92,246,.16); }
+@keyframes cortex-auth-orb-pulse { 50% { transform:scale(1.035) translateZ(8px); } }
+@keyframes cortex-auth-ring-a { to { transform:rotateX(68deg) rotateZ(360deg); } }
+@keyframes cortex-auth-ring-b { to { transform:rotateY(66deg) rotateZ(360deg); } }
+html:not(.dark) .cortex-auth-core-orb {
+  background:
+    radial-gradient(circle at 31% 24%, rgba(255,255,255,.96), transparent 9%),
+    radial-gradient(circle at 54% 46%, rgba(91,140,255,.72), transparent 34%),
+    radial-gradient(circle at 70% 70%, rgba(139,92,246,.56), transparent 52%),
+    #edf3fb;
+  box-shadow:0 0 72px rgba(91,140,255,.14), inset -12px -14px 24px rgba(100,116,139,.14), inset 10px 10px 24px rgba(255,255,255,.90);
+}
+html:not(.dark) .cortex-auth-core-ring { border-color:rgba(63,111,229,.16); }
+@media (max-width: 1023px) { .cortex-auth-core { display:none; } }
+@media (prefers-reduced-motion: reduce) {
+  .cortex-auth-core-orb,.cortex-auth-core-ring-a,.cortex-auth-core-ring-b { animation:none !important; }
+}
