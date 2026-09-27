@@ -495,7 +495,6 @@ export function AppShell() {
 
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <SystemSearch triggerClassName="cortex-search-trigger hidden min-w-[220px] items-center gap-2 rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-xs text-muted-foreground xl:flex" />
-            <SystemSearch compact triggerClassName="cortex-search-trigger flex size-10 items-center justify-center rounded-xl border border-border/70 bg-muted/35 text-muted-foreground xl:hidden" />
             <NotificationCenter />
             <ThemeToggle />
             <Button variant="ghost" size="icon" aria-label="منوی بیشتر" title="منوی بیشتر" className="rounded-xl lg:hidden" onClick={() => setMoreOpen(true)}>
