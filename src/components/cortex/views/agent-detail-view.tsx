@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   Play,
   Loader2,
-  BarChart3,
   BrainCircuit,
   MessageCircleQuestion,
   Users,
@@ -901,7 +900,10 @@ export function AgentDetailView() {
         <TabsContent value="ai" className="mt-6">
           <ProviderTab agentId={agentId} />
         </TabsContent>
-        <TabsContent value="tools" className="mt-6">\n          <ToolsTab agentId={agentId} />\n        </TabsContent>\n        <TabsContent value="playground" className="mt-4">
+        <TabsContent value="tools" className="mt-6">
+          <ToolsTab agentId={agentId} />
+        </TabsContent>
+        <TabsContent value="playground" className="mt-4">
           <Playground agentId={agentId} />
         </TabsContent>
         <TabsContent value="api" className="mt-6">
