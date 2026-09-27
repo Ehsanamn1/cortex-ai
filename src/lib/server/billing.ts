@@ -237,10 +237,11 @@ export async function getBillingSnapshot(workspaceId: string) {
   if (existingCatalog === 0) {
     for (const entry of known) await ensureModel(entry.provider, entry.modelId);
   }
-  const [subscription, recentLedger, usage] = await Promise.all([
+  const [subscription, recentLedger, usage, plans] = await Promise.all([
     db.subscription.findFirst({ where: { billingAccountId: account.id, status: "active" }, orderBy: { createdAt: "desc" }, include: { plan: true } }),
     db.creditLedgerEntry.findMany({ where: { billingAccountId: account.id }, orderBy: { createdAt: "desc" }, take: 12 }),
     db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
+    db.plan.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
   const catalog = await db.modelCatalog.findMany({
@@ -261,6 +262,16 @@ export async function getBillingSnapshot(workspaceId: string) {
       periodStart: account.periodStart.toISOString(),
       periodEnd: account.periodEnd.toISOString(),
     },
+    plans: plans.map((plan) => ({
+      id: plan.id,
+      key: plan.key,
+      name: plan.name,
+      description: plan.description,
+      priceToman: plan.priceToman,
+      currency: plan.currency,
+      monthlyCredits: plan.monthlyCredits,
+      overageCreditPriceToman: plan.overageCreditPriceToman,
+    })),
     subscription: subscription ? {
       id: subscription.id,
       status: subscription.status,
