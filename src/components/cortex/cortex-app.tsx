@@ -3,8 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-
 import { api, ApiError } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
 import { CortexMark } from "@/components/cortex/logo";
