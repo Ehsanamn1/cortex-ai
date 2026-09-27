@@ -352,12 +352,13 @@ export const api = {
   getNotifications(workspaceId?:string): Promise<{notifications:NotificationDto[]}> {
     return request(`/api/notifications${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`);
   },
-  searchSystem(query:string, workspaceId?:string): Promise<{results:SearchResultDto[]}> {
+  searchSystem(query:string, workspaceId?:string, signal?:AbortSignal): Promise<{results:SearchResultDto[]}> {
     const params=new URLSearchParams({q:query});
     if(workspaceId) params.set("workspaceId",workspaceId);
-    return request("/api/search?"+params.toString());
+    return request("/api/search?"+params.toString(), { signal });
   },
   getBilling(workspaceId?:string): Promise<BillingSnapshotDto> { return request(`/api/billing${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
+  getBillingFx(): Promise<{usdToman:number;source:string;asOf:string;stale:boolean}> { return request("/api/billing/fx"); },
   getBillingTopUps(workspaceId?:string): Promise<{ requests: BillingTopUpRequestDto[]; packages: Array<{ key:string; credits:number; amountToman:number; label:string }> }> {
     const query = workspaceId ? "?workspaceId=" + encodeURIComponent(workspaceId) : "";
     return request("/api/billing/topup-request" + query);

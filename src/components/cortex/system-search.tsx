@@ -29,6 +29,8 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
 
   useEffect(() => {
     if (!open || !workspaceId || query.trim().length < 2) {
+      setResults([]);
+      setLoading(false);
       return;
     }
     const controller = new AbortController();
@@ -36,14 +38,14 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
       if (controller.signal.aborted) return;
       setLoading(true);
       try {
-        const data = await api.searchSystem(query.trim(), workspaceId);
+        const data = await api.searchSystem(query.trim(), workspaceId, controller.signal);
         if (!controller.signal.aborted) setResults(data.results);
       } catch {
         if (!controller.signal.aborted) setResults([]);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
-    }, 180);
+    }, 110);
     return () => {
       window.clearTimeout(timer);
       controller.abort();

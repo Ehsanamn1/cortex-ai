@@ -927,3 +927,103 @@ html:not(.dark) .cortex-auth-core-ring { border-color:rgba(63,111,229,.16); }
 @media (prefers-reduced-motion: reduce) {
   .cortex-auth-core-orb,.cortex-auth-core-ring-a,.cortex-auth-core-ring-b { animation:none !important; }
 }
+
+/* ===== Final theme-safe wallet/core contract ===== */
+.cortex-infra-badge {
+  background: rgba(5,9,15,.34);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 14px 34px rgba(0,0,0,.16);
+}
+.cortex-infra-label { color: #728098; }
+.cortex-infra-value { color: #eef2ff; }
+
+.cortex-wallet-orb { position: relative; }
+.cortex-wallet-orb-icon {
+  background: rgba(0,0,0,.20);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,.10);
+}
+.cortex-estimator {
+  background:
+    radial-gradient(circle at 84% 18%, rgba(91,140,255,.09), transparent 24%),
+    radial-gradient(circle at 15% 84%, rgba(139,92,246,.07), transparent 24%),
+    linear-gradient(145deg, rgba(16,22,30,.94), rgba(9,13,18,.96));
+}
+.cortex-model-guide {
+  background: linear-gradient(145deg, rgba(15,21,29,.82), rgba(9,13,18,.86));
+}
+
+html.dark .cortex-infra-badge {
+  background: rgba(5,9,15,.48);
+  border-color: rgba(148,163,184,.16);
+}
+html.dark .cortex-infra-label { color: #718096 !important; }
+html.dark .cortex-infra-value { color: #e8eef8 !important; }
+
+html.dark .cortex-wallet-card {
+  background:
+    radial-gradient(circle at 82% 24%, rgba(91,140,255,.20), transparent 25%),
+    radial-gradient(circle at 18% 80%, rgba(139,92,246,.15), transparent 23%),
+    linear-gradient(145deg, #111a28 0%, #0a0f17 58%, #080b11 100%) !important;
+  border-color: rgba(148,163,184,.13) !important;
+  color: #eef2ff !important;
+}
+html.dark .cortex-wallet-card .text-muted-foreground { color: #93a0b2 !important; }
+
+html:not(.dark) .cortex-wallet-card {
+  background:
+    radial-gradient(circle at 82% 24%, rgba(91,140,255,.13), transparent 25%),
+    radial-gradient(circle at 18% 80%, rgba(139,92,246,.10), transparent 23%),
+    linear-gradient(145deg, #ffffff 0%, #f3f7fd 62%, #edf2f9 100%) !important;
+  border-color: #dfe6ef !important;
+  color: #121826 !important;
+  box-shadow: 0 20px 55px rgba(15,23,42,.10), inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+html:not(.dark) .cortex-wallet-card .text-muted-foreground { color: #617086 !important; }
+html:not(.dark) .cortex-wallet-card .bg-white\/10 { background: rgba(15,23,42,.08) !important; }
+html:not(.dark) .cortex-wallet-card .cortex-wallet-orb-icon {
+  background: rgba(255,255,255,.62);
+  color: #30415b;
+  border-color: rgba(100,116,139,.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 10px 24px rgba(15,23,42,.08);
+}
+html:not(.dark) .cortex-wallet-orb {
+  background:
+    radial-gradient(circle at 31% 24%, rgba(255,255,255,.98), transparent 8%),
+    radial-gradient(circle at 43% 38%, rgba(91,140,255,.80), transparent 31%),
+    radial-gradient(circle at 70% 66%, rgba(139,92,246,.62), transparent 52%),
+    radial-gradient(circle at 42% 30%, #dfe8f5, #f6f9fd 70%) !important;
+  border-color: rgba(63,111,229,.18) !important;
+  box-shadow: inset -18px -24px 42px rgba(89,109,138,.14), inset 12px 12px 28px rgba(255,255,255,.9), 0 0 65px rgba(91,140,255,.12) !important;
+}
+
+html:not(.dark) .cortex-estimator {
+  background:
+    radial-gradient(circle at 84% 18%, rgba(91,140,255,.08), transparent 24%),
+    radial-gradient(circle at 15% 84%, rgba(139,92,246,.06), transparent 24%),
+    linear-gradient(145deg, #ffffff, #f5f8fd) !important;
+  border-color: #dfe6ef !important;
+}
+html:not(.dark) .cortex-model-guide {
+  background: linear-gradient(145deg,#ffffff,#f7f9fd) !important;
+  border-color: #dfe6ef !important;
+}
+
+/* Make select/options readable in both themes. */
+html.dark .cortex-estimator select option { background: #0d121a; color: #eef2ff; }
+html:not(.dark) .cortex-estimator select option { background: #ffffff; color: #111827; }
+
+/* Hero itself owns its palette; do not let old utility colors leak across themes. */
+html:not(.dark) .cortex-dashstack .cortex-hero {
+  background: linear-gradient(145deg,#ffffff,#f4f7fb) !important;
+  border-color: #dfe6ef !important;
+}
+html:not(.dark) .cortex-dashstack .cortex-hero > div:first-child {
+  background:
+    radial-gradient(circle at 78% 14%, rgba(91,140,255,.12), transparent 28%),
+    radial-gradient(circle at 18% 82%, rgba(139,92,246,.08), transparent 26%),
+    linear-gradient(145deg,#ffffff,#f3f6fb) !important;
+}
+html:not(.dark) .cortex-dashstack .cortex-hero .text-white { color: #111827 !important; }
+html:not(.dark) .cortex-dashstack .cortex-hero .text-slate-300 { color: #5f6d80 !important; }
+html:not(.dark) .cortex-dashstack .cortex-hero .text-slate-500 { color: #7b8796 !important; }
