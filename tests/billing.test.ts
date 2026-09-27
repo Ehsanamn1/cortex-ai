@@ -3,6 +3,7 @@ import {
   DEFAULT_BILLING_PLANS,
   BillingInsufficientCreditsError,
   creditsFromProviderCost,
+  catalogCostMicros,
   defaultCreditMultiplierBps,
 } from "@/lib/server/billing";
 
@@ -34,6 +35,12 @@ describe("Cortex commercial billing", () => {
     expect(DEFAULT_BILLING_PLANS[1].priceToman).toBeGreaterThan(0);
     expect(DEFAULT_BILLING_PLANS[2].priceToman).toBeGreaterThan(DEFAULT_BILLING_PLANS[1].priceToman);
     expect(DEFAULT_BILLING_PLANS[3].priceToman).toBeGreaterThan(DEFAULT_BILLING_PLANS[2].priceToman);
+  });
+
+  it("uses persisted catalog rates in micro-USD math", () => {
+    expect(catalogCostMicros(1000, 500, 2, 4)).toBe(4000);
+    expect(catalogCostMicros(1234.9, 0, 1, 99)).toBe(1235);
+    expect(catalogCostMicros(100, 100, 0, 0.5)).toBe(50);
   });
 
   it("uses HTTP 402 semantics for insufficient credits", () => {
