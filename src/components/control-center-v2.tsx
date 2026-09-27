@@ -123,10 +123,9 @@ function DataTable({ section, search }: { section: Section; search: string }) {
               {typeof valueAt(row,k) === "boolean" ? (valueAt(row,k) ? "بله" : "خیر") : valueAt(row,k) instanceof Object ? JSON.stringify(valueAt(row,k)) : String(valueAt(row,k) ?? "—")}
             </td>)}
             <td className="px-4 py-3">
-              {["agents","providers","telegram","plugins"].includes(section) && <Button size="sm" variant="ghost" onClick={() => {
+              {["agents","providers","plugins"].includes(section) && <Button size="sm" variant="ghost" onClick={() => {
                 if (section === "agents") toggle.mutate({ resource: "agents", id: row.id, status: row.status === "active" ? "paused" : "active" });
                 else if (section === "providers") toggle.mutate({ resource: "providers", id: row.id, enabled: !row.enabled, status: row.scope });
-                else if (section === "telegram") toggle.mutate({ resource: "telegram", id: row.id, status: row.status === "connected" ? "disconnected" : "connected" });
                 else toggle.mutate({ resource: "plugins", id: row.id, enabled: !row.enabled });
               }}><Power className="size-4" /></Button>}
             </td>
