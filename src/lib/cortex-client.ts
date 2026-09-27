@@ -358,6 +358,7 @@ export const api = {
     return request("/api/search?"+params.toString(), { signal });
   },
   getBilling(workspaceId?:string): Promise<BillingSnapshotDto> { return request(`/api/billing${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`); },
+  getBillingFx(): Promise<{usdToman:number;source:string;asOf:string;stale:boolean}> { return request("/api/billing/fx"); },
   getBillingTopUps(workspaceId?:string): Promise<{ requests: BillingTopUpRequestDto[]; packages: Array<{ key:string; credits:number; amountToman:number; label:string }> }> {
     const query = workspaceId ? "?workspaceId=" + encodeURIComponent(workspaceId) : "";
     return request("/api/billing/topup-request" + query);
