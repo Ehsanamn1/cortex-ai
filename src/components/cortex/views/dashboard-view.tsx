@@ -5,6 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Activity,
+  BarChart3,
+  BrainCircuit,
+  Settings2,
   ArrowUpLeft,
   Bot,
   BookPlus,
@@ -222,44 +225,28 @@ export function DashboardView() {
       <section aria-label="عملیات و وضعیت" className="grid items-start gap-5 xl:grid-cols-[1.2fr_.8fr]">
         <Card className="cortex-panel overflow-hidden rounded-2xl">
           <CardHeader className="border-b border-white/[.06]">
-            <div><p className="cortex-kicker">عملیات سریع</p><CardTitle className="mt-2 text-base">از این‌جا ادامه بده</CardTitle></div>
-            <span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[10px] text-primary">{faNum(stats.agents + stats.knowledgeSources + stats.conversations)} رکورد</span>
+            <div><p className="cortex-kicker">دسترسی سریع</p><CardTitle className="mt-2 text-base">همه مسیرهای اصلی، در یک نگاه</CardTitle></div>
+            <span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[10px] text-primary">شروع در کمتر از ۲ ثانیه</span>
           </CardHeader>
-          <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
+          <CardContent className="grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { title: "ساخت ایجنت", description: "رفتار، لحن و دستورالعمل پاسخ‌گویی را تنظیم کن.", icon: Bot, view: "agent-new" as const },
-              { title: "افزودن دانش", description: "فایل یا URL واقعی را وارد کن و وضعیت پردازش را ببین.", icon: BookPlus, view: "knowledge" as const },
-              { title: "گفتگوها", description: "مکالمات ثبت‌شده را باز کن و پاسخ‌ها را بررسی کن.", icon: MessagesSquare, view: "conversations" as const },
-              { title: "اتصال تلگرام", description: "ربات را به یکی از ایجنت‌های این فضا وصل کن.", icon: Send, view: "telegram" as const },
+              { title: "ایجنت‌ها", description: "ساخت و مدیریت ایجنت‌ها", icon: Bot, view: "agents" as const },
+              { title: "مغز کسب‌وکار", description: "دانش و منابع پاسخ‌گویی", icon: BrainCircuit, view: "knowledge" as const },
+              { title: "گفتگوها", description: "بررسی مکالمات واقعی", icon: MessagesSquare, view: "conversations" as const },
+              { title: "تلگرام", description: "ربات‌ها و کاربران", icon: Send, view: "telegram" as const },
+              { title: "تحلیل", description: "مصرف، هزینه و روندها", icon: BarChart3, view: "analytics" as const },
+              { title: "تنظیمات", description: "اتصال‌ها و تنظیمات فضای کاری", icon: Settings2, view: "settings" as const },
             ].map((action) => (
-              <button key={action.title} type="button" onClick={() => setView(action.view)} className="cortex-action group relative flex min-h-[128px] flex-col justify-between rounded-2xl border border-white/[.07] bg-white/[.02] p-4 text-start">
-                <div className="flex items-start justify-between gap-3"><span className="cortex-icon-box"><action.icon className="size-[18px]" /></span><ArrowUpLeft className="size-4 text-muted-foreground transition-transform group-hover:-translate-x-1 group-hover:-translate-y-1" /></div>
-                <div className="relative z-10 mt-5"><p className="text-sm font-semibold">{action.title}</p><p className="mt-1 text-xs leading-6 text-muted-foreground">{action.description}</p></div>
+              <button key={action.title} type="button" onClick={() => setView(action.view)} className="group flex min-h-[88px] items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3 text-start transition-colors hover:bg-white/[.045]">
+                <span className="cortex-icon-box shrink-0"><action.icon className="size-[18px]" /></span>
+                <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{action.title}</span><span className="mt-1 block truncate text-[11px] text-muted-foreground">{action.description}</span></span>
+                <ArrowUpLeft className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-1 group-hover:-translate-y-1" />
               </button>
             ))}
           </CardContent>
         </Card>
 
-        <Card className="cortex-panel overflow-hidden rounded-2xl">
-          <CardHeader className="border-b border-white/[.06]">
-            <div><p className="cortex-kicker">سلامت و مصرف</p><CardTitle className="mt-2 text-base">وضعیت فضای کاری</CardTitle></div>
-            <div className="flex size-9 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary"><Server className="size-4" /></div>
-          </CardHeader>
-          <CardContent className="space-y-3 p-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3"><p className="text-[11px] text-muted-foreground">ربات تلگرام</p><p className="mt-1 text-xl font-bold">{faNum(stats.telegramBots ?? 0)}</p></div>
-              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3"><p className="text-[11px] text-muted-foreground">رویداد مصرف</p><p className="mt-1 text-xl font-bold">{faNum(stats.totalUsageEvents ?? 0)}</p></div>
-              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3"><p className="text-[11px] text-muted-foreground">توکن کل</p><p className="mt-1 text-xl font-bold">{faNum(stats.totalTokens ?? 0)}</p></div>
-              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3"><p className="text-[11px] text-muted-foreground">هزینه ثبت‌شده</p><p className="mt-1 text-xl font-bold">{faNum(stats.estimatedCostMicros ?? 0)}</p></div>
-            </div>
-            <div className="rounded-xl border border-white/[.06] bg-black/10 p-3">
-              <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Workflow className="size-4 text-primary" /><span className="text-xs font-medium">اتصال‌های زیرساخت</span></div><span className={cn("text-xs font-semibold", providerReadyCount === 3 ? "text-emerald-400" : "text-amber-400")}>{faNum(providerReadyCount)} / ۳</span></div>
-              <div className="mt-3 flex gap-1.5">{[0,1,2].map((i) => <span key={i} className={cn("h-1.5 flex-1 rounded-full", i < providerReadyCount ? "bg-emerald-400" : "bg-white/10")} />)}</div>
-            </div>
-            <Button variant="outline" className="w-full" onClick={() => setView("settings")}><Sparkles className="size-4" />پیکربندی اتصال‌ها</Button>
-          </CardContent>
-        </Card>
-      </section>
+        <Card className="cortex-panel overflow-hidden rounded-2xl"></section>
 
       )}
 
