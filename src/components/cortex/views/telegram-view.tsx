@@ -245,7 +245,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
 }
 
 
-function TelegramAccessManager({ botId }: { botId: string }) {
+export function TelegramAccessManager({ botId }: { botId: string }) {
   const queryClient = useQueryClient();
   const [phones, setPhones] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -395,7 +395,7 @@ function AccessEntryRow({
   );
 }
 
-function TelegramCustomizer({ botId }: { botId: string }) {
+export function TelegramCustomizer({ botId }: { botId: string }) {
   const q = useQuery({
     queryKey: ["telegram-profile", botId],
     queryFn: () => api.getTelegramBotProfile(botId),

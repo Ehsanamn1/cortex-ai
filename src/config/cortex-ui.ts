@@ -17,14 +17,9 @@ export const CORTEX_UI_CONFIG = {
   },
   navigation: [
     { view: "dashboard" as CortexView, label: "داشبورد", mobile: true },
-    { view: "workflows" as CortexView, label: "Workflow", mobile: false },
     { view: "agents" as CortexView, label: "ایجنت‌ها", mobile: true },
     { view: "knowledge" as CortexView, label: "مغز شرکت", mobile: true },
     { view: "conversations" as CortexView, label: "گفتگوها", mobile: true },
-    { view: "telegram" as CortexView, label: "تلگرام", mobile: false },
-    { view: "analytics" as CortexView, label: "تحلیل", mobile: false },
-    { view: "admin" as CortexView, label: "مدیریت", mobile: false },
-    { view: "learn" as CortexView, label: "آموزش", mobile: false },
   ],
   copy: {
     welcomeTitle: "هوش کسب‌وکار را از یک داشبورد کنترل کن.",
