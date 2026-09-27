@@ -483,7 +483,7 @@ export function AppShell() {
   const showCta = (view === "dashboard" || view === "agents") && settingEnabled(siteConfig.data?.settings, "feature.createAgentCta");
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
+    <div className="cortex-dashstack flex h-dvh overflow-hidden bg-background">
       {/* Sidebar — first in DOM = right side in RTL */}
       <aside className="cortex-sidebar hidden w-[268px] shrink-0 flex-col gap-5 border-l p-4 lg:flex">
         <div className="px-1 pt-1">
@@ -516,7 +516,16 @@ export function AppShell() {
 
           <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><Bot className="size-4" /></span><div className="min-w-0"><p className="truncate text-[9px] font-bold tracking-[.18em] text-primary/75">CORTEX WORKSPACE</p><h1 className="truncate text-lg font-bold text-foreground">{title}</h1></div></div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <div className="hidden min-w-[220px] items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 xl:flex">
+              <Search className="size-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">جستجو در Cortex…</span>
+              <span className="ms-auto rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">⌘K</span>
+            </div>
+            <Button variant="ghost" size="icon" aria-label="اعلان‌ها" className="relative rounded-lg">
+              <Bell className="size-[18px]" />
+              <span aria-hidden="true" className="absolute end-2 top-2 size-1.5 rounded-full bg-primary" />
+            </Button>
             {showCta && (
               <Button size="sm" className="hidden sm:inline-flex" onClick={() => setView("agent-new")}>
                 <Plus />
