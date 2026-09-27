@@ -305,7 +305,7 @@ export async function getBillingSnapshot(workspaceId: string) {
       qualityTier: item.qualityTier,
       speedTier: item.speedTier,
       commercialAvailable: item.commercialAvailable,
-      enabledForPlan: accessMap.get(item.id)?.enabled ?? item.commercialAvailable,
+      enabledForPlan: accessMap.get(item.id)?.enabled ?? (account.plan.priceToman === 0 ? item.commercialAvailable : false),
       creditMultiplierBps: accessMap.get(item.id)?.creditMultiplierBps ?? defaultCreditMultiplierBps(item.qualityTier),
     })),
     ledger: recentLedger.map((entry) => ({
