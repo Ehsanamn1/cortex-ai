@@ -14,6 +14,28 @@ export function getModelRate(provider: string, model: string): ModelRate {
   const p = provider.toLowerCase();
   const m = model.toLowerCase();
 
+  // Current 2026 model catalog. Rates are standard public API rates;
+  // providers may add tool, search, fast-mode, regional, or long-context fees.
+  if (m.includes("gpt-6-astra")) return { inputUsdPer1M: 10, outputUsdPer1M: 50, known: true, label: "OpenAI GPT-6 Astra" };
+  if (m.includes("gpt-6-sol")) return { inputUsdPer1M: 2, outputUsdPer1M: 10, known: true, label: "OpenAI GPT-6 Sol" };
+  if (m.includes("gpt-6-luna")) return { inputUsdPer1M: 0.10, outputUsdPer1M: 0.50, known: true, label: "OpenAI GPT-6 Luna" };
+  if (m.includes("gpt-5.6-luna")) return { inputUsdPer1M: 0.20, outputUsdPer1M: 1.20, known: true, label: "OpenAI GPT-5.6 Luna" };
+  if (m.includes("gpt-5.6-terra")) return { inputUsdPer1M: 1, outputUsdPer1M: 6, known: true, label: "OpenAI GPT-5.6 Terra" };
+  if (m.includes("gpt-5.6-sol")) return { inputUsdPer1M: 2, outputUsdPer1M: 10, known: true, label: "OpenAI GPT-5.6 Sol" };
+
+  if (m.includes("glm-5.3-flash")) return { inputUsdPer1M: 0.15, outputUsdPer1M: 0.50, known: true, label: "Z.AI GLM-5.3 Flash" };
+  if (m.includes("glm-5.3")) return { inputUsdPer1M: 1.40, outputUsdPer1M: 4.40, known: true, label: "Z.AI GLM-5.3" };
+
+  if (m.includes("deepseek-v4.1-flash") || m === "deepseek-flash") {
+    return { inputUsdPer1M: 0.15, outputUsdPer1M: 0.60, known: true, label: "DeepSeek V4.1 Flash" };
+  }
+  if (m.includes("deepseek-v4-pro") || m === "deepseek-v4") {
+    return { inputUsdPer1M: 0.66, outputUsdPer1M: 1.98, known: true, label: "DeepSeek V4 Pro (off-peak base)" };
+  }
+  if (m.includes("claude-opus-5")) return { inputUsdPer1M: 5, outputUsdPer1M: 25, known: true, label: "Anthropic Claude Opus 5" };
+  if (m.includes("claude-opus-4-8") || m.includes("opus-4.8")) return { inputUsdPer1M: 5, outputUsdPer1M: 25, known: true, label: "Anthropic Claude Opus 4.8" };
+  if (m.includes("gemini-3.8-flash")) return { inputUsdPer1M: 0.75, outputUsdPer1M: 3.75, known: true, label: "Google Gemini 3.8 Flash" };
+
   if (m.includes("gpt-5-mini") || m.includes("gpt-5.4-mini")) {
     return m.includes("gpt-5.4-mini")
       ? { inputUsdPer1M: 0.75, outputUsdPer1M: 4.5, known: true, label: "OpenAI GPT-5.4 mini" }
