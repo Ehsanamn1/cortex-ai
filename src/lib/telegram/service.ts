@@ -6,7 +6,7 @@ import { RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } fr
 import { normalizeTelegramPhone } from '@/lib/telegram/phone';
 import { hashTelegramInviteToken, parseTelegramStartToken } from '@/lib/telegram/access';
 import { getTelegramBotProfile } from '@/lib/telegram/profile';
-import { estimateLlmCostMicros } from '@/lib/server/pricing';
+import { releaseBillingReservation, reserveBillingForAgentRequest, recordUsageAndCharge } from '@/lib/server/billing';
 import { runAgentExecution } from '@/lib/runtime/engine';
 
 const API = 'https://api.telegram.org';
@@ -507,6 +507,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
   await sendChatAction(token, msg.chat.id, 'typing').catch(() => undefined);
 
   let reservationId: string | null = null;
+  let billingReservationId: string | null = null;
   let progressMessageId: string | number | null = null;
   try {
     const botAgent = await db.agent.findUniqueOrThrow({ where: { id: bot.agentId } });
@@ -543,6 +544,13 @@ export async function processTelegramUpdate(botId: string, update: any) {
       botAgent.maxTokens,
       user.id,
     );
+
+    billingReservationId = (await reserveBillingForAgentRequest({
+      workspaceId: bot.workspaceId,
+      agentId: botAgent.id,
+      inputTokens: estimatedPromptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS,
+      maxOutputTokens: botAgent.maxTokens,
+    })).reservationId;
 
     await db.message.create({
       data: {
@@ -626,24 +634,26 @@ export async function processTelegramUpdate(botId: string, update: any) {
     const inputTokens = estimatedPromptTokens + auxiliaryInputTokens;
     const outputTokens = estimateTokens(content) + auxiliaryOutputTokens;
 
-    await db.$transaction([
-      db.usageEvent.create({
-        data: {
-          workspaceId: bot.workspaceId,
-          agentId: bot.agentId,
-          telegramBotId: bot.id,
-          telegramUserId: user.id,
-          channel: 'telegram',
-          provider,
-          model,
-          inputTokens,
-          outputTokens,
-          totalTokens: inputTokens + outputTokens,
-          estimatedCostMicros: estimateLlmCostMicros(inputTokens, outputTokens, provider, model),
-        },
-      }),
-      ...(reservationId ? [db.usageReservation.delete({ where: { id: reservationId } })] : []),
-    ]);
+    await recordUsageAndCharge({
+      usage: {
+        workspaceId: bot.workspaceId,
+        agentId: bot.agentId,
+        telegramBotId: bot.id,
+        telegramUserId: user.id,
+        channel: 'telegram',
+        provider,
+        model,
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+      },
+      reservationId: billingReservationId,
+    });
+    billingReservationId = null;
+
+    if (reservationId) {
+      await db.usageReservation.delete({ where: { id: reservationId } }).catch(() => undefined);
+    }
     reservationId = null;
 
     await db.telegramBot.update({
@@ -661,7 +671,9 @@ export async function processTelegramUpdate(botId: string, update: any) {
     }
   } catch (error) {
     await releaseUsageReservation(reservationId);
+    await releaseBillingReservation(billingReservationId);
     reservationId = null;
+    billingReservationId = null;
 
     if (error && typeof error === 'object' && 'status' in error && Number((error as { status?: unknown }).status) === 429) {
       const message = error instanceof Error ? error.message : 'سقف مصرف این کاربر پر شده است.';
