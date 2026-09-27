@@ -19,6 +19,11 @@ import {
   CheckCircle2,
   Play,
   Loader2,
+  BarChart3,
+  BrainCircuit,
+  MessageCircleQuestion,
+  Users,
+  Coins,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -52,12 +57,13 @@ import { TelegramAccessManager, TelegramCustomizer } from "@/components/cortex/v
 
 const AGENT_TABS: Array<{ value: AgentTab; label: string }> = [
   { value: "overview", label: "نمای کلی" },
-  { value: "knowledge", label: "دانش" },
+  { value: "knowledge", label: "مغز کسب‌وکار" },
   { value: "telegram", label: "تلگرام" },
   { value: "ai", label: "هوش مصنوعی" },
   { value: "tools", label: "ابزارها" },
   { value: "playground", label: "پلی‌گراند" },
   { value: "api", label: "API" },
+  { value: "analytics", label: "تحلیل" },
   { value: "settings", label: "تنظیمات" },
 ];
 
@@ -189,8 +195,6 @@ function OverviewTab({ agentId }: { agentId: string }) {
           </CardContent>
         </Card>
       </div>
-
-      <BusinessOnboardingCard agentId={agentId} />
 
       {agent?.instructions?.trim() && (
         <Card className="rounded-xl">
@@ -347,6 +351,44 @@ function BusinessOnboardingCard({ agentId }: { agentId: string }) {
 
 function ChevronRightIcon() {
   return <ArrowRight className="rotate-180" />;
+}
+
+function BusinessBrainTab({ agentId }: { agentId: string }) {
+  const { data: knowledgeData } = useAgentKnowledge(agentId);
+  const { data: onboardingData } = useQuery({
+    queryKey: ["business-onboarding", agentId],
+    queryFn: () => api.getBusinessOnboarding(agentId),
+  });
+  const sources = knowledgeData?.sources ?? [];
+  const readySources = sources.filter((source) => source.status === "ready").length;
+  const failedSources = sources.filter((source) => source.status === "failed").length;
+  const onboardingComplete = onboardingData?.session?.status === "completed";
+
+  return (
+    <div className="space-y-5">
+      <Card className="cortex-panel overflow-hidden rounded-2xl">
+        <CardHeader className="border-b border-white/[.06] pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base"><span className="flex size-9 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary"><BrainCircuit className="size-4" /></span>مغز کسب‌وکار</CardTitle>
+              <CardDescription className="mt-1 leading-6">همه چیزهایی که این ایجنت درباره کسب‌وکار می‌داند؛ از پاسخ‌های مصاحبه تا فایل‌ها و منابع دانش.</CardDescription>
+            </div>
+            <Badge variant={onboardingComplete ? "default" : "outline"}>{onboardingComplete ? "پروفایل تکمیل شده" : "نیاز به راه‌اندازی"}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-4 sm:grid-cols-3">
+          <MiniStat icon={BrainCircuit} value={onboardingComplete ? "آماده" : "ناقص"} label="پروفایل کسب‌وکار" tint="border-primary/25 bg-primary/10 text-primary" />
+          <MiniStat icon={FileText} value={faNum(readySources)} label="منابع آماده" tint="border-emerald-500/25 bg-emerald-500/10 text-emerald-400" />
+          <MiniStat icon={ShieldCheck} value={faNum(failedSources)} label="منابع دارای خطا" tint="border-amber-500/25 bg-amber-500/10 text-amber-400" />
+        </CardContent>
+      </Card>
+      <BusinessOnboardingCard agentId={agentId} />
+      <Card className="cortex-panel overflow-hidden rounded-2xl">
+        <CardHeader className="border-b border-white/[.06] pb-4"><CardTitle className="flex items-center gap-2 text-base"><Library className="size-4 text-primary" />منابع و دانش</CardTitle><CardDescription>فایل‌ها، URLها و دانش ساختاریافته‌ای که پاسخ‌های ایجنت به آن‌ها متکی است.</CardDescription></CardHeader>
+        <CardContent className="p-0"><KnowledgeManager agentId={agentId} /></CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function ToolsTab({ agentId }: { agentId: string }) {
@@ -642,6 +684,39 @@ function AgentTelegramTab({ agentId }: { agentId: string }) {
 
 
 
+function AgentAnalyticsTab({ agentId }: { agentId: string }) {
+  const { data, isPending, isError, error, refetch } = useQuery({
+    queryKey: ["agent-analytics", agentId],
+    queryFn: () => api.getAgentAnalytics(agentId),
+    staleTime: 30_000,
+  });
+  if (isPending) return <div className="space-y-4"><Skeleton className="h-28 rounded-2xl" /><Skeleton className="h-72 rounded-2xl" /></div>;
+  if (isError || !data) return <ErrorState message={error instanceof Error ? error.message : "دریافت تحلیل ایجنت ناموفق بود."} onRetry={() => void refetch()} />;
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MiniStat icon={MessagesSquare} value={faNum(data.conversations)} label="گفتگوها" tint="border-primary/25 bg-primary/10 text-primary" />
+        <MiniStat icon={MessageCircleQuestion} value={faNum(data.usage.events)} label="درخواست‌های AI" tint="border-secondary/25 bg-secondary/10 text-secondary" />
+        <MiniStat icon={Coins} value={faNum(data.usage.totalTokens)} label="توکن مصرف‌شده" tint="border-amber-500/25 bg-amber-500/10 text-amber-400" />
+        <MiniStat icon={Users} value={faNum(data.telegramUsers)} label="کاربر تلگرام" tint="border-emerald-500/25 bg-emerald-500/10 text-emerald-400" />
+      </div>
+      <Card className="cortex-panel rounded-2xl">
+        <CardHeader className="border-b border-white/[.06] pb-4"><CardTitle className="text-base">مصرف و هزینه</CardTitle><CardDescription>مصرف واقعی ثبت‌شده برای همین ایجنت، جدا از سایر ایجنت‌های فضای کاری.</CardDescription></CardHeader>
+        <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">ورودی</p><p className="mt-1 text-lg font-bold">{faNum(data.usage.inputTokens)}</p><p className="text-[11px] text-muted-foreground">توکن</p></div>
+          <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">خروجی</p><p className="mt-1 text-lg font-bold">{faNum(data.usage.outputTokens)}</p><p className="text-[11px] text-muted-foreground">توکن</p></div>
+          <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">هزینه تخمینی</p><p className="mt-1 text-lg font-bold">{faNum(data.usage.estimatedCostMicros)}</p><p className="text-[11px] text-muted-foreground">میکرودلار</p></div>
+          <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">پرسش‌های بی‌پاسخ</p><p className="mt-1 text-lg font-bold">{faNum(data.unanswered)}</p><p className="text-[11px] text-muted-foreground">نیازمند بهبود دانش</p></div>
+        </CardContent>
+      </Card>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card className="cortex-panel rounded-2xl"><CardHeader className="border-b border-white/[.06] pb-4"><CardTitle className="text-base">پرسش‌های پرتکرار</CardTitle></CardHeader><CardContent className="p-0">{data.topQuestions.length === 0 ? <p className="p-6 text-center text-sm text-muted-foreground">هنوز داده‌ای برای تحلیل وجود ندارد.</p> : <ul className="divide-y divide-white/[.06]">{data.topQuestions.slice(0, 8).map((item) => <li key={item.question} className="flex items-start gap-3 p-4"><span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">{faNum(item.count)}</span><p className="text-sm leading-6">{item.question}</p></li>)}</ul>}</CardContent></Card>
+        <Card className="cortex-panel rounded-2xl"><CardHeader className="border-b border-white/[.06] pb-4"><CardTitle className="text-base">شکاف‌های دانش</CardTitle><CardDescription>سؤال‌هایی که ایجنت نتوانسته از دانش فعلی پاسخ مطمئن بسازد.</CardDescription></CardHeader><CardContent className="p-0">{data.unansweredQuestions.length === 0 ? <p className="p-6 text-center text-sm text-muted-foreground">فعلاً شکاف شاخصی ثبت نشده است.</p> : <ul className="divide-y divide-white/[.06]">{data.unansweredQuestions.slice(0, 8).map((item) => <li key={item.question} className="flex items-start gap-3 p-4"><span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-xs font-semibold text-amber-300">{faNum(item.count)}</span><p className="text-sm leading-6">{item.question}</p></li>)}</ul>}</CardContent></Card>
+      </div>
+    </div>
+  );
+}
+
 function SettingsTab({ agentId }: { agentId: string }) {
   const { data } = useQuery({
     queryKey: ["agent", agentId],
@@ -806,7 +881,7 @@ export function AgentDetailView() {
 
       {/* Tabs */}
       <Tabs value={agentTab} onValueChange={(value) => setAgentTab(value as AgentTab)}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
+        <TabsList className="flex w-full justify-start gap-1 overflow-x-auto rounded-xl p-1 sm:grid sm:grid-cols-4 lg:grid-cols-9">
           {AGENT_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -818,10 +893,7 @@ export function AgentDetailView() {
           <OverviewTab agentId={agentId} />
         </TabsContent>
         <TabsContent value="knowledge" className="mt-6">
-          <KnowledgeManager agentId={agentId} />
-        </TabsContent>
-        <TabsContent value="telegram" className="mt-6">
-          <AgentTelegramTab agentId={agentId} />
+          <BusinessBrainTab agentId={agentId} />
         </TabsContent>
         <TabsContent value="telegram" className="mt-6">
           <AgentTelegramTab agentId={agentId} />
@@ -834,6 +906,9 @@ export function AgentDetailView() {
         </TabsContent>
         <TabsContent value="api" className="mt-6">
           <AgentApiAccess agentId={agentId} />
+        </TabsContent>
+        <TabsContent value="analytics" className="mt-6">
+          <AgentAnalyticsTab agentId={agentId} />
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
           <SettingsTab agentId={agentId} />
