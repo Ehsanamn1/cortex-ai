@@ -371,15 +371,18 @@ export async function reserveBillingCredits(params: {
 }): Promise<BillingReservationResult> {
   const account = await ensureWorkspaceBilling(params.workspaceId);
   const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel(params.provider, params.model);
-  const access = await db.planModelAccess.upsert({
+  const existingAccess = await db.planModelAccess.findUnique({
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
-    update: {},
-    create: { planId: account.planId, modelCatalogId: catalog.id, enabled: true, creditMultiplierBps: fallbackMultiplier },
   });
 
-  if (account.enforcementEnabled && account.plan.priceToman > 0 && access.enabled === false) {
+  if (account.enforcementEnabled && account.plan.priceToman > 0 && !existingAccess?.enabled) {
     throw new BillingModelUnavailableError(params.model);
   }
+
+  const access = existingAccess ?? {
+    enabled: true,
+    creditMultiplierBps: fallbackMultiplier,
+  };
 
   const providerCostMicros = estimateLlmCostMicros(
     Math.max(0, Math.floor(params.inputTokens)),
@@ -477,12 +480,10 @@ export async function recordUsageAndCharge(params: {
     params.usage.model,
   );
   const { catalog, defaultMultiplierBps } = await ensureModel(params.usage.provider, params.usage.model);
-  const access = await db.planModelAccess.upsert({
+  const access = await db.planModelAccess.findUnique({
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
-    update: {},
-    create: { planId: account.planId, modelCatalogId: catalog.id, enabled: true, creditMultiplierBps: defaultMultiplierBps },
   });
-  const multiplierBps = Math.max(1, access.creditMultiplierBps || defaultMultiplierBps);
+  const multiplierBps = Math.max(1, access?.creditMultiplierBps || defaultMultiplierBps);
   const chargedCredits = creditsFromProviderCost(providerCostMicros, multiplierBps);
   const totalTokens = params.usage.totalTokens ?? params.usage.inputTokens + params.usage.outputTokens;
 
