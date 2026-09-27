@@ -87,7 +87,7 @@ describe("Telegram 10-user simulation", () => {
       id: "db-" + where.botId_telegramUserId.telegramUserId,
       botId: "bot-10",
       telegramUserId: where.botId_telegramUserId.telegramUserId,
-      status: "pending",
+      status: "allowed",
       username: "user" + where.botId_telegramUserId.telegramUserId,
       firstName: "User",
       lastName: where.botId_telegramUserId.telegramUserId,
