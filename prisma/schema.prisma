@@ -24,6 +24,7 @@ model User {
   conversations   Conversation[]
   usageEvents     UsageEvent[]
   auditLogs       AuditLog[]
+  topUpRequests   CreditTopUpRequest[]
 }
 
 model Workspace {
@@ -51,6 +52,7 @@ model Workspace {
   creditReservations CreditReservation[]
   billingCharges  BillingCharge[]
   invoices        Invoice[]
+  topUpRequests   CreditTopUpRequest[]
   workflows       Workflow[]
   executions      Execution[]
   memoryEntries   MemoryEntry[]
@@ -823,6 +825,26 @@ model CreditLedgerEntry {
   @@index([workspaceId, createdAt])
   @@index([billingAccountId, createdAt])
   @@index([referenceType, referenceId])
+}
+
+model CreditTopUpRequest {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  userId       String
+  packageKey   String
+  credits      Int
+  amountToman  Int
+  status       String   @default("pending")
+  note         String?
+  createdAt    DateTime @default(now())
+  reviewedAt   DateTime?
+  reviewedBy   String?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status, createdAt])
+  @@index([userId, createdAt])
 }
 
 model CreditReservation {
