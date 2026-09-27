@@ -20,7 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import { faNum } from "@/components/cortex/format";
+import { faNum, formatCountCompact, formatTomanCompact } from "@/components/cortex/format";
 import { api } from "@/lib/cortex-client";
 
 type EstimatorModel = {
