@@ -40,7 +40,7 @@ export default function RootLayout({
       </head>
       <body className={vazirmatn.variable + " antialiased bg-background text-foreground"}>
         {children}
-        <Toaster position="top-center" dir="rtl" richColors theme="dark" />
+        <Toaster position="top-center" dir="rtl" richColors />
       </body>
     </html>
   );
