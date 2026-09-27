@@ -27,7 +27,7 @@ export async function GET(req: Request) {
       db.workspaceBillingAccount.count(),
       db.subscription.count({ where: { status: "active" } }),
       db.billingCharge.aggregate({ where: { createdAt: { gte: since30 }, status: { in: ["captured", "captured_debt"] } }, _sum: { chargedCredits: true, providerCostMicros: true } }),
-      db.subscription.findMany({ where: { status: "active", plan: { priceToman: { gt: 0 } } }, include: { plan: true }, select: { plan: { select: { priceToman: true } } } }).then(rows => rows.reduce((sum, row) => sum + row.plan.priceToman, 0)),
+      db.subscription.findMany({ where: { status: "active", plan: { priceToman: { gt: 0 } } }, select: { plan: { select: { priceToman: true } } } }).then(rows => rows.reduce((sum, row) => sum + row.plan.priceToman, 0)),
     ]);
 
     return applyCors(jsonOk({
