@@ -290,6 +290,7 @@ export async function getBillingSnapshot(workspaceId: string) {
       periodStart: account.periodStart.toISOString(),
       periodEnd: account.periodEnd.toISOString(),
     },
+    topUpPackages: Object.entries(CREDIT_TOP_UP_PACKAGES).map(([key,item]) => ({ key, ...item })),
     plans: plans.map((plan) => ({
       id: plan.id,
       key: plan.key,
