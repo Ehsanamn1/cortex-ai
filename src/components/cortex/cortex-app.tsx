@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 
 import { api, ApiError } from "@/lib/cortex-client";
