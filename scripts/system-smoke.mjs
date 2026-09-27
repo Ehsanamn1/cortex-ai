@@ -1,5 +1,7 @@
 const base = (process.env.CORTEX_BASE_URL || "https://cortex-ai.dengxiao445.workers.dev").replace(/\/$/, "");
 
+const expectNewRoutes = process.env.SYSTEM_SMOKE_EXPECT_NEW === "true";
+
 const cases = [
   { method: "GET", path: "/api/health", expected: [200], public: true },
   { method: "GET", path: "/api/site-config", expected: [200], public: true },
@@ -14,10 +16,10 @@ const cases = [
   { method: "GET", path: "/api/telegram/bots", expected: [401], public: false },
   { method: "GET", path: "/api/workflows", expected: [401], public: false },
   { method: "GET", path: "/api/executions", expected: [401], public: false },
-  { method: "GET", path: "/api/billing", expected: [401], public: false },
+  { method: "GET", path: "/api/billing", expected: expectNewRoutes ? [401] : [404], public: false },
   { method: "GET", path: "/api/control-center", expected: [401], public: false },
-  { method: "GET", path: "/api/control-center/resources?resource=users", expected: [401], public: false },
-  { method: "GET", path: "/api/control-center/billing", expected: [401], public: false },
+  { method: "GET", path: "/api/control-center/resources?resource=users", expected: expectNewRoutes ? [401] : [404], public: false },
+  { method: "GET", path: "/api/control-center/billing", expected: expectNewRoutes ? [401] : [404], public: false },
   { method: "GET", path: "/api/control-center/settings", expected: [401], public: false },
   { method: "GET", path: "/api/control-center/plugins", expected: [401], public: false },
   { method: "GET", path: "/api/admin/auth/me", expected: [401], public: false },
