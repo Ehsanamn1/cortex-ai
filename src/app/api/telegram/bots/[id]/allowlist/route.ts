@@ -30,7 +30,17 @@ function rawPhones(body: Record<string, unknown>): string[] {
 
 function serialize(entry: any, username: string | null) {
   return {
-    ...entry,
+    id: entry.id,
+    botId: entry.botId,
+    phoneNumber: entry.phoneNumber,
+    displayName: entry.displayName,
+    notes: entry.notes,
+    status: entry.status,
+    dailyMessageLimit: entry.dailyMessageLimit,
+    monthlyMessageLimit: entry.monthlyMessageLimit,
+    dailyTokenLimit: entry.dailyTokenLimit,
+    monthlyTokenLimit: entry.monthlyTokenLimit,
+    claimedTelegramUserId: entry.claimedTelegramUserId,
     inviteLink: entry.invitePlainToken ? buildTelegramInviteLink(username, entry.invitePlainToken) : null,
     invitePlainToken: undefined,
     createdAt: entry.createdAt.toISOString(),
@@ -58,6 +68,12 @@ export async function POST(req: Request, { params }: Params) {
 
     const displayName = typeof body.displayName === "string" ? body.displayName.trim().slice(0, 80) : null;
     const notes = typeof body.notes === "string" ? body.notes.trim().slice(0, 300) : null;
+    const defaultLimits = {
+      dailyMessageLimit: safeLimit(body.dailyMessageLimit) ?? 0,
+      monthlyMessageLimit: safeLimit(body.monthlyMessageLimit) ?? 0,
+      dailyTokenLimit: safeLimit(body.dailyTokenLimit) ?? 0,
+      monthlyTokenLimit: safeLimit(body.monthlyTokenLimit) ?? 0,
+    };
     const regenerate = body.regenerate === true;
     const results = [];
 
@@ -72,12 +88,13 @@ export async function POST(req: Request, { params }: Params) {
               displayName: displayName ?? existing.displayName,
               notes: notes ?? existing.notes,
               status: "allowed",
+              ...defaultLimits,
               ...(needsToken ? { inviteTokenHash: hashTelegramInviteToken(plainToken!), inviteCreatedAt: new Date(), claimedTelegramUserId: null, claimedAt: null } : {}),
             },
           })
         : await db.telegramAllowlistEntry.create({
             data: {
-              botId: bot.id, phoneNumber, displayName, notes, status: "allowed",
+              botId: bot.id, phoneNumber, displayName, notes, status: "allowed", ...defaultLimits,
               inviteTokenHash: hashTelegramInviteToken(plainToken!), inviteCreatedAt: new Date(),
             },
           });
