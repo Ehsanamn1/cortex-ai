@@ -768,7 +768,7 @@ model WorkspaceBillingAccount {
 
   workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   plan            Plan              @relation(fields: [planId], references: [id], onDelete: Restrict)
-  subscriptions  Subscription[]
+  subscriptions  Subscription[] @relation("WorkspaceSubscriptionAccount")
   ledgerEntries  CreditLedgerEntry[]
   reservations   CreditReservation[]
   charges        BillingCharge[]
@@ -861,7 +861,7 @@ model BillingCharge {
 
   workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   billingAccount WorkspaceBillingAccount @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
-  usageEvent     UsageEvent             @relation(fields: [usageEventId], references: [id], onDelete: Cascade)
+  usageEvent     UsageEvent             @relation("UsageEventBillingCharge", fields: [usageEventId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
   @@index([billingAccountId, createdAt])
