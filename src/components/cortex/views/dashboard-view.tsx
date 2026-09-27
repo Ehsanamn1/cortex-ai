@@ -246,7 +246,26 @@ export function DashboardView() {
           </CardContent>
         </Card>
 
-        <Card className="cortex-panel overflow-hidden rounded-2xl"></section>
+        <Card className="cortex-panel overflow-hidden rounded-2xl">
+          <CardHeader className="border-b border-white/[.06]">
+            <div><p className="cortex-kicker">سلامت و مصرف</p><CardTitle className="mt-2 text-base">وضعیت فضای کاری</CardTitle></div>
+            <div className="flex size-9 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary"><Server className="size-4" /></div>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3"><p className="text-[11px] text-muted-foreground">ربات تلگرام</p><p className="mt-1 text-xl font-bold">{faNum(stats.telegramBots ?? 0)}</p></div>
+              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3"><p className="text-[11px] text-muted-foreground">رویداد مصرف</p><p className="mt-1 text-xl font-bold">{faNum(stats.totalUsageEvents ?? 0)}</p></div>
+              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3"><p className="text-[11px] text-muted-foreground">توکن کل</p><p className="mt-1 text-xl font-bold">{faNum(stats.totalTokens ?? 0)}</p></div>
+              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-3"><p className="text-[11px] text-muted-foreground">هزینه ثبت‌شده</p><p className="mt-1 text-xl font-bold">{faNum(stats.estimatedCostMicros ?? 0)}</p></div>
+            </div>
+            <div className="rounded-xl border border-white/[.06] bg-black/10 p-3">
+              <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Workflow className="size-4 text-primary" /><span className="text-xs font-medium">اتصال‌های زیرساخت</span></div><span className={cn("text-xs font-semibold", providerReadyCount === 3 ? "text-emerald-400" : "text-amber-400")}>{faNum(providerReadyCount)} / ۳</span></div>
+              <div className="mt-3 flex gap-1.5">{[0,1,2].map((i) => <span key={i} className={cn("h-1.5 flex-1 rounded-full", i < providerReadyCount ? "bg-emerald-400" : "bg-white/10")} />)}</div>
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => setView("settings")}><Sparkles className="size-4" />پیکربندی اتصال‌ها</Button>
+          </CardContent>
+        </Card>
+      </section>
 
       )}
 
