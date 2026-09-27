@@ -797,3 +797,88 @@ html:not(.dark) .cortex-core-stage .text-slate-400 { color:#5f6d80 !important; }
   .cortex-wallet-card { border-radius:24px; }
   .cortex-wallet-card .cortex-wallet-orb { width:98px;height:98px; }
 }
+
+
+/* ===== Final theme contract: eliminate legacy light utility leakage in dark mode ===== */
+html.dark .cortex-dashstack,
+html.dark .cortex-dashstack main,
+html.dark .cortex-dashstack header,
+html.dark .cortex-dashstack aside,
+html.dark .cortex-dashstack [data-slot="card"],
+html.dark .cortex-dashstack [data-slot="sheet-content"],
+html.dark .cortex-dashstack [data-slot="popover-content"] {
+  color-scheme: dark;
+}
+html.dark .cortex-dashstack [class*="bg-white"],
+html.dark .cortex-dashstack [class*="bg-slate-50"],
+html.dark .cortex-dashstack [class*="bg-slate-100"],
+html.dark .cortex-dashstack [class*="bg-gray-50"],
+html.dark .cortex-dashstack [class*="bg-gray-100"] {
+  background-color: #0d121a !important;
+  background-image: none !important;
+}
+html.dark .cortex-dashstack [class*="bg-gray-200"],
+html.dark .cortex-dashstack [class*="bg-slate-200"] {
+  background-color: #141b25 !important;
+}
+html.dark .cortex-dashstack [class*="border-white"],
+html.dark .cortex-dashstack [class*="border-gray-"],
+html.dark .cortex-dashstack [class*="border-slate-"] {
+  border-color: #202a38 !important;
+}
+html.dark .cortex-dashstack [class*="text-gray-"],
+html.dark .cortex-dashstack [class*="text-slate-"] {
+  color: #9aa8bb !important;
+}
+html.dark .cortex-dashstack [class*="text-black"] {
+  color: #eef2ff !important;
+}
+html.dark .cortex-dashstack input,
+html.dark .cortex-dashstack textarea,
+html.dark .cortex-dashstack select,
+html.dark .cortex-dashstack [data-slot="select-trigger"] {
+  color: #eef2ff !important;
+  background-color: #0d121a !important;
+  border-color: #263244 !important;
+}
+html.dark .cortex-dashstack input::placeholder,
+html.dark .cortex-dashstack textarea::placeholder {
+  color: #738095 !important;
+}
+html.dark .cortex-dashstack [data-slot="dialog-content"],
+html.dark .cortex-dashstack [data-slot="popover-content"],
+html.dark .cortex-dashstack [data-slot="select-content"],
+html.dark .cortex-dashstack [data-slot="sheet-content"] {
+  background: #0b1017 !important;
+  color: #eef2ff !important;
+  border-color: #202a38 !important;
+}
+html:not(.dark) .cortex-dashstack [class*="bg-slate-950"],
+html:not(.dark) .cortex-dashstack [class*="bg-gray-950"] {
+  background-color: #ffffff !important;
+}
+html:not(.dark) .cortex-dashstack [class*="text-white"] {
+  color: #111827 !important;
+}
+
+/* Core colors are theme-owned, not utility-owned. */
+html.dark .cortex-core-stage .text-slate-400 { color: #90a0b4 !important; }
+html:not(.dark) .cortex-core-stage .text-slate-400 { color: #5f6d80 !important; }
+html.dark .cortex-core-node {
+  background: #d9e7ff !important;
+  box-shadow: 0 0 18px rgba(91,140,255,.95), 0 0 4px rgba(255,255,255,.95) !important;
+}
+html.dark .cortex-core-shell,
+html.dark .cortex-core-ring,
+html.dark .cortex-core-stage > div:nth-child(2) {
+  border-color: rgba(91,140,255,.24) !important;
+}
+html:not(.dark) .cortex-core-stage > div:nth-child(2) { border-color: rgba(91,140,255,.20) !important; }
+
+/* Reduce visual work during boot and page transitions. */
+.cortex-splash-mark {
+  filter: drop-shadow(0 0 22px rgba(91,140,255,.18));
+}
+@media (prefers-reduced-motion: reduce) {
+  .cortex-splash-mark { animation: none !important; }
+}
