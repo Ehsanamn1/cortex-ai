@@ -4,7 +4,7 @@ import { estimateTokens } from '@/lib/server/audit';
 import { releaseUsageReservation, reserveUsageWithinLimits } from '@/lib/server/usage';
 import { RAG_QUERY_EXPANSION_RESERVE_TOKENS, toRetrievalDebug, toSourceRefs } from '@/lib/rag/pipeline';
 import { normalizeTelegramPhone } from '@/lib/telegram/phone';
-import { buildTelegramInviteLink, hashTelegramInviteToken, parseTelegramStartToken } from '@/lib/telegram/access';
+import { hashTelegramInviteToken, parseTelegramStartToken } from '@/lib/telegram/access';
 import { getTelegramBotProfile } from '@/lib/telegram/profile';
 import { estimateLlmCostMicros } from '@/lib/server/pricing';
 import { runAgentExecution } from '@/lib/runtime/engine';
@@ -325,12 +325,16 @@ export async function processTelegramUpdate(botId: string, update: any) {
     });
     await answerCallback(token, String(callback.id)).catch(() => undefined);
 
-    if (!user || user.status !== 'allowed') {
+    if (!user) {
       await sendAccessRequired(token, chatId, profile);
       return;
     }
     if (user.status === 'blocked') {
       await sendMessage(token, chatId, profile.blockedText);
+      return;
+    }
+    if (user.status !== 'allowed') {
+      await sendAccessRequired(token, chatId, profile);
       return;
     }
 
