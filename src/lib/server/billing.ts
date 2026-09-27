@@ -169,6 +169,11 @@ async function ensureWorkspaceBilling(workspaceId: string) {
       });
     }
 
+    if (envEnforcementDefault() && !account.enforcementEnabled) {
+      await tx.workspaceBillingAccount.update({ where: { id: account.id }, data: { enforcementEnabled: true } });
+      account = await tx.workspaceBillingAccount.findUniqueOrThrow({ where: { id: account.id }, include: { plan: true } });
+    }
+
     if (account.periodEnd <= now) {
       if (account.plan.priceToman === 0 && account.plan.monthlyCredits > 0) {
         const nextStart = account.periodEnd;
