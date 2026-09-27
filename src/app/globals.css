@@ -1205,3 +1205,32 @@ html:not(.dark) .cortex-core-v2-caption span { color: #5f6d80; }
 @media (prefers-reduced-motion: reduce) {
   .cortex-core-v2 * { animation: none !important; }
 }
+
+/* Final override: document/body background follows the active theme, including during hydration. */
+html.dark body {
+  background-color: #070a0f !important;
+  background-image:
+    radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
+    radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%) !important;
+  color: #eef2ff !important;
+}
+html:not(.dark) body {
+  background-color: #f6f7fb !important;
+  background-image: none !important;
+  color: #1f2937 !important;
+}
+.cortex-auth-submit {
+  transform: translate3d(0,0,0);
+  box-shadow: 0 12px 0 rgba(31,64,145,.28), 0 18px 34px rgba(59,130,246,.18), inset 0 1px 0 rgba(255,255,255,.22);
+}
+.cortex-auth-submit:hover {
+  transform: translate3d(0,-2px,0);
+  box-shadow: 0 14px 0 rgba(31,64,145,.22), 0 22px 40px rgba(59,130,246,.22), inset 0 1px 0 rgba(255,255,255,.24);
+}
+.cortex-auth-submit:active {
+  transform: translate3d(0,3px,0);
+  box-shadow: 0 6px 0 rgba(31,64,145,.22), 0 12px 24px rgba(59,130,246,.14), inset 0 1px 0 rgba(255,255,255,.20);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cortex-auth-submit { transition: none !important; }
+}
