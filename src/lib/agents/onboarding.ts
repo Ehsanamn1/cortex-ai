@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
-import { getVectorStore } from "@/lib/providers/vector";
+import { getVectorStore, type UpsertPoint } from "@/lib/providers/vector";
 import { embeddingManager } from "@/lib/providers/embeddings/manager";
 import { chunkInputs } from "@/lib/knowledge/chunk";
 import { estimateTokens } from "@/lib/server/audit";
@@ -115,7 +115,7 @@ async function indexBusinessKnowledge(
     const embedder = embeddingManager.resolve();
     if (!embedder) throw new Error("سرویس Embedding برای ساخت دانش فعال نیست.");
     const vectors = await embedder.embedDocuments(chunks.map(x => x.text));
-    const points: Array<{ id: string; vector: number[]; payload: Record<string, unknown> }> = [];
+    const points: UpsertPoint[] = [];
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]!;
       const created = await db.knowledgeChunk.create({ data: { id: crypto.randomUUID(), documentId: document.id, sourceId: source.id, agentId, workspaceId, seq: i, text: chunk.text, page: chunk.page ?? 1, section: chunk.section, sourceUrl: null, metadata: JSON.stringify({ source: "business_interview" }) } });
