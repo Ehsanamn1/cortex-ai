@@ -335,15 +335,11 @@ function TelegramAccessManager({ botId }: { botId: string }) {
                 phoneNumbers: phones.split(/[\n,;]+/).map(v => v.trim()).filter(Boolean),
                 displayName: displayName.trim() || undefined,
                 notes: notes.trim() || undefined,
-              });
-              for (const entry of result.entries) {
-                await api.updateTelegramAllowlist(botId, entry.id, {
-                  dailyMessageLimit: parseLimit(dailyMessages),
-                  monthlyMessageLimit: parseLimit(monthlyMessages),
-                  dailyTokenLimit: parseLimit(dailyTokens),
-                  monthlyTokenLimit: parseLimit(monthlyTokens),
-                });
-              }
+                dailyMessageLimit: parseLimit(dailyMessages),
+                monthlyMessageLimit: parseLimit(monthlyMessages),
+                dailyTokenLimit: parseLimit(dailyTokens),
+                monthlyTokenLimit: parseLimit(monthlyTokens),
+              } as any);
               setFreshInvites(result.entries.filter(item => item.inviteLink));
               setPhones("");
               queryClient.invalidateQueries({ queryKey: ["telegram-allowlist", botId] });
