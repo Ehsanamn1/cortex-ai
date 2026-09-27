@@ -325,7 +325,10 @@ export async function processTelegramUpdate(botId: string, update: any) {
     });
     await answerCallback(token, String(callback.id)).catch(() => undefined);
 
-    if (!user) return;
+    if (!user || user.status !== 'allowed') {
+      await sendAccessRequired(token, chatId, profile);
+      return;
+    }
     if (user.status === 'blocked') {
       await sendMessage(token, chatId, profile.blockedText);
       return;
