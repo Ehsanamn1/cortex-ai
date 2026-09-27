@@ -93,3 +93,53 @@ export function estimateLlmCostMicros(inputTokens: number, outputTokens: number,
 export function usdFromMicros(micros: number): number {
   return Math.max(0, Number(micros) || 0) / 1_000_000;
 }
+
+
+export interface KnownModelCatalogEntry {
+  provider: string;
+  modelId: string;
+  displayName: string;
+  qualityTier: "economy" | "balanced" | "premium" | "deep";
+  speedTier: "fast" | "balanced" | "deep";
+  contextWindow?: number;
+  vision?: boolean;
+  tools?: boolean;
+  structuredOutput?: boolean;
+  reasoning?: boolean;
+  commercialAvailable?: boolean;
+}
+
+/**
+ * Single source of truth for the currently recognized model IDs. Commercial
+ * tables can be seeded from this registry instead of duplicating vendor prices
+ * across UI components.
+ */
+export function getKnownModelCatalog(): Array<KnownModelCatalogEntry & Pick<ModelRate, "inputUsdPer1M" | "outputUsdPer1M" | "known">> {
+  const seeds: KnownModelCatalogEntry[] = [
+    { provider: "OpenAI", modelId: "gpt-6-astra", displayName: "GPT-6 Astra", qualityTier: "deep", speedTier: "deep", reasoning: true, tools: true, structuredOutput: true, contextWindow: 400000 },
+    { provider: "OpenAI", modelId: "gpt-6-sol", displayName: "GPT-6 Sol", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true, contextWindow: 256000 },
+    { provider: "OpenAI", modelId: "gpt-6-luna", displayName: "GPT-6 Luna", qualityTier: "economy", speedTier: "fast", tools: true, structuredOutput: true, contextWindow: 128000 },
+    { provider: "OpenAI", modelId: "gpt-5.6-luna", displayName: "GPT-5.6 Luna", qualityTier: "economy", speedTier: "fast", tools: true, structuredOutput: true, contextWindow: 128000 },
+    { provider: "OpenAI", modelId: "gpt-5.6-terra", displayName: "GPT-5.6 Terra", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true, contextWindow: 256000 },
+    { provider: "OpenAI", modelId: "gpt-5.6-sol", displayName: "GPT-5.6 Sol", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true, contextWindow: 256000 },
+    { provider: "OpenAI", modelId: "gpt-5-mini", displayName: "GPT-5 mini", qualityTier: "balanced", speedTier: "fast", tools: true, structuredOutput: true },
+    { provider: "OpenAI", modelId: "gpt-5.4-mini", displayName: "GPT-5.4 mini", qualityTier: "balanced", speedTier: "fast", tools: true, structuredOutput: true },
+    { provider: "OpenAI", modelId: "gpt-5.4-nano", displayName: "GPT-5.4 nano", qualityTier: "economy", speedTier: "fast", tools: true, structuredOutput: true },
+    { provider: "OpenAI", modelId: "gpt-5.4", displayName: "GPT-5.4", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true },
+    { provider: "OpenAI", modelId: "gpt-5", displayName: "GPT-5", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true, structuredOutput: true },
+    { provider: "OpenAI", modelId: "gpt-5-nano", displayName: "GPT-5 nano", qualityTier: "economy", speedTier: "fast", tools: true, structuredOutput: true },
+    { provider: "Anthropic", modelId: "claude-sonnet-5", displayName: "Claude Sonnet 5", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true },
+    { provider: "Anthropic", modelId: "claude-sonnet-4.6", displayName: "Claude Sonnet 4.6", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true },
+    { provider: "Anthropic", modelId: "claude-haiku-4.5", displayName: "Claude Haiku 4.5", qualityTier: "balanced", speedTier: "fast", tools: true },
+    { provider: "Anthropic", modelId: "claude-opus-5", displayName: "Claude Opus 5", qualityTier: "deep", speedTier: "deep", reasoning: true, tools: true },
+    { provider: "Google", modelId: "gemini-3.8-flash", displayName: "Gemini 3.8 Flash", qualityTier: "balanced", speedTier: "fast", tools: true, vision: true },
+    { provider: "Google", modelId: "gemini-3.7-flash", displayName: "Gemini 3.7 Flash", qualityTier: "balanced", speedTier: "fast", tools: true, vision: true },
+    { provider: "Google", modelId: "gemini-2.5-flash", displayName: "Gemini 2.5 Flash", qualityTier: "balanced", speedTier: "fast", tools: true, vision: true },
+    { provider: "Google", modelId: "gemini-2.5-flash-lite", displayName: "Gemini 2.5 Flash Lite", qualityTier: "economy", speedTier: "fast", tools: true, vision: true },
+    { provider: "Z.AI", modelId: "glm-5.3", displayName: "GLM-5.3", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true },
+    { provider: "Z.AI", modelId: "glm-5.3-flash", displayName: "GLM-5.3 Flash", qualityTier: "balanced", speedTier: "fast", tools: true },
+    { provider: "DeepSeek", modelId: "deepseek-v4-pro", displayName: "DeepSeek V4 Pro", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true },
+    { provider: "DeepSeek", modelId: "deepseek-v4.1-flash", displayName: "DeepSeek V4.1 Flash", qualityTier: "economy", speedTier: "fast", tools: true, reasoning: true },
+  ];
+  return seeds.map((seed) => ({ ...seed, ...getModelRate(seed.provider, seed.modelId) }));
+}
