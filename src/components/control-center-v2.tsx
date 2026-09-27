@@ -159,7 +159,8 @@ function BillingPanel({ section }: { section: Section }) {
       </div>}</CardContent>
   </Card>)}</div>;
 
-  if (section === "models") return <div className="grid gap-3">{(q.data.models ?? []).map((model: any) => <Card key={model.id} className="border-border">
+  if (section === "models") return <div className="space-y-4">
+    <div className="grid gap-3">{(q.data.models ?? []).map((model: any) => <Card key={model.id} className="border-border">
     <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
       <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{model.displayName}</p><p className="mt-1 text-[11px] text-muted-foreground">{model.provider} · <code>{model.modelId}</code></p></div>
       <div className="grid grid-cols-2 gap-2 text-[10px] sm:grid-cols-4 lg:w-[440px]"><span>Input <b>{"$" + model.inputUsdPer1M}</b></span><span>Output <b>{"$" + model.outputUsdPer1M}</b></span><span>Tier <b>{model.qualityTier}</b></span><span>Active <b>{model.active?"Yes":"No"}</b></span></div>
@@ -206,7 +207,12 @@ export function ControlCenterV2() {
       <div className="border-t border-border p-4"><div className="flex items-center gap-2 rounded-lg bg-slate-50 p-2.5"><span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-[10px] font-bold text-primary">{session.data?.username?.slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{session.data?.username}</p><p className="text-[9px] text-muted-foreground">Administrator</p></div><Button variant="ghost" size="icon" onClick={()=>logout.mutate()}><LogOut className="size-4"/></Button></div></div>
     </aside>
     <div className="min-w-0 flex-1"><header className="sticky top-0 z-30 border-b border-border bg-white/95 backdrop-blur"><div className="flex items-center gap-3 px-4 py-3 lg:px-7"><div className="min-w-0 flex-1"><p className="text-[9px] font-bold tracking-[.18em] text-primary">CORTEX CONTROL CENTER</p><h1 className="truncate text-lg font-bold">{activeSection.label}</h1></div><div className="hidden w-[260px] items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 md:flex"><Search className="size-4 text-muted-foreground"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-0" placeholder="جستجو…"/></div><Button variant="outline" size="icon" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button></div></header>
-      <main className="mx-auto max-w-[1400px] space-y-5 p-4 lg:p-7">{section==="overview"?<Overview summary={summary.data}/>:["plans","models","accounts","charges","invoices"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>}</main>
+      <div className="flex gap-1 overflow-x-auto border-b bg-white px-3 py-2 lg:hidden">
+        {SECTIONS.slice(0,10).map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-[10px] font-medium",section===s.id?"bg-[#eef3ff] text-[#3f6fe5]":"text-slate-600")}>{s.label}</button>)}
+      </div>
+      <main className="mx-auto max-w-[1400px] space-y-5 p-4 lg:p-7">
+        {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:["plans","models","accounts","charges","invoices"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>}
+      </main>
     </div>
   </div></div>;
 }
@@ -218,6 +224,36 @@ function Overview({summary}:{summary:any}) {
     <section className="grid gap-4 xl:grid-cols-3"><Card className="border-border"><CardHeader><CardTitle className="text-sm">Billing وضعیت</CardTitle></CardHeader><CardContent className="space-y-3"><div className="flex justify-between text-xs"><span>حساب‌های اعتباری</span><b>{Number(summary?.financial?.billingAccounts??0).toLocaleString("fa-IR")}</b></div><div className="flex justify-between text-xs"><span>Subscription فعال</span><b>{Number(summary?.financial?.activeSubscriptions??0).toLocaleString("fa-IR")}</b></div><div className="flex justify-between text-xs"><span>Credits مصرف‌شده</span><b>{Number(f.creditsConsumed??0).toLocaleString("fa-IR")}</b></div><p className="rounded-lg bg-amber-50 p-3 text-[10px] leading-5 text-amber-800">درآمد نقدی و سود تا اتصال درگاه واقعی محاسبه نمی‌شوند.</p></CardContent></Card>
       <Card className="border-border xl:col-span-2"><CardHeader><CardTitle className="text-sm">ایجنت‌های اخیر</CardTitle></CardHeader><CardContent className="divide-y">{(summary?.recentAgents??[]).slice(0,8).map((a:any)=><div key={a.id} className="flex items-center gap-3 py-3"><span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Bot className="size-4"/></span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{a.name}</p><p className="text-[10px] text-muted-foreground">{a.workspace.name} · {a.status}</p></div><span className="text-[10px] text-muted-foreground">{new Date(a.createdAt).toLocaleDateString("fa-IR")}</span></div>)}</CardContent></Card></section>
   </div>;
+}
+
+function ModelAccessMatrix({plans,models,onSave}:{plans:any[];models:any[];onSave:(body:any)=>void}) {
+  const [selectedPlan,setSelectedPlan]=useState(plans[0]?.id ?? "");
+  const plan=plans.find((p:any)=>p.id===selectedPlan);
+  const accessByModel=new Map((plan?.modelAccess??[]).map((x:any)=>[x.modelCatalogId,x]));
+  return <Card className="border-border overflow-hidden">
+    <CardHeader><CardTitle className="text-sm">دسترسی مدل‌ها در هر پلن</CardTitle><p className="text-[10px] text-muted-foreground">فعال‌سازی و ضریب مصرف هر مدل برای هر پلن از همین‌جا کنترل می‌شود.</p></CardHeader>
+    <CardContent className="space-y-3">
+      <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={selectedPlan} onChange={e=>setSelectedPlan(e.target.value)}>
+        {plans.map((p:any)=><option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
+      <div className="overflow-x-auto"><table className="w-full min-w-[800px] text-right text-xs"><thead className="bg-muted/30"><tr><th className="px-3 py-3">مدل</th><th className="px-3 py-3">Provider</th><th className="px-3 py-3">فعال</th><th className="px-3 py-3">Multiplier BPS</th><th className="px-3 py-3">ثبت</th></tr></thead>
+        <tbody className="divide-y">{models.map((m:any)=>{const current=accessByModel.get(m.id); const enabled=current?.enabled ?? false; const mult=current?.creditMultiplierBps ?? 200; return <AccessRow key={m.id} model={m} enabled={enabled} multiplier={mult} onSave={(b:any)=>onSave({planId:selectedPlan,modelCatalogId:m.id,enabled:b.enabled,creditMultiplierBps:b.multiplier})}/>})}</tbody>
+      </table></div>
+    </CardContent>
+  </Card>;
+}
+function AccessRow({model,enabled,multiplier,onSave}:{model:any;enabled:boolean;multiplier:number;onSave:(b:any)=>void}) {
+  const [e,setE]=useState(enabled); const [m,setM]=useState(String(multiplier));
+  return <tr><td className="px-3 py-3 font-medium">{model.displayName}</td><td className="px-3 py-3">{model.provider}</td><td className="px-3 py-3"><Switch checked={e} onCheckedChange={setE}/></td><td className="px-3 py-3"><Input className="w-32" type="number" value={m} onChange={x=>setM(x.target.value)}/></td><td className="px-3 py-3"><Button size="sm" onClick={()=>onSave({enabled:e,multiplier:Number(m)})}><Save/></Button></td></tr>;
+}
+function SettingsPanel() {
+  const q=useQuery({queryKey:["cc-settings"],queryFn:()=>jsonFetch<{settings:Record<string,string>}>("/api/control-center/settings")});
+  const qc=useQueryClient(); const [draft,setDraft]=useState<Record<string,string>>({});
+  const save=useMutation({mutationFn:()=>jsonFetch("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings:{...(q.data?.settings??{}),...draft}})}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-settings"]});toast.success("تنظیمات ذخیره شد")},onError:(e:Error)=>toast.error(e.message)});
+  if(q.isPending) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">در حال بارگذاری تنظیمات…</CardContent></Card>;
+  const s={...(q.data?.settings??{}),...draft};
+  const fields=[["site.name","نام محصول"],["site.welcomeTitle","عنوان خوش‌آمدگویی"],["site.description","توضیحات"],["site.supportEmail","ایمیل پشتیبانی"],["site.authTitle","عنوان ورود"],["site.authDescription","توضیحات ورود"],["site.primaryColor","رنگ اصلی"],["site.secondaryColor","رنگ ثانویه"],["site.sidebarColor","رنگ Sidebar"],["site.navOrder","ترتیب منو"]];
+  return <Card className="border-border"><CardHeader><CardTitle className="text-sm">تنظیمات محصول و رابط کاربری</CardTitle><p className="text-[10px] text-muted-foreground">همان SiteSetting فعلی؛ بدون hard-code کردن مقدارهای عملیاتی.</p></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">{fields.map(([k,l])=><div key={k}><label className="text-xs font-medium">{l}</label><Input className="mt-2" dir={k.includes("Color")||k.includes("Email")?"ltr":"rtl"} value={s[k]??""} onChange={e=>setDraft({...draft,[k]:e.target.value})}/></div>)}<div className="md:col-span-2 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save/>ذخیره تنظیمات</Button></div></CardContent></Card>;
 }
 
 function AdminLogin({onDone}:{onDone:()=>void}) {
