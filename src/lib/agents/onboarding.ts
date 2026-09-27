@@ -115,7 +115,7 @@ async function indexBusinessKnowledge(
     const embedder = embeddingManager.resolve();
     if (!embedder) throw new Error("سرویس Embedding برای ساخت دانش فعال نیست.");
     const vectors = await embedder.embedDocuments(chunks.map(x => x.text));
-    const points = [];
+    const points: Array<{ id: string; vector: number[]; payload: Record<string, unknown> }> = [];
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]!;
       const created = await db.knowledgeChunk.create({ data: { id: crypto.randomUUID(), documentId: document.id, sourceId: source.id, agentId, workspaceId, seq: i, text: chunk.text, page: chunk.page ?? 1, section: chunk.section, sourceUrl: null, metadata: JSON.stringify({ source: "business_interview" }) } });
@@ -139,7 +139,7 @@ function buildSynthesisPrompt(answers: Array<{ question: OnboardingQuestion; ans
 export async function synthesizeOnboarding(answers: Array<{ question: OnboardingQuestion; answer: string }>, agentId: string, workspaceId: string): Promise<{ result: OnboardingResult; knowledgeSourceId: string }> {
   const resolved = await llmManager.resolveForAgent(agentId, workspaceId);
   if (!resolved.provider) throw Object.assign(new Error("سرویس هوش مصنوعی این ایجنت هنوز پیکربندی نشده است."), { status: 503 });
-  const completion = await resolved.provider.generateResponse({ messages: [{ role: "system", content: "پاسخ را فقط به صورت JSON معتبر بده و از اطلاعات خارج از مصاحبه استفاده نکن." }, { role: "user", content: buildSynthesisPrompt(answers) }], temperature: 0, maxTokens: 2200 });
+  const synthesisPrompt = buildSynthesisPrompt(answers);\n  const completion = await resolved.provider.generateResponse({ messages: [{ role: "system", content: "پاسخ را فقط به صورت JSON معتبر بده و از اطلاعات خارج از مصاحبه استفاده نکن." }, { role: "user", content: synthesisPrompt }], temperature: 0, maxTokens: 2200 });
   const result = parseOnboardingResult(completion.content);
   const inputTokens = estimateTokens(synthesisPrompt);
   const outputTokens = estimateTokens(completion.content);
