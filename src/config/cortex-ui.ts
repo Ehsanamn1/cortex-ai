@@ -1,4 +1,4 @@
-export type CortexView = "dashboard" | "workflows" | "agents" | "knowledge" | "conversations" | "telegram" | "analytics" | "admin" | "learn";
+export type CortexView = "dashboard" | "workflows" | "agents" | "knowledge" | "conversations" | "telegram" | "analytics" | "billing" | "admin" | "learn";
 
 export const CORTEX_UI_CONFIG = {
   brand: {
