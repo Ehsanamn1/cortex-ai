@@ -394,6 +394,7 @@ model AgentOnboardingSession {
   agentId      String
   status       String   @default("active")
   currentIndex Int      @default(0)
+  questionLimit Int      @default(30)
   answersJson  String   @default("[]")
   resultJson   String?
   error        String?
