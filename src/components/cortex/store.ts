@@ -15,6 +15,7 @@ export type View =
   | "settings"
   | "telegram"
   | "analytics"
+  | "billing"
   | "admin"
   | "learn";
 
