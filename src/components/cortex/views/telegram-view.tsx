@@ -187,7 +187,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
       <DialogContent className="w-[calc(100vw-1rem)] max-h-[90dvh] overflow-y-auto max-w-2xl">
         <DialogHeader>
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0"><DialogTitle className="truncate">{bot.name}</DialogTitle><DialogDescription className="mt-1">مدیریت ایجنت، اتصال، Webhook و کاربران عمومی ربات.</DialogDescription></div>
+            <div className="min-w-0"><DialogTitle className="truncate">{bot.name}</DialogTitle><DialogDescription className="mt-1">مدیریت ایجنت، اتصال، Webhook و کاربران مجاز ربات.</DialogDescription></div>
             <Badge className={cn("shrink-0 font-normal", meta.className)}><Icon className="size-3.5" />{meta.label}</Badge>
           </div>
         </DialogHeader>
@@ -215,8 +215,8 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
             <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />دسترسی و کاربران</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-xl border border-emerald-400/15 bg-emerald-400/[.06] p-4">
-                <p className="flex items-center gap-2 text-sm font-semibold text-emerald-200"><ShieldCheck className="size-4" />دسترسی عمومی فعال است</p>
-                <p className="mt-1 text-xs leading-6 text-muted-foreground">کاربران برای شروع گفتگو نیازی به تأیید شماره موبایل یا ثبت در فهرست مجاز ندارند. فقط حساب‌هایی که مدیر صراحتاً مسدود کند نمی‌توانند از ربات استفاده کنند.</p>
+                <p className="flex items-center gap-2 text-sm font-semibold text-emerald-200"><ShieldCheck className="size-4" />دسترسی مدیریت‌شده فعال است</p>
+                <p className="mt-1 text-xs leading-6 text-muted-foreground">فقط شماره‌هایی که شما ثبت و تأیید می‌کنید می‌توانند با ربات گفتگو کنند. کاربر بعد از ثبت شماره، با لینک ورود یک‌بارمصرف حساب تلگرامش را متصل می‌کند.</p>
               </div>
               <div className="border-t border-white/[.06] pt-4">
                 <div className="flex items-center justify-between gap-3"><p className="flex items-center gap-2 text-xs font-semibold"><BarChart3 className="size-4 text-primary" />مانیتورینگ مصرف همین ربات</p><span className="text-[10px] text-muted-foreground">{botUsers.length} کاربر شناخته‌شده</span></div>
