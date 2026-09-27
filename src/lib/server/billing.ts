@@ -57,7 +57,8 @@ export class BillingModelUnavailableError extends Error {
 }
 
 async function ensurePlanCatalog() {
-  if (catalogPromise && Date.now() - catalogReadyAt < CATALOG_CACHE_MS) return catalogPromise;
+  if (catalogReadyAt && Date.now() - catalogReadyAt < CATALOG_CACHE_MS) return;
+  if (catalogPromise) return catalogPromise;
   catalogPromise = (async () => {
     for (const plan of DEFAULT_BILLING_PLANS) {
       await db.plan.upsert({
@@ -465,7 +466,7 @@ export async function recordUsageAndCharge(params: {
           idempotencyKey: "usage:" + usageEvent.id,
         },
       });
-      if (params.reservationId) await tx.creditReservation.updateMany({ where: { id: params.reservationId, status: "active" }, data: { status: "captured" } });
+      if (params.reservationId) await tx.creditReservation.updateMany({ where: { id: params.reservationId, billingAccountId: fresh.id, status: "active" }, data: { status: "captured" } });
       return { usageEvent, chargedCredits, balanceCredits: fresh.balanceCredits, status: "shadow" };
     }
 
@@ -509,7 +510,7 @@ export async function recordUsageAndCharge(params: {
           idempotencyKey: "usage:" + usageEvent.id,
         },
       });
-      if (params.reservationId) await tx.creditReservation.updateMany({ where: { id: params.reservationId, status: "active" }, data: { status: "captured" } });
+      if (params.reservationId) await tx.creditReservation.updateMany({ where: { id: params.reservationId, billingAccountId: fresh.id, status: "active" }, data: { status: "captured" } });
       return { usageEvent, chargedCredits, balanceCredits: nextBalance, status: "captured_debt" };
     }
 
