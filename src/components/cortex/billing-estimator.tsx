@@ -104,15 +104,6 @@ function formatTomanExact(value: number): string {
   return `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Math.max(0, Math.round(value)))} تومان`;
 }
 
-function formatCountCompact(value: number): string {
-  const amount = Math.max(0, Math.round(value));
-  const nf = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 2 });
-  if (amount >= 1_000_000_000) return `${nf.format(amount / 1_000_000_000)} میلیارد`;
-  if (amount >= 1_000_000) return `${nf.format(amount / 1_000_000)} میلیون`;
-  if (amount >= 1_000) return `${nf.format(amount / 1_000)} هزار`;
-  return faNum(amount);
-}
-
 function describeModel(model: EstimatorModel): string {
   const id = model.modelId.toLowerCase();
   if (id.includes("gpt-6-astra")) return "پرچم‌دار برای کارهای end-to-end، استدلال، کدنویسی، تحقیق و استفاده از ابزار.";
