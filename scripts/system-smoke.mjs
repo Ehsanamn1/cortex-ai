@@ -6,7 +6,7 @@ const cases = [
   { method: "GET", path: "/api", expected: [200, 404], public: true },
   { method: "GET", path: "/api/auth/me", expected: [401], public: false },
   { method: "GET", path: "/api/providers/status", expected: [401], public: false },
-  { method: "GET", path: "/api/providers/health", expected: [401], public: false },
+  { method: "GET", path: "/api/providers/health", expected: [405], public: false },
   { method: "GET", path: "/api/settings/limits", expected: [401], public: false },
   { method: "GET", path: "/api/dashboard", expected: [401], public: false },
   { method: "GET", path: "/api/agents", expected: [401], public: false },
