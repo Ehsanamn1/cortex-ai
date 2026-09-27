@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -134,6 +134,20 @@ export function DashboardView() {
     staleTime: 30_000,
   });
 
+  const billingQuery = useQuery({
+    queryKey: ["billing", activeWorkspaceId],
+    queryFn: () => api.getBilling(activeWorkspaceId ?? undefined),
+    enabled: !!activeWorkspaceId,
+    staleTime: 15_000,
+  });
+
+  const activateFreePlan = useMutation({
+    mutationFn: () => api.activateBillingPlan("free", activeWorkspaceId ?? undefined),
+    onSuccess: () => {
+      void billingQuery.refetch();
+    },
+  });
+
   // Dashboard data is non-critical UI telemetry. A backend data failure must
   // never replace the whole workspace with a scary internal-error screen.
   // Keep the shell usable and let React Query retry in the background.
@@ -215,6 +229,44 @@ export function DashboardView() {
         <StatCard icon={MessagesSquare} label="گفتگوها" value={faNum(stats.conversations)} caption={faNum(stats.messages) + " پیام در مجموع"} tint="border-emerald-400/25 bg-emerald-400/10 text-emerald-300" />
         <StatCard icon={Activity} label="امروز" value={faNum(stats.todayMessages ?? 0)} caption={faNum(stats.todayTokens ?? 0) + " توکن امروز"} tint="border-amber-400/25 bg-amber-400/10 text-amber-300" />
       </section>
+
+      {billingQuery.data && (
+        <section aria-label="اعتبار Cortex" className="cortex-panel overflow-hidden rounded-2xl border border-white/[.07]">
+          <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div className="min-w-0">
+              <p className="cortex-kicker">CORTEX CREDITS</p>
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h2 className="text-xl font-bold">اعتبار هوش مصنوعی</h2>
+                <span className="rounded-full border border-primary/15 bg-primary/10 px-2.5 py-1 text-[10px] text-primary">
+                  {billingQuery.data.billing.subscription?.plan.name ?? "بدون پلن فعال"}
+                </span>
+              </div>
+              <p className="mt-1.5 text-xs leading-6 text-muted-foreground">
+                اعتبار با مصرف مدل‌ها کم می‌شود و هزینه از سرویس‌های AI به‌صورت جداگانه ثبت می‌شود.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:items-end">
+              <div className="rounded-xl border border-white/[.07] bg-white/[.025] px-4 py-3 text-end">
+                <p className="text-[10px] text-muted-foreground">اعتبار قابل استفاده</p>
+                <p className="mt-1 text-2xl font-bold tracking-tight">
+                  {Number(billingQuery.data.billing.wallet.availableCredits).toLocaleString("fa-IR")}
+                </p>
+                <p className="text-[10px] text-muted-foreground">Cortex Credits</p>
+              </div>
+              {!billingQuery.data.billing.subscription && (
+                <Button
+                  size="sm"
+                  onClick={() => activateFreePlan.mutate()}
+                  disabled={activateFreePlan.isPending}
+                >
+                  {activateFreePlan.isPending ? "در حال فعال‌سازی…" : "فعال‌سازی پلن رایگان"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       <Capabilities onOpen={setView} />
 
