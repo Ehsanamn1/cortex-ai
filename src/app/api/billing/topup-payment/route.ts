@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     if (!pack) return jsonError("بسته شارژ معتبر نیست.", 400);
 
     const recentPending = await db.creditTopUpRequest.findFirst({
-      where: { workspaceId, userId: session.user.id, status: "pending", paymentStatus: { in: ["initiated", "pending"] } },
+      where: { workspaceId, userId: session.user.id, packageKey, status: "pending", paymentStatus: { in: ["initiated", "pending"] } },
       orderBy: { createdAt: "desc" },
     });
     if (recentPending && recentPending.paymentAuthority) {
