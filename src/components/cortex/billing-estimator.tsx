@@ -277,6 +277,28 @@ export function BillingEstimator({
   const signals = selected ? modelSignals(selected) : [];
   const hasInputProfile = Boolean(estimate && estimate.baseTokens > 0);
   const hasWorkload = Boolean(estimate && estimate.workloadUnits > 0);
+  const tenKCapacity = useMemo(() => {
+    if (!selected) return null;
+    const inputTokens = 1200;
+    const outputTokens = 600;
+    const perMessageUsd = (inputTokens / 1_000_000) * selected.inputUsdPer1M + (outputTokens / 1_000_000) * selected.outputUsdPer1M;
+    const creditsPerMessage = perMessageUsd > 0
+      ? Math.max(1, Math.ceil((perMessageUsd * 1_000_000 / 1000) * (selected.creditMultiplierBps / 100)))
+      : 0;
+    const creditsPerTask = creditsPerMessage ? Math.ceil(creditsPerMessage * 2.2) : 0;
+    const maxProviderUsd = 1000 / Math.max(1, selected.creditMultiplierBps);
+    const inputShareDenom = selected.inputUsdPer1M + (selected.outputUsdPer1M * 0.5);
+    const maxInputTokensAt2to1 = inputShareDenom > 0 ? Math.floor((maxProviderUsd * 1_000_000) / inputShareDenom) : 0;
+    return {
+      maxProviderUsd,
+      messages: creditsPerMessage ? Math.floor(10_000 / creditsPerMessage) : 0,
+      standardTasks: creditsPerTask ? Math.floor(10_000 / creditsPerTask) : 0,
+      inputTokensAt2to1: maxInputTokensAt2to1,
+      outputTokensAt2to1: Math.floor(maxInputTokensAt2to1 * 0.5),
+      creditsPerMessage,
+      creditsPerTask,
+    };
+  }, [selected]);
 
   function applyPreset(preset: (typeof PRESETS)[number]) {
     if (preset.key === "astra") {
@@ -378,6 +400,20 @@ export function BillingEstimator({
             <ResultCard title="هزینه یک تسک" value={hasInputProfile && estimate ? formatTomanCompact(estimate.perTaskUsd * fx) : "—"} detail={hasInputProfile && estimate ? `دقیق: ${formatTomanExact(estimate.perTaskUsd * fx)} · پیچیدگی ×${faNum(complexity.multiplier)}` : "توکن‌ها را وارد کن"} primary icon={<Zap className="size-4" />} />
             <ResultCard title="هزینه سناریوی ماهانه" value={hasWorkload && estimate ? formatTomanCompact(estimate.monthlyToman) : "—"} detail={hasWorkload && estimate ? `معادل $${moneyUsd(estimate.monthlyUsd)}` : "تعداد پیام یا تسک را وارد کن"} icon={<WalletCards className="size-4" />} />
             <ResultCard title="اعتبار مصرفی ماهانه" value={hasWorkload && estimate ? formatCountCompact(estimate.monthlyCredits) : "—"} detail={hasWorkload && estimate ? `${faNum(estimate.creditsPerMessage)} اعتبار/پیام · ${faNum(estimate.creditsPerTask)} اعتبار/تسک` : "بر اساس نرخ مدل و پلن"} icon={<Cpu className="size-4" />} />
+
+            <div className="sm:col-span-2 rounded-2xl border border-primary/15 bg-primary/[.04] p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div><p className="text-[10px] text-muted-foreground">۱۰,۰۰۰ اعتبار یعنی چه؟</p><p className="mt-1 text-lg font-black">ظرفیت تقریبی همین مدل را همین‌جا ببین.</p></div>
+                <span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[9px] font-semibold text-primary">{selected?.displayName ?? "مدل انتخابی"}</span>
+              </div>
+              {tenKCapacity && <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                <InfoCell label="پیام استاندارد" value={formatCountCompact(tenKCapacity.messages)} />
+                <InfoCell label="تسک استاندارد" value={formatCountCompact(tenKCapacity.standardTasks)} />
+                <InfoCell label="بودجه تأمین مدل" value={"$"+moneyUsd(tenKCapacity.maxProviderUsd)} />
+                <InfoCell label="بودجه توکن با نسبت ۲:۱" value={formatCountCompact(tenKCapacity.inputTokensAt2to1)+" in / "+formatCountCompact(tenKCapacity.outputTokensAt2to1)+" out"} />
+              </div>}
+              <p className="mt-3 text-[9px] leading-5 text-muted-foreground">اعداد نمونه‌اند، نه تضمین خروجی. ظرفیت واقعی با طول context، RAG، ابزارها، retry و نسبت واقعی input/output تغییر می‌کند.</p>
+            </div>
 
             <div className="sm:col-span-2 rounded-2xl border border-primary/15 bg-primary/[.035] p-4">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
