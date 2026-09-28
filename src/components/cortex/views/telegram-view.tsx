@@ -196,7 +196,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
 
   return (
     <Dialog open onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="w-[calc(100vw-1rem)] max-h-[90dvh] overflow-y-auto max-w-2xl">
+      <DialogContent className="w-[calc(100vw-0.75rem)] max-h-[92dvh] overflow-y-auto rounded-[22px] p-3 sm:p-6 max-w-2xl">
         <DialogHeader>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0"><DialogTitle className="truncate">{bot.name}</DialogTitle><DialogDescription className="mt-1">مدیریت ایجنت، اتصال، Webhook و کاربران مجاز ربات.</DialogDescription></div>
