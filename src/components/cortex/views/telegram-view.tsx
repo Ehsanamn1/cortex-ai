@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BarChart3, Bot, CheckCircle2, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users, Wifi, XCircle, CopyPlus, Link, UserCheck, UserX } from "lucide-react";
+import { Activity, BarChart3, Bot, CheckCircle2, Copy, FileSpreadsheet, Link2, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, Upload, Users, Wifi, XCircle, CopyPlus, Link, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 import { api, type AgentDto, type TelegramAllowlistDto, type TelegramBotDto, type TelegramUserDto } from "@/lib/cortex-client";
@@ -174,6 +174,18 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
     refetchInterval: 20_000,
   });
   const botUsers = (usersQuery.data?.users ?? []).filter((item) => item.botId === bot.id).sort((a, b) => (b.usage?.tokens ?? 0) - (a.usage?.tokens ?? 0));
+  const [userSearch, setUserSearch] = useState("");
+  const [showAllUsers, setShowAllUsers] = useState(false);
+  const filteredBotUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return botUsers;
+    return botUsers.filter((user) => [user.phoneNumber, user.username, user.firstName, user.lastName, user.telegramUserId].filter(Boolean).join(" ").toLowerCase().includes(q));
+  }, [botUsers, userSearch]);
+  const visibleBotUsers = showAllUsers ? filteredBotUsers : filteredBotUsers.slice(0, 6);
+  const dailyTokensTotal = botUsers.reduce((sum, user) => sum + (user.dailyUsage?.tokens ?? 0), 0);
+  const dailyMessagesTotal = botUsers.reduce((sum, user) => sum + (user.dailyUsage?.events ?? 0), 0);
+  const monthlyTokensTotal = botUsers.reduce((sum, user) => sum + (user.monthlyUsage?.tokens ?? 0), 0);
+  const warningUsers = botUsers.filter((user) => (user.dailyTokenLimit > 0 && (user.dailyUsage?.tokens ?? 0) >= user.dailyTokenLimit) || (user.monthlyTokenLimit > 0 && (user.monthlyUsage?.tokens ?? 0) >= user.monthlyTokenLimit)).length;
   const meta = statusMeta(bot.status); const Icon = meta.icon;
   const webhookUrl = typeof window === "undefined" ? "" : window.location.origin + "/api/telegram/webhook/" + bot.id;
   async function copyWebhook() {
@@ -219,12 +231,25 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
                 <p className="mt-1 text-xs leading-6 text-muted-foreground">فقط شماره‌هایی که شما ثبت و تأیید می‌کنید می‌توانند با ربات گفتگو کنند. کاربر بعد از ثبت شماره، با لینک ورود یک‌بارمصرف حساب تلگرامش را متصل می‌کند.</p>
               </div>
               <div className="border-t border-white/[.06] pt-4">
-                <div className="flex items-center justify-between gap-3"><p className="flex items-center gap-2 text-xs font-semibold"><BarChart3 className="size-4 text-primary" />مانیتورینگ مصرف همین ربات</p><span className="text-[10px] text-muted-foreground">{botUsers.length} کاربر شناخته‌شده</span></div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div><p className="flex items-center gap-2 text-xs font-semibold"><BarChart3 className="size-4 text-primary" />مرکز مانیتورینگ مصرف و فعالیت</p><p className="mt-1 text-[10px] text-muted-foreground">مصرف امروز/ماه، کاربران پرمصرف و نزدیک‌شدن به سقف‌ها را همین‌جا ببین.</p></div>
+                  <span className="shrink-0 rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[9px] text-primary">{faNum(botUsers.length)} کاربر</span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <Mini label="پیام امروز" value={faNum(dailyMessagesTotal)} />
+                  <Mini label="توکن امروز" value={faNum(dailyTokensTotal)} />
+                  <Mini label="توکن این ماه" value={faNum(monthlyTokensTotal)} />
+                  <Mini label="در سقف" value={faNum(warningUsers)} />
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute start-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"/><Input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder="شماره، نام کاربر یا Telegram ID..." className="ps-9 text-xs" /></div>
+                  {botUsers.length > 6 && <Button size="sm" variant="outline" onClick={() => setShowAllUsers((value) => !value)}>{showAllUsers ? "جمع‌کردن" : "نمایش همه"}</Button>}
+                </div>
                 <div className="mt-3 space-y-2">
-                  {botUsers.map((user) => (
+                  {visibleBotUsers.map((user) => (
                     <TelegramUserMonitorCard key={user.id} botId={bot.id} user={user} onChanged={() => void usersQuery.refetch()} />
                   ))}
-                  {botUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">هنوز کاربری برای این ربات ثبت نشده است.</p>}
+                  {filteredBotUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">کاربری با این فیلتر پیدا نشد.</p>}
                 </div>
               </div>
             </CardContent>
@@ -299,7 +324,25 @@ export function TelegramAccessManager({ botId }: { botId: string }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 md:grid-cols-2">
-          <div className="space-y-2 md:col-span-2"><Label>شماره موبایل‌ها</Label><Textarea dir="ltr" value={phones} onChange={e => setPhones(e.target.value)} rows={4} placeholder={"مثال:\n09121234567\n09351234567\n+989121234567"} className="text-left" /><p className="text-[10px] text-muted-foreground">هر خط یک شماره؛ حداکثر ۵۰۰ شماره در هر نوبت.</p></div>
+          <div className="space-y-2 md:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2"><Label>شماره موبایل‌ها</Label><span className="text-[10px] text-muted-foreground">تکی یا فله‌ای · حداکثر ۵۰۰ شماره</span></div>
+            <Textarea dir="ltr" value={phones} onChange={e => setPhones(e.target.value)} rows={4} placeholder={"مثال:\n09121234567\n09351234567\n+989121234567"} className="text-left" />
+            <div className="mt-2 flex flex-wrap gap-2">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border/60 bg-background/45 px-3 py-2 text-[10px] font-semibold hover:border-primary/25">
+                <Upload className="size-3.5" />واردکردن فایل CSV / TXT
+                <input type="file" accept=".csv,.txt,text/csv,text/plain" className="sr-only" onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  file.text().then((text) => {
+                    setPhones((current) => [current, text].filter(Boolean).join("\n"));
+                    toast.success("شماره‌ها از فایل وارد شدند.");
+                  }).catch(() => toast.error("خواندن فایل ناموفق بود."));
+                  event.currentTarget.value = "";
+                }} />
+              </label>
+              <span className="inline-flex items-center gap-1 rounded-xl border border-border/60 bg-background/35 px-3 py-2 text-[9px] text-muted-foreground"><FileSpreadsheet className="size-3.5" />هر خط یک شماره؛ جداکننده , ; هم پشتیبانی می‌شود.</span>
+            </div>
+          </div>
           <div className="space-y-2"><Label>نام مشترک (اختیاری)</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="مثلاً واحد فروش" /></div>
           <div className="space-y-2"><Label>یادداشت (اختیاری)</Label><Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="مثلاً مشتری VIP" /></div>
         </div>
