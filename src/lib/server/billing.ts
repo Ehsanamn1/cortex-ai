@@ -268,17 +268,29 @@ async function ensureWorkspaceBilling(workspaceId: string) {
 export async function getBillingSnapshot(workspaceId: string) {
   const account = await ensureWorkspaceBilling(workspaceId);
   await ensureKnownModelCatalog();
-  const [subscription, recentLedger, usage, plans, billedUsage, topUpRequests, recentInvoices] = await Promise.all([
+  const usageSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const [subscription, recentLedger, usage, usageByModel, plans, billedUsage, billedByModel, topUpRequests, recentInvoices] = await Promise.all([
     db.subscription.findFirst({ where: { billingAccountId: account.id, status: "active" }, orderBy: { createdAt: "desc" }, include: { plan: true } }),
     db.creditLedgerEntry.findMany({ where: { billingAccountId: account.id }, orderBy: { createdAt: "desc" }, take: 12 }),
-    db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
+    db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: usageSince } }, _sum: { totalTokens: true, inputTokens: true, outputTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
+    db.usageEvent.groupBy({
+      by: ["provider", "model"],
+      where: { workspaceId, createdAt: { gte: usageSince } },
+      _sum: { totalTokens: true, inputTokens: true, outputTokens: true, estimatedCostMicros: true },
+      _count: { _all: true },
+    }),
     db.plan.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
     db.billingCharge.aggregate({
       where: {
         workspaceId,
-        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        createdAt: { gte: usageSince },
         status: { in: ["captured", "captured_debt"] },
       },
+      _sum: { chargedCredits: true },
+    }),
+    db.billingCharge.groupBy({
+      by: ["provider", "model"],
+      where: { workspaceId, createdAt: { gte: usageSince }, status: { in: ["captured", "captured_debt"] } },
       _sum: { chargedCredits: true },
     }),
     db.creditTopUpRequest.findMany({
@@ -338,6 +350,33 @@ export async function getBillingSnapshot(workspaceId: string) {
       tokens: usage._sum.totalTokens ?? 0,
       estimatedCostMicros: usage._sum.estimatedCostMicros ?? 0,
       credits: billedUsage._sum.chargedCredits ?? 0,
+      byModel: (() => {
+        const billedMap = new Map(billedByModel.map((row) => [
+          (row.provider ?? "unknown") + "::" + (row.model ?? "unknown"),
+          row._sum.chargedCredits ?? 0,
+        ]));
+        const labelFor = (provider: string | null, model: string | null) => {
+          const hit = catalog.find((item) => item.provider === provider && item.modelId === model);
+          return hit?.displayName ?? model ?? "مدل نامشخص";
+        };
+        return usageByModel
+          .map((row) => {
+            const key = (row.provider ?? "unknown") + "::" + (row.model ?? "unknown");
+            return {
+              provider: row.provider,
+              model: row.model,
+              displayName: labelFor(row.provider, row.model),
+              events: row._count._all,
+              inputTokens: row._sum.inputTokens ?? 0,
+              outputTokens: row._sum.outputTokens ?? 0,
+              tokens: row._sum.totalTokens ?? 0,
+              estimatedCostMicros: row._sum.estimatedCostMicros ?? 0,
+              credits: billedMap.get(key) ?? 0,
+            };
+          })
+          .sort((a, b) => b.tokens - a.tokens)
+          .slice(0, 12);
+      })(),
     },
     models: catalog.map((item) => ({
       id: item.id,
