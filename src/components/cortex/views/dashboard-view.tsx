@@ -19,6 +19,7 @@ import {
   Send,
   Server,
   Sparkles,
+  TriangleAlert,
   Workflow,
   WalletCards,
 } from "lucide-react";
@@ -191,16 +192,16 @@ export function DashboardView() {
       <section className="cortex-hero relative overflow-hidden rounded-[30px] border border-white/[.08]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_16%,rgba(59,130,255,.18),transparent_28%),radial-gradient(circle_at_20%_78%,rgba(139,92,246,.13),transparent_25%),linear-gradient(145deg,#111824,#070a0f)]" />
         <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(148,163,184,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.05)_1px,transparent_1px)] [background-size:34px_34px]" />
-        <div className="relative z-10 grid items-center gap-3 px-5 py-6 sm:px-8 lg:grid-cols-[1.04fr_.96fr] lg:px-10 lg:py-7">
+        <div className="relative z-10 grid items-center gap-3 px-5 py-5 sm:px-8 lg:grid-cols-[1.04fr_.96fr] lg:px-10 lg:py-6">
           <div className="max-w-2xl">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="cortex-kicker">مرکز فرماندهی</span>
+              <span className="cortex-kicker">مرکز کنترل</span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/15 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-medium text-emerald-300">
                 <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.8)]" />فضای کاری فعال
               </span>
             </div>
-            <h2 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[42px] lg:leading-[1.15]">
-              {siteConfigQuery.data?.settings["site.welcomeTitle"] ?? "هوش کسب‌وکار را از یک داشبورد کنترل کن."}
+            <h2 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[38px] lg:leading-[1.16]">
+              {siteConfigQuery.data?.settings["site.welcomeTitle"] ?? "مرکز کنترل هوش کسب‌وکار"}
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-8 text-slate-300">ایجنت‌ها، دانش، گفتگوها، اتصال‌ها و مصرف منابع از همین‌جا مدیریت می‌شوند؛ آمار این صفحه از فضای کاری فعلی خوانده می‌شود.</p>
             <div className="mt-6 flex flex-wrap gap-2">
@@ -225,6 +226,25 @@ export function DashboardView() {
         </div>
       </section>
 
+      )}
+
+      {!llmReady && providers && (
+        <motion.section
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[.055] p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-amber-400/20 bg-amber-400/10 text-amber-300">
+              <TriangleAlert className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-bold">مدل زبانی هنوز پیکربندی نشده است</p>
+              <p className="mt-1 text-xs leading-6 text-muted-foreground">قبل از تست ایجنت، سرویس مدل و کلید API را در تنظیمات متصل کنید.</p>
+            </div>
+          </div>
+          <Button variant="outline" className="shrink-0 border-amber-400/20 bg-background/30" onClick={() => setView("settings")}>پیکربندی مدل</Button>
+        </motion.section>
       )}
 
       <section aria-label="آمار کلی" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -307,13 +327,36 @@ export function DashboardView() {
       )}
 
       {!hasAgents ? (
-        <EmptyState
-          icon={<DashboardEmptyIllustration />}
-          title="هنوز ایجنتی نساخته‌اید"
-          description="اولین ایجنت خود را بسازید، دانش را به آن وصل کنید و بعد از پلی‌گراند پاسخ بگیرید."
-          action={<Button onClick={() => setView("agent-new")}><Plus />ایجاد ایجنت</Button>}
-          className="bg-card py-16"
-        />
+        <section className="cortex-panel overflow-hidden rounded-[26px] border border-primary/10 p-5 sm:p-7">
+          <div className="grid items-center gap-6 lg:grid-cols-[.72fr_1.28fr]">
+            <div className="text-center lg:text-start">
+              <div className="mx-auto grid size-20 place-items-center rounded-[24px] border border-primary/15 bg-primary/[.06] lg:mx-0">
+                <DashboardEmptyIllustration />
+              </div>
+              <p className="mt-4 text-lg font-black">اولین ایجنتت را در ۳ قدم بساز</p>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">از دانش سازمان تا اولین پاسخ، مسیر را همین‌جا شروع کن.</p>
+              <Button className="mt-4" onClick={() => setView("knowledge")}><Plus />شروع از دانش</Button>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {[
+                ["۱", "آپلود دانش", "PDF، متن یا URL را اضافه کن.", "knowledge"],
+                ["۲", "ساخت ایجنت", "لحن و قوانین پاسخ‌گویی را تعیین کن.", "agent-new"],
+                ["۳", "تست در پلی‌گراند", "قبل از انتشار با ایجنت گفتگو کن.", "agents"],
+              ].map(([number, title, description, target]) => (
+                <button
+                  key={number}
+                  type="button"
+                  onClick={() => setView(target as "knowledge" | "agent-new" | "agents")}
+                  className="cortex-action min-h-[150px] rounded-2xl border border-white/[.07] bg-white/[.02] p-4 text-right"
+                >
+                  <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">{number}</span>
+                  <p className="mt-7 text-sm font-bold">{title}</p>
+                  <p className="mt-1 text-xs leading-6 text-muted-foreground">{description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
       ) : (
         <>
           {settingEnabled("feature.dashboardRecent") && (
