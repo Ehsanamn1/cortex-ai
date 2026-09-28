@@ -26,7 +26,7 @@ import {
 
 import { api } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
-import { EmptyState, ErrorState, useErrorToast } from "@/components/cortex/bits";
+import { ErrorState, useErrorToast } from "@/components/cortex/bits";
 import { faNum, timeAgoFa } from "@/components/cortex/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
