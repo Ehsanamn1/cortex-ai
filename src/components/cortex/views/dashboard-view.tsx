@@ -2,7 +2,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -69,12 +69,9 @@ function CortexCore() {
 }
 
 function DashboardOnboarding({ onNavigate }: { onNavigate: (view: "knowledge" | "agent-new" | "agents") => void }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const dismissed = window.localStorage.getItem("cortex:onboarding:dismissed") === "1";
-    if (!dismissed) setOpen(true);
-  }, []);
+  const [open, setOpen] = useState(
+    () => typeof window !== "undefined" && window.localStorage.getItem("cortex:onboarding:dismissed") !== "1",
+  );
 
   function dismiss() {
     window.localStorage.setItem("cortex:onboarding:dismissed", "1");
