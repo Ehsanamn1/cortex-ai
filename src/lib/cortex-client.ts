@@ -260,7 +260,23 @@ export interface BillingSnapshotDto {
   topUpPackages: Array<{key:string;credits:number;amountToman:number;label:string}>;
   plans: BillingPlanDto[];
   subscription:{ id:string; status:string; periodStart:string; periodEnd:string; cancelAtPeriodEnd:boolean }|null;
-  usage30Days:{events:number;tokens:number;estimatedCostMicros:number;credits:number};
+  usage30Days:{
+    events:number;
+    tokens:number;
+    estimatedCostMicros:number;
+    credits:number;
+    byModel:Array<{
+      provider:string|null;
+      model:string|null;
+      displayName:string;
+      events:number;
+      inputTokens:number;
+      outputTokens:number;
+      tokens:number;
+      estimatedCostMicros:number;
+      credits:number;
+    }>;
+  };
   models: BillingModelDto[];
   ledger: BillingLedgerEntryDto[];
   topUpRequests: BillingTopUpRequestDto[];
