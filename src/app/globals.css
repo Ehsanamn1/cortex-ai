@@ -703,6 +703,15 @@ html:not(.dark) .cortex-mobile-nav {
 }
 html.dark .cortex-mobile-nav button[aria-current="page"] { color: #86adff !important; }
 html:not(.dark) .cortex-mobile-nav button[aria-current="page"] { color: #3f6fe5 !important; }
+.cortex-wallet-quick-glow { animation: cortex-wallet-quick-pulse 6s ease-in-out infinite; }
+@keyframes cortex-wallet-quick-pulse {
+  0%, 100% { transform: scale(1); opacity: .55; }
+  50% { transform: scale(1.12); opacity: .85; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cortex-wallet-quick-glow { animation: none !important; }
+}
+
 .cortex-wallet-quick { box-shadow: 0 14px 40px rgba(15,23,42,.08), inset 0 1px 0 rgba(255,255,255,.04); }
 .cortex-wallet-quick-btn {
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
