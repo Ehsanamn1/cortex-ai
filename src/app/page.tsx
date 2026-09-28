@@ -1,7 +1,5 @@
-"use client";
-
-import { CortexApp } from "@/components/cortex/cortex-app";
+import { LandingPage } from "@/components/cortex/landing-page";
 
 export default function Home() {
-  return <CortexApp />;
+  return <LandingPage />;
 }
