@@ -196,13 +196,9 @@ export function BillingEstimator({
     ?? available[0]
     ?? models[0];
 
-  const [modelId, setModelId] = useState(preferred?.id ?? "");
-
-  useEffect(() => {
-    if (!models.length) return;
-    const preferredId = preferred?.id ?? models[0]?.id ?? "";
-    setModelId((current) => current && models.some((model) => model.id === current) ? current : preferredId);
-  }, [models, preferred]);
+  // Empty means "use the deterministic DeepSeek default". Once the user
+  // picks a model manually, keep that selection as long as the model exists.
+  const [modelId, setModelId] = useState("");
   const [input, setInput] = useState("4000");
   const [output, setOutput] = useState("1200");
   const [messages, setMessages] = useState("100");
