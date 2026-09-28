@@ -4,9 +4,9 @@ import { getKnownModelCatalog, getModelRate, PRICING_VERIFIED_AT, PRICING_MODE }
 
 export const DEFAULT_BILLING_PLANS = [
   { key: "free", name: "رایگان", description: "برای شروع و تست Cortex", priceToman: 0, monthlyCredits: 5000, overageCreditPriceToman: 0, sortOrder: 0 },
-  { key: "starter", name: "Launch", description: "برای شروع واقعی با مدل‌های سریع و اقتصادی", priceToman: 1790000, monthlyCredits: 10000, overageCreditPriceToman: 700, sortOrder: 1 },
-  { key: "business", name: "Growth", description: "برای تیم‌ها، Agentها و مصرف حرفه‌ای", priceToman: 8900000, monthlyCredits: 50000, overageCreditPriceToman: 600, sortOrder: 2 },
-  { key: "pro", name: "Scale", description: "برای اتوماسیون سنگین و مدل‌های سطح بالا", priceToman: 17900000, monthlyCredits: 100000, overageCreditPriceToman: 500, sortOrder: 3 },
+  { key: "starter", name: "Launch", description: "برای شروع واقعی با مدل‌های سریع و اقتصادی", priceToman: 1790000, monthlyCredits: 10000, overageCreditPriceToman: 220, sortOrder: 1 },
+  { key: "business", name: "Growth", description: "برای تیم‌ها، Agentها و مصرف حرفه‌ای", priceToman: 8900000, monthlyCredits: 50000, overageCreditPriceToman: 190, sortOrder: 2 },
+  { key: "pro", name: "Scale", description: "برای اتوماسیون سنگین و مدل‌های سطح بالا", priceToman: 17900000, monthlyCredits: 100000, overageCreditPriceToman: 175, sortOrder: 3 },
   { key: "enterprise", name: "Enterprise", description: "قرارداد و محدودیت سفارشی", priceToman: 0, monthlyCredits: 0, overageCreditPriceToman: 0, sortOrder: 4 },
 ] as const;
 
