@@ -453,9 +453,22 @@ function SourceCard({ source }: { source: KnowledgeSourceDto }) {
           </Alert>
         )}
         {busy && (
-          <p className="mt-2.5 border-t pt-2.5 text-[11px] leading-relaxed text-muted-foreground">
-            متن این منبع در حال تبدیل به بردارهای معنایی است؛ تا «آماده» شدن، در پاسخ‌ها استفاده نمی‌شود.
-          </p>
+          <div className="mt-3 space-y-2 border-t pt-3">
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+              <span>{source.status === "pending" ? "در انتظار شروع پردازش" : "در حال استخراج، chunking و ایندکس…"}</span>
+              <span className="font-semibold text-primary">وضعیت زنده</span>
+            </div>
+            <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-y-0 start-0 rounded-full bg-gradient-to-r from-primary to-violet-400",
+                  source.status === "processing" ? "w-2/3 animate-pulse" : "w-1/5"
+                )}
+              />
+            </div>
+            <p className="text-[10px] leading-5 text-muted-foreground">Cortex هر ۲٫۵ ثانیه وضعیت را تازه می‌کند؛ تا «آماده» شدن، این منبع وارد پاسخ‌ها نمی‌شود.</p>
+          </div>
         )}
       </CardContent>
 
