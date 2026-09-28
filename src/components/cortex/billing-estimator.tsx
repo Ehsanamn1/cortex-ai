@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -75,6 +75,7 @@ const COMPLEXITIES: Complexity[] = [
 const PRESETS = [
   { key: "support", label: "پشتیبانی", input: 1200, output: 600, messages: 1000, tasks: 0, complexity: "standard" as const },
   { key: "sales", label: "فروش و CRM", input: 1800, output: 900, messages: 800, tasks: 50, complexity: "standard" as const },
+  { key: "telegram100", label: "۱۰۰ کاربر × ۱۰ پیام روزانه", input: 1200, output: 600, messages: 30000, tasks: 0, complexity: "standard" as const },
   { key: "agentic", label: "اتوماسیون Agentic", input: 2500, output: 1500, messages: 300, tasks: 100, complexity: "agentic" as const },
   { key: "astra", label: "GPT-6 Astra", input: 4500, output: 2200, messages: 300, tasks: 60, complexity: "agentic" as const },
 ];
@@ -189,11 +190,19 @@ export function BillingEstimator({
 }: Props) {
   const available = models.filter((m) => m.enabledForPlan);
   const preferred =
-    available.find((m) => m.modelId.toLowerCase().includes("gpt-6-astra"))
+    available.find((m) => m.modelId.toLowerCase().includes("deepseek-v4-pro"))
+    ?? available.find((m) => m.modelId.toLowerCase().includes("deepseek-flash"))
+    ?? available.find((m) => m.provider.toLowerCase().includes("deepseek"))
     ?? available[0]
     ?? models[0];
 
   const [modelId, setModelId] = useState(preferred?.id ?? "");
+
+  useEffect(() => {
+    if (!models.length) return;
+    const preferredId = preferred?.id ?? models[0]?.id ?? "";
+    setModelId((current) => current && models.some((model) => model.id === current) ? current : preferredId);
+  }, [models, preferred]);
   const [input, setInput] = useState("4000");
   const [output, setOutput] = useState("1200");
   const [messages, setMessages] = useState("100");
@@ -232,6 +241,8 @@ export function BillingEstimator({
     const creditsPerTask = creditsPerMessage ? Math.ceil(creditsPerMessage * complexity.multiplier) : 0;
     const monthlyCreditsEstimate = creditsPerMessage * messageCount + creditsPerTask * taskCount;
     const monthlyUsd = perMessageUsd * messageCount + perTaskUsd * taskCount;
+    const suggestedCustomerUsd = monthlyUsd * 1.5;
+    const suggestedCustomerToman = suggestedCustomerUsd * fx;
     const monthlyTokens = baseTokens * (messageCount + taskCount * complexity.multiplier);
     const workloadUnits = messageCount + taskCount * complexity.multiplier;
 
@@ -247,6 +258,8 @@ export function BillingEstimator({
       monthlyToman: monthlyUsd * fx,
       monthlyCredits: monthlyCreditsEstimate,
       monthlyTokens,
+      suggestedCustomerUsd,
+      suggestedCustomerToman,
       workloadUnits,
       creditsPerMessage,
       creditsPerTask,
@@ -400,6 +413,18 @@ export function BillingEstimator({
             <ResultCard title="هزینه یک تسک" value={hasInputProfile && estimate ? formatTomanCompact(estimate.perTaskUsd * fx) : "—"} detail={hasInputProfile && estimate ? `دقیق: ${formatTomanExact(estimate.perTaskUsd * fx)} · پیچیدگی ×${faNum(complexity.multiplier)}` : "توکن‌ها را وارد کن"} primary icon={<Zap className="size-4" />} />
             <ResultCard title="هزینه سناریوی ماهانه" value={hasWorkload && estimate ? formatTomanCompact(estimate.monthlyToman) : "—"} detail={hasWorkload && estimate ? `معادل $${moneyUsd(estimate.monthlyUsd)}` : "تعداد پیام یا تسک را وارد کن"} icon={<WalletCards className="size-4" />} />
             <ResultCard title="اعتبار مصرفی ماهانه" value={hasWorkload && estimate ? formatCountCompact(estimate.monthlyCredits) : "—"} detail={hasWorkload && estimate ? `${faNum(estimate.creditsPerMessage)} اعتبار/پیام · ${faNum(estimate.creditsPerTask)} اعتبار/تسک` : "بر اساس نرخ مدل و پلن"} icon={<Cpu className="size-4" />} />
+
+            <div className="sm:col-span-2 rounded-2xl border border-violet-400/15 bg-violet-500/[.035] p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div><p className="text-[10px] text-muted-foreground">سناریوی مشتری</p><p className="mt-1 text-lg font-black">۱۰۰ کاربر × ۱۰ پیام روزانه</p><p className="mt-1 text-[10px] leading-5 text-muted-foreground">پروفایل نمونه: ۱۲۰۰ توکن ورودی + ۶۰۰ توکن خروجی برای هر پیام، معادل ۳۰هزار پیام در ماه.</p></div>
+                <button type="button" onClick={() => { setInput("1200"); setOutput("600"); setMessages("30000"); setTasks("0"); setComplexityKey("standard"); }} className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-[10px] font-semibold text-primary hover:bg-primary/10">اعمال سناریو</button>
+              </div>
+              {hasWorkload && estimate && <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <InfoCell label="هزینه تأمین مدل" value={formatTomanCompact(estimate.monthlyToman)} />
+                <InfoCell label="قیمت پیشنهادی با ۵۰٪ markup" value={formatTomanCompact(estimate.suggestedCustomerToman)} />
+                <InfoCell label="اعتبار موردنیاز" value={formatCountCompact(estimate.monthlyCredits)} />
+              </div>}
+            </div>
 
             <div className="sm:col-span-2 rounded-2xl border border-primary/15 bg-primary/[.04] p-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
