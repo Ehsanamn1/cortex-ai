@@ -128,8 +128,8 @@ export function KnowledgeView() {
         <div className="absolute -start-16 -bottom-20 size-56 rounded-full bg-violet-500/10 blur-3xl" />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <p className="cortex-kicker">COMPANY BRAIN · مغز شرکت</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">دانش واقعی کسب‌وکار را به منبع مشترک ایجنت‌ها تبدیل کن.</h2>
+            <p className="cortex-kicker">KNOWLEDGE BASE · پایگاه دانش</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">پایگاه دانش شرکت را به Agentها وصل کن.</h2>
             <p className="mt-3 text-sm leading-8 text-muted-foreground">فایل، وب‌سایت و داده را وارد کن؛ Cortex پردازش، ایندکس و وضعیت هر منبع را شفاف نشان می‌دهد تا تیم بداند چه چیزی واقعاً آماده استفاده است.</p>
           </div>
           <Button onClick={() => setAddOpen(true)} disabled={agents.length === 0}><Plus />افزودن منبع</Button>
@@ -143,9 +143,9 @@ export function KnowledgeView() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h2 className="text-xl font-bold text-foreground">مغز شرکت</h2>
+          <h2 className="text-xl font-bold text-foreground">پایگاه دانش</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            تمام منابع واقعی فضای کاری، گروه‌بندی‌شده بر اساس ایجنت و آماده بررسی وضعیت.
+            تمام منابع واقعی فضای کاری، گروه‌بندی‌شده بر اساس Agent و با وضعیت پردازش زنده.
           </p>
         </div>
         <Button onClick={() => setAddOpen(true)} disabled={agents.length === 0}>
