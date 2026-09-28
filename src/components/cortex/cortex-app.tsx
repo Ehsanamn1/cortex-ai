@@ -8,6 +8,7 @@ import { useCortexStore } from "@/components/cortex/store";
 import { CortexMark } from "@/components/cortex/logo";
 import { AppShell } from "@/components/cortex/app-shell";
 import { AuthScreen } from "@/components/cortex/auth-screen";
+import { LandingPage } from "@/components/cortex/landing-page";
 
 function makeQueryClient(): QueryClient {
   return new QueryClient({
@@ -44,7 +45,7 @@ function Splash() {
 
 function SessionGate() {
   const hydrate = useCortexStore((s) => s.hydrate);
-  const [phase, setPhase] = useState<"checking" | "auth" | "ready">("checking");
+  const [phase, setPhase] = useState<"checking" | "public" | "auth" | "ready">("checking");
   const [recoveryNotice, setRecoveryNotice] = useState("");
 
   useEffect(() => {
@@ -81,7 +82,7 @@ function SessionGate() {
           };
           window.setTimeout(preload, 80);
         } else {
-          setPhase("auth");
+          setPhase("public");
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : "بازیابی جلسه Cortex ناموفق بود.";
@@ -103,6 +104,7 @@ function SessionGate() {
   }, [hydrate]);
 
   if (phase === "checking") return <Splash />;
+  if (phase === "public") return <LandingPage />;
   if (phase === "auth") return <AuthScreen onAuthenticated={() => setPhase("ready")} bootNotice={recoveryNotice} />;
   return <AppShell />;
 }
