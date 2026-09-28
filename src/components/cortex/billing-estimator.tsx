@@ -356,7 +356,7 @@ export function BillingEstimator({
             <label className="block rounded-2xl border border-border/60 bg-background/55 p-3">
               <span className="flex items-center gap-2 text-[11px] text-muted-foreground"><Gauge className="size-3.5" />مدل هوش مصنوعی</span>
               <select
-                value={models.some((model) => model.id === modelId) ? modelId : (preferred?.id ?? "")}
+                value={selected?.id ?? ""}
                 onChange={(e) => setModelId(e.target.value)}
                 className="mt-2 w-full bg-transparent text-sm font-bold outline-none"
               >
