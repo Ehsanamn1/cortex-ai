@@ -829,17 +829,23 @@ model CreditLedgerEntry {
 }
 
 model CreditTopUpRequest {
-  id           String   @id @default(cuid())
-  workspaceId  String
-  userId       String
-  packageKey   String
-  credits      Int
-  amountToman  Int
-  status       String   @default("pending")
-  note         String?
-  createdAt    DateTime @default(now())
-  reviewedAt   DateTime?
-  reviewedBy   String?
+  id               String   @id @default(cuid())
+  workspaceId      String
+  userId           String
+  packageKey       String
+  credits          Int
+  amountToman      Int
+  status           String   @default("pending")
+  note             String?
+  paymentProvider  String?
+  paymentAuthority String?  @unique
+  paymentRefId     String?
+  paymentStatus    String?
+  paymentStartedAt DateTime?
+  paidAt           DateTime?
+  createdAt        DateTime @default(now())
+  reviewedAt       DateTime?
+  reviewedBy       String?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
