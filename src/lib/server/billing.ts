@@ -4,9 +4,9 @@ import { getKnownModelCatalog, getModelRate, PRICING_VERIFIED_AT, PRICING_MODE }
 
 export const DEFAULT_BILLING_PLANS = [
   { key: "free", name: "رایگان", description: "برای شروع و تست Cortex", priceToman: 0, monthlyCredits: 5000, overageCreditPriceToman: 0, sortOrder: 0 },
-  { key: "starter", name: "Starter", description: "برای کسب‌وکارهای کوچک", priceToman: 5900000, monthlyCredits: 10000, overageCreditPriceToman: 700, sortOrder: 1 },
-  { key: "business", name: "Business", description: "برای تیم‌ها و حجم بالاتر", priceToman: 16900000, monthlyCredits: 35000, overageCreditPriceToman: 600, sortOrder: 2 },
-  { key: "pro", name: "Pro", description: "برای استفاده سنگین و مدل‌های پیشرفته", priceToman: 39900000, monthlyCredits: 100000, overageCreditPriceToman: 500, sortOrder: 3 },
+  { key: "starter", name: "Launch", description: "برای شروع واقعی با مدل‌های سریع و اقتصادی", priceToman: 1790000, monthlyCredits: 10000, overageCreditPriceToman: 700, sortOrder: 1 },
+  { key: "business", name: "Growth", description: "برای تیم‌ها، Agentها و مصرف حرفه‌ای", priceToman: 8900000, monthlyCredits: 50000, overageCreditPriceToman: 600, sortOrder: 2 },
+  { key: "pro", name: "Scale", description: "برای اتوماسیون سنگین و مدل‌های سطح بالا", priceToman: 17900000, monthlyCredits: 100000, overageCreditPriceToman: 500, sortOrder: 3 },
   { key: "enterprise", name: "Enterprise", description: "قرارداد و محدودیت سفارشی", priceToman: 0, monthlyCredits: 0, overageCreditPriceToman: 0, sortOrder: 4 },
 ] as const;
 
@@ -24,14 +24,14 @@ function periodEndFor(start: Date): Date {
 
 export const CREDIT_TOP_UP_PACKAGES = {
   starter: { credits: 10_000, amountToman: 1_990_000, label: "۱۰ هزار اعتبار" },
-  growth: { credits: 50_000, amountToman: 8_900_000, label: "۵۰ هزار اعتبار" },
-  scale: { credits: 100_000, amountToman: 15_900_000, label: "۱۰۰ هزار اعتبار" },
+  growth: { credits: 50_000, amountToman: 9_490_000, label: "۵۰ هزار اعتبار" },
+  scale: { credits: 100_000, amountToman: 19_490_000, label: "۱۰۰ هزار اعتبار" },
 } as const;
 export type CreditTopUpPackageKey = keyof typeof CREDIT_TOP_UP_PACKAGES;
 
 export function defaultCreditMultiplierBps(qualityTier: string): number {
   switch (qualityTier) {
-    case "economy": return 100;
+    case "economy": return 200;
     case "premium": return 400;
     case "deep": return 800;
     default: return 200;
@@ -113,8 +113,20 @@ async function ensureKnownModelCatalog() {
   if (modelCatalogPromise) return modelCatalogPromise;
   modelCatalogPromise = (async () => {
     const known = getKnownModelCatalog();
+    const qualityRank: Record<string, number> = { economy: 1, balanced: 2, premium: 3, deep: 4 };
+    const plans = await db.plan.findMany({ where: { active: true }, select: { id: true, key: true } });
     for (const entry of known) {
-      await ensureModel(entry.provider, entry.modelId);
+      const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel(entry.provider, entry.modelId);
+      for (const plan of plans) {
+        const maxRank = plan.key === "free" || plan.key === "starter" ? 2 : plan.key === "business" ? 3 : 4;
+        const enabled = qualityRank[entry.qualityTier] <= maxRank && Boolean(entry.commercialAvailable ?? true);
+        const multiplierBps = Math.max(1, fallbackMultiplier);
+        await db.planModelAccess.upsert({
+          where: { planId_modelCatalogId: { planId: plan.id, modelCatalogId: catalog.id } },
+          update: { enabled, creditMultiplierBps: multiplierBps },
+          create: { planId: plan.id, modelCatalogId: catalog.id, enabled, creditMultiplierBps: multiplierBps },
+        });
+      }
     }
   })().then(() => { modelCatalogReadyAt = Date.now(); }).finally(() => { modelCatalogPromise = null; });
   return modelCatalogPromise;
