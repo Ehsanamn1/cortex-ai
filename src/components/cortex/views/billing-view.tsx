@@ -58,13 +58,36 @@ export function BillingView(){
   }
 
   return <div className="space-y-4 sm:space-y-5">
-    <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="cortex-wallet-quick relative overflow-hidden rounded-[22px] border border-primary/15 bg-primary/[.035] p-3.5 sm:p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2"><span className="cortex-kicker">QUICK ACCESS</span><span className="rounded-full border border-primary/15 bg-primary/5 px-2 py-1 text-[8px] font-bold text-primary">{plan.name}</span></div>
-          <div className="mt-2 flex flex-wrap items-end gap-x-5 gap-y-1"><p className="text-xl font-black">{formatCountCompact(data.account.balanceCredits)} <span className="text-[10px] font-semibold text-muted-foreground">اعتبار</span></p><p className="text-[10px] text-muted-foreground">۳۰ روز: {formatCountCompact(data.usage30Days.tokens)} توکن · {formatCountCompact(data.usage30Days.credits)} اعتبار</p></div>
+    <motion.section
+      initial={{ opacity: 0, y: 10, scale: .99 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: .28, ease: "easeOut" }}
+      className="cortex-wallet-quick relative overflow-hidden rounded-[22px] border border-primary/15 bg-primary/[.035] p-3.5 sm:p-4"
+    >
+      <span aria-hidden="true" className="cortex-wallet-quick-glow absolute -end-12 -top-16 size-44 rounded-full bg-primary/10 blur-3xl" />
+      <div className="relative">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="cortex-kicker">QUICK ACCESS</span>
+              <span className="rounded-full border border-primary/15 bg-primary/5 px-2 py-1 text-[8px] font-bold text-primary">{plan.name}</span>
+              <span className="rounded-full border border-border/60 bg-background/35 px-2 py-1 text-[8px] text-muted-foreground">Wallet</span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-end gap-x-5 gap-y-1">
+              <p className="text-xl font-black">{formatCountCompact(data.account.balanceCredits)} <span className="text-[10px] font-semibold text-muted-foreground">اعتبار</span></p>
+              <p className="text-[10px] text-muted-foreground">۳۰ روز: {formatCountCompact(data.usage30Days.tokens)} توکن · {formatCountCompact(data.usage30Days.credits)} اعتبار</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[430px]">
+            <div className="rounded-xl border border-border/60 bg-background/35 px-3 py-2"><p className="text-[8px] text-muted-foreground">اعتبار باقی‌مانده</p><p className="mt-1 text-xs font-black">{formatCountCompact(data.account.balanceCredits)}</p></div>
+            <div className="rounded-xl border border-border/60 bg-background/35 px-3 py-2"><p className="text-[8px] text-muted-foreground">پلن فعلی</p><p className="mt-1 truncate text-xs font-black">{plan.name}</p></div>
+            <div className="rounded-xl border border-border/60 bg-background/35 px-3 py-2"><p className="text-[8px] text-muted-foreground">توکن ۳۰ روز</p><p className="mt-1 text-xs font-black">{formatCountCompact(data.usage30Days.tokens)}</p></div>
+            <div className="rounded-xl border border-primary/10 bg-primary/[.045] px-3 py-2"><p className="text-[8px] text-muted-foreground">مصرف پلن</p><p className="mt-1 text-xs font-black">{faNum(balancePct)}٪</p></div>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <button type="button" onClick={() => jumpTo("cortex-topup")} className="cortex-wallet-quick-btn"><Plus className="size-3.5"/>شارژ سریع</button>
           <button type="button" onClick={() => jumpTo("cortex-cost-lab")} className="cortex-wallet-quick-btn"><Gauge className="size-3.5"/>Cost Lab</button>
           <button type="button" onClick={() => jumpTo("cortex-usage-analytics")} className="cortex-wallet-quick-btn"><BarChart3 className="size-3.5"/>تحلیل مصرف</button>
