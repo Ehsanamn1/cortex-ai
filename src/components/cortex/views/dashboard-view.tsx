@@ -22,6 +22,7 @@ import {
   Sparkles,
   TriangleAlert,
   Workflow,
+  X,
   WalletCards,
 } from "lucide-react";
 
