@@ -2,6 +2,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -63,6 +64,61 @@ function CortexCore() {
         <span>مرکز کنترل هوش و دانش</span>
       </div>
     </div>
+  );
+}
+
+function DashboardOnboarding({ onNavigate }: { onNavigate: (view: "knowledge" | "agent-new" | "agents") => void }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const dismissed = window.localStorage.getItem("cortex:onboarding:dismissed") === "1";
+    if (!dismissed) setOpen(true);
+  }, []);
+
+  function dismiss() {
+    window.localStorage.setItem("cortex:onboarding:dismissed", "1");
+    setOpen(false);
+  }
+
+  if (!open) return null;
+
+  const steps: Array<{ number: string; title: string; description: string; view: "knowledge" | "agent-new" | "agents" }> = [
+    { number: "۱", title: "اولین دانش را آپلود کن", description: "PDF، متن یا URL شرکت را اضافه کن.", view: "knowledge" },
+    { number: "۲", title: "اولین Agent را بساز", description: "لحن و قوانین پاسخ‌گویی را تنظیم کن.", view: "agent-new" },
+    { number: "۳", title: "در Playground تست کن", description: "قبل از اتصال به مشتری، پاسخ واقعی بگیر.", view: "agents" },
+  ];
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: -8, scale: .99 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8 }}
+      className="relative overflow-hidden rounded-[26px] border border-primary/20 bg-primary/[.045] p-5 shadow-[0_22px_70px_rgba(59,130,255,.08)] sm:p-6"
+    >
+      <button type="button" onClick={dismiss} aria-label="بستن راهنمای شروع" className="absolute end-3 top-3 grid size-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-background/50 hover:text-foreground">
+        <X className="size-4" />
+      </button>
+      <div className="max-w-3xl">
+        <p className="cortex-kicker">FIRST RUN</p>
+        <h2 className="mt-2 text-xl font-black sm:text-2xl">در ۳ قدم Cortex را راه بینداز.</h2>
+        <p className="mt-2 text-xs leading-6 text-muted-foreground">این راهنمای شروع فقط برای اولین ورود است و هر زمان خواستی می‌توانی ببندی.</p>
+      </div>
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        {steps.map((step) => (
+          <button
+            key={step.number}
+            type="button"
+            onClick={() => { dismiss(); onNavigate(step.view); }}
+            className="cortex-action min-h-[142px] rounded-2xl border border-border/60 bg-background/45 p-4 text-right"
+          >
+            <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">{step.number}</span>
+            <p className="mt-5 text-sm font-bold">{step.title}</p>
+            <p className="mt-1 text-[11px] leading-6 text-muted-foreground">{step.description}</p>
+          </button>
+        ))}
+      </div>
+      <button type="button" onClick={dismiss} className="mt-4 text-[10px] font-semibold text-muted-foreground transition hover:text-foreground">بعداً ادامه می‌دهم</button>
+    </motion.section>
   );
 }
 
@@ -188,6 +244,8 @@ export function DashboardView() {
 
   return (
     <div className="space-y-7">
+      {!hasAgents && <DashboardOnboarding onNavigate={setView} />}
+
       {settingEnabled("feature.dashboardHero") && (
       <section className="cortex-hero relative overflow-hidden rounded-[30px] border border-white/[.08]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_16%,rgba(59,130,255,.18),transparent_28%),radial-gradient(circle_at_20%_78%,rgba(139,92,246,.13),transparent_25%),linear-gradient(145deg,#111824,#070a0f)]" />
