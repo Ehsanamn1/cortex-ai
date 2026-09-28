@@ -14,7 +14,7 @@ export function AuthRoute({ defaultTab }: { defaultTab: "login" | "signup" }) {
 
   useEffect(() => {
     void api.checkSession().then((session) => {
-      if (session) router.replace("/");
+      if (session) router.replace("/app");
     }).catch(() => undefined);
   }, [router]);
 
