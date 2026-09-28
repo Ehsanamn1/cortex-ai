@@ -132,7 +132,7 @@ export function LandingPage() {
                   <div className="rounded-2xl border border-white/[.07] bg-white/[.02] p-4">
                     <div className="flex items-center justify-between"><span className="text-[9px] text-slate-400">مصرف مدل‌ها</span><MessageSquare className="size-4 text-emerald-300" /></div>
                     <div className="mt-3 space-y-3">
-                      {[["DeepSeek", "۴۱٪"], ["GPT-5.6", "۳۴٪"], ["Gemini", "۲۵٪"]].map(([x, p]) => <div key={x}><div className="flex justify-between text-[9px] text-slate-400"><span>{x}</span><span>{p}</span></div><div className="mt-1 h-1.5 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-400" style={{ width: p }} /></div></div>)}
+                      {[["DeepSeek", "۴۱٪", "41%"], ["GPT-5.6", "۳۴٪", "34%"], ["Gemini", "۲۵٪", "25%"]].map(([x, label, width]) => <div key={x}><div className="flex justify-between text-[9px] text-slate-400"><span>{x}</span><span>{label}</span></div><div className="mt-1 h-1.5 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-400" style={{ width }} /></div></div>)}
                     </div>
                   </div>
                 </div>
