@@ -362,7 +362,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
               )}
             >
               <item.icon aria-hidden="true" className="size-[19px]" />
-              {item.view === "dashboard" ? "داشبورد" : item.view === "agents" ? "ایجنت" : item.view === "knowledge" ? "مغز سیستم" : "اعتبار"}
+              {item.view === "dashboard" ? "داشبورد" : item.view === "agents" ? "ایجنت" : item.view === "knowledge" ? "دانش" : "اعتبار"}
             </button>
           );
         })}
