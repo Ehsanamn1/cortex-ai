@@ -248,7 +248,7 @@ export interface WorkflowDto { id:string; workspaceId:string; agentId:string|nul
 export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }
 export interface BillingModelDto { id:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; contextWindow:number|null; vision:boolean; tools:boolean; structuredOutput:boolean; reasoning:boolean; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number }
 export interface BillingInvoiceDto { id:string; invoiceNumber:string; status:string; currency:string; subtotalToman:number; overageToman:number; totalToman:number; periodStart:string; periodEnd:string; issuedAt:string|null; dueAt:string|null; paidAt:string|null; createdAt:string }
-export interface BillingTopUpRequestDto { id:string; packageKey:string; credits:number; amountToman:number; status:string; note:string|null; createdAt:string; reviewedAt:string|null }
+export interface BillingTopUpRequestDto { id:string; packageKey:string; credits:number; amountToman:number; status:string; note:string|null; paymentProvider:string|null; paymentStatus:string|null; paymentRefId:string|null; paidAt:string|null; createdAt:string; reviewedAt:string|null }
 export interface BillingLedgerEntryDto { id:string; amountCredits:number; balanceAfter:number; entryType:string; description:string|null; createdAt:string }
 export interface NotificationDto { id:string; action:string; entityType:string; createdAt:string }
 export interface SearchResultDto { type:"agent"|"knowledge"|"conversation"; id:string; title:string; subtitle:string; agentId:string; }
@@ -364,6 +364,7 @@ export const api = {
     return request("/api/billing/topup-request" + query);
   },
   requestBillingTopUp(packageKey:string, workspaceId?:string){ return jsonRequest<{request:BillingTopUpRequestDto}>(`/api/billing/topup-request`,"POST",{packageKey,workspaceId}); },
+  startBillingTopUpPayment(packageKey:string, workspaceId?:string){ return jsonRequest<{redirectUrl:string;requestId:string}>(`/api/billing/topup-payment`,"POST",{packageKey,workspaceId}); },
 
   /* AUTH */
 
