@@ -483,6 +483,7 @@ model UsageEvent {
   @@index([telegramBotId, createdAt])
   @@index([telegramUserId, createdAt])
   @@index([channel, createdAt])
+  @@index([workspaceId, provider, model, createdAt])
 }
 
 model AuditLog {
