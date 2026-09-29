@@ -158,6 +158,11 @@ export interface ConversationDetailDto {
 export interface ChatResponse {
   userMessage: MessageDto;
   assistantMessage: MessageDto;
+  billing?: {
+    chargedCredits: number;
+    balanceCredits: number;
+    status: string;
+  };
 }
 
 export interface DashboardStatsDto {
