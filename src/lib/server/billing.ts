@@ -477,6 +477,20 @@ export async function activateFreePlan(workspaceId: string): Promise<void> {
       },
     });
 
+    await tx.usagePolicy.upsert({
+      where: { workspaceId },
+      update: {
+        monthlyMessageLimit: plan.monthlyMessages,
+      },
+      create: {
+        workspaceId,
+        dailyMessageLimit: 0,
+        monthlyMessageLimit: plan.monthlyMessages,
+        dailyTokenLimit: 0,
+        monthlyTokenLimit: 0,
+      },
+    });
+
     await tx.walletAccount.update({
       where: { id: wallet.id },
       data: { balanceCredits: nextBalance, version: { increment: 1 } },
