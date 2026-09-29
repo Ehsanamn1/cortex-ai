@@ -1,5 +1,5 @@
-import { ControlCenter } from "@/components/control-center";
+import { redirect } from "next/navigation";
 
 export default function BackofficePage() {
-  return <ControlCenter />;
+  redirect("/admin");
 }
