@@ -613,7 +613,13 @@ export const api = {
   addTelegramAllowlistBulk(botId:string,input:{phoneNumbers:string[];displayName?:string;notes?:string;regenerate?:boolean;dailyMessageLimit?:number;monthlyMessageLimit?:number;dailyTokenLimit?:number;monthlyTokenLimit?:number}){ return jsonRequest<{entries:TelegramAllowlistDto[];count:number}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`,"POST",input); },
   updateTelegramAllowlist(botId:string,entryId:string,input:Partial<Pick<TelegramAllowlistDto,"status"|"dailyMessageLimit"|"monthlyMessageLimit"|"dailyTokenLimit"|"monthlyTokenLimit">>){ return jsonRequest<{entry:TelegramAllowlistDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`,"PATCH",{id:entryId,...input}); },
   regenerateTelegramInvite(botId:string,entryId:string){ return jsonRequest<{entry:TelegramAllowlistDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist/${encodeURIComponent(entryId)}/invite`,"POST"); },
-  getTelegramBotUsers(botId:string){ return request<{users:TelegramUserDto[]}>(`/api/telegram/bots/${encodeURIComponent(botId)}/users`); },
+  getTelegramBotUsers(botId:string,params?:{search?:string;limit?:number;offset?:number}) {
+    const q = new URLSearchParams();
+    if (params?.search?.trim()) q.set("search", params.search.trim());
+    if (params?.limit) q.set("limit", String(params.limit));
+    if (params?.offset) q.set("offset", String(params.offset));
+    return request<{users:TelegramUserDto[];totalCount:number;hasMore:boolean}>(`/api/telegram/bots/${encodeURIComponent(botId)}/users${q.toString() ? "?" + q.toString() : ""}`);
+  },
   updateTelegramBotUser(botId:string,userId:string,status?:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/users`,'PATCH',{id:userId,status,...limits}); },
   addTelegramAllowlist(botId:string,input:{phoneNumber:string;displayName?:string;notes?:string}){ return jsonRequest<{entry:TelegramAllowlistDto}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`,'POST',input); },
   removeTelegramAllowlist(botId:string,entryId:string){ return request<{ok:boolean}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist?entryId=${encodeURIComponent(entryId)}`,{method:'DELETE'}); },
