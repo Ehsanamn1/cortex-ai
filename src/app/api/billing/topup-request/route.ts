@@ -16,7 +16,7 @@ export async function GET(req: Request) {
       where: { workspaceId },
       orderBy: { createdAt: "desc" },
       take: 12,
-      select: { id:true, packageKey:true, credits:true, amountToman:true, status:true, note:true, createdAt:true, reviewedAt:true },
+      select: { id:true, packageKey:true, credits:true, amountToman:true, status:true, note:true, paymentProvider:true, paymentStatus:true, paymentRefId:true, paidAt:true, createdAt:true, reviewedAt:true },
     });
     return applyCors(jsonOk({
       requests: requests.map(x => ({ ...x, createdAt:x.createdAt.toISOString(), reviewedAt:x.reviewedAt?.toISOString() ?? null })),
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
         credits: pack.credits,
         amountToman: pack.amountToman,
       },
-      select: { id:true, packageKey:true, credits:true, amountToman:true, status:true, createdAt:true },
+      select: { id:true, packageKey:true, credits:true, amountToman:true, status:true, paymentProvider:true, paymentStatus:true, paymentRefId:true, paidAt:true, createdAt:true },
     });
 
     return applyCors(jsonOk({ request: { ...request, createdAt:request.createdAt.toISOString() } }, 201), req.headers.get("origin"));

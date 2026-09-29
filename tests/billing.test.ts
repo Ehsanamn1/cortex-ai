@@ -9,7 +9,7 @@ import {
 
 describe("Cortex commercial billing", () => {
   it("maps model tiers to deterministic multipliers", () => {
-    expect(defaultCreditMultiplierBps("economy")).toBe(100);
+    expect(defaultCreditMultiplierBps("economy")).toBe(200);
     expect(defaultCreditMultiplierBps("balanced")).toBe(200);
     expect(defaultCreditMultiplierBps("premium")).toBe(400);
     expect(defaultCreditMultiplierBps("deep")).toBe(800);
@@ -32,9 +32,9 @@ describe("Cortex commercial billing", () => {
       "enterprise",
     ]);
     expect(DEFAULT_BILLING_PLANS[0].priceToman).toBe(0);
-    expect(DEFAULT_BILLING_PLANS[1].priceToman).toBeGreaterThan(0);
-    expect(DEFAULT_BILLING_PLANS[2].priceToman).toBeGreaterThan(DEFAULT_BILLING_PLANS[1].priceToman);
-    expect(DEFAULT_BILLING_PLANS[3].priceToman).toBeGreaterThan(DEFAULT_BILLING_PLANS[2].priceToman);
+    expect(DEFAULT_BILLING_PLANS[1]).toMatchObject({ name: "Launch", priceToman: 1790000, monthlyCredits: 10000, overageCreditPriceToman: 220 });
+    expect(DEFAULT_BILLING_PLANS[2]).toMatchObject({ name: "Growth", priceToman: 8900000, monthlyCredits: 50000, overageCreditPriceToman: 190 });
+    expect(DEFAULT_BILLING_PLANS[3]).toMatchObject({ name: "Scale", priceToman: 17900000, monthlyCredits: 100000, overageCreditPriceToman: 175 });
   });
 
   it("uses persisted catalog rates in micro-USD math", () => {

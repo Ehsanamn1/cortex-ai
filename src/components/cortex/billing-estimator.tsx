@@ -75,6 +75,7 @@ const COMPLEXITIES: Complexity[] = [
 const PRESETS = [
   { key: "support", label: "پشتیبانی", input: 1200, output: 600, messages: 1000, tasks: 0, complexity: "standard" as const },
   { key: "sales", label: "فروش و CRM", input: 1800, output: 900, messages: 800, tasks: 50, complexity: "standard" as const },
+  { key: "telegram100", label: "۱۰۰ کاربر × ۱۰ پیام روزانه", input: 1200, output: 600, messages: 30000, tasks: 0, complexity: "standard" as const },
   { key: "agentic", label: "اتوماسیون Agentic", input: 2500, output: 1500, messages: 300, tasks: 100, complexity: "agentic" as const },
   { key: "astra", label: "GPT-6 Astra", input: 4500, output: 2200, messages: 300, tasks: 60, complexity: "agentic" as const },
 ];
@@ -189,11 +190,15 @@ export function BillingEstimator({
 }: Props) {
   const available = models.filter((m) => m.enabledForPlan);
   const preferred =
-    available.find((m) => m.modelId.toLowerCase().includes("gpt-6-astra"))
+    available.find((m) => m.modelId.toLowerCase().includes("deepseek-v4-pro"))
+    ?? available.find((m) => m.modelId.toLowerCase().includes("deepseek-flash"))
+    ?? available.find((m) => m.provider.toLowerCase().includes("deepseek"))
     ?? available[0]
     ?? models[0];
 
-  const [modelId, setModelId] = useState(preferred?.id ?? "");
+  // Empty means "use the deterministic DeepSeek default". Once the user
+  // picks a model manually, keep that selection as long as the model exists.
+  const [modelId, setModelId] = useState("");
   const [input, setInput] = useState("4000");
   const [output, setOutput] = useState("1200");
   const [messages, setMessages] = useState("100");
@@ -232,6 +237,8 @@ export function BillingEstimator({
     const creditsPerTask = creditsPerMessage ? Math.ceil(creditsPerMessage * complexity.multiplier) : 0;
     const monthlyCreditsEstimate = creditsPerMessage * messageCount + creditsPerTask * taskCount;
     const monthlyUsd = perMessageUsd * messageCount + perTaskUsd * taskCount;
+    const suggestedCustomerUsd = monthlyUsd * 1.5;
+    const suggestedCustomerToman = suggestedCustomerUsd * fx;
     const monthlyTokens = baseTokens * (messageCount + taskCount * complexity.multiplier);
     const workloadUnits = messageCount + taskCount * complexity.multiplier;
 
@@ -247,6 +254,8 @@ export function BillingEstimator({
       monthlyToman: monthlyUsd * fx,
       monthlyCredits: monthlyCreditsEstimate,
       monthlyTokens,
+      suggestedCustomerUsd,
+      suggestedCustomerToman,
       workloadUnits,
       creditsPerMessage,
       creditsPerTask,
@@ -277,6 +286,28 @@ export function BillingEstimator({
   const signals = selected ? modelSignals(selected) : [];
   const hasInputProfile = Boolean(estimate && estimate.baseTokens > 0);
   const hasWorkload = Boolean(estimate && estimate.workloadUnits > 0);
+  const tenKCapacity = useMemo(() => {
+    if (!selected) return null;
+    const inputTokens = 1200;
+    const outputTokens = 600;
+    const perMessageUsd = (inputTokens / 1_000_000) * selected.inputUsdPer1M + (outputTokens / 1_000_000) * selected.outputUsdPer1M;
+    const creditsPerMessage = perMessageUsd > 0
+      ? Math.max(1, Math.ceil((perMessageUsd * 1_000_000 / 1000) * (selected.creditMultiplierBps / 100)))
+      : 0;
+    const creditsPerTask = creditsPerMessage ? Math.ceil(creditsPerMessage * 2.2) : 0;
+    const maxProviderUsd = 1000 / Math.max(1, selected.creditMultiplierBps);
+    const inputShareDenom = selected.inputUsdPer1M + (selected.outputUsdPer1M * 0.5);
+    const maxInputTokensAt2to1 = inputShareDenom > 0 ? Math.floor((maxProviderUsd * 1_000_000) / inputShareDenom) : 0;
+    return {
+      maxProviderUsd,
+      messages: creditsPerMessage ? Math.floor(10_000 / creditsPerMessage) : 0,
+      standardTasks: creditsPerTask ? Math.floor(10_000 / creditsPerTask) : 0,
+      inputTokensAt2to1: maxInputTokensAt2to1,
+      outputTokensAt2to1: Math.floor(maxInputTokensAt2to1 * 0.5),
+      creditsPerMessage,
+      creditsPerTask,
+    };
+  }, [selected]);
 
   function applyPreset(preset: (typeof PRESETS)[number]) {
     if (preset.key === "astra") {
@@ -325,7 +356,7 @@ export function BillingEstimator({
             <label className="block rounded-2xl border border-border/60 bg-background/55 p-3">
               <span className="flex items-center gap-2 text-[11px] text-muted-foreground"><Gauge className="size-3.5" />مدل هوش مصنوعی</span>
               <select
-                value={models.some((model) => model.id === modelId) ? modelId : (preferred?.id ?? "")}
+                value={selected?.id ?? ""}
                 onChange={(e) => setModelId(e.target.value)}
                 className="mt-2 w-full bg-transparent text-sm font-bold outline-none"
               >
@@ -378,6 +409,32 @@ export function BillingEstimator({
             <ResultCard title="هزینه یک تسک" value={hasInputProfile && estimate ? formatTomanCompact(estimate.perTaskUsd * fx) : "—"} detail={hasInputProfile && estimate ? `دقیق: ${formatTomanExact(estimate.perTaskUsd * fx)} · پیچیدگی ×${faNum(complexity.multiplier)}` : "توکن‌ها را وارد کن"} primary icon={<Zap className="size-4" />} />
             <ResultCard title="هزینه سناریوی ماهانه" value={hasWorkload && estimate ? formatTomanCompact(estimate.monthlyToman) : "—"} detail={hasWorkload && estimate ? `معادل $${moneyUsd(estimate.monthlyUsd)}` : "تعداد پیام یا تسک را وارد کن"} icon={<WalletCards className="size-4" />} />
             <ResultCard title="اعتبار مصرفی ماهانه" value={hasWorkload && estimate ? formatCountCompact(estimate.monthlyCredits) : "—"} detail={hasWorkload && estimate ? `${faNum(estimate.creditsPerMessage)} اعتبار/پیام · ${faNum(estimate.creditsPerTask)} اعتبار/تسک` : "بر اساس نرخ مدل و پلن"} icon={<Cpu className="size-4" />} />
+
+            <div className="sm:col-span-2 rounded-2xl border border-violet-400/15 bg-violet-500/[.035] p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div><p className="text-[10px] text-muted-foreground">سناریوی مشتری</p><p className="mt-1 text-lg font-black">۱۰۰ کاربر × ۱۰ پیام روزانه</p><p className="mt-1 text-[10px] leading-5 text-muted-foreground">پروفایل نمونه: ۱۲۰۰ توکن ورودی + ۶۰۰ توکن خروجی برای هر پیام، معادل ۳۰هزار پیام در ماه.</p></div>
+                <button type="button" onClick={() => { setInput("1200"); setOutput("600"); setMessages("30000"); setTasks("0"); setComplexityKey("standard"); }} className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-[10px] font-semibold text-primary hover:bg-primary/10">اعمال سناریو</button>
+              </div>
+              {hasWorkload && estimate && <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <InfoCell label="هزینه تأمین مدل" value={formatTomanCompact(estimate.monthlyToman)} />
+                <InfoCell label="قیمت پیشنهادی با ۵۰٪ markup" value={formatTomanCompact(estimate.suggestedCustomerToman)} />
+                <InfoCell label="اعتبار موردنیاز" value={formatCountCompact(estimate.monthlyCredits)} />
+              </div>}
+            </div>
+
+            <div className="sm:col-span-2 rounded-2xl border border-primary/15 bg-primary/[.04] p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div><p className="text-[10px] text-muted-foreground">۱۰,۰۰۰ اعتبار یعنی چه؟</p><p className="mt-1 text-lg font-black">ظرفیت تقریبی همین مدل را همین‌جا ببین.</p></div>
+                <span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[9px] font-semibold text-primary">{selected?.displayName ?? "مدل انتخابی"}</span>
+              </div>
+              {tenKCapacity && <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                <InfoCell label="پیام استاندارد" value={formatCountCompact(tenKCapacity.messages)} />
+                <InfoCell label="تسک استاندارد" value={formatCountCompact(tenKCapacity.standardTasks)} />
+                <InfoCell label="بودجه تأمین مدل" value={"$"+moneyUsd(tenKCapacity.maxProviderUsd)} />
+                <InfoCell label="بودجه توکن با نسبت ۲:۱" value={formatCountCompact(tenKCapacity.inputTokensAt2to1)+" in / "+formatCountCompact(tenKCapacity.outputTokensAt2to1)+" out"} />
+              </div>}
+              <p className="mt-3 text-[9px] leading-5 text-muted-foreground">اعداد نمونه‌اند، نه تضمین خروجی. ظرفیت واقعی با طول context، RAG، ابزارها، retry و نسبت واقعی input/output تغییر می‌کند.</p>
+            </div>
 
             <div className="sm:col-span-2 rounded-2xl border border-primary/15 bg-primary/[.035] p-4">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

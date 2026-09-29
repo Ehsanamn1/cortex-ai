@@ -4,9 +4,9 @@ import { getKnownModelCatalog, getModelRate, PRICING_VERIFIED_AT, PRICING_MODE }
 
 export const DEFAULT_BILLING_PLANS = [
   { key: "free", name: "رایگان", description: "برای شروع و تست Cortex", priceToman: 0, monthlyCredits: 5000, overageCreditPriceToman: 0, sortOrder: 0 },
-  { key: "starter", name: "Starter", description: "برای کسب‌وکارهای کوچک", priceToman: 5900000, monthlyCredits: 10000, overageCreditPriceToman: 700, sortOrder: 1 },
-  { key: "business", name: "Business", description: "برای تیم‌ها و حجم بالاتر", priceToman: 16900000, monthlyCredits: 35000, overageCreditPriceToman: 600, sortOrder: 2 },
-  { key: "pro", name: "Pro", description: "برای استفاده سنگین و مدل‌های پیشرفته", priceToman: 39900000, monthlyCredits: 100000, overageCreditPriceToman: 500, sortOrder: 3 },
+  { key: "starter", name: "Launch", description: "برای شروع واقعی با مدل‌های سریع و اقتصادی", priceToman: 1790000, monthlyCredits: 10000, overageCreditPriceToman: 220, sortOrder: 1 },
+  { key: "business", name: "Growth", description: "برای تیم‌ها، Agentها و مصرف حرفه‌ای", priceToman: 8900000, monthlyCredits: 50000, overageCreditPriceToman: 190, sortOrder: 2 },
+  { key: "pro", name: "Scale", description: "برای اتوماسیون سنگین و مدل‌های سطح بالا", priceToman: 17900000, monthlyCredits: 100000, overageCreditPriceToman: 175, sortOrder: 3 },
   { key: "enterprise", name: "Enterprise", description: "قرارداد و محدودیت سفارشی", priceToman: 0, monthlyCredits: 0, overageCreditPriceToman: 0, sortOrder: 4 },
 ] as const;
 
@@ -24,14 +24,14 @@ function periodEndFor(start: Date): Date {
 
 export const CREDIT_TOP_UP_PACKAGES = {
   starter: { credits: 10_000, amountToman: 1_990_000, label: "۱۰ هزار اعتبار" },
-  growth: { credits: 50_000, amountToman: 8_900_000, label: "۵۰ هزار اعتبار" },
-  scale: { credits: 100_000, amountToman: 15_900_000, label: "۱۰۰ هزار اعتبار" },
+  growth: { credits: 50_000, amountToman: 9_490_000, label: "۵۰ هزار اعتبار" },
+  scale: { credits: 100_000, amountToman: 19_490_000, label: "۱۰۰ هزار اعتبار" },
 } as const;
 export type CreditTopUpPackageKey = keyof typeof CREDIT_TOP_UP_PACKAGES;
 
 export function defaultCreditMultiplierBps(qualityTier: string): number {
   switch (qualityTier) {
-    case "economy": return 100;
+    case "economy": return 200;
     case "premium": return 400;
     case "deep": return 800;
     default: return 200;
@@ -113,8 +113,20 @@ async function ensureKnownModelCatalog() {
   if (modelCatalogPromise) return modelCatalogPromise;
   modelCatalogPromise = (async () => {
     const known = getKnownModelCatalog();
+    const qualityRank: Record<string, number> = { economy: 1, balanced: 2, premium: 3, deep: 4 };
+    const plans = await db.plan.findMany({ where: { active: true }, select: { id: true, key: true } });
     for (const entry of known) {
-      await ensureModel(entry.provider, entry.modelId);
+      const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel(entry.provider, entry.modelId);
+      for (const plan of plans) {
+        const maxRank = plan.key === "free" || plan.key === "starter" ? 2 : plan.key === "business" ? 3 : 4;
+        const enabled = qualityRank[entry.qualityTier] <= maxRank && Boolean(entry.commercialAvailable ?? true);
+        const multiplierBps = Math.max(1, fallbackMultiplier);
+        await db.planModelAccess.upsert({
+          where: { planId_modelCatalogId: { planId: plan.id, modelCatalogId: catalog.id } },
+          update: { enabled, creditMultiplierBps: multiplierBps },
+          create: { planId: plan.id, modelCatalogId: catalog.id, enabled, creditMultiplierBps: multiplierBps },
+        });
+      }
     }
   })().then(() => { modelCatalogReadyAt = Date.now(); }).finally(() => { modelCatalogPromise = null; });
   return modelCatalogPromise;
@@ -256,24 +268,36 @@ async function ensureWorkspaceBilling(workspaceId: string) {
 export async function getBillingSnapshot(workspaceId: string) {
   const account = await ensureWorkspaceBilling(workspaceId);
   await ensureKnownModelCatalog();
-  const [subscription, recentLedger, usage, plans, billedUsage, topUpRequests, recentInvoices] = await Promise.all([
+  const usageSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const [subscription, recentLedger, usage, usageByModel, plans, billedUsage, billedByModel, topUpRequests, recentInvoices] = await Promise.all([
     db.subscription.findFirst({ where: { billingAccountId: account.id, status: "active" }, orderBy: { createdAt: "desc" }, include: { plan: true } }),
     db.creditLedgerEntry.findMany({ where: { billingAccountId: account.id }, orderBy: { createdAt: "desc" }, take: 12 }),
-    db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }, _sum: { totalTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
+    db.usageEvent.aggregate({ where: { workspaceId, createdAt: { gte: usageSince } }, _sum: { totalTokens: true, inputTokens: true, outputTokens: true, estimatedCostMicros: true }, _count: { _all: true } }),
+    db.usageEvent.groupBy({
+      by: ["provider", "model"],
+      where: { workspaceId, createdAt: { gte: usageSince } },
+      _sum: { totalTokens: true, inputTokens: true, outputTokens: true, estimatedCostMicros: true },
+      _count: { _all: true },
+    }),
     db.plan.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
     db.billingCharge.aggregate({
       where: {
         workspaceId,
-        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        createdAt: { gte: usageSince },
         status: { in: ["captured", "captured_debt"] },
       },
+      _sum: { chargedCredits: true },
+    }),
+    db.billingCharge.groupBy({
+      by: ["provider", "model"],
+      where: { workspaceId, createdAt: { gte: usageSince }, status: { in: ["captured", "captured_debt"] } },
       _sum: { chargedCredits: true },
     }),
     db.creditTopUpRequest.findMany({
       where: { workspaceId },
       orderBy: { createdAt: "desc" },
       take: 8,
-      select: { id:true, packageKey:true, credits:true, amountToman:true, status:true, note:true, createdAt:true, reviewedAt:true },
+      select: { id:true, packageKey:true, credits:true, amountToman:true, status:true, note:true, paymentProvider:true, paymentStatus:true, paymentRefId:true, paidAt:true, createdAt:true, reviewedAt:true },
     }),
     db.invoice.findMany({
       where: { workspaceId },
@@ -326,6 +350,33 @@ export async function getBillingSnapshot(workspaceId: string) {
       tokens: usage._sum.totalTokens ?? 0,
       estimatedCostMicros: usage._sum.estimatedCostMicros ?? 0,
       credits: billedUsage._sum.chargedCredits ?? 0,
+      byModel: (() => {
+        const billedMap = new Map(billedByModel.map((row) => [
+          (row.provider ?? "unknown") + "::" + (row.model ?? "unknown"),
+          row._sum.chargedCredits ?? 0,
+        ]));
+        const labelFor = (provider: string | null, model: string | null) => {
+          const hit = catalog.find((item) => item.provider === provider && item.modelId === model);
+          return hit?.displayName ?? model ?? "مدل نامشخص";
+        };
+        return usageByModel
+          .map((row) => {
+            const key = (row.provider ?? "unknown") + "::" + (row.model ?? "unknown");
+            return {
+              provider: row.provider,
+              model: row.model,
+              displayName: labelFor(row.provider, row.model),
+              events: row._count._all,
+              inputTokens: row._sum.inputTokens ?? 0,
+              outputTokens: row._sum.outputTokens ?? 0,
+              tokens: row._sum.totalTokens ?? 0,
+              estimatedCostMicros: row._sum.estimatedCostMicros ?? 0,
+              credits: billedMap.get(key) ?? 0,
+            };
+          })
+          .sort((a, b) => b.tokens - a.tokens)
+          .slice(0, 12);
+      })(),
     },
     models: catalog.map((item) => ({
       id: item.id,
@@ -360,6 +411,10 @@ export async function getBillingSnapshot(workspaceId: string) {
       amountToman:item.amountToman,
       status:item.status,
       note:item.note,
+      paymentProvider:item.paymentProvider,
+      paymentStatus:item.paymentStatus,
+      paymentRefId:item.paymentRefId,
+      paidAt:item.paidAt?.toISOString() ?? null,
       createdAt:item.createdAt.toISOString(),
       reviewedAt:item.reviewedAt?.toISOString() ?? null,
     })),

@@ -362,7 +362,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
               )}
             >
               <item.icon aria-hidden="true" className="size-[19px]" />
-              {item.view === "dashboard" ? "داشبورد" : item.view === "agents" ? "ایجنت" : item.view === "knowledge" ? "مغز سیستم" : "اعتبار"}
+              {item.view === "dashboard" ? "داشبورد" : item.view === "agents" ? "ایجنت" : item.view === "knowledge" ? "دانش" : "اعتبار"}
             </button>
           );
         })}
@@ -473,6 +473,11 @@ export function AppShell() {
   const viewKey = view.startsWith("agent") && activeAgentId ? `${view}-${activeAgentId}` : view;
   const showCta = (view === "dashboard" || view === "agents") && settingEnabled(siteConfig.data?.settings, "feature.createAgentCta");
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("view") === "billing") setView("billing");
+  }, [setView]);
+
   return (
     <div className="cortex-dashstack flex h-dvh overflow-hidden bg-background">
       {/* Sidebar — first in DOM = right side in RTL */}
@@ -497,7 +502,7 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
-        <header className="cortex-topbar relative flex h-16 shrink-0 items-center justify-between gap-2 border-b px-3.5 backdrop-blur-xl sm:px-4 lg:px-8">          <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/35 to-transparent" />
+        <header className="cortex-topbar relative flex h-14 min-w-0 shrink-0 items-center justify-between gap-1.5 overflow-visible border-b px-2.5 backdrop-blur-xl sm:h-16 sm:px-4 lg:px-8">          <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/35 to-transparent" />
           <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
             <CortexMark size={30} />
             <span className="max-w-[calc(100vw-110px)] truncate text-sm font-semibold text-foreground">
@@ -509,8 +514,8 @@ export function AppShell() {
 
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <SystemSearch triggerClassName="cortex-search-trigger hidden min-w-[220px] items-center gap-2 rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-xs text-muted-foreground xl:flex" />
-            <NotificationCenter />
-            <ThemeToggle />
+            <span className="shrink-0"><NotificationCenter /></span>
+            <span className="shrink-0"><ThemeToggle /></span>
             <Button variant="ghost" size="icon" aria-label="منوی بیشتر" title="منوی بیشتر" className="rounded-xl lg:hidden" onClick={() => setMoreOpen(true)}>
               <MoreHorizontal className="size-[18px]" />
             </Button>
@@ -521,7 +526,7 @@ export function AppShell() {
               </Button>
             )}
             <ProviderPill />
-            <div className="lg:hidden">
+            <div className="shrink-0 lg:hidden">
               <MobileUserMenu />
             </div>
           </div>
