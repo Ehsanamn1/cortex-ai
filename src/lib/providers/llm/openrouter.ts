@@ -52,6 +52,10 @@ export class OpenRouterProvider implements LLMProvider {
     if (!key) throw new ProviderNotConfiguredError(this.name);
     const model = this.model()!;
     try {
+      const base = new URL(this.baseUrl());
+      if (base.protocol !== "https:" && base.hostname !== "localhost") {
+        throw new Error("OpenRouter Base URL must use HTTPS");
+      }
       const res = await fetch(`${this.baseUrl()}/chat/completions`, {
         method: "POST",
         headers: {
