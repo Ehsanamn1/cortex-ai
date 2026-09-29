@@ -54,7 +54,7 @@ export function BillingView(){
   const plan=data.account.plan;
   const balancePct=plan.monthlyCredits?Math.min(100,Math.round((Math.max(0,data.account.balanceCredits)/plan.monthlyCredits)*100)):0;
   const pending=data.topUpRequests.filter(x=>x.status==="pending").length;
-  const needsPlan = plan.key === "free" || (plan.monthlyCredits > 0 && data.account.balanceCredits <= 0);
+  const needsPlan = plan.monthlyCredits > 0 && data.account.balanceCredits <= 0;
   const lowBalance = !needsPlan && plan.monthlyCredits > 0 && balancePct <= 20;
 
   const modelUsage = data.usage30Days.byModel ?? [];
