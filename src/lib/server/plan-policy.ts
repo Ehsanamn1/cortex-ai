@@ -1,7 +1,7 @@
 export type CommercialPlanKey = "free" | "launch" | "growth" | "scale" | "enterprise";
 
 /** Maximum single-generation output reserved for a plan-managed Trial workspace. */
-export const TRIAL_MAX_OUTPUT_TOKENS = 768;
+export const TRIAL_MAX_OUTPUT_TOKENS = 512;
 
 export const PLAN_FEATURE_LIMITS: Record<CommercialPlanKey, {
   maxAgents: number | null;
