@@ -50,7 +50,7 @@ describe("Central model routing", () => {
 
     const result = await resolveManagedModelForAgent("agent-1", "workspace-1");
     expect(result.planKey).toBe("free");
-    expect(result.model.displayName).toBe("Trial");
+    expect(result.model.provider).toBe("TrialProvider");
     expect(result.model.providerModelId).toBe("trial-model");
     expect(result.provider.isConfigured()).toBe(true);
   });
