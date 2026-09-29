@@ -54,7 +54,7 @@ const AGENT_TABS: Array<{ value: AgentTab; label: string }> = [
   { value: "overview", label: "نمای کلی" },
   { value: "knowledge", label: "دانش" },
   { value: "telegram", label: "تلگرام" },
-  { value: "ai", label: "هوش مصنوعی" },
+  { value: "ai", label: "مدل و هوش مصنوعی" },
   { value: "tools", label: "ابزارها" },
   { value: "playground", label: "پلی‌گراند" },
   { value: "api", label: "API" },
