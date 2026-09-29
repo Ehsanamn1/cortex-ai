@@ -142,7 +142,7 @@ class ProviderManager {
     };
   }
 
-  async resolveForAgent(agentId: string, workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus }> {
+  async resolveForAgent(agentId: string, workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus; planKey?: string }> {
     if (workspaceId && process.env.APP_ENV !== "test" && process.env.NODE_ENV !== "test") {
       const managed = await resolveManagedModelForAgent(agentId, workspaceId);
       const provider = managed.provider;
@@ -152,6 +152,7 @@ class ProviderManager {
       return {
         provider: new ResilientProvider(provider, agentId, workspaceId),
         status: this.statusFor(provider, "environment"),
+        planKey: managed.planKey,
       };
     }
 
