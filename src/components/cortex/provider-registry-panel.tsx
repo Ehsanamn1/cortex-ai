@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   CheckCircle2,
@@ -164,9 +164,9 @@ export function ProviderRegistryPanel() {
     }
   }
 
-  if (loading && providers.length === 0) {
+  useEffect(() => {
     void load();
-  }
+  }, []);
 
   return (
     <div className="space-y-5">
