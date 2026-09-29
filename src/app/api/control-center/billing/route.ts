@@ -117,7 +117,16 @@ export async function POST(req: Request) {
       const qualityTier = textValue(body.qualityTier, 40) || "balanced";
       const speedTier = textValue(body.speedTier, 40) || "balanced";
       const routeKey = textValue(body.routeKey, 100)?.toLowerCase() || null;
-      const systemProviderId = textValue(body.systemProviderId, 120) || null;
+      let systemProviderId = textValue(body.systemProviderId, 120) || null;
+      if (body.trialDefault === true) {
+        const provider = systemProviderId
+          ? await db.systemProviderConfig.findUnique({ where: { id: systemProviderId }, select: { id: true, enabled: true, isTrialProvider: true } })
+          : await db.systemProviderConfig.findFirst({ where: { enabled: true, isTrialProvider: true }, orderBy: { updatedAt: "desc" }, select: { id: true, enabled: true, isTrialProvider: true } });
+        if (!provider || !provider.enabled || !provider.isTrialProvider) {
+          return applyCors(jsonError("برای Default Trial ابتدا یک Provider فعال با نقش «Provider پیش‌فرض Trial» تنظیم کنید.", 400), req.headers.get("origin"));
+        }
+        systemProviderId = provider.id;
+      }
       if (systemProviderId && !(await db.systemProviderConfig.findUnique({ where: { id: systemProviderId } }))) {
         return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
       }
@@ -203,6 +212,16 @@ export async function PATCH(req: Request) {
         const providerId = textValue(body.systemProviderId, 120);
         if (providerId && !(await db.systemProviderConfig.findUnique({ where: { id: providerId }, select: { id: true } }))) return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
         data.systemProviderId = providerId || null;
+      }
+      if (body.trialDefault === true) {
+        const trialProviderId = data.systemProviderId ? String(data.systemProviderId) : "";
+        const provider = trialProviderId
+          ? await db.systemProviderConfig.findUnique({ where: { id: trialProviderId }, select: { id: true, enabled: true, isTrialProvider: true } })
+          : await db.systemProviderConfig.findFirst({ where: { enabled: true, isTrialProvider: true }, orderBy: { updatedAt: "desc" }, select: { id: true, enabled: true, isTrialProvider: true } });
+        if (!provider || !provider.enabled || !provider.isTrialProvider) {
+          return applyCors(jsonError("برای Default Trial ابتدا یک Provider فعال با نقش «Provider پیش‌فرض Trial» تنظیم کنید.", 400), req.headers.get("origin"));
+        }
+        data.systemProviderId = provider.id;
       }
       if (body.displayName !== undefined) data.displayName = textValue(body.displayName, 180) || "Unnamed model";
       if (body.qualityTier !== undefined) data.qualityTier = textValue(body.qualityTier, 40) || "balanced";
