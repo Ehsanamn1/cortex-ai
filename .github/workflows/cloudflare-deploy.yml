@@ -68,6 +68,7 @@ jobs:
           CORTEX_ZARINPAL_MERCHANT_ID: ${{ secrets.CORTEX_ZARINPAL_MERCHANT_ID || vars.CORTEX_ZARINPAL_MERCHANT_ID }}
           CORTEX_PAYMENT_CALLBACK_URL: ${{ secrets.CORTEX_PAYMENT_CALLBACK_URL || vars.CORTEX_PAYMENT_CALLBACK_URL }}
           CORTEX_CUSTOMER_APP_URL: ${{ secrets.CORTEX_CUSTOMER_APP_URL || vars.CORTEX_CUSTOMER_APP_URL }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || vars.OPENROUTER_API_KEY }}
         run: |
           set -euo pipefail
           put_secret() {
@@ -90,6 +91,7 @@ jobs:
           put_secret CORTEX_ZARINPAL_MERCHANT_ID "$CORTEX_ZARINPAL_MERCHANT_ID"
           put_secret CORTEX_PAYMENT_CALLBACK_URL "$CORTEX_PAYMENT_CALLBACK_URL"
           put_secret CORTEX_CUSTOMER_APP_URL "$CORTEX_CUSTOMER_APP_URL"
+          put_secret OPENROUTER_API_KEY "$OPENROUTER_API_KEY"
       - name: Synchronize production database schema
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
