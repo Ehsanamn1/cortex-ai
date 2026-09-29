@@ -119,7 +119,7 @@ export function LandingPage() {
               Cortex AI دانش، Agent، Telegram، مصرف مدل و اعتبار را در یک محیط کاری حرفه‌ای برای شرکت‌ها جمع می‌کند.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <button onClick={() => go("/signup")} className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3.5 text-sm font-black text-primary-foreground shadow-[0_14px_40px_rgba(59,130,255,.25)] transition hover:-translate-y-1">شروع رایگان <ArrowLeft className="size-4" /></button>
+              <button onClick={() => go("/signup")} className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3.5 text-sm font-black text-primary-foreground shadow-[0_14px_40px_rgba(59,130,255,.25)] transition hover:-translate-y-1">شروع کنید <ArrowLeft className="size-4" /></button>
               <a href="#features" className="inline-flex items-center gap-2 rounded-2xl border border-border/70 bg-card/60 px-5 py-3.5 text-sm font-bold transition hover:-translate-y-1 hover:border-primary/20">مشاهده ویژگی‌ها <Play className="size-4" /></a>
             </div>
             <div className="mt-7 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
