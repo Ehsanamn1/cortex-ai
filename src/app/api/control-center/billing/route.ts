@@ -77,7 +77,6 @@ export async function GET(req: Request) {
       accounts,
       invoices,
       recentCharges,
-      systemProviders,
       defaults: { economy: 100, balanced: 200, premium: 400, deep: 800 },
     }), req.headers.get("origin"));
   } catch (error) {
