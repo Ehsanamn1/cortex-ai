@@ -46,8 +46,6 @@ describe("Central model routing", () => {
       planId: "plan-free", plan: { key: "free" },
     } as never);
     vi.mocked(db.planModelAccess.findUnique).mockResolvedValue({ enabled: true, creditMultiplierBps: 100 } as never);
-    vi.mocked(db.modelCatalog.findFirst).mockResolvedValue(null);
-
     const result = await resolveManagedModelForAgent("agent-1", "workspace-1");
     expect(result.planKey).toBe("free");
     expect(result.model.provider).toBe("TrialProvider");
