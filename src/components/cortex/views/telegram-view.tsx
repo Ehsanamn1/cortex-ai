@@ -316,7 +316,7 @@ function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }
 }
 
 
-export function TelegramAccessManager({ botId }: { botId: string }) {
+export function TelegramAccessManager({ botId, enabled = true }: { botId: string; enabled?: boolean }) {
   const queryClient = useQueryClient();
   const [phones, setPhones] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -331,6 +331,7 @@ export function TelegramAccessManager({ botId }: { botId: string }) {
     queryKey: ["telegram-allowlist", botId],
     queryFn: () => api.getTelegramAllowlist(botId),
     staleTime: 10_000,
+    enabled: !!botId && enabled,
   });
 
   const update = useMutation({
@@ -484,11 +485,12 @@ function AccessEntryRow({
   );
 }
 
-export function TelegramCustomizer({ botId }: { botId: string }) {
+export function TelegramCustomizer({ botId, enabled = true }: { botId: string; enabled?: boolean }) {
   const q = useQuery({
     queryKey: ["telegram-profile", botId],
     queryFn: () => api.getTelegramBotProfile(botId),
-    staleTime: 15_000,
+    staleTime: 30_000,
+    enabled: !!botId && enabled,
   });
   const profile = q.data?.profile;
 
@@ -513,6 +515,9 @@ function TelegramCustomizerForm({
   const [welcomeTitle, setWelcomeTitle] = useState(profile.welcomeTitle);
   const [welcome, setWelcome] = useState(profile.welcomeText);
   const [help, setHelp] = useState(profile.helpText);
+  const [blocked, setBlocked] = useState(profile.blockedText);
+  const [errorText, setErrorText] = useState(profile.errorText);
+  const [accessRequired, setAccessRequired] = useState(profile.accessRequiredText);
   const [newChat, setNewChat] = useState(profile.newChatText);
   const [newChatButton, setNewChatButton] = useState(profile.newChatButtonText);
   const [helpButton, setHelpButton] = useState(profile.helpButtonText);
@@ -531,6 +536,9 @@ function TelegramCustomizerForm({
       welcomeTitle: welcomeTitle.trim(),
       welcomeText: welcome.trim(),
       helpText: help.trim(),
+      blockedText: blocked.trim(),
+      errorText: errorText.trim(),
+      accessRequiredText: accessRequired.trim(),
       newChatText: newChat.trim(),
       newChatButtonText: newChatButton.trim(),
       helpButtonText: helpButton.trim(),
@@ -544,9 +552,20 @@ function TelegramCustomizerForm({
         return { command: command.replace(/^\//, "").trim(), description: description.join("=").trim() };
       }).filter(item => item.command && item.description),
     }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["telegram-profile", botId] });
-      toast.success("شخصی‌سازی ربات ذخیره شد.");
+      if (result.sync.ok) toast.success("شخصی‌سازی ذخیره و با Telegram همگام شد.");
+      else toast.warning("شخصی‌سازی ذخیره شد، اما همگام‌سازی Telegram ناقص بود: " + result.sync.failures.map((item) => item.method).join(", "));
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const sync = useMutation({
+    mutationFn: () => api.syncTelegramBotProfile(botId),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["telegram-profile", botId] });
+      if (result.sync.ok) toast.success("پروفایل Telegram دوباره همگام شد.");
+      else toast.warning("همگام‌سازی ناقص بود: " + result.sync.failures.map((item) => item.method).join(", "));
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -564,6 +583,9 @@ function TelegramCustomizerForm({
         <div className="space-y-2"><Label>عنوان خوش‌آمد</Label><Input value={welcomeTitle} onChange={(e) => setWelcomeTitle(e.target.value)} /></div>
         <div className="space-y-2 md:col-span-2"><Label>متن خوش‌آمدگویی</Label><Textarea value={welcome} onChange={(e) => setWelcome(e.target.value)} rows={4} /></div>
         <div className="space-y-2"><Label>متن راهنما</Label><Textarea value={help} onChange={(e) => setHelp(e.target.value)} rows={4} /></div>
+        <div className="space-y-2"><Label>پیام مسدودی</Label><Textarea value={blocked} onChange={(e) => setBlocked(e.target.value)} rows={3} /></div>
+        <div className="space-y-2"><Label>پیام خطا</Label><Textarea value={errorText} onChange={(e) => setErrorText(e.target.value)} rows={3} /></div>
+        <div className="space-y-2"><Label>پیام نیاز به دسترسی</Label><Textarea value={accessRequired} onChange={(e) => setAccessRequired(e.target.value)} rows={3} /></div>
         <div className="space-y-2"><Label>متن New Chat</Label><Textarea value={newChat} onChange={(e) => setNewChat(e.target.value)} rows={4} /></div>
         <div className="space-y-2"><Label>دکمه گفتگوی جدید</Label><Input value={newChatButton} onChange={(e) => setNewChatButton(e.target.value)} /></div>
         <div className="space-y-2"><Label>دکمه راهنما</Label><Input value={helpButton} onChange={(e) => setHelpButton(e.target.value)} /></div>
@@ -573,7 +595,10 @@ function TelegramCustomizerForm({
         <div className="space-y-2 md:col-span-2"><Label>پیام‌های وضعیت کار (هر خط یک پیام)</Label><Textarea value={thinking} onChange={(e) => setThinking(e.target.value)} rows={3} /></div>
         <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش وضعیت فکر/کار</p><p className="mt-1 text-[10px] text-muted-foreground">پیام مرحله‌ای قبل از پاسخ نمایش داده شود.</p></div><Switch checked={showThinking} onCheckedChange={setShowThinking} /></div>
         <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش بنر خوش‌آمد</p><p className="mt-1 text-[10px] text-muted-foreground">در /start، بنر https ارسال شود.</p></div><Switch checked={showBanner} onCheckedChange={setShowBanner} /></div>
-        <div className="md:col-span-2"><Button disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "در حال ذخیره…" : "ذخیره شخصی‌سازی"}</Button></div>
+        <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row">
+          <Button className="sm:flex-1" disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "در حال ذخیره و همگام‌سازی…" : "ذخیره و همگام‌سازی"}</Button>
+          <Button className="sm:flex-1" variant="outline" disabled={sync.isPending} onClick={() => sync.mutate()}>{sync.isPending ? "در حال همگام‌سازی…" : "همگام‌سازی مجدد با Telegram"}</Button>
+        </div>
       </CardContent>
     </Card>
   );
