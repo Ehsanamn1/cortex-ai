@@ -62,8 +62,7 @@ export function buildSystemProviderForModel(config: SystemProviderRecord, modelI
     return new GeminiProvider({ name: config.providerName, baseUrl: config.baseUrl, apiKey, model: modelId });
   }
   if (protocol === "openrouter") {
-    const provider = new OpenRouterProvider({ model: modelId });
-    return provider;
+    return new OpenRouterProvider({ model: modelId, baseUrl: config.baseUrl, apiKey });
   }
   return new OpenAICompatibleProvider({
     name: config.providerName,
