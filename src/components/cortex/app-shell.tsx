@@ -87,7 +87,7 @@ function ProviderPill() {
       type="button"
       onClick={() => setView("billing")}
       title="پلن و اعتبار"
-      className="hidden items-center gap-2 rounded-full border border-primary/15 bg-primary/[.045] px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/[.08] sm:inline-flex"
+      className="inline-flex max-w-[150px] items-center gap-1.5 rounded-full border border-primary/15 bg-primary/[.045] px-2.5 py-1.5 text-[10px] font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/[.08] sm:max-w-none sm:gap-2 sm:px-3 sm:text-xs"
     >
       <WalletCards className="size-3.5 text-primary" />
       <span>{plan.name}</span>
@@ -519,6 +519,7 @@ export function AppShell() {
             <span className="max-w-[calc(100vw-110px)] truncate text-sm font-semibold text-foreground">
               {activeWorkspaceName ?? "Cortex AI"}
             </span>
+            <span className="shrink-0 lg:hidden"><ProviderPill /></span>
           </div>
 
           <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><Bot className="size-4" /></span><div className="min-w-0"><p className="truncate text-[9px] font-bold tracking-[.18em] text-primary/75">CORTEX WORKSPACE</p><h1 className="truncate text-lg font-bold text-foreground">{title}</h1></div></div>
@@ -536,7 +537,7 @@ export function AppShell() {
                 ایجاد ایجنت
               </Button>
             )}
-            <ProviderPill />
+            <span className="hidden lg:inline-flex"><ProviderPill /></span>
             <div className="shrink-0 lg:hidden">
               <MobileUserMenu />
             </div>

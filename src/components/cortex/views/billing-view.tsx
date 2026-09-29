@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -15,6 +15,7 @@ import { BillingEstimator } from "@/components/cortex/billing-estimator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
 
 function StatusBadge({ status }: { status:string }){
   const config=status==="approved"
@@ -40,10 +41,11 @@ export function BillingView(){
     onSuccess:(result)=>{window.location.assign(result.redirectUrl);},
     onError:(e:Error)=>toast.error(e.message),
   });
+  const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null);
   const planPurchase=useMutation({
     mutationFn:(planKey:string)=>api.startBillingPlanPayment(planKey,workspaceId??undefined),
-    onSuccess:(result)=>{window.location.assign(result.redirectUrl);},
-    onError:(e:Error)=>toast.error(e.message),
+    onSuccess:(result)=>{setSelectedPlanKey(null);window.location.assign(result.redirectUrl);},
+    onError:(e:Error)=>{setSelectedPlanKey(null);toast.error(e.message);},
   });
 
   const enabledModels=useMemo(()=>data?.models.filter(m=>m.enabledForPlan)??[],[data]);
@@ -205,15 +207,43 @@ export function BillingView(){
             enterprise:{headline:"کنترل کامل برای سازمان",features:["تمام ظرفیت Cortex","مدل‌های اختصاصی","سفارشی‌سازی و SLA","پشتیبانی اختصاصی و قرارداد سازمانی"]},
           };
           const meta=details[item.key] ?? details.launch;
-          return <article key={item.id} className={cn("relative flex min-h-[430px] h-full sm:min-h-[460px] lg:min-h-[500px] flex-col overflow-hidden rounded-2xl border p-4 sm:p-5",featured?"border-primary/45 bg-primary/[.075] shadow-[0_24px_70px_rgba(59,130,255,.16)]":"border-border/65 bg-background/30")}>
+          return <motion.article
+            key={item.id}
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: .18 }}
+            whileHover={{ y: -5 }}
+            transition={{ duration: .28, ease: "easeOut" }}
+            className={cn("relative flex min-h-[430px] h-full sm:min-h-[460px] lg:min-h-[500px] flex-col overflow-hidden rounded-2xl border p-4 sm:p-5 transition-shadow duration-300",
+              featured ? "border-primary/45 bg-primary/[.075] shadow-[0_24px_70px_rgba(59,130,255,.16)]" : "border-border/65 bg-background/30",
+              selectedPlanKey === item.key ? "ring-2 ring-primary/35 shadow-[0_25px_70px_rgba(59,130,255,.18)]" : ""
+            )}>
             {featured&&<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-violet-400 to-primary"/>}
             <div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-black">{item.name}</h3>{featured&&<Badge className="bg-primary text-[8px]">پیشنهاد ویژه</Badge>}{isCurrent&&<Badge variant="outline" className="border-primary/20 bg-primary/5 text-[8px] text-primary">پلن فعلی</Badge>}</div><p className="mt-1 text-[10px] font-semibold text-primary/90">{meta.headline}</p></div><WalletCards className="size-5 text-primary"/></div>
             <p className="mt-4 text-2xl font-black">{item.priceToman?formatTomanCompact(item.priceToman):"از ۳۵٬۰۰۰٬۰۰۰"}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.priceToman?"تومان / ماه":"تومان / ماه · توافقی"}</p>
             <p className="mt-3 text-sm font-black">{item.monthlyCredits?formatCountCompact(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار توافقی"}</p>
             <div className="my-4 h-px bg-border/60"/><div className="space-y-2">{meta.features.map((feature)=><div key={feature} className="flex items-start gap-2 text-[10px] leading-5 text-muted-foreground"><CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-400"/>{feature}</div>)}</div>
-            <div className="mt-auto min-h-14 pt-5">{isCurrent?<button type="button" disabled className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold text-muted-foreground">پلن فعلی</button>:item.key==="enterprise"?<button type="button" onClick={()=>toast.info("Enterprise به‌صورت قراردادی فعال می‌شود و شرایط SLA اختصاصی دارد.")} className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold">درخواست Enterprise</button>:<button type="button" disabled={planPurchase.isPending} onClick={()=>planPurchase.mutate(item.key)} className="flex h-10 w-full items-center justify-center rounded-xl bg-primary px-4 text-xs font-black text-primary-foreground disabled:opacity-60">{planPurchase.isPending?"در حال انتقال به پرداخت…":featured?"قدرت بیشتری آزاد کن":"انتخاب "+item.name}</button>}</div>
+            <div className="mt-auto min-h-14 pt-5">
+              {isCurrent ? (
+                <button type="button" disabled className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold text-muted-foreground">پلن فعلی</button>
+              ) : item.key === "enterprise" ? (
+                <motion.button type="button" whileHover={{ scale: 1.015 }} whileTap={{ scale: .98 }} onClick={() => toast.info("Enterprise به‌صورت قراردادی فعال می‌شود و شرایط SLA اختصاصی دارد.")} className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold transition-all hover:border-primary/30 hover:bg-primary/[.04]">درخواست Enterprise</motion.button>
+              ) : (
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: .975 }}
+                  disabled={planPurchase.isPending}
+                  onClick={() => { setSelectedPlanKey(item.key); planPurchase.mutate(item.key); }}
+                  className={cn("relative flex h-11 w-full items-center justify-center overflow-hidden rounded-xl bg-primary px-4 text-xs font-black text-primary-foreground shadow-[0_10px_30px_rgba(59,130,255,.18)] transition-all hover:shadow-[0_15px_40px_rgba(59,130,255,.28)] disabled:cursor-wait disabled:opacity-60")}
+                >
+                  <span className="absolute inset-0 -translate-x-full bg-white/15 transition-transform duration-700 hover:translate-x-full" />
+                  <span className="relative">{planPurchase.isPending && selectedPlanKey === item.key ? "در حال انتقال به پرداخت…" : featured ? "قدرت بیشتری آزاد کن" : "انتخاب " + item.name}</span>
+                </motion.button>
+              )}
+            </div>
             <p className="mt-2 min-h-4 text-center text-[9px] text-muted-foreground">{featured?"تعادل ایده‌آل بین قدرت و هزینه برای تیم‌های در حال رشد.":"\u00A0"}</p>
-          </article>;
+          </motion.article>;
         })}
       </div>
     </section>
@@ -222,7 +252,7 @@ export function BillingView(){
       {plan.key === "free" ? (
         <div className="mb-4 rounded-2xl border border-primary/15 bg-primary/[.04] p-3 text-xs leading-6 text-muted-foreground">
           <span className="font-black text-foreground">پلن آزمایشی:</span>{" "}
-          برای کنترل هزینه، فقط دو مدل اقتصادی منتخب Cortex در این سطح فعال هستند؛
+          برای کنترل هزینه، فقط سه مدل اقتصادی منتخب Cortex در این سطح فعال هستند؛
           مدل‌های حرفه‌ای‌تر با ارتقا به پلن‌های بالاتر باز می‌شوند.
         </div>
       ) : null}

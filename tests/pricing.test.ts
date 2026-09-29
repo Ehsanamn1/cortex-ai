@@ -26,8 +26,16 @@ describe("Cortex pricing estimates", () => {
   test("exposes the pricing verification date", () => {
     expect(PRICING_VERIFIED_AT).toBe("2026-09-28");
   });
-  test("publishes a 25-model recognized catalog", () => {
-    expect(getKnownModelCatalog()).toHaveLength(25);
+  test("publishes the recognized model catalog", () => {
+    expect(getKnownModelCatalog()).toHaveLength(28);
+  });
+
+  test("tracks the low-cost Qwen3.7 Flash rate used by Trial", () => {
+    expect(getModelRate("OpenRouter", "qwen/qwen3.7-flash")).toMatchObject({
+      inputUsdPer1M: 0.03,
+      outputUsdPer1M: 0.13,
+      known: true,
+    });
   });
 
   test("uses environment fallback for an unknown configured model", () => {

@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import {
   Activity,
   ArrowUpLeft,
+  BarChart3,
   Bot,
   BookPlus,
   ChevronLeft,
@@ -26,7 +27,7 @@ import {
   WalletCards,
 } from "lucide-react";
 
-import { api } from "@/lib/cortex-client";
+import { api, type DashboardStatsDto } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
 import { ErrorState, useErrorToast } from "@/components/cortex/bits";
 import { faNum, timeAgoFa } from "@/components/cortex/format";
@@ -77,86 +78,44 @@ function DashboardOnboarding({
   recentAgentId?: string;
   onOpenAgent: (agentId: string, tab: "overview" | "ai" | "playground") => void;
 }) {
-  const [open, setOpen] = useState(
-    () => typeof window !== "undefined" && window.localStorage.getItem("cortex:onboarding:dismissed") !== "1",
-  );
-
-  function dismiss() {
-    window.localStorage.setItem("cortex:onboarding:dismissed", "1");
-    setOpen(false);
-  }
-
-  if (!open) return null;
-
   const hasAgent = Boolean(recentAgentId);
   const steps = [
-    {
-      number: "۱",
-      title: hasAgent ? "ورود به اولین Agent" : "اولین Agent را بساز",
-      description: hasAgent ? "هویت، دانش و تنظیمات همین Agent را ادامه بده." : "نام، لحن و قوانین پاسخ‌گویی را تعیین کن.",
-      action: "create" as const,
-      disabled: false,
-    },
-    {
-      number: "۲",
-      title: "مدل را داخل Agent تنظیم کن",
-      description: hasAgent ? "یکی از مدل‌های مدیریت‌شده Cortex را برای Agent انتخاب کن." : "بعد از ساخت Agent، مدل مناسب را از بین گزینه‌های Cortex انتخاب کن.",
-      action: "ai" as const,
-      disabled: !hasAgent,
-    },
-    {
-      number: "۳",
-      title: "در Playground تست کن",
-      description: hasAgent ? "قبل از انتشار، پاسخ واقعی همان Agent را بررسی کن." : "بعد از ساخت Agent، اولین پاسخ را تست کن.",
-      action: "playground" as const,
-      disabled: !hasAgent,
-    },
+    { number: "۱", title: hasAgent ? "Agent ساخته شده" : "اولین Agent را بساز", description: hasAgent ? "هویت و تنظیمات Agent آماده است؛ برای ادامه وارد آن شو." : "نام، لحن و قوانین پاسخ‌گویی Agent را تعیین کن.", action: "create" as const, done: hasAgent },
+    { number: "۲", title: "مدل و هوش Agent", description: hasAgent ? "مدل مدیریت‌شده Cortex را انتخاب کن و کیفیت پاسخ را تنظیم کن." : "بعد از ساخت Agent، مدل مناسب را انتخاب کن.", action: "ai" as const, done: false },
+    { number: "۳", title: "دانش کسب‌وکار", description: "فایل‌ها و دانش واقعی کسب‌وکارت را اضافه کن تا پاسخ‌ها grounded شوند.", action: "knowledge" as const, done: false },
+    { number: "۴", title: "تست و انتشار", description: hasAgent ? "در Playground تست کن و بعد Agent را از API یا Telegram منتشر کن." : "پس از ساخت Agent، اولین پاسخ را در Playground بررسی کن.", action: "playground" as const, done: false },
   ];
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: -8, scale: .99 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -8 }}
-      className="relative overflow-hidden rounded-[26px] border border-primary/20 bg-primary/[.045] p-5 shadow-[0_22px_70px_rgba(59,130,255,.08)] sm:p-6"
-    >
-      <button type="button" onClick={dismiss} aria-label="بستن راهنمای شروع" className="absolute end-3 top-3 grid size-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-background/50 hover:text-foreground">
-        <X className="size-4" />
-      </button>
-      <div className="max-w-3xl">
-        <p className="cortex-kicker">FIRST RUN</p>
-        <h2 className="mt-2 text-xl font-black sm:text-2xl">در ۳ قدم Cortex را راه بینداز.</h2>
-        <p className="mt-2 text-xs leading-6 text-muted-foreground">این راهنمای شروع فقط برای اولین ورود است و هر زمان خواستی می‌توانی ببندی.</p>
+    <motion.section initial={{ opacity: 0, y: -8, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-card/70 p-5 shadow-[0_24px_70px_rgba(59,130,255,.08)] sm:p-6">
+      <div className="absolute -start-20 -top-24 size-56 rounded-full bg-primary/10 blur-3xl" />
+      <div className="relative">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="cortex-kicker">START HERE</p>
+            <h2 className="mt-2 text-xl font-black sm:text-2xl">آموزش و راه‌اندازی قدم‌به‌قدم</h2>
+            <p className="mt-2 text-xs leading-6 text-muted-foreground">همه مراحل اصلی راه‌اندازی Cortex را از همین داشبورد دنبال کن؛ این بخش همیشه در دسترس می‌ماند.</p>
+          </div>
+          <div className="rounded-full border border-border/70 bg-background/45 px-3 py-1.5 text-[9px] font-bold text-primary">{hasAgent ? "۱ از ۴ مرحله پایه انجام شده" : "شروع از مرحله ۱"}</div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {steps.map((step) => (
+            <motion.button key={step.number} type="button" disabled={step.action !== "create" && !hasAgent} whileHover={{ y: -3, scale: 1.01 }} whileTap={{ scale: .985 }} transition={{ duration: .16 }}
+              onClick={() => {
+                if (step.action === "create") { if (recentAgentId) onOpenAgent(recentAgentId, "overview"); else onNavigate("agent-new"); return; }
+                if (step.action === "knowledge") { onNavigate("knowledge"); return; }
+                if (recentAgentId) onOpenAgent(recentAgentId, step.action);
+              }}
+              className={cn("group relative min-h-[158px] overflow-hidden rounded-2xl border p-4 text-right transition-all", step.done ? "border-emerald-400/20 bg-emerald-400/[.055]" : "border-border/70 bg-background/50 hover:border-primary/25 hover:bg-primary/[.035]", "disabled:cursor-not-allowed disabled:opacity-45")}
+            >
+              <span className={cn("grid size-10 place-items-center rounded-xl border text-sm font-black transition-transform group-hover:scale-105", step.done ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" : "border-primary/15 bg-primary/10 text-primary")}>{step.done ? <CircleCheck className="size-4" /> : step.number}</span>
+              <p className="mt-5 text-sm font-black">{step.title}</p>
+              <p className="mt-1.5 text-[11px] leading-6 text-muted-foreground">{step.description}</p>
+              <span className="absolute bottom-3 end-4 text-[9px] font-bold text-primary opacity-0 transition group-hover:opacity-100">باز کردن ←</span>
+            </motion.button>
+          ))}
+        </div>
       </div>
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
-        {steps.map((step) => (
-          <button
-            key={step.number}
-            type="button"
-            disabled={step.disabled}
-            onClick={() => {
-              if (step.action === "create") {
-                if (recentAgentId) {
-                  onOpenAgent(recentAgentId, "overview");
-                  dismiss();
-                } else {
-                  onNavigate("agent-new");
-                }
-                return;
-              }
-              if (!recentAgentId) return;
-              onOpenAgent(recentAgentId, step.action);
-              dismiss();
-            }}
-            className="cortex-action min-h-[142px] rounded-2xl border border-border/60 bg-background/45 p-4 text-right disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">{step.number}</span>
-            <p className="mt-5 text-sm font-bold">{step.title}</p>
-            <p className="mt-1 text-[11px] leading-6 text-muted-foreground">{step.description}</p>
-          </button>
-        ))}
-      </div>
-      <button type="button" onClick={dismiss} className="mt-4 text-[10px] font-semibold text-muted-foreground transition hover:text-foreground">بعداً ادامه می‌دهم</button>
     </motion.section>
   );
 }
@@ -204,6 +163,77 @@ function HealthPill({ ready, label, detail }: { ready: boolean; label: string; d
         <p className="truncate text-[10px] text-muted-foreground">{detail}</p>
       </div>
     </div>
+  );
+}
+
+function DashboardLaunchpad({
+  onNavigate,
+  recentAgentId,
+  onOpenAgent,
+}: {
+  onNavigate: (view: "agents" | "knowledge" | "telegram" | "analytics" | "workflows") => void;
+  recentAgentId?: string;
+  onOpenAgent: (agentId: string, tab: "overview" | "ai" | "playground") => void;
+}) {
+  const items = [
+    { title: "ساخت Agent", desc: "ایجاد دستیار جدید", icon: Bot, action: () => onNavigate("agents") },
+    { title: "افزودن دانش", desc: "PDF، DOCX و URL", icon: BookPlus, action: () => onNavigate("knowledge") },
+    { title: "انتشار روی Telegram", desc: "اتصال کانال", icon: Send, action: () => onNavigate("telegram") },
+    { title: "تحلیل عملکرد", desc: "مصرف و رفتار", icon: BarChart3, action: () => onNavigate("analytics") },
+    { title: "گردش‌کارها", desc: "اتوماسیون مرحله‌ای", icon: Workflow, action: () => onNavigate("workflows") },
+    { title: "Playground", desc: "تست پاسخ واقعی", icon: MessageSquare, action: () => recentAgentId && onOpenAgent(recentAgentId, "playground") },
+  ];
+  return (
+    <section className="space-y-3">
+      <div className="flex items-end justify-between gap-3">
+        <div><p className="cortex-kicker">LAUNCHPAD</p><h2 className="mt-1 text-lg font-black">دسترسی سریع برای اجرای Cortex</h2></div>
+        <span className="hidden text-[10px] text-muted-foreground sm:inline">همه مسیرهای اصلی در یک نگاه</span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const disabled = item.title === "Playground" && !recentAgentId;
+          return (
+            <motion.button key={item.title} type="button" onClick={item.action} disabled={disabled} whileHover={{ y: -3 }} whileTap={{ scale: .98 }}
+              className="group flex min-h-[90px] items-center gap-3 rounded-2xl border border-border/70 bg-card/55 p-4 text-right transition-all hover:border-primary/25 hover:bg-primary/[.035] disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/10 text-primary transition-transform group-hover:scale-105"><Icon className="size-4" /></span>
+              <span className="min-w-0 flex-1"><span className="block text-xs font-black">{item.title}</span><span className="mt-1 block text-[10px] text-muted-foreground">{item.desc}</span></span>
+              <ArrowUpLeft className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:-translate-x-0.5" />
+            </motion.button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function DashboardSystemPulse({ stats, activity }: { stats: DashboardStatsDto; activity: Array<{id:string;action:string;entityType:string;createdAt:string}> }) {
+  const signals = [
+    { ready: stats.agents > 0, label: "موتور Agent", detail: stats.agents > 0 ? faNum(stats.agents) + " Agent" : "در انتظار راه‌اندازی" },
+    { ready: stats.knowledgeReady > 0, label: "مغز کسب‌وکار", detail: stats.knowledgeReady > 0 ? faNum(stats.knowledgeReady) + " منبع آماده" : "هنوز دانش آماده نشده" },
+    { ready: stats.conversations > 0, label: "گفتگو", detail: stats.conversations > 0 ? faNum(stats.conversations) + " گفتگوی ثبت‌شده" : "هنوز مکالمه‌ای ثبت نشده" },
+    { ready: (stats.telegramBots ?? 0) > 0, label: "Telegram", detail: (stats.telegramBots ?? 0) > 0 ? faNum(stats.telegramBots ?? 0) + " ربات" : "قابل راه‌اندازی" },
+  ];
+  return (
+    <Card className="cortex-panel h-full rounded-2xl">
+      <CardHeader><p className="cortex-kicker">SYSTEM PULSE</p><CardTitle className="mt-2 text-base">نبض عملیاتی Cortex</CardTitle></CardHeader>
+      <CardContent className="space-y-2 p-4 pt-0">
+        <div className="grid grid-cols-2 gap-2">{signals.map((signal) => <HealthPill key={signal.label} ready={signal.ready} label={signal.label} detail={signal.detail} />)}</div>
+        <div className="mt-2 rounded-2xl border border-border/60 bg-background/35 p-4">
+          <div className="flex items-center justify-between"><span className="text-xs font-bold">در ۳۰ روز</span><span className="text-[9px] text-muted-foreground">{faNum(stats.totalUsageEvents ?? 0)} رویداد</span></div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div><p className="text-lg font-black">{faNum(stats.totalTokens ?? 0)}</p><p className="text-[9px] text-muted-foreground">توکن</p></div>
+            <div><p className="text-lg font-black">{faNum(stats.messages ?? 0)}</p><p className="text-[9px] text-muted-foreground">پیام</p></div>
+            <div><p className="text-lg font-black">{faNum(stats.knowledgeReady ?? 0)}</p><p className="text-[9px] text-muted-foreground">منبع آماده</p></div>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between"><span className="text-xs font-bold">آخرین رویدادها</span><span className="text-[9px] text-muted-foreground">{faNum(activity.length)} مورد</span></div>
+          {activity.length === 0 ? <p className="rounded-xl border border-dashed border-border/70 p-4 text-center text-[10px] text-muted-foreground">هنوز فعالیتی ثبت نشده؛ اولین Agent یا منبع دانش را بساز.</p> : activity.slice(0,4).map((item) => <div key={item.id} className="flex items-center gap-2 rounded-xl border border-border/55 bg-background/25 px-3 py-2"><span className="size-2 rounded-full bg-primary/70"/><span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">{item.action} · {item.entityType}</span><span className="shrink-0 text-[9px] text-muted-foreground">{timeAgoFa(item.createdAt)}</span></div>)}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -258,52 +288,39 @@ export function DashboardView() {
     <div className="space-y-5 pb-2 sm:space-y-7">
       {billing && (
         <motion.section
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "relative overflow-hidden rounded-[24px] border p-4 sm:rounded-[30px] sm:p-6",
-            lowBalance ? "border-amber-400/25 bg-amber-400/[.045]" : "border-primary/20 bg-primary/[.045]"
-          )}
+          initial={{ opacity: 0, y: -10, scale: .985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: .42, ease: "easeOut" }}
+          className={cn("relative overflow-hidden rounded-[30px] border p-4 shadow-[0_30px_90px_rgba(15,23,42,.14)] sm:p-6 lg:p-7", lowBalance ? "border-amber-400/25 bg-amber-400/[.045]" : "border-primary/20 bg-primary/[.045]")}
         >
-          <div className="absolute -end-20 -top-24 size-64 rounded-full bg-primary/10 blur-3xl" />
-          <div className="relative">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0">
-                <p className="cortex-kicker">CORTEX WALLET</p>
-                <div className="mt-2 flex flex-wrap items-end gap-3">
-                  <h2 className="text-2xl font-black sm:text-3xl">{plan?.name ?? "پلن"}</h2>
-                  <span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[10px] text-primary">کنترل مصرف فعال</span>
-                </div>
-                <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">پلن، مدل‌های در دسترس و اعتبارت را از یک مسیر ساده مدیریت کن؛ اتصال زیرساخت را Cortex انجام می‌دهد.</p>
+          <div className="absolute -end-20 -top-24 size-72 rounded-full bg-primary/10 blur-3xl animate-pulse" />
+          <div className="absolute -start-24 -bottom-28 size-64 rounded-full bg-violet-500/10 blur-3xl" />
+          <div className="relative grid gap-6 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="cortex-kicker">CORTEX WALLET</span>
+                <motion.span animate={{ y: [0, -2, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }} className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-black text-primary">{plan?.name ?? "پلن"}</motion.span>
+                <span className="rounded-full border border-border/70 bg-background/45 px-2.5 py-1 text-[9px] text-muted-foreground">اعتبار امن و کنترل‌شده</span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <h2 className="mt-3 text-2xl font-black sm:text-3xl">مرکز فرمان اعتبار و هوش</h2>
+              <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">موجودی، سطح مدل‌ها و مصرف را در یک نمای زنده ببین و بدون خارج‌شدن از داشبورد به پلن و مدل دسترسی پیدا کن.</p>
+              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="rounded-2xl border border-border/60 bg-background/35 p-3"><p className="text-[9px] text-muted-foreground">اعتبار فعلی</p><p className="mt-1 text-lg font-black">{faNum(balance)}</p></div>
+                <div className="rounded-2xl border border-border/60 bg-background/35 p-3"><p className="text-[9px] text-muted-foreground">پلن</p><p className="mt-1 truncate text-sm font-black">{plan?.name ?? "—"}</p></div>
+                <div className="rounded-2xl border border-border/60 bg-background/35 p-3"><p className="text-[9px] text-muted-foreground">توکن امروز</p><p className="mt-1 text-lg font-black">{faNum(stats.todayTokens ?? 0)}</p></div>
+                <div className="rounded-2xl border border-primary/15 bg-primary/[.06] p-3"><p className="text-[9px] text-muted-foreground">مصرف ماهانه</p><p className="mt-1 text-lg font-black">{faNum(remainingPct)}٪</p></div>
+              </div>
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground"><span>{lowBalance ? "اعتبار رو به اتمام است" : "اعتبار قابل استفاده"}</span><span>{faNum(balance)} از {faNum(monthlyCredits)} اعتبار</span></div>
+                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted"><motion.div initial={{ width: 0 }} animate={{ width: String(remainingPct || (monthlyCredits === 0 ? 0 : 1)) + "%" }} transition={{ duration: .9, ease: "easeOut" }} className={cn("h-full rounded-full", lowBalance ? "bg-amber-400" : "bg-gradient-to-r from-primary via-violet-400 to-primary")} /></div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Button onClick={() => setView("billing")}><WalletCards />مدیریت پلن و اعتبار</Button>
                 {recentAgentId && <Button variant="outline" onClick={() => openAgent(recentAgentId, "ai")}><Sparkles />انتخاب مدل</Button>}
+                {lowBalance && <Button size="sm" variant="outline" onClick={() => setView("billing")}>شارژ سریع</Button>}
               </div>
             </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-              <div>
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>{lowBalance ? "اعتبار رو به اتمام است" : "اعتبار قابل استفاده"}</span>
-                  <span>{faNum(balance)} از {faNum(monthlyCredits)} اعتبار</span>
-                </div>
-                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
-                  <div className={cn("h-full rounded-full transition-all", lowBalance ? "bg-amber-400" : "bg-gradient-to-r from-primary to-violet-400")} style={{ width: (remainingPct || (monthlyCredits === 0 ? 0 : 1)) + "%" }} />
-                </div>
-              </div>
-              <p className={cn("text-xs font-bold sm:text-end", lowBalance ? "text-amber-300" : "text-primary")}>{faNum(remainingPct)}٪ باقی‌مانده</p>
-            </div>
-
-            {lowBalance && (
-              <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/[.05] p-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-bold">اعتبارت در حال تمام شدن است.</p>
-                  <p className="mt-1 text-[10px] leading-5 text-muted-foreground">برای اینکه درخواست‌های آینده متوقف نشوند، همین حالا اعتبارت را شارژ کن.</p>
-                </div>
-                <Button size="sm" onClick={() => setView("billing")}>همین حالا شارژ کن</Button>
-              </div>
-            )}
+            <div className="relative min-h-[210px] sm:min-h-[250px]"><CortexCore /></div>
           </div>
         </motion.section>
       )}
@@ -322,6 +339,11 @@ export function DashboardView() {
         recentAgentId={recentAgentId}
         onOpenAgent={(agentId, tab) => openAgent(agentId, tab)}
       />
+
+      <div className="grid items-start gap-4 lg:grid-cols-[1.1fr_.9fr]">
+        <DashboardLaunchpad onNavigate={(next) => setView(next)} recentAgentId={recentAgentId} onOpenAgent={(agentId, tab) => openAgent(agentId, tab)} />
+        <DashboardSystemPulse stats={stats} activity={data.activity ?? []} />
+      </div>
 
       <section className="grid items-start gap-4 lg:grid-cols-2">
         <Card className="cortex-panel rounded-2xl">

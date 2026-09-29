@@ -56,7 +56,8 @@ export function getModelRate(provider: string, model: string): ModelRate {
     return { inputUsdPer1M: 0.66, outputUsdPer1M: 1.98, known: true, label: "DeepSeek V4 Pro (off-peak base)" };
   }
 
-  if (routedProvider.includes("qwen") && (m.includes("qwen3.5-flash") || m.includes("qwen3.7-flash"))) return { inputUsdPer1M: 0.065, outputUsdPer1M: 0.26, known: true, label: "Qwen3.5 Flash" };
+  if (routedProvider.includes("qwen") && m.includes("qwen3.7-flash")) return { inputUsdPer1M: 0.03, outputUsdPer1M: 0.13, known: true, label: "Qwen3.7 Flash" };
+  if (routedProvider.includes("qwen") && m.includes("qwen3.5-flash")) return { inputUsdPer1M: 0.065, outputUsdPer1M: 0.26, known: true, label: "Qwen3.5 Flash" };
   if (routedProvider.includes("qwen") && m.includes("qwen3.8-max")) return { inputUsdPer1M: 2, outputUsdPer1M: 6, known: true, label: "Qwen3.8 Max" };
 
   const input = envRate("CORTEX_INPUT_USD_PER_1M");
@@ -128,6 +129,9 @@ export function getKnownModelCatalog(): Array<KnownModelCatalogEntry & Pick<Mode
     { provider: "Google", modelId: "gemini-2.5-flash-lite", displayName: "Gemini 2.5 Flash-Lite", qualityTier: "economy", speedTier: "fast", tools: true, vision: true },
 
     { provider: "DeepSeek", modelId: "deepseek-v4-pro", displayName: "DeepSeek V4 Pro", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true },
+    { provider: "DeepSeek", modelId: "deepseek-v4.1-flash", displayName: "DeepSeek V4.1 Flash", qualityTier: "economy", speedTier: "fast", reasoning: true, tools: true },
+    { provider: "Qwen", modelId: "qwen3.5-flash-02-23", displayName: "Qwen3.5 Flash", qualityTier: "economy", speedTier: "fast", reasoning: true, tools: true },
+    { provider: "Qwen", modelId: "qwen3.7-flash", displayName: "Qwen3.7 Flash", qualityTier: "economy", speedTier: "fast", reasoning: true, tools: true, vision: true },
     { provider: "DeepSeek", modelId: "deepseek-flash", displayName: "DeepSeek Flash", qualityTier: "economy", speedTier: "fast", reasoning: true, tools: true },
   ];
   return seeds.map((seed) => ({ ...seed, ...getModelRate(seed.provider, seed.modelId) }));
