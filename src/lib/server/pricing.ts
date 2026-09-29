@@ -33,25 +33,31 @@ export function getModelRate(provider: string, model: string): ModelRate {
   if ((routedProvider.includes("openai")) && m.includes("gpt-5.4")) return { inputUsdPer1M: 2.5, outputUsdPer1M: 15, known: true, label: "OpenAI GPT-5.4" };
   if ((routedProvider.includes("openai")) && m.includes("gpt-5.4-mini")) return { inputUsdPer1M: 0.75, outputUsdPer1M: 4.5, known: true, label: "OpenAI GPT-5.4 mini" };
 
-  if ((routedProvider.includes("anthropic")) && m.includes("claude-opus-5-5")) return { inputUsdPer1M: 4, outputUsdPer1M: 20, known: true, label: "Anthropic Claude Opus 5.5" };
+  if ((routedProvider.includes("anthropic")) && (m.includes("claude-opus-5.5") || m.includes("claude-opus-5-5"))) return { inputUsdPer1M: 4, outputUsdPer1M: 20, known: true, label: "Anthropic Claude Opus 5.5" };
   if ((routedProvider.includes("anthropic")) && m.includes("claude-opus-5")) return { inputUsdPer1M: 5, outputUsdPer1M: 25, known: true, label: "Anthropic Claude Opus 5" };
   if ((routedProvider.includes("anthropic")) && m.includes("claude-sonnet-5")) return { inputUsdPer1M: 2, outputUsdPer1M: 10, known: true, label: "Anthropic Claude Sonnet 5" };
   if ((routedProvider.includes("anthropic")) && (m.includes("claude-sonnet-4.6") || m.includes("claude-sonnet-4-6"))) return { inputUsdPer1M: 3, outputUsdPer1M: 15, known: true, label: "Anthropic Claude Sonnet 4.6" };
   if ((routedProvider.includes("anthropic")) && (m.includes("claude-haiku-4.5") || m.includes("claude-haiku-4-5"))) return { inputUsdPer1M: 1, outputUsdPer1M: 5, known: true, label: "Anthropic Claude Haiku 4.5" };
 
   if ((routedProvider.includes("google")) && m.includes("gemini-3.1-pro-preview")) return { inputUsdPer1M: 2, outputUsdPer1M: 12, known: true, label: "Google Gemini 3.1 Pro Preview (≤200K input)" };
-  if ((routedProvider.includes("google")) && m.includes("gemini-3.7-flash")) return { inputUsdPer1M: 0.75, outputUsdPer1M: 3.75, known: true, label: "Google Gemini 3.7 Flash" };
+  if ((routedProvider.includes("google")) && (m.includes("gemini-3.8-flash") || m.includes("gemini-3.7-flash"))) return { inputUsdPer1M: 0.75, outputUsdPer1M: 3.75, known: true, label: "Google Gemini Flash" };
   if ((routedProvider.includes("google")) && m.includes("gemini-3.1-flash-lite")) return { inputUsdPer1M: 0.25, outputUsdPer1M: 1.5, known: true, label: "Google Gemini 3.1 Flash-Lite" };
   if ((routedProvider.includes("google")) && m.includes("gemini-3-flash-preview")) return { inputUsdPer1M: 0.5, outputUsdPer1M: 3, known: true, label: "Google Gemini 3 Flash Preview" };
   if ((routedProvider.includes("google")) && m.includes("gemini-2.5-flash-lite")) return { inputUsdPer1M: 0.1, outputUsdPer1M: 0.4, known: true, label: "Google Gemini 2.5 Flash-Lite" };
   if ((routedProvider.includes("google")) && m.includes("gemini-2.5-flash")) return { inputUsdPer1M: 0.3, outputUsdPer1M: 2.5, known: true, label: "Google Gemini 2.5 Flash" };
 
-  if ((routedProvider.includes("deepseek")) && (m.includes("deepseek-flash") || m.includes("deepseek-v4-flash") || m.includes("deepseek-v4.1-flash"))) {
-    return { inputUsdPer1M: 0.15, outputUsdPer1M: 0.6, known: true, label: "DeepSeek Flash (off-peak base)" };
+  if (routedProvider.includes("deepseek") && m.includes("deepseek-v4.1-flash")) {
+    return { inputUsdPer1M: 0.13, outputUsdPer1M: 0.52, known: true, label: "DeepSeek V4.1 Flash" };
+  }
+  if ((routedProvider.includes("deepseek")) && (m.includes("deepseek-flash") || m.includes("deepseek-v4-flash"))) {
+    return { inputUsdPer1M: 0.15, outputUsdPer1M: 0.6, known: true, label: "DeepSeek Flash" };
   }
   if ((routedProvider.includes("deepseek")) && (m.includes("deepseek-v4-pro") || m === "deepseek-v4")) {
     return { inputUsdPer1M: 0.66, outputUsdPer1M: 1.98, known: true, label: "DeepSeek V4 Pro (off-peak base)" };
   }
+
+  if (routedProvider.includes("qwen") && m.includes("qwen3.7-flash")) return { inputUsdPer1M: 0.03, outputUsdPer1M: 0.13, known: true, label: "Qwen3.7 Flash" };
+  if (routedProvider.includes("qwen") && m.includes("qwen3.8-max")) return { inputUsdPer1M: 2, outputUsdPer1M: 6, known: true, label: "Qwen3.8 Max" };
 
   const input = envRate("CORTEX_INPUT_USD_PER_1M");
   const output = envRate("CORTEX_OUTPUT_USD_PER_1M");
