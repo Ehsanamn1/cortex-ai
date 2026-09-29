@@ -397,12 +397,12 @@ jobs:
           echo "GET(no-auth) $base/api/billing/topup-request -> HTTP $topup_noauth_status"
           test "$topup_noauth_status" = "401" -o "$topup_noauth_status" = "404"
 
-          if [ -n "$CORTEX_ADMIN_USERNAME" ] && [ -n "$CORTEX_ADMIN_PASSWORD" ]; then
+          if [ -n "$CORTEX_ADMIN_ACCESS_TOKEN" ]; then
             admin_cookie="$(mktemp)"
             admin_response="$(mktemp)"
-            admin_body="$(jq -nc --arg username "$CORTEX_ADMIN_USERNAME" --arg password "$CORTEX_ADMIN_PASSWORD" '{username:$username,password:$password}')"
-            admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$admin_body" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/login")"
-            echo "POST $base/api/admin/auth/login -> HTTP $admin_status"
+            admin_body="$(jq -nc --arg token "$CORTEX_ADMIN_ACCESS_TOKEN" '{token:$token}')"
+            admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$admin_body" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/exchange")"
+            echo "POST $base/api/admin/auth/exchange -> HTTP $admin_status"
             cat "$admin_response" | jq . || cat "$admin_response"
             test "$admin_status" = "200"
             check_admin_json() {
@@ -428,7 +428,7 @@ jobs:
             check_admin_json "/api/control-center/topups" "200"
             rm -f "$admin_response" "$admin_cookie"
           else
-            echo "Admin credentials are not duplicated into GitHub Actions; unauthenticated admin route guards were verified above."
+            echo "Private admin access token is not configured in cortex1; protected admin route guards were verified above."
           fi
 
           agent_body="$(jq -nc '{name:"Cortex Smoke Agent",language:"fa",tone:"professional",temperature:0.2,topP:1,maxTokens:256}')"
