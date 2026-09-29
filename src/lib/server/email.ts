@@ -1,19 +1,30 @@
-import { createHash, randomBytes } from "node:crypto";
-
 const RESET_TTL_MS = 30 * 60 * 1000;
 
 function trimEnv(name: string): string {
   return process.env[name]?.trim() ?? "";
 }
 
-export function createPasswordResetToken(): { raw: string; hash: string; expiresAt: Date } {
-  const raw = randomBytes(32).toString("base64url");
-  const hash = createHash("sha256").update(raw).digest("hex");
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/g, "");
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function createPasswordResetToken(): Promise<{ raw: string; hash: string; expiresAt: Date }> {
+  const bytes = new Uint8Array(32);
+  globalThis.crypto.getRandomValues(bytes);
+  const raw = bytesToBase64Url(bytes);
+  const hash = await sha256Hex(raw);
   return { raw, hash, expiresAt: new Date(Date.now() + RESET_TTL_MS) };
 }
 
-export function hashPasswordResetToken(raw: string): string {
-  return crypto.createHash("sha256").update(raw).digest("hex");
+export async function hashPasswordResetToken(raw: string): Promise<string> {
+  return sha256Hex(raw);
 }
 
 function appBaseUrl(): string {
