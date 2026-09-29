@@ -176,7 +176,7 @@ async function ensureModel(provider: string, model: string) {
       commercialAvailable: rate.known,
     },
     create: {
-      provider,
+      provider: canonicalProvider,
       modelId: model,
       displayName: managed?.displayName ?? known?.displayName ?? model,
       inputUsdPer1M: rate.inputUsdPer1M,
