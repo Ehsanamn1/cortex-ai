@@ -341,7 +341,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
   const view = useCortexStore((s) => s.view);
   const setView = useCortexStore((s) => s.setView);
 
-  const mobileItems = (["dashboard", "agents", "knowledge", "billing"] as View[])
+  const mobileItems = (["billing", "dashboard", "agents", "telegram"] as View[])
     .map((view) => items.find((item) => item.view === view))
     .filter((item): item is NavItem => Boolean(item));
   return (
@@ -349,7 +349,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
       aria-label="ناوبری موبایل"
       className="cortex-mobile-nav fixed inset-x-0 bottom-0 z-50 border-t shadow-[0_-12px_35px_rgba(0,0,0,.18)] backdrop-blur-xl lg:hidden"
     >
-      <div className="mx-auto flex w-full max-w-lg items-stretch pb-[max(env(safe-area-inset-bottom),6px)]">
+      <div className="mx-auto grid w-full max-w-lg grid-cols-4 items-stretch px-2">
         {mobileItems.map((item) => {
           const active = item.matches.includes(view);
           return (
@@ -360,12 +360,17 @@ function BottomNav({ items }: { items: NavItem[] }) {
               aria-label={item.label}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-medium transition-colors active:scale-[.96]",
+                "relative my-1 flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 text-[10px] font-medium transition-all active:scale-[.96]",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon aria-hidden="true" className="size-[19px]" />
-              {item.view === "dashboard" ? "داشبورد" : item.view === "agents" ? "ایجنت" : item.view === "knowledge" ? "دانش" : "اعتبار"}
+              <span className={cn(
+                "grid size-8 place-items-center rounded-xl transition-colors",
+                active ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              )}>
+                <item.icon aria-hidden="true" className="size-[18px]" />
+              </span>
+              <span>{item.view === "billing" ? "پلن" : item.view === "dashboard" ? "خانه" : item.view === "agents" ? "ایجنت‌ها" : "تلگرام"}</span>
             </button>
           );
         })}
@@ -539,7 +544,7 @@ export function AppShell() {
         </header>
 
         <main className="cortex-scroll flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-6xl px-3 pb-32 pt-4 sm:px-4 sm:pb-32 sm:pt-6 lg:px-8 lg:pb-10 lg:pt-8">
+          <div className="mx-auto w-full max-w-6xl px-3 pb-40 pt-4 sm:px-4 sm:pb-36 sm:pt-6 lg:px-8 lg:pb-10 lg:pt-8">
             <AnimatePresence mode="wait">
               <ViewErrorBoundary key={viewKey}>
                 <motion.div
