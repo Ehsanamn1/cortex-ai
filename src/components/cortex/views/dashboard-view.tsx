@@ -26,7 +26,7 @@ import {
   WalletCards,
 } from "lucide-react";
 
-import { api } from "@/lib/cortex-client";
+import { api, type DashboardStatsDto } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
 import { ErrorState, useErrorToast } from "@/components/cortex/bits";
 import { faNum, timeAgoFa } from "@/components/cortex/format";
