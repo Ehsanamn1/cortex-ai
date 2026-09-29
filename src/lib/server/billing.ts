@@ -155,17 +155,18 @@ async function ensureKnownModelCatalog() {
 }
 
 async function ensureModel(provider: string, model: string) {
+  const canonicalProvider = provider.toLowerCase() === "openrouter" ? "OpenRouter" : provider;
   const managed = getManagedModelCatalog().find(
-    (entry) => entry.provider === provider && entry.providerModelId.toLowerCase() === model.toLowerCase(),
+    (entry) => entry.provider === canonicalProvider && entry.providerModelId.toLowerCase() === model.toLowerCase(),
   );
   const known = getKnownModelCatalog().find(
-    (entry) => entry.provider.toLowerCase() === provider.toLowerCase() && entry.modelId.toLowerCase() === model.toLowerCase(),
+    (entry) => entry.provider.toLowerCase() === canonicalProvider.toLowerCase() && entry.modelId.toLowerCase() === model.toLowerCase(),
   );
-  const rate = managed ? getModelRate("OpenRouter", managed.providerModelId) : getModelRate(provider, model);
+  const rate = managed ? getModelRate("OpenRouter", managed.providerModelId) : getModelRate(canonicalProvider, model);
   const qualityTier = managed?.qualityTier ?? known?.qualityTier ?? "balanced";
   const multiplierBps = defaultCreditMultiplierBps(qualityTier);
   const catalog = await db.modelCatalog.upsert({
-    where: { provider_modelId: { provider, modelId: model } },
+    where: { provider_modelId: { provider: canonicalProvider, modelId: model } },
     update: {
       displayName: managed?.displayName ?? known?.displayName ?? model,
       inputUsdPer1M: rate.inputUsdPer1M,
