@@ -70,6 +70,7 @@ export async function GET(req: Request) {
       periodEnd.setMonth(periodEnd.getMonth() + 1);
 
       const nextBalance = target.monthlyCredits;
+      const balanceDelta = nextBalance - account.balanceCredits;
       await tx.workspaceBillingAccount.update({
         where: { id: account.id },
         data: {
@@ -103,7 +104,7 @@ export async function GET(req: Request) {
         data: {
           workspaceId: fresh.workspaceId,
           billingAccountId: account.id,
-          amountCredits: nextBalance,
+          amountCredits: balanceDelta,
           balanceAfter: nextBalance,
           entryType: "plan_activation",
           referenceType: "credit_top_up_request",
