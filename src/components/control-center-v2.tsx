@@ -167,7 +167,7 @@ function BillingPanel({ section }: { section: Section }) {
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div><span className="text-muted-foreground">Key</span><p className="font-mono">{plan.key}</p></div>
         <div><span className="text-muted-foreground">قیمت</span><p className="font-semibold">{Number(plan.priceToman).toLocaleString("fa-IR")} تومان</p></div>
-        <div><span className="text-muted-foreground">اعتبار ماهانه</span><p className="font-semibold">{Number(plan.monthlyCredits).toLocaleString("fa-IR")}</p></div>
+        <div><span className="text-muted-foreground">اعتبار ماهانه</span><p className="font-semibold">{Number(plan.monthlyCredits).toLocaleString("fa-IR")}</p></div><div><span className="text-muted-foreground">Token quota</span><p className="font-semibold">{Number(plan.monthlyTokenLimit ?? 0).toLocaleString("fa-IR")}</p></div>
         <div><span className="text-muted-foreground">Overage</span><p>{Number(plan.overageCreditPriceToman).toLocaleString("fa-IR")}</p></div>
       </div>}</CardContent>
   </Card>)}</div></div>;
@@ -183,6 +183,7 @@ function BillingPanel({ section }: { section: Section }) {
     </CardContent>
   </Card>)}</div>
     <ModelAccessMatrix plans={q.data.plans ?? []} models={q.data.models ?? []} onSave={(body) => patch.mutate({action:"set_access",id:"access",body})}/>
+    <TrialRoutePanel providers={q.data.systemProviders ?? []} models={q.data.models ?? []} plans={q.data.plans ?? []}/>
   </div>;
 
   if (section === "accounts") return <div className="grid gap-3">{(q.data.accounts ?? []).map((account:any) => <AccountEditor key={account.id} account={account} plans={q.data.plans ?? []} onSave={(body) => patch.mutate({action:"update_account",id:account.id,body})}/>)}</div>;
@@ -228,14 +229,15 @@ function TopUpRequestsPanel() {
 }
 
 function PlanCreate({onSave}:{onSave:(body:any)=>void}) {
-  const [v,setV]=useState({key:"",name:"",priceToman:"0",monthlyCredits:"0",overageCreditPriceToman:"0",sortOrder:"10"});
-  return <Card className="border-border"><CardHeader><CardTitle className="text-sm">ساخت پلن جدید</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+  const [v,setV]=useState({key:"",name:"",priceToman:"0",monthlyCredits:"0",monthlyTokenLimit:"0",overageCreditPriceToman:"0",sortOrder:"10"});
+  return <Card className="border-border"><CardHeader><CardTitle className="text-sm">ساخت پلن جدید</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
     <Input placeholder="key" value={v.key} onChange={e=>setV({...v,key:e.target.value})}/>
     <Input placeholder="نام" value={v.name} onChange={e=>setV({...v,name:e.target.value})}/>
     <Input type="number" placeholder="قیمت تومان" value={v.priceToman} onChange={e=>setV({...v,priceToman:e.target.value})}/>
     <Input type="number" placeholder="Credits ماهانه" value={v.monthlyCredits} onChange={e=>setV({...v,monthlyCredits:e.target.value})}/>
+    <Input type="number" placeholder="Token quota / ماه" value={v.monthlyTokenLimit} onChange={e=>setV({...v,monthlyTokenLimit:e.target.value})}/>
     <Input type="number" placeholder="Overage / credit" value={v.overageCreditPriceToman} onChange={e=>setV({...v,overageCreditPriceToman:e.target.value})}/>
-    <Button onClick={()=>onSave({key:v.key,name:v.name,priceToman:Number(v.priceToman),monthlyCredits:Number(v.monthlyCredits),overageCreditPriceToman:Number(v.overageCreditPriceToman),sortOrder:Number(v.sortOrder)})}><Save/>ساخت پلن</Button>
+    <Button onClick={()=>onSave({key:v.key,name:v.name,priceToman:Number(v.priceToman),monthlyCredits:Number(v.monthlyCredits),monthlyTokenLimit:Number(v.monthlyTokenLimit),overageCreditPriceToman:Number(v.overageCreditPriceToman),sortOrder:Number(v.sortOrder)})}><Save/>ساخت پلن</Button>
   </CardContent></Card>;
 }
 
@@ -256,8 +258,8 @@ function ModelCreate({providers,onSave}:{providers:any[];onSave:(body:any)=>void
 }
 
 function PlanEditor({plan,onSave}:{plan:any;onSave:(body:any)=>void}) {
-  const [v,setV]=useState({...plan});
-  return <div className="grid gap-3 sm:grid-cols-2"><Input value={v.name} onChange={e=>setV({...v,name:e.target.value})} placeholder="نام"/><Input type="number" value={v.priceToman} onChange={e=>setV({...v,priceToman:e.target.value})} placeholder="قیمت"/><Input type="number" value={v.monthlyCredits} onChange={e=>setV({...v,monthlyCredits:e.target.value})} placeholder="اعتبار"/><Input type="number" value={v.overageCreditPriceToman} onChange={e=>setV({...v,overageCreditPriceToman:e.target.value})} placeholder="Overage"/><Button onClick={()=>onSave({name:v.name,priceToman:Number(v.priceToman),monthlyCredits:Number(v.monthlyCredits),overageCreditPriceToman:Number(v.overageCreditPriceToman)})}><Save/>ذخیره</Button></div>;
+  const [v,setV]=useState({...plan,monthlyTokenLimit:plan.monthlyTokenLimit ?? 0});
+  return <div className="grid gap-3 sm:grid-cols-2"><Input value={v.name} onChange={e=>setV({...v,name:e.target.value})} placeholder="نام"/><Input type="number" value={v.priceToman} onChange={e=>setV({...v,priceToman:e.target.value})} placeholder="قیمت"/><Input type="number" value={v.monthlyCredits} onChange={e=>setV({...v,monthlyCredits:e.target.value})} placeholder="اعتبار"/><Input type="number" value={v.monthlyTokenLimit} onChange={e=>setV({...v,monthlyTokenLimit:e.target.value})} placeholder="Token quota / ماه"/><Input type="number" value={v.overageCreditPriceToman} onChange={e=>setV({...v,overageCreditPriceToman:e.target.value})} placeholder="Overage"/><Button onClick={()=>onSave({name:v.name,priceToman:Number(v.priceToman),monthlyCredits:Number(v.monthlyCredits),monthlyTokenLimit:Number(v.monthlyTokenLimit),overageCreditPriceToman:Number(v.overageCreditPriceToman)})}><Save/>ذخیره</Button></div>;
 }
 
 function ModelEditor({model,providers,onSave}:{model:any;providers:any[];onSave:(body:any)=>void}) {
@@ -301,16 +303,16 @@ function ControlCenterRuntime() {
   const groups=[...new Set(SECTIONS.map(x=>x.group))]; const m=summary.data?.metrics??{}; const activeSection=SECTIONS.find(x=>x.id===section)!;
   return <div className="cortex-control-center min-h-screen bg-[#f6f7fb] text-foreground" dir="rtl"><div className="flex min-h-screen">
     <aside className="hidden w-[250px] shrink-0 border-l border-border bg-white lg:flex lg:flex-col">
-      <div className="border-b border-border p-5"><div className="text-lg font-extrabold tracking-tight text-slate-900">Cortex <span className="text-primary">Admin</span></div><p className="mt-1 text-[10px] text-muted-foreground">Operational Control Center</p></div>
+      <div className="border-b border-border p-5"><div className="text-lg font-extrabold tracking-tight text-slate-900">Cortex <span className="text-primary">Systems</span></div><p className="mt-1 text-[10px] text-muted-foreground">System Desk · Private</p></div>
       <nav className="flex-1 overflow-y-auto p-3">{groups.map(group=><div key={group} className="mb-5"><p className="px-3 pb-2 text-[9px] font-bold tracking-[.18em] text-slate-400">{group.toUpperCase()}</p><div className="space-y-1">{SECTIONS.filter(s=>s.group===group).map(s=><button key={s.id} type="button" onClick={()=>{setSection(s.id);setSearch("");}} className={cn("flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium",section===s.id?"bg-[#eef3ff] text-[#3f6fe5]":"text-slate-600 hover:bg-slate-50")}><s.icon className="size-4 shrink-0"/><span>{s.label}</span></button>)}</div></div>)}</nav>
       <div className="border-t border-border p-4"><div className="flex items-center gap-2 rounded-lg bg-slate-50 p-2.5"><span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-[10px] font-bold text-primary">{session.data?.username?.slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{session.data?.username}</p><p className="text-[9px] text-muted-foreground">Administrator</p></div><Button variant="ghost" size="icon" onClick={()=>logout.mutate()}><LogOut className="size-4"/></Button></div></div>
     </aside>
-    <div className="min-w-0 flex-1"><header className="sticky top-0 z-30 border-b border-border bg-white/95 backdrop-blur"><div className="flex items-center gap-3 px-4 py-3 lg:px-7"><div className="min-w-0 flex-1"><p className="text-[9px] font-bold tracking-[.18em] text-primary">CORTEX CONTROL CENTER</p><h1 className="truncate text-lg font-bold">{activeSection.label}</h1></div><div className="hidden w-[260px] items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 md:flex"><Search className="size-4 text-muted-foreground"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-0" placeholder="جستجو…"/></div><Button variant="outline" size="icon" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button></div></header>
+    <div className="min-w-0 flex-1"><header className="sticky top-0 z-30 border-b border-border bg-white/95 backdrop-blur"><div className="flex items-center gap-3 px-4 py-3 lg:px-7"><div className="min-w-0 flex-1"><p className="text-[9px] font-bold tracking-[.18em] text-primary">CORTEX SYSTEM DESK</p><h1 className="truncate text-lg font-bold">{activeSection.label}</h1></div><div className="hidden w-[260px] items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 md:flex"><Search className="size-4 text-muted-foreground"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-0" placeholder="جستجو…"/></div><Button variant="outline" size="icon" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button></div></header>
       <div className="flex gap-1 overflow-x-auto border-b bg-white px-3 py-2 lg:hidden">
         {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-[10px] font-medium",section===s.id?"bg-[#eef3ff] text-[#3f6fe5]":"text-slate-600")}>{s.label}</button>)}
       </div>
       <main className="mx-auto max-w-[1400px] space-y-5 p-4 lg:p-7">
-        {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>}
+        {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:section==="systemProviders"?<SystemProvidersPanel/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>}
       </main>
     </div>
   </div></div>;
@@ -323,6 +325,20 @@ function Overview({summary}:{summary:any}) {
     <section className="grid gap-4 xl:grid-cols-3"><Card className="border-border"><CardHeader><CardTitle className="text-sm">Billing وضعیت</CardTitle></CardHeader><CardContent className="space-y-3"><div className="flex justify-between text-xs"><span>حساب‌های اعتباری</span><b>{Number(summary?.financial?.billingAccounts??0).toLocaleString("fa-IR")}</b></div><div className="flex justify-between text-xs"><span>Subscription فعال</span><b>{Number(summary?.financial?.activeSubscriptions??0).toLocaleString("fa-IR")}</b></div><div className="flex justify-between text-xs"><span>Credits مصرف‌شده</span><b>{Number(f.creditsConsumed??0).toLocaleString("fa-IR")}</b></div><p className="rounded-lg bg-amber-50 p-3 text-[10px] leading-5 text-amber-800">درآمد نقدی و سود تا اتصال درگاه واقعی محاسبه نمی‌شوند.</p></CardContent></Card>
       <Card className="border-border xl:col-span-2"><CardHeader><CardTitle className="text-sm">ایجنت‌های اخیر</CardTitle></CardHeader><CardContent className="divide-y">{(summary?.recentAgents??[]).slice(0,8).map((a:any)=><div key={a.id} className="flex items-center gap-3 py-3"><span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Bot className="size-4"/></span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{a.name}</p><p className="text-[10px] text-muted-foreground">{a.workspace.name} · {a.status}</p></div><span className="text-[10px] text-muted-foreground">{new Date(a.createdAt).toLocaleDateString("fa-IR")}</span></div>)}</CardContent></Card></section>
   </div>;
+}
+
+function TrialRoutePanel({providers,models,plans}:{providers:any[];models:any[];plans:any[]}) {
+  const provider = providers.find((p:any)=>p.isTrialProvider);
+  const model = models.find((m:any)=>m.trialDefault || m.isTrialDefault);
+  const free = plans.find((p:any)=>p.key === "free");
+  return <Card className="border-primary/30 bg-primary/[.035]">
+    <CardHeader><CardTitle className="text-sm">مسیر تأمین نسخه آزمایشی</CardTitle><p className="text-[10px] leading-5 text-muted-foreground">این مسیر را یک‌بار در پیشخوان تنظیم می‌کنی؛ حساب‌های آزمایشی Provider و Model را از همین registry دریافت می‌کنند و کلید تأمین هرگز به کاربر نمایش داده نمی‌شود.</p></CardHeader>
+    <CardContent className="grid gap-3 sm:grid-cols-3">
+      <div className="rounded-lg border bg-background p-3"><p className="text-[9px] text-muted-foreground">Provider</p><p className="mt-1 text-xs font-black">{provider?.displayName ?? "تنظیم نشده"}</p><p className="mt-1 text-[9px] text-muted-foreground">{provider?.providerName ?? "—"} · {provider?.enabled ? "فعال" : "خاموش"}</p></div>
+      <div className="rounded-lg border bg-background p-3"><p className="text-[9px] text-muted-foreground">Default Model</p><p className="mt-1 text-xs font-black">{model?.displayName ?? "تنظیم نشده"}</p><p className="mt-1 font-mono text-[9px] text-muted-foreground">{model?.modelId ?? "—"}</p></div>
+      <div className="rounded-lg border bg-background p-3"><p className="text-[9px] text-muted-foreground">سقف Trial</p><p className="mt-1 text-xs font-black">{Number(free?.monthlyTokenLimit ?? 1000).toLocaleString("fa-IR")} توکن / ماه</p><p className="mt-1 text-[9px] text-muted-foreground">مانده اعتبار: {Number(free?.monthlyCredits ?? 1000).toLocaleString("fa-IR")}</p></div>
+    </CardContent>
+  </Card>;
 }
 
 function ModelAccessMatrix({plans,models,onSave}:{plans:any[];models:any[];onSave:(body:any)=>void}) {
