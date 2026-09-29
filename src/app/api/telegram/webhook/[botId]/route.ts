@@ -21,7 +21,7 @@ export async function POST(req:Request,{params}:Params){
     // background. The DB ledger prevents duplicate delivery from generating a
     // second user message / model call.
     after(async () => {
-      await db.telegramBot.update({
+      await db.telegramBot.updateMany({
         where: { id: bot.id },
         data: { lastSeenAt: new Date(), status: "connected", lastError: null },
       }).catch(() => undefined);
