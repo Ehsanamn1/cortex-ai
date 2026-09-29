@@ -33,9 +33,9 @@ describe("Cortex commercial billing", () => {
       "enterprise",
     ]);
     expect(DEFAULT_BILLING_PLANS[0].priceToman).toBe(0);
-    expect(DEFAULT_BILLING_PLANS[1]).toMatchObject({ name: "Launch", priceToman: 1790000, monthlyCredits: 10000, overageCreditPriceToman: 220 });
-    expect(DEFAULT_BILLING_PLANS[2]).toMatchObject({ name: "Growth", priceToman: 8900000, monthlyCredits: 50000, overageCreditPriceToman: 190 });
-    expect(DEFAULT_BILLING_PLANS[3]).toMatchObject({ name: "Scale", priceToman: 17900000, monthlyCredits: 100000, overageCreditPriceToman: 175 });
+    expect(DEFAULT_BILLING_PLANS[1]).toMatchObject({ name: "Launch", priceToman: 3900000, monthlyCredits: 15000, overageCreditPriceToman: 260 });
+    expect(DEFAULT_BILLING_PLANS[2]).toMatchObject({ name: "Growth", priceToman: 12900000, monthlyCredits: 80000, overageCreditPriceToman: 220 });
+    expect(DEFAULT_BILLING_PLANS[3]).toMatchObject({ name: "Scale", priceToman: 24900000, monthlyCredits: 180000, overageCreditPriceToman: 190 });
   });
 
   it("uses persisted catalog rates in micro-USD math", () => {
