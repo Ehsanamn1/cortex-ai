@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { getModelRate, type KnownModelCatalogEntry } from "@/lib/server/pricing";
 import type { LLMProvider } from "@/lib/providers/llm/types";
 
-export type ManagedPlanKey = "launch" | "growth" | "scale" | "enterprise";
+export type ManagedPlanKey = "free" | "launch" | "growth" | "scale" | "enterprise";
 export type ManagedModelTier = "economy" | "balanced" | "premium" | "deep";
 
 export interface ManagedModelDefinition extends KnownModelCatalogEntry {
@@ -36,7 +36,7 @@ export function getManagedModelCatalog(): ManagedModelDefinition[] {
       speedTier: "fast",
       tier: "economy",
       creditRatePer1K: 1.5,
-      planKeys: ["launch", "growth", "scale", "enterprise"],
+      planKeys: ["free", "launch", "growth", "scale", "enterprise"],
       tools: true,
       reasoning: true,
     },
