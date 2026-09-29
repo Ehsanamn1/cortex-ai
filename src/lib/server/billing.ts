@@ -446,7 +446,7 @@ export async function getBillingSnapshot(workspaceId: string) {
         structuredOutput: item.structuredOutput,
         reasoning: item.reasoning,
         commercialAvailable: item.commercialAvailable,
-        enabledForPlan: accessMap.get(item.id)?.enabled ?? false,
+        enabledForPlan: Boolean(managed && managed.planKeys.includes(account.plan.key as any) && item.commercialAvailable),
         creditMultiplierBps: accessMap.get(item.id)?.creditMultiplierBps ?? defaultCreditMultiplierBps(item.qualityTier),
         creditRatePer1K: managed?.creditRatePer1K ?? null,
       };
@@ -577,8 +577,11 @@ export async function reserveBillingCredits(params: {
   const existingAccess = await db.planModelAccess.findUnique({
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
   });
+  const managedForPlan = getManagedModelCatalog().find(
+    (entry) => entry.providerModelId.toLowerCase() === params.model.toLowerCase(),
+  );
 
-  if (account.enforcementEnabled && account.plan.priceToman > 0 && !existingAccess?.enabled) {
+  if (!managedForPlan || !managedForPlan.planKeys.includes(account.plan.key as any) || !existingAccess?.enabled) {
     throw new BillingModelUnavailableError(params.model);
   }
 
