@@ -147,8 +147,8 @@ export function AgentForm({ mode, agent }: { mode: "create" | "edit"; agent?: Ag
     onSuccess: ({ agent: created }) => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("ایجنت با موفقیت ساخته شد");
-      openAgent(created.id, "overview");
+      toast.success("ایجنت با موفقیت ساخته شد؛ قدم دوم آماده است.");
+      openAgent(created.id, "ai");
     },
     onError: (error: Error) => toast.error(error.message),
   });

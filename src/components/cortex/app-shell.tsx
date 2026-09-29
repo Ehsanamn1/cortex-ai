@@ -459,6 +459,7 @@ export function AppShell() {
   const view = useCortexStore((s) => s.view);
   const activeAgentId = useCortexStore((s) => s.activeAgentId);
   const setView = useCortexStore((s) => s.setView);
+  const syncFromUrl = useCortexStore((s) => s.syncFromUrl);
   const activeWorkspaceName = useCortexStore((s) => s.workspaces.find((w) => w.id === s.activeWorkspaceId)?.name);
   const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
   const navItems = buildNavItems(siteConfig.data?.settings);
@@ -474,9 +475,11 @@ export function AppShell() {
   const showCta = (view === "dashboard" || view === "agents") && settingEnabled(siteConfig.data?.settings, "feature.createAgentCta");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("view") === "billing") setView("billing");
-  }, [setView]);
+    syncFromUrl();
+    const handlePopState = () => syncFromUrl();
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [syncFromUrl]);
 
   return (
     <div className="cortex-dashstack flex h-dvh overflow-hidden bg-background">

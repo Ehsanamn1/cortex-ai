@@ -666,10 +666,36 @@ function AgentTelegramTab({ agentId }: { agentId: string }) {
                 </CardTitle>
                 <CardDescription className="mt-1">{bot.username ? "@" + bot.username : "بدون username"} · {bot.status === "connected" ? "متصل" : bot.status}</CardDescription>
               </div>
-              <Button size="sm" variant="outline" onClick={() => useCortexStore.getState().setView("telegram")}>مدیریت اتصال</Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => useCortexStore.getState().setView("telegram")}>مدیریت اتصال</Button>
+                <Button
+                  size="sm"
+                  onClick={() => document.getElementById(`telegram-bot-customizer-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                >
+                  شخصی‌سازی Bot
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4 p-4">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => document.getElementById(`telegram-bot-access-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="rounded-xl border border-primary/15 bg-primary/[.04] p-3 text-start transition hover:border-primary/30"
+              >
+                <p className="text-xs font-semibold text-foreground">افزودن شماره و مدیریت دسترسی</p>
+                <p className="mt-1 text-[10px] leading-5 text-muted-foreground">ثبت شماره، ساخت لینک ورود و تعیین سقف مصرف کاربران.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => document.getElementById(`telegram-bot-customizer-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="rounded-xl border border-violet-400/15 bg-violet-400/[.04] p-3 text-start transition hover:border-violet-400/30"
+              >
+                <p className="text-xs font-semibold text-foreground">تیون و شخصی‌سازی ربات</p>
+                <p className="mt-1 text-[10px] leading-5 text-muted-foreground">Welcome، Help، دکمه‌ها، Commandها، پیام‌های وضعیت و بنر.</p>
+              </button>
+            </div>
             <TelegramCustomizer botId={bot.id} />
             <TelegramAccessManager botId={bot.id} />
           </CardContent>
