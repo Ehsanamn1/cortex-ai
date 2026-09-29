@@ -7,7 +7,9 @@ function trimEnv(name: string): string {
 function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/g, "");
+  let encoded = btoa(binary).replaceAll("+", "-").replaceAll("/", "_");
+  while (encoded.endsWith("=")) encoded = encoded.slice(0, -1);
+  return encoded;
 }
 
 async function sha256Hex(value: string): Promise<string> {
