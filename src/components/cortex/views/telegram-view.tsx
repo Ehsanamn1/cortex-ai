@@ -100,29 +100,29 @@ export function TelegramView() {
           {bots.map((bot) => {
             const meta = statusMeta(bot.status); const Icon = meta.icon;
             return (
-              <button key={bot.id} type="button" onClick={() => setSelected(bot)} className="group text-start">
-                <Card className="cortex-panel h-full min-h-[250px] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/30">
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="cortex-icon-box"><Bot /></div>
-                        <div className="min-w-0"><p className="truncate font-semibold">{bot.name}</p><p className="truncate text-xs text-muted-foreground">@{bot.username ?? "—"} · {bot.agentName}</p></div>
-                      </div>
-                      <Badge className={cn("shrink-0 font-normal", meta.className)}><Icon className="size-3.5" />{meta.label}</Badge>
+              <Card key={bot.id} className="cortex-panel h-full min-h-[250px] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30">
+                <CardContent className="flex h-full flex-col p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="cortex-icon-box"><Bot /></div>
+                      <div className="min-w-0"><p className="truncate font-semibold">{bot.name}</p><p className="truncate text-xs text-muted-foreground">@{bot.username ?? "—"} · {bot.agentName}</p></div>
                     </div>
-                    <div className="mt-6 grid grid-cols-2 gap-3"><Mini label="کانال" value="Webhook" /><Mini label="کاربر" value={String(bot.usersCount)} /></div>
-                    <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground"><span>{bot.lastSeenAt ? "آخرین فعالیت: " + new Date(bot.lastSeenAt).toLocaleString("fa-IR") : "هنوز رویدادی ثبت نشده"}</span></div>
-                    {bot.lastError && <p className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs leading-6 text-destructive">{bot.lastError}</p>}
-                    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/[.06] pt-3 text-[10px] text-primary">
-                      <span className="inline-flex items-center gap-1"><Pencil className="size-3.5" />ویرایش Bot</span>
-                      <span className="text-muted-foreground">·</span>
-                      <span>شماره‌ها و دسترسی</span>
-                      <span className="text-muted-foreground">·</span>
-                      <span>شخصی‌سازی و منو</span>
+                    <Badge className={cn("shrink-0 font-normal", meta.className)}><Icon className="size-3.5" />{meta.label}</Badge>
+                  </div>
+                  <div className="mt-6 grid grid-cols-2 gap-3"><Mini label="کانال" value="Webhook" /><Mini label="کاربر" value={String(bot.usersCount)} /></div>
+                  <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground"><span>{bot.lastSeenAt ? "آخرین فعالیت: " + new Date(bot.lastSeenAt).toLocaleString("fa-IR") : "هنوز رویدادی ثبت نشده"}</span></div>
+                  {bot.lastError && <p className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs leading-6 text-destructive">{bot.lastError}</p>}
+                  <div className="mt-auto pt-5">
+                    <p className="text-[10px] font-semibold text-muted-foreground">مدیریت این ربات</p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                      <Button size="sm" onClick={() => setSelected(bot)}><Pencil />مدیریت Bot</Button>
+                      <Button size="sm" variant="outline" onClick={() => setSelected(bot)}><Users />شماره‌ها و دسترسی</Button>
+                      <Button size="sm" variant="outline" onClick={() => setSelected(bot)}><Pencil />شخصی‌سازی Bot</Button>
                     </div>
-                  </CardContent>
-                </Card>
-              </button>
+                    <p className="mt-2 text-[10px] leading-5 text-muted-foreground">با انتخاب هرکدام، پنجره مدیریت همین Bot باز می‌شود و بخش مربوطه در بالای پنجره کاملاً مشخص است.</p>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
@@ -211,13 +211,13 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
         </DialogHeader>
 
         <div className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-2 rounded-xl border border-white/[.06] bg-background/95 p-2 backdrop-blur">
-          <Button size="sm" variant="outline" onClick={() => document.getElementById("telegram-bot-connection")?.scrollIntoView({ behavior: "smooth", block: "start" })}>اتصال Bot</Button>
-          <Button size="sm" variant="outline" onClick={() => document.getElementById("telegram-bot-access")?.scrollIntoView({ behavior: "smooth", block: "start" })}>شماره‌ها و دسترسی</Button>
-          <Button size="sm" variant="outline" onClick={() => document.getElementById("telegram-bot-customizer")?.scrollIntoView({ behavior: "smooth", block: "start" })}>شخصی‌سازی Bot</Button>
+          <Button size="sm" variant="outline" onClick={() => document.getElementById(`telegram-bot-connection-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>۱ · اتصال Bot</Button>
+          <Button size="sm" variant="outline" onClick={() => document.getElementById(`telegram-bot-access-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>۲ · افزودن شماره / دسترسی</Button>
+          <Button size="sm" variant="outline" onClick={() => document.getElementById(`telegram-bot-customizer-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>۳ · شخصی‌سازی Bot</Button>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
-          <Card id="telegram-bot-connection" className="border-white/[.06] bg-white/[.02]">
+          <Card id={`telegram-bot-connection-${bot.id}`} className="border-white/[.06] bg-white/[.02]">
             <CardHeader><CardTitle className="text-sm">تنظیمات ربات</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label>نام نمایشی</Label><Input value={name} onChange={(event) => setName(event.target.value)} /></div>
@@ -329,7 +329,7 @@ export function TelegramAccessManager({ botId }: { botId: string }) {
   const parseLimit = (value: string) => Math.max(0, Math.min(10_000_000, Math.floor(Number(value) || 0)));
 
   return (
-    <Card id="telegram-bot-access" className="border-white/[.06] bg-white/[.02]">
+    <Card id={`telegram-bot-access-${botId}`} className="border-white/[.06] bg-white/[.02]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />مدیریت دسترسی کاربران</CardTitle>
         <p className="text-xs leading-6 text-muted-foreground">شماره‌ها را یکی‌یکی یا فله‌ای وارد کن. برای هر شماره، دسترسی و سقف مصرف جداگانه نگه داشته می‌شود.</p>
@@ -518,7 +518,7 @@ function TelegramCustomizerForm({
   });
 
   return (
-    <Card id="telegram-bot-customizer" className="border-primary/15 bg-primary/[.025]">
+    <Card id={`telegram-bot-customizer-${botId}`} className="border-primary/15 bg-primary/[.025]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm"><Pencil className="size-4 text-primary" />استودیو شخصی‌سازی ربات</CardTitle>
         <p className="text-xs leading-6 text-muted-foreground">متن‌های خوش‌آمد، راهنما، دکمه‌ها، پیام‌های «در حال کار» و بنر را برای همین ربات تغییر بده. ذخیره‌سازی روی خود Bot Profile انجام می‌شود.</p>
