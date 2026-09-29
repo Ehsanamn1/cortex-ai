@@ -6,6 +6,7 @@ import type { RetrievedChunk } from "@/lib/rag/prompt";
 import { loadAgentMemory, remember, rememberExplicitUserFacts } from "./memory";
 import { executeTool, listAgentTools } from "./tools";
 import type { AgentRuntimeInput } from "./types";
+import { TRIAL_MAX_OUTPUT_TOKENS } from "@/lib/server/plan-policy";
 
 function parseToolCall(content: string): { tool: string; arguments: Record<string, unknown> } | null {
   const match = content.match(/\{[\s\S]*\}/)?.[0];
@@ -35,7 +36,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
   if (!agent) throw Object.assign(new Error("ایجنت فعال پیدا نشد."), { status: 404 });
 
   const resolved = await llmManager.resolveForAgent(agent.id, input.workspaceId);
-  const effectiveMaxTokens = resolved.planKey === "free" ? Math.min(agent.maxTokens, 768) : agent.maxTokens;
+  const effectiveMaxTokens = resolved.planKey === "free" ? Math.min(agent.maxTokens, TRIAL_MAX_OUTPUT_TOKENS) : agent.maxTokens;
   if (!resolved.provider) throw Object.assign(new Error("سرویس‌دهنده هوش مصنوعی برای این ایجنت پیکربندی نشده است. از تب «هوش مصنوعی» ایجنت استفاده کنید."), { status: 503 });
 
   const tools = await listAgentTools(agent.id);
