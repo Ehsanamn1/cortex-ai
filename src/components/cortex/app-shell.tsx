@@ -187,7 +187,6 @@ function SidebarUserCard() {
 function MobileUserMenu() {
   const user = useCortexStore((s) => s.user);
   const setView = useCortexStore((s) => s.setView);
-  const syncFromUrl = useCortexStore((s) => s.syncFromUrl);
   const signOutNow = useSignOut();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -460,6 +459,7 @@ export function AppShell() {
   const view = useCortexStore((s) => s.view);
   const activeAgentId = useCortexStore((s) => s.activeAgentId);
   const setView = useCortexStore((s) => s.setView);
+  const syncFromUrl = useCortexStore((s) => s.syncFromUrl);
   const activeWorkspaceName = useCortexStore((s) => s.workspaces.find((w) => w.id === s.activeWorkspaceId)?.name);
   const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
   const navItems = buildNavItems(siteConfig.data?.settings);
