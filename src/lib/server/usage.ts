@@ -66,7 +66,7 @@ export async function reserveUsageWithinLimits(
   const [policyProbe, telegramUserProbe] = await Promise.all([
     db.usagePolicy.findUnique({
       where: { workspaceId },
-      select: { dailyMessageLimit: true, monthlyMessageLimit: true, dailyTokenLimit: true, monthlyTokenLimit: true },
+      select: { dailyMessageLimit: true, monthlyMessageLimit: true, dailyTokenLimit: true, monthlyTokenLimit: true, planManaged: true },
     }),
     telegramUserId
       ? db.telegramUser.findUnique({
