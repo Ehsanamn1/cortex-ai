@@ -2,7 +2,6 @@ import { OpenRouterProvider } from "@/lib/providers/llm/openrouter";
 import { db } from "@/lib/db";
 import { getModelRate, type KnownModelCatalogEntry } from "@/lib/server/pricing";
 import type { LLMProvider } from "@/lib/providers/llm/types";
-
 export type ManagedPlanKey = "free" | "launch" | "growth" | "scale" | "enterprise";
 export type ManagedModelTier = "economy" | "balanced" | "premium" | "deep";
 
