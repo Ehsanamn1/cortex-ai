@@ -405,6 +405,7 @@ export const api = {
   },
   requestBillingTopUp(packageKey:string, workspaceId?:string){ return jsonRequest<{request:BillingTopUpRequestDto}>(`/api/billing/topup-request`,"POST",{packageKey,workspaceId}); },
   startBillingTopUpPayment(packageKey:string, workspaceId?:string){ return jsonRequest<{redirectUrl:string;requestId:string}>(`/api/billing/topup-payment`,"POST",{packageKey,workspaceId}); },
+  startBillingPlanPayment(planKey:string, workspaceId?:string){ return jsonRequest<{redirectUrl:string;requestId:string}>(`/api/billing/plan-payment`,"POST",{planKey,workspaceId}); },
 
   /* AUTH */
 
