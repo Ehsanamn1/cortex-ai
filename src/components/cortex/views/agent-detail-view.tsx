@@ -19,6 +19,10 @@ import {
   CheckCircle2,
   Play,
   Loader2,
+  Activity,
+  CircleDollarSign,
+  Users,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,6 +62,7 @@ const AGENT_TABS: Array<{ value: AgentTab; label: string }> = [
   { value: "tools", label: "ابزارها" },
   { value: "playground", label: "پلی‌گراند" },
   { value: "api", label: "API" },
+  { value: "analytics", label: "تحلیل" },
   { value: "settings", label: "تنظیمات" },
 ];
 
@@ -676,6 +681,112 @@ function AgentTelegramTab({ agentId }: { agentId: string }) {
 
 
 
+function AgentAnalyticsTab({ agentId }: { agentId: string }) {
+  const { data, isPending, isError, error, refetch } = useQuery({
+    queryKey: ["agent-analytics", agentId],
+    queryFn: () => api.getAgentAnalytics(agentId),
+    staleTime: 30_000,
+  });
+
+  if (isPending) {
+    return <div className="space-y-4"><Skeleton className="h-28 rounded-2xl" /><Skeleton className="h-72 rounded-2xl" /></div>;
+  }
+
+  if (isError || !data) {
+    return <ErrorState message={error instanceof Error ? error.message : "دریافت تحلیل ایجنت ناموفق بود."} onRetry={() => void refetch()} />;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MiniStat icon={MessagesSquare} value={faNum(data.conversations)} label="گفتگوها" tint="border-primary/25 bg-primary/10 text-primary" />
+        <MiniStat icon={MessageCircleQuestion} value={faNum(data.usage.events)} label="درخواست‌های AI" tint="border-secondary/25 bg-secondary/10 text-secondary" />
+        <MiniStat icon={Activity} value={faNum(data.usage.totalTokens)} label="توکن مصرف‌شده" tint="border-amber-500/25 bg-amber-500/10 text-amber-400" />
+        <MiniStat icon={Users} value={faNum(data.telegramUsers)} label="کاربر تلگرام" tint="border-emerald-500/25 bg-emerald-500/10 text-emerald-400" />
+      </div>
+
+      <Card className="cortex-panel rounded-2xl">
+        <CardHeader className="border-b border-white/[.06] pb-4">
+          <CardTitle className="flex items-center gap-2 text-base"><CircleDollarSign className="size-4 text-primary" />مصرف و هزینه</CardTitle>
+          <CardDescription>مصرف واقعی ثبت‌شده برای همین ایجنت، جدا از سایر ایجنت‌های فضای کاری.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">ورودی</p><p className="mt-1 text-lg font-bold">{faNum(data.usage.inputTokens)}</p><p className="text-[11px] text-muted-foreground">توکن</p></div>
+          <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">خروجی</p><p className="mt-1 text-lg font-bold">{faNum(data.usage.outputTokens)}</p><p className="text-[11px] text-muted-foreground">توکن</p></div>
+          <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">هزینه تخمینی</p><p className="mt-1 text-lg font-bold">{faNum(data.usage.estimatedCostMicros)}</p><p className="text-[11px] text-muted-foreground">میکرودلار</p></div>
+          <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">پرسش‌های بی‌پاسخ</p><p className="mt-1 text-lg font-bold">{faNum(data.unanswered)}</p><p className="text-[11px] text-muted-foreground">نیازمند بهبود دانش</p></div>
+        </CardContent>
+      </Card>
+
+      <Card className="cortex-panel rounded-2xl">
+        <CardHeader className="border-b border-white/[.06] pb-4">
+          <CardTitle className="flex items-center gap-2 text-base"><Activity className="size-4 text-primary" />روند ۱۴ روزه</CardTitle>
+          <CardDescription>تعداد درخواست و توکن ثبت‌شده برای این Agent.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-48 items-end gap-1.5">
+            {data.trend.map((item) => {
+              const max = Math.max(...data.trend.map((point) => point.requests), 1);
+              const height = Math.max(8, Math.round((item.requests / max) * 100));
+              return (
+                <div key={item.date} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+                  <div className="flex h-36 w-full items-end"><div title={faNum(item.requests) + " درخواست"} className="mx-auto w-full max-w-9 rounded-t-xl bg-gradient-to-t from-primary/35 to-primary" style={{ height: height + "%" }} /></div>
+                  <span className="text-[9px] text-muted-foreground">{item.date.slice(5)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card className="cortex-panel rounded-2xl">
+          <CardHeader className="border-b border-white/[.06] pb-4"><CardTitle className="text-base">پرسش‌های پرتکرار</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            {data.topQuestions.length === 0
+              ? <p className="p-6 text-center text-sm text-muted-foreground">هنوز داده‌ای برای تحلیل وجود ندارد.</p>
+              : <ul className="divide-y divide-white/[.06]">{data.topQuestions.slice(0, 8).map((item) => (
+                <li key={item.question} className="flex items-start gap-3 p-4">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">{faNum(item.count)}</span>
+                  <p className="text-sm leading-6">{item.question}</p>
+                </li>
+              ))}</ul>}
+          </CardContent>
+        </Card>
+
+        <Card className="cortex-panel rounded-2xl">
+          <CardHeader className="border-b border-white/[.06] pb-4">
+            <CardTitle className="text-base">شکاف‌های دانش</CardTitle>
+            <CardDescription>سؤال‌هایی که در پاسخ‌گویی دانش‌محور با fallback ثبت شده‌اند.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {data.unansweredQuestions.length === 0
+              ? <p className="p-6 text-center text-sm text-muted-foreground">فعلاً شکاف شاخصی ثبت نشده است.</p>
+              : <ul className="divide-y divide-white/[.06]">{data.unansweredQuestions.slice(0, 8).map((item) => (
+                <li key={item.question} className="flex items-start gap-3 p-4">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-xs font-semibold text-amber-300">{faNum(item.count)}</span>
+                  <p className="text-sm leading-6">{item.question}</p>
+                </li>
+              ))}</ul>}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="cortex-panel rounded-2xl">
+        <CardHeader className="border-b border-white/[.06] pb-4">
+          <CardTitle className="text-base">وضعیت دانش</CardTitle>
+          <CardDescription>وضعیت منابع و onboarding همین Agent.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-3">
+          <MiniStat icon={Library} value={faNum(data.knowledge.sources)} label="کل منابع" tint="border-primary/25 bg-primary/10 text-primary" />
+          <MiniStat icon={CheckCircle2} value={faNum(data.knowledge.ready)} label="منابع آماده" tint="border-emerald-500/25 bg-emerald-500/10 text-emerald-400" />
+          <MiniStat icon={Sparkles} value={data.knowledge.onboardingComplete ? "آماده" : "ناقص"} label="پروفایل کسب‌وکار" tint="border-violet-500/25 bg-violet-500/10 text-violet-300" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function SettingsTab({ agentId }: { agentId: string }) {
   const { data } = useQuery({
     queryKey: ["agent", agentId],
@@ -868,6 +979,9 @@ export function AgentDetailView() {
         </TabsContent>
         <TabsContent value="api" className="mt-6">
           <AgentApiAccess agentId={agentId} />
+        </TabsContent>
+        <TabsContent value="analytics" className="mt-6">
+          <AgentAnalyticsTab agentId={agentId} />
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
           <SettingsTab agentId={agentId} />
