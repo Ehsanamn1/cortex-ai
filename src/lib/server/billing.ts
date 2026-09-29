@@ -604,14 +604,14 @@ export async function reserveBillingCredits(params: {
     (entry) => entry.providerModelId.toLowerCase() === params.model.toLowerCase(),
   );
 
-  if (!existingAccess && managedForPlan?.planKeys.includes(account.plan.key as any)) {
+  if (!existingAccess && (managedForPlan?.planKeys.includes(account.plan.key as any) || (account.plan.key === "free" && catalog.trialEnabled))) {
     existingAccess = await db.planModelAccess.upsert({
       where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
       update: {},
       create: {
         planId: account.planId,
         modelCatalogId: catalog.id,
-        enabled: Boolean(managedForPlan.commercialAvailable ?? true),
+        enabled: account.plan.key === "free" ? Boolean(catalog.trialEnabled) : Boolean(managedForPlan?.commercialAvailable ?? catalog.commercialAvailable),
         creditMultiplierBps: Math.max(1, fallbackMultiplier),
       },
     });
