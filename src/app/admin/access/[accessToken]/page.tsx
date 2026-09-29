@@ -17,6 +17,7 @@ export default function PrivateAdminAccessPage({ params }: { params: Promise<{ a
           body: JSON.stringify({ token: accessToken }),
         });
         if (!response.ok) throw new Error("لینک مدیریتی معتبر نیست.");
+        window.history.replaceState(null, "", "/admin");
         window.location.replace("/admin");
       } catch (error) {
         if (active) setMessage(error instanceof Error ? error.message : "دسترسی مدیر برقرار نشد.");
@@ -26,8 +27,8 @@ export default function PrivateAdminAccessPage({ params }: { params: Promise<{ a
   }, [params]);
 
   return (
-    <main dir="rtl" className="grid min-h-screen place-items-center bg-[#0d100e] px-5 text-[#f2f0e8]">
-      <section className="w-full max-w-md border border-[#30372b] bg-[#121610] p-7 shadow-2xl">
+    <main dir="rtl" className="grid min-h-screen place-items-center bg-[#0d100e] px-5 text-[#f2f0e8]" style={{ colorScheme: "dark" }}>
+      <section className="w-full max-w-md border border-[#30372b] bg-[#121610] p-7 shadow-2xl" style={{ boxShadow: "0 30px 100px rgba(0,0,0,.45)" }}>
         <div className="flex items-center gap-3">
           <span className="grid size-11 place-items-center border border-[#b5d84b]/30 bg-[#b5d84b]/10 text-[#b5d84b]"><ShieldCheck className="size-5" /></span>
           <div><p className="text-[10px] font-semibold tracking-[0.24em] text-[#b5d84b]">PRIVATE CONSOLE</p><h1 className="mt-1 text-xl font-black">پیشخوان مدیریت Cortex</h1></div>
