@@ -233,6 +233,28 @@ export interface TelegramUserDto { id:string; botId:string; telegramUserId:strin
 export interface BusinessOnboardingQuestionDto { id:string; category:string; question:string }
 export interface BusinessOnboardingSessionDto { id:string; status:string; currentIndex:number; totalQuestions:number; question:BusinessOnboardingQuestionDto|null; answersCount:number; result:any; error:string|null; completedAt:string|null; createdAt:string; updatedAt:string }
 
+export interface AgentAnalyticsDto {
+  conversations: number;
+  messages: number;
+  telegramUsers: number;
+  usage: {
+    events: number;
+    totalTokens: number;
+    inputTokens: number;
+    outputTokens: number;
+    estimatedCostMicros: number;
+  };
+  knowledge: {
+    sources: number;
+    ready: number;
+    onboardingComplete: boolean;
+  };
+  trend: Array<{ date: string; requests: number; tokens: number }>;
+  topQuestions: Array<{ question: string; count: number }>;
+  unanswered: number;
+  unansweredQuestions: Array<{ question: string; count: number }>;
+}
+
 export interface AnalyticsDto { users:number; bots:number; usage:{events:number;tokens:number;inputTokens:number;outputTokens:number;estimatedCostMicros:number}; trend:Array<{date:string;messages:number;tokens:number}>; topQuestions:Array<{question:string;count:number}>; unanswered:number; unansweredQuestions:Array<{question:string;count:number}> }
 
 export interface SessionDto {
@@ -423,6 +445,10 @@ export const api = {
   },
 
   /* AGENTS */
+
+  getAgentAnalytics(agentId: string): Promise<AgentAnalyticsDto> {
+    return request(`/api/agents/${encodeURIComponent(agentId)}/analytics`);
+  },
 
   getAgents(workspaceId?: string): Promise<{ agents: AgentDto[] }> {
     const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
