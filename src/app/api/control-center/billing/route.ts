@@ -130,7 +130,7 @@ export async function POST(req: Request) {
         if (body.trialDefault === true) {
           await tx.modelCatalog.updateMany({ where: { trialDefault: true }, data: { trialDefault: false } });
         }
-        return tx.modelCatalog.create({
+        const model = await tx.modelCatalog.create({
           data: {
             routeKey,
             provider, modelId, displayName, inputUsdPer1M, outputUsdPer1M,
@@ -143,6 +143,18 @@ export async function POST(req: Request) {
           systemProviderId,
         },
       });
+      const effectiveTrial = body.trialDefault === true || body.trialEnabled === true;
+      if (effectiveTrial) {
+        const free = await tx.plan.findUnique({ where: { key: "free" }, select: { id: true } });
+        if (free) {
+          await tx.planModelAccess.upsert({
+            where: { planId_modelCatalogId: { planId: free.id, modelCatalogId: model.id } },
+            update: { enabled: true },
+            create: { planId: free.id, modelCatalogId: model.id, enabled: true, creditMultiplierBps: 100 },
+          });
+        }
+      }
+      return model;
       });
       return applyCors(jsonOk({ admin, model }, 201), req.headers.get("origin"));
     }
