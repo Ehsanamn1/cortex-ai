@@ -127,6 +127,7 @@ export async function POST(req: Request) {
         }
         systemProviderId = provider.id;
       }
+      const trialEnabled = body.trialDefault === true || body.trialEnabled === true;
       if (systemProviderId && !(await db.systemProviderConfig.findUnique({ where: { id: systemProviderId } }))) {
         return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
       }
@@ -148,7 +149,7 @@ export async function POST(req: Request) {
           vision: body.vision === true, tools: body.tools === true, structuredOutput: body.structuredOutput === true,
           reasoning: body.reasoning === true, qualityTier, speedTier,
           commercialAvailable: body.commercialAvailable !== false, active: body.active !== false,
-          trialEnabled: body.trialEnabled === true,
+          trialEnabled,
           trialDefault: body.trialDefault === true,
           systemProviderId,
         },
