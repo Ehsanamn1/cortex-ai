@@ -13,7 +13,11 @@ export async function POST(req: Request) {
       return applyCors(jsonError("لینک مدیریتی معتبر نیست یا منقضی شده است.", 401), req.headers.get("origin"));
     }
     const session = signAdminSession("owner");
-    return applyCors(setAdminCookie({ ok: true, username: "owner" }, session), req.headers.get("origin"));
+    const response = applyCors(setAdminCookie({ ok: true, username: "owner" }, session), req.headers.get("origin"));
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Referrer-Policy", "no-referrer");
+    return response;
   } catch (error) {
     return toErrorResponse(error);
   }
