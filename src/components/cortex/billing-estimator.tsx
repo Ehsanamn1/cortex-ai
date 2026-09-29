@@ -38,6 +38,7 @@ type EstimatorModel = {
   structuredOutput: boolean;
   reasoning: boolean;
   creditMultiplierBps: number;
+  creditRatePer1K: number | null;
   enabledForPlan: boolean;
 };
 
@@ -231,9 +232,11 @@ export function BillingEstimator({
       (inputTokens / 1_000_000) * selected.inputUsdPer1M
       + (outputTokens / 1_000_000) * selected.outputUsdPer1M;
     const perTaskUsd = perMessageUsd * complexity.multiplier;
-    const creditsPerMessage = perMessageUsd > 0
-      ? Math.max(1, Math.ceil((perMessageUsd * 1_000_000 / 1000) * (selected.creditMultiplierBps / 100)))
-      : 0;
+    const creditRatePer1K = selected.creditRatePer1K ?? 1.5;
+    const creditsPerMessage = Math.max(
+      1,
+      Math.ceil((outputTokens / 1000) * creditRatePer1K + (inputTokens / 1000) * creditRatePer1K * 0.25),
+    );
     const creditsPerTask = creditsPerMessage ? Math.ceil(creditsPerMessage * complexity.multiplier) : 0;
     const monthlyCreditsEstimate = creditsPerMessage * messageCount + creditsPerTask * taskCount;
     const monthlyUsd = perMessageUsd * messageCount + perTaskUsd * taskCount;
@@ -291,9 +294,8 @@ export function BillingEstimator({
     const inputTokens = 1200;
     const outputTokens = 600;
     const perMessageUsd = (inputTokens / 1_000_000) * selected.inputUsdPer1M + (outputTokens / 1_000_000) * selected.outputUsdPer1M;
-    const creditsPerMessage = perMessageUsd > 0
-      ? Math.max(1, Math.ceil((perMessageUsd * 1_000_000 / 1000) * (selected.creditMultiplierBps / 100)))
-      : 0;
+    const creditRatePer1K = selected.creditRatePer1K ?? 1.5;
+    const creditsPerMessage = Math.max(1, Math.ceil((outputTokens / 1000) * creditRatePer1K + (inputTokens / 1000) * creditRatePer1K * 0.25));
     const creditsPerTask = creditsPerMessage ? Math.ceil(creditsPerMessage * 2.2) : 0;
     const maxProviderUsd = 1000 / Math.max(1, selected.creditMultiplierBps);
     const inputShareDenom = selected.inputUsdPer1M + (selected.outputUsdPer1M * 0.5);
@@ -362,7 +364,7 @@ export function BillingEstimator({
               >
                 {guideModels.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.provider} · {m.displayName}
+                    {m.displayName}
                   </option>
                 ))}
               </select>
@@ -447,7 +449,7 @@ export function BillingEstimator({
                 </div>
                 {selected && (
                   <div className="w-full rounded-2xl border border-white/[.06] bg-background/45 p-3 md:max-w-[310px]">
-                    <div className="flex items-center gap-2"><span className="grid size-8 place-items-center rounded-xl bg-primary/10 text-primary"><Bot className="size-4"/></span><div className="min-w-0"><p className="truncate text-xs font-black">{selected.displayName}</p><p className="truncate text-[9px] text-muted-foreground">{selected.provider} · {formatContext(selected.contextWindow)}</p></div></div>
+                    <div className="flex items-center gap-2"><span className="grid size-8 place-items-center rounded-xl bg-primary/10 text-primary"><Bot className="size-4"/></span><div className="min-w-0"><p className="truncate text-xs font-black">{selected.displayName}</p><p className="truncate text-[9px] text-muted-foreground">Cortex · {formatContext(selected.contextWindow)}</p></div></div>
                     <p className="mt-2 text-[10px] leading-5 text-muted-foreground">{describeModel(selected)}</p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {signals.map((signal) => <span key={signal} className="rounded-full bg-primary/[.07] px-2 py-1 text-[8px] text-primary">{signal}</span>)}
@@ -523,7 +525,7 @@ export function BillingEstimator({
                           <p className="truncate text-xs font-black">{model.displayName}</p>
                           {selected?.id === model.id && <Check className="size-3.5 shrink-0 text-primary" />}
                         </div>
-                        <p className="mt-0.5 truncate text-[8px] text-muted-foreground">{model.provider} · {model.modelId}</p>
+                        <p className="mt-0.5 truncate text-[8px] text-muted-foreground">مدل مدیریت‌شده Cortex</p>
                       </div>
                     </div>
                     <p className="mt-2 line-clamp-2 text-[9px] leading-5 text-muted-foreground">{describeModel(model)}</p>
