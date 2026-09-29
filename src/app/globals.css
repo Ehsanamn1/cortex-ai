@@ -1554,3 +1554,63 @@ body {
     contain-intrinsic-size: 0 220px;
   }
 }
+
+
+/* Cortex dark theme restoration for anti-template palette. */
+.dark {
+  --background: #11140f;
+  --foreground: #ecefe6;
+  --card: #171b14;
+  --card-foreground: #ecefe6;
+  --popover: #151912;
+  --popover-foreground: #ecefe6;
+  --primary: #a5c958;
+  --primary-foreground: #10130c;
+  --secondary: #24291f;
+  --secondary-foreground: #dde5cd;
+  --muted: #1c2119;
+  --muted-foreground: #9ba496;
+  --accent: #252c20;
+  --accent-foreground: #edf0e7;
+  --border: #343b2f;
+  --input: #343b2f;
+  --ring: #a5c958;
+  --sidebar: #10130e;
+  --sidebar-foreground: #e7ebdf;
+  --sidebar-primary: #a5c958;
+  --sidebar-primary-foreground: #10130c;
+  --sidebar-accent: #20261a;
+  --sidebar-accent-foreground: #dae8b8;
+  --sidebar-border: #2f372b;
+  --sidebar-ring: #a5c958;
+}
+
+.dark body {
+  background-image: none !important;
+}
+
+.dark .cortex-dashstack {
+  background: #11140f !important;
+  color: #ecefe6 !important;
+}
+
+.dark .cortex-dashstack .cortex-panel,
+.dark .cortex-dashstack [data-slot="card"] {
+  border-color: #343b2f !important;
+  background: #171b14 !important;
+  color: #ecefe6 !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.025), 0 12px 32px rgba(0,0,0,.20) !important;
+}
+
+.dark .cortex-dashstack .cortex-hero {
+  border-color: #3a4333 !important;
+  background: #1a1f17 !important;
+}
+
+.dark .cortex-dashstack input,
+.dark .cortex-dashstack textarea,
+.dark .cortex-dashstack select {
+  background: #131711 !important;
+  border-color: #3a4333 !important;
+  color: #ecefe6 !important;
+}
