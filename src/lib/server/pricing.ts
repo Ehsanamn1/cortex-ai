@@ -129,6 +129,9 @@ export function getKnownModelCatalog(): Array<KnownModelCatalogEntry & Pick<Mode
     { provider: "Google", modelId: "gemini-2.5-flash-lite", displayName: "Gemini 2.5 Flash-Lite", qualityTier: "economy", speedTier: "fast", tools: true, vision: true },
 
     { provider: "DeepSeek", modelId: "deepseek-v4-pro", displayName: "DeepSeek V4 Pro", qualityTier: "premium", speedTier: "balanced", reasoning: true, tools: true },
+    { provider: "DeepSeek", modelId: "deepseek-v4.1-flash", displayName: "DeepSeek V4.1 Flash", qualityTier: "economy", speedTier: "fast", reasoning: true, tools: true },
+    { provider: "Qwen", modelId: "qwen3.5-flash-02-23", displayName: "Qwen3.5 Flash", qualityTier: "economy", speedTier: "fast", reasoning: true, tools: true },
+    { provider: "Qwen", modelId: "qwen3.7-flash", displayName: "Qwen3.7 Flash", qualityTier: "economy", speedTier: "fast", reasoning: true, tools: true, vision: true },
     { provider: "DeepSeek", modelId: "deepseek-flash", displayName: "DeepSeek Flash", qualityTier: "economy", speedTier: "fast", reasoning: true, tools: true },
   ];
   return seeds.map((seed) => ({ ...seed, ...getModelRate(seed.provider, seed.modelId) }));
