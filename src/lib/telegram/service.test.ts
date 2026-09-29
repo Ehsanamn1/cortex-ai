@@ -7,12 +7,11 @@ describe("Telegram profile sync", () => {
   });
 
   it("syncs all Telegram profile operations in parallel", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ ok: true, result: {} }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, result: {} }),
+    } as Response);
 
     const result = await configureBotProfile("123:token", "Cortex Test", {
       shortDescription: "کوتاه",
