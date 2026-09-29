@@ -5,11 +5,11 @@ import { getManagedModelCatalog } from "@/lib/server/model-router";
 import { getUsdTomanRate } from "@/lib/server/fx";
 
 export const DEFAULT_BILLING_PLANS = [
-  { key: "free", name: "آزمایشی", description: "دسترسی محدود برای آشنایی با Cortex؛ فقط مدل‌های اقتصادی منتخب", priceToman: 0, monthlyCredits: 1_000, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 0 },
-  { key: "launch", name: "Launch", description: "شروع هوشمندانه برای تست و راه‌اندازی", priceToman: 3_900_000, monthlyCredits: 15_000, overageCreditPriceToman: 260, overageEnabled: false, sortOrder: 1 },
-  { key: "growth", name: "Growth", description: "پیشنهاد تیمی؛ تعادل ایده‌آل بین قدرت و هزینه", priceToman: 12_900_000, monthlyCredits: 80_000, overageCreditPriceToman: 220, overageEnabled: false, sortOrder: 2 },
-  { key: "scale", name: "Scale", description: "قدرت واقعی اتوماسیون برای مصرف سنگین", priceToman: 24_900_000, monthlyCredits: 180_000, overageCreditPriceToman: 190, overageEnabled: false, sortOrder: 3 },
-  { key: "enterprise", name: "Enterprise", description: "همه امکانات با قرارداد و SLA سفارشی", priceToman: 35_000_000, monthlyCredits: 0, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 4 },
+  { key: "free", name: "آزمایشی", description: "دسترسی محدود برای آشنایی با Cortex؛ فقط مدل‌های اقتصادی منتخب", priceToman: 0, monthlyCredits: 1_000, monthlyTokenLimit: 1_000, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 0 },
+  { key: "launch", name: "Launch", description: "شروع هوشمندانه برای تست و راه‌اندازی", priceToman: 3_900_000, monthlyCredits: 15_000, monthlyTokenLimit: 0, overageCreditPriceToman: 260, overageEnabled: false, sortOrder: 1 },
+  { key: "growth", name: "Growth", description: "پیشنهاد تیمی؛ تعادل ایده‌آل بین قدرت و هزینه", priceToman: 12_900_000, monthlyCredits: 80_000, monthlyTokenLimit: 0, overageCreditPriceToman: 220, overageEnabled: false, sortOrder: 2 },
+  { key: "scale", name: "Scale", description: "قدرت واقعی اتوماسیون برای مصرف سنگین", priceToman: 24_900_000, monthlyCredits: 180_000, monthlyTokenLimit: 0, overageCreditPriceToman: 190, overageEnabled: false, sortOrder: 3 },
+  { key: "enterprise", name: "Enterprise", description: "همه امکانات با قرارداد و SLA سفارشی", priceToman: 35_000_000, monthlyCredits: 0, monthlyTokenLimit: 0, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 4 },
 ] as const;
 
 const CATALOG_CACHE_MS = 10 * 60 * 1000;
@@ -110,6 +110,7 @@ async function ensurePlanCatalog() {
           priceToman: plan.priceToman,
           currency: "TOMAN",
           monthlyCredits: plan.monthlyCredits,
+          monthlyTokenLimit: plan.monthlyTokenLimit,
           overageCreditPriceToman: plan.overageCreditPriceToman,
           overageEnabled: plan.overageEnabled,
           active: true,
@@ -310,6 +311,32 @@ async function ensureWorkspaceBilling(workspaceId: string) {
         await tx.workspaceBillingAccount.update({ where: { id: account.id }, data: { status: "past_due" } });
         account = await tx.workspaceBillingAccount.findUniqueOrThrow({ where: { id: account.id }, include: { plan: true } });
       }
+    }
+
+    const planTokenLimit = account.plan.key === "free" ? Math.max(0, account.plan.monthlyTokenLimit ?? 0) : 0;
+    const existingPolicy = await tx.usagePolicy.findUnique({ where: { workspaceId } });
+    if (!existingPolicy && planTokenLimit > 0) {
+      await tx.usagePolicy.create({
+        data: {
+          workspaceId,
+          dailyMessageLimit: 0,
+          monthlyMessageLimit: 0,
+          dailyTokenLimit: 0,
+          monthlyTokenLimit: planTokenLimit,
+          planManaged: true,
+        },
+      });
+    } else if (existingPolicy?.planManaged) {
+      await tx.usagePolicy.update({
+        where: { workspaceId },
+        data: {
+          dailyMessageLimit: 0,
+          monthlyMessageLimit: 0,
+          dailyTokenLimit: 0,
+          monthlyTokenLimit: planTokenLimit,
+          planManaged: account.plan.key === "free" && planTokenLimit > 0,
+        },
+      });
     }
 
     const initialGrantKey = "initial-grant:" + account.id;
