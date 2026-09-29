@@ -27,7 +27,9 @@ export async function POST(req:Request,{params}:Params){
       const secret=bot.webhookSecretEncrypted?decryptSecret(bot.webhookSecretEncrypted):Buffer.from(randomBytes(24)).toString("hex");
       if(!bot.webhookSecretEncrypted) await db.telegramBot.update({where:{id:bot.id},data:{webhookSecretEncrypted:encryptSecret(secret)}});
       const publicOrigin=(process.env.APP_PUBLIC_URL||new URL(req.url).origin).replace(/\/$/,"");
-      await setWebhook(token,publicOrigin+"/api/telegram/webhook/"+bot.id,secret);
+      const webhookUrl=publicOrigin+"/api/telegram/webhook/"+bot.id;
+      await setWebhook(token,webhookUrl,secret);
+      await verifyWebhook(token,webhookUrl);
     }else{
       await deleteWebhook(token);
     }
