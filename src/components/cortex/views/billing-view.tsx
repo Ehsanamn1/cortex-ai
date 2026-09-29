@@ -58,6 +58,7 @@ export function BillingView(){
   const pending=data.topUpRequests.filter(x=>x.status==="pending").length;
   const needsPlan = plan.monthlyCredits > 0 && data.account.balanceCredits <= 0;
   const lowBalance = !needsPlan && plan.monthlyCredits > 0 && balancePct <= 20;
+  const trialTokenLimit = Number(plan.monthlyTokenLimit ?? 0);
 
   const modelUsage = data.usage30Days.byModel ?? [];
   const maxModelTokens = Math.max(...modelUsage.map((usageItem) => usageItem.tokens), 1);
@@ -134,7 +135,7 @@ export function BillingView(){
     </section>
 
     <div className="grid gap-3 md:grid-cols-3">
-      <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">پلن</span><CreditCard className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{plan.name}</p><p className="mt-1 text-xs text-muted-foreground">{plan.monthlyCredits?formatCountCompact(plan.monthlyCredits)+" اعتبار ماهانه":"اعتبار سفارشی"}</p></CardContent></Card>
+      <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">پلن</span><CreditCard className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{plan.name}</p><p className="mt-1 text-xs text-muted-foreground">{plan.monthlyCredits?formatCountCompact(plan.monthlyCredits)+" اعتبار ماهانه":"اعتبار سفارشی"}{trialTokenLimit > 0 ? " · " + formatCountCompact(trialTokenLimit) + " توکن سقف ماهانه" : ""}</p></CardContent></Card>
       <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">مصرف توکن</span><Activity className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{formatCountCompact(data.usage30Days.tokens)}</p><p className="mt-1 text-xs text-muted-foreground">۳۰ روز اخیر</p></CardContent></Card>
       <Card className="cortex-panel rounded-2xl"><CardContent className="p-4"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">پایان چرخه</span><CircleDollarSign className="size-4 text-primary"/></div><p className="mt-3 text-lg font-bold">{new Date(data.account.periodEnd).toLocaleDateString("fa-IR")}</p><p className="mt-1 text-xs text-muted-foreground">{data.account.enforcementEnabled?"کنترل اعتبار فعال":"حالت آزمایشی"}</p></CardContent></Card>
     </div>
