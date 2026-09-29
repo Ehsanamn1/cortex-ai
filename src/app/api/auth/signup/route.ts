@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { readJson } from "@/lib/server/http";
 import { hashPasswordWithDb, publicUser, sessionCookieHeader, signSessionToken } from "@/lib/server/auth";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { activateFreePlan } from "@/lib/server/billing";
 
 interface SignupBody { name?: unknown; email?: unknown; password?: unknown; }
 export const dynamic = "force-dynamic";
@@ -38,6 +39,8 @@ export async function POST(req: Request) {
       });
       return { user, workspace };
     });
+
+    await activateFreePlan(workspace.id);
 
     const token = signSessionToken(user.id);
     return response({
