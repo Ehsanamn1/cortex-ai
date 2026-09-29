@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, toErrorResponse } from "@/lib/server/http";
 import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
 import { decryptSecret, encryptSecret } from "@/lib/server/secrets";
-import { configureBotProfile, getBotInfo, setWebhook, deleteWebhook } from "@/lib/telegram/service";
+import { configureBotProfile, getBotInfo, setWebhook, verifyWebhook, deleteWebhook } from "@/lib/telegram/service";
 import { audit } from "@/lib/server/audit";
 import { randomBytes } from "@/lib/server/random";
 
