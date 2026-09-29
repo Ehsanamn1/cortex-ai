@@ -16,8 +16,8 @@ export const CORTEX_UI_CONFIG = {
     maxKnowledgeUploadMb: 20,
   },
   navigation: [
-    { view: "billing" as CortexView, label: "پلن و اعتبار", mobile: true },
     { view: "dashboard" as CortexView, label: "داشبورد", mobile: true },
+    { view: "billing" as CortexView, label: "پلن و اعتبار", mobile: true },
     { view: "agents" as CortexView, label: "ایجنت‌ها", mobile: true },
     { view: "knowledge" as CortexView, label: "پایگاه دانش", mobile: false },
     { view: "conversations" as CortexView, label: "گفتگوها", mobile: false },
