@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 type Section =
   | "overview" | "users" | "workspaces" | "agents" | "knowledge" | "conversations"
-  | "telegram" | "providers" | "workflows" | "executions" | "audit" | "plugins"
+  | "telegram" | "workflows" | "executions" | "audit" | "plugins"
   | "plans" | "models" | "accounts" | "charges" | "invoices" | "topups" | "systemProviders" | "settings";
 
 const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof LayoutDashboard }> = [
@@ -27,8 +27,7 @@ const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof 
   { id: "knowledge", label: "دانش", group: "AI", icon: Database },
   { id: "conversations", label: "گفتگوها", group: "AI", icon: MessageSquare },
   { id: "telegram", label: "بات‌های تلگرام", group: "اتصال‌ها", icon: Send },
-  { id: "providers", label: "اتصال‌های قدیمی", group: "اتصال‌ها", icon: Plug },
-  { id: "systemProviders", label: "AI زیرساخت", group: "اتصال‌ها", icon: Server },
+  { id: "systemProviders", label: "Provider Registry", group: "اتصال‌ها", icon: Server },
   { id: "workflows", label: "Workflowها", group: "عملیات", icon: Workflow },
   { id: "executions", label: "Executionها", group: "عملیات", icon: Activity },
   { id: "audit", label: "Audit Log", group: "امنیت", icon: History },
@@ -350,15 +349,22 @@ function SystemProvidersPanel() {
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["cc-system-providers"],
-    queryFn: () => jsonFetch<{ providers: any[] }>("/api/control-center/providers"),
+    queryFn: () => jsonFetch<{ providers: any[]; trial: any }>("/api/control-center/providers"),
     staleTime: 5_000,
   });
+  const catalogQ = useQuery({
+    queryKey: ["cc-trial-catalog"],
+    queryFn: () => jsonFetch<any>("/api/control-center/billing"),
+    staleTime: 10_000,
+  });
   const [editing, setEditing] = useState<string | null>(null);
+  const [trialProviderId, setTrialProviderId] = useState("");
+  const [trialModelId, setTrialModelId] = useState("");
+
   const save = useMutation({
-    mutationFn: async ({ mode, body }: { mode: "create" | "update" | "test"; body: Record<string, unknown> }) => {
-      const id = typeof body.id === "string" ? body.id : "";
+    mutationFn: async ({ mode, body }: { mode: "create" | "update" | "test" | "configure_trial"; body: Record<string, unknown> }) => {
       const response = await fetch("/api/control-center/providers", {
-        method: mode === "update" || mode === "test" ? (mode === "test" ? "POST" : "PATCH") : "POST",
+        method: mode === "update" ? "PATCH" : "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(mode === "update" ? body : { ...body, action: mode }),
@@ -375,45 +381,86 @@ function SystemProvidersPanel() {
       return payload.data ?? payload;
     },
     onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ["cc-system-providers"] });
-      qc.invalidateQueries({ queryKey: ["cc-billing"] });
-      toast.success(vars.mode === "test" ? "تست Provider انجام شد." : "Provider ذخیره شد.");
+      void qc.invalidateQueries({ queryKey: ["cc-system-providers"] });
+      void qc.invalidateQueries({ queryKey: ["cc-billing"] });
+      if (vars.mode === "test") toast.success("تست اتصال انجام شد.");
+      else if (vars.mode === "configure_trial") toast.success("مسیر Trial ذخیره و تست شد.");
+      else toast.success("Provider ذخیره شد.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  if (q.isPending) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">در حال بارگذاری زیرساخت AI…</CardContent></Card>;
+
+  if (q.isPending) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">در حال بارگذاری زیرساخت…</CardContent></Card>;
   if (q.isError) return <Card className="border-destructive/20"><CardContent className="p-8 text-center text-sm text-destructive">{q.error.message}</CardContent></Card>;
+
   const providers = q.data?.providers ?? [];
-  return <div className="space-y-4">
-    <section className="grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
-      <Card className="border-[#d8ddcf] bg-[#f8faf4]">
-        <CardHeader><CardTitle className="text-sm">Registry تأمین هوش</CardTitle><p className="text-[10px] leading-5 text-muted-foreground">هر Provider فقط یک بار اینجا تعریف می‌شود. مدل‌های Cortex بعداً به همین Provider متصل می‌شوند؛ API Key هیچ‌وقت به کاربر نهایی ارسال نمی‌شود.</p></CardHeader>
-        <CardContent><ProviderEditor onSave={(body) => save.mutate({ mode: "create", body })} pending={save.isPending}/></CardContent>
+  const models = catalogQ.data?.models ?? [];
+  const trial = q.data?.trial;
+  const activeProviderId = trialProviderId || trial?.provider?.id || providers.find((p: any) => p.isTrialProvider)?.id || "";
+  const activeModelId = trialModelId || trial?.model?.id || models.find((m: any) => m.trialDefault)?.id || "";
+
+  return <div className="space-y-5">
+    <section className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
+      <Card className={cn("overflow-hidden border-[#37422f] bg-[#141914] text-[#e9eadf]", trial?.ready && "border-[#b7d65c]/55")}>
+        <CardHeader className="border-b border-[#2a3324]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[9px] font-bold tracking-[.22em] text-[#b8d85b]">TRIAL ROUTE</p>
+              <CardTitle className="mt-1 text-base text-[#f0f1e8]">مسیر پیش‌فرض نسخه آزمایشی</CardTitle>
+              <p className="mt-1 text-[10px] leading-5 text-[#929b8c]">تمام حساب‌های بدون پلن از این Model و Provider تغذیه می‌شوند. اعتبار مصرفی از کیف پول پلن «{trial?.planName ?? "آزمایشی"}» کم می‌شود.</p>
+            </div>
+            <span className={cn("border px-2.5 py-1 text-[9px] font-bold", trial?.ready ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" : "border-amber-400/20 bg-amber-400/10 text-amber-200")}>{trial?.ready ? "READY" : "NEEDS CONFIG"}</span>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <div className="space-y-2">
+            <label className="text-[10px] font-semibold text-[#aeb7a6]">Provider منبع Trial</label>
+            <select className="h-10 w-full border border-[#394533] bg-[#0f120e] px-3 text-xs text-[#ecefe6] outline-none focus:border-[#b8d85b]" value={activeProviderId} onChange={e=>setTrialProviderId(e.target.value)}>
+              <option value="">انتخاب Provider</option>
+              {providers.map((p:any)=><option key={p.id} value={p.id}>{p.displayName} · {p.providerName}</option>)}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-semibold text-[#aeb7a6]">مدل پیش‌فرض Trial</label>
+            <select className="h-10 w-full border border-[#394533] bg-[#0f120e] px-3 text-xs text-[#ecefe6] outline-none focus:border-[#b8d85b]" value={activeModelId} onChange={e=>setTrialModelId(e.target.value)}>
+              <option value="">انتخاب مدل</option>
+              {models.map((m:any)=><option key={m.id} value={m.id}>{m.displayName} · {m.provider}</option>)}
+            </select>
+          </div>
+          <Button className="h-10 border border-[#b8d85b] bg-[#b8d85b] px-4 text-[#17200e] hover:bg-[#c7e36b]" disabled={save.isPending || catalogQ.isPending || !activeProviderId || !activeModelId} onClick={()=>save.mutate({mode:"configure_trial",body:{providerId:activeProviderId,modelCatalogId:activeModelId}})}>
+            {save.isPending ? "در حال اتصال…" : "قفل‌کردن مسیر Trial"}
+          </Button>
+          <div className="md:col-span-3 grid gap-2 sm:grid-cols-3 border-t border-[#2a3324] pt-3">
+            <div><p className="text-[9px] text-[#7f897a]">اعتبار شروع</p><p className="mt-1 text-sm font-black text-[#f1f3e9]">{Number(trial?.credits ?? 0).toLocaleString("fa-IR")} credit</p></div>
+            <div><p className="text-[9px] text-[#7f897a]">Provider فعال</p><p className="mt-1 truncate text-xs text-[#d3d8ca]">{trial?.provider?.displayName ?? "—"}</p></div>
+            <div><p className="text-[9px] text-[#7f897a]">Model فعال</p><p className="mt-1 truncate text-xs text-[#d3d8ca]">{trial?.model?.displayName ?? "—"}</p></div>
+          </div>
+        </CardContent>
       </Card>
-      <Card className="border-[#d8ddcf] bg-white">
-        <CardHeader><CardTitle className="text-sm">منطق جریان</CardTitle></CardHeader>
-        <CardContent className="space-y-3 text-xs leading-7 text-muted-foreground">
-          <div className="flex gap-3"><span className="grid size-7 shrink-0 place-items-center bg-[#dff2a7] text-[#273018]">۱</span><p>Provider را تعریف می‌کنی: Base URL، Protocol و API Key.</p></div>
-          <div className="flex gap-3"><span className="grid size-7 shrink-0 place-items-center bg-[#dff2a7] text-[#273018]">۲</span><p>در کاتالوگ مدل، مدل را به Provider وصل می‌کنی.</p></div>
-          <div className="flex gap-3"><span className="grid size-7 shrink-0 place-items-center bg-[#dff2a7] text-[#273018]">۳</span><p>دسترسی مدل به Free/Launch/Growth/Scale/Enterprise را تعیین می‌کنی.</p></div>
-          <div className="flex gap-3"><span className="grid size-7 shrink-0 place-items-center bg-[#dff2a7] text-[#273018]">۴</span><p>برای Trial یک مدل را Default می‌کنی؛ همه Workspaceهای آزمایشی از همان مسیر تغذیه می‌شوند.</p></div>
+
+      <Card className="border-[#d6ddce] bg-[#f7f9f3]">
+        <CardHeader><CardTitle className="text-sm text-[#1b2218]">قرارداد داخلی Cortex</CardTitle><p className="text-[10px] leading-5 text-[#646d60]">کاربر فقط نام مدل Cortex را می‌بیند؛ کلید و Base URL فقط اینجا ذخیره و سمت سرور مصرف می‌شوند.</p></CardHeader>
+        <CardContent className="space-y-2 text-[10px] leading-6 text-[#556052]">
+          <div className="border-l-2 border-[#b8d85b] pl-3">Provider Registry → Model Catalog → Plan Access → Runtime → Billing</div>
+          <div className="border-l-2 border-[#b8d85b] pl-3">Trial route همیشه یک Provider و یک Model صریح دارد.</div>
+          <div className="border-l-2 border-[#b8d85b] pl-3">با تغییر Provider/Model، اتصال، دسترسی Free و Default بودن در یک تراکنش تنظیم می‌شوند.</div>
         </CardContent>
       </Card>
     </section>
 
-    <div className="grid gap-3">
-      {providers.map((provider) => <Card key={provider.id} className={cn("border-border", provider.isTrialProvider && "border-[#b8d75b]/60 shadow-[0_12px_40px_rgba(121,146,47,.10)]")}>
+    <section className="grid gap-3">
+      {providers.map((provider) => <Card key={provider.id} className={cn("border-[#2c3527] bg-[#151a14] text-[#e9eadf]", provider.isTrialProvider && "border-[#b8d85b]/50 shadow-[0_14px_42px_rgba(128,154,50,.10)]")}>
         <CardContent className="p-4">
           {editing === provider.id
             ? <ProviderEditor initial={provider} onSave={(body) => save.mutate({ mode: "update", body: { ...body, id: provider.id } })} pending={save.isPending} />
             : <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-                <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-black">{provider.displayName}</p>{provider.isTrialProvider && <span className="rounded-full bg-[#e9f4c6] px-2 py-1 text-[9px] font-bold text-[#506422]">Provider پیش‌فرض Trial</span>}{provider.enabled ? <span className="text-[9px] text-emerald-700">فعال</span> : <span className="text-[9px] text-rose-700">غیرفعال</span>}</div><p className="mt-1 text-[10px] text-muted-foreground">{provider.providerName} · {provider.protocol} · <span dir="ltr">{provider.baseUrl}</span></p><p className="mt-1 text-[10px] text-muted-foreground">{provider.configured ? "کلید تنظیم شده" : "بدون API Key"} · {provider.modelsCount ?? 0} مدل متصل</p></div>
-                <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => provider.testModelId && save.mutate({ mode: "test", body: { id: provider.id, modelId: provider.testModelId } })} disabled={save.isPending || !provider.testModelId} title={provider.testModelId ? "تست مدل متصل" : "ابتدا یک مدل به این Provider وصل کن"}><Gauge className="size-3.5"/>{provider.testModelId ? "تست" : "بدون مدل برای تست"}</Button><Button size="sm" variant="outline" onClick={() => setEditing(provider.id)}><Pencil className="size-3.5"/>ویرایش</Button></div>
+                <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-black">{provider.displayName}</p>{provider.isTrialProvider && <span className="border border-[#b8d85b]/25 bg-[#b8d85b]/10 px-2 py-1 text-[9px] font-bold text-[#c5e46d]">Trial source</span>}{provider.enabled ? <span className="text-[9px] text-emerald-300">فعال</span> : <span className="text-[9px] text-rose-300">غیرفعال</span>}</div><p className="mt-1 text-[10px] text-[#9aa492]">{provider.providerName} · {provider.protocol} · <span dir="ltr">{provider.baseUrl}</span></p><p className="mt-1 text-[10px] text-[#778274]">{provider.configured ? "کلید تنظیم شده" : "بدون API Key"} · {provider.modelsCount ?? 0} مدل متصل</p></div>
+                <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => provider.testModelId && save.mutate({ mode: "test", body: { id: provider.id, modelId: provider.testModelId } })} disabled={save.isPending || !provider.testModelId}><Gauge className="size-3.5"/>{provider.testModelId ? "تست اتصال" : "بدون مدل"}</Button><Button size="sm" variant="outline" onClick={() => setEditing(provider.id)}><Pencil className="size-3.5"/>ویرایش</Button></div>
               </div>}
         </CardContent>
       </Card>)}
-      {!providers.length && <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">هنوز Provider سراسری ثبت نشده است.</CardContent></Card>}
-    </div>
+      {!providers.length && <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">هنوز Provider ثبت نشده است.</CardContent></Card>}
+    </section>
   </div>;
 }
 
