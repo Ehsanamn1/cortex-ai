@@ -43,7 +43,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Cortex/DashStack design system: light operational workspace by default. */
+/* Cortex design system: a restrained operating surface, not a template dashboard. */
 :root {
   --radius: 0.55rem;
   --background: #f2f2e9;
