@@ -121,6 +121,19 @@ export async function setWebhook(token: string, url: string, secret: string) {
   });
 }
 
+export async function getWebhookInfo(token: string) {
+  return telegramCall(token, 'getWebhookInfo', {});
+}
+
+export async function verifyWebhook(token: string, expectedUrl: string) {
+  const info = await getWebhookInfo(token) as { url?: string; pending_update_count?: number; last_error_message?: string | null } | null;
+  const actualUrl = typeof info?.url === 'string' ? info.url : '';
+  if (actualUrl !== expectedUrl) {
+    throw new Error('Webhook تلگرام تأیید نشد. آدرس ثبت‌شده با آدرس Cortex یکسان نیست.');
+  }
+  return info;
+}
+
 export async function deleteWebhook(token: string) {
   return telegramCall(token, 'deleteWebhook', { drop_pending_updates: false });
 }
