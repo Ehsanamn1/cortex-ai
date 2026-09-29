@@ -9,6 +9,7 @@ export async function POST(req: Request) {
     rateLimit(req, "admin-access-exchange", 20, 60_000);
     const body = await req.json().catch(() => ({})) as { token?: unknown };
     const token = typeof body.token === "string" ? body.token.trim() : "";
+    if (token.length < 32) return applyCors(jsonError("کلید دسترسی خصوصی نامعتبر است.", 401), req.headers.get("origin"));
     if (!verifyAdminAccessToken(token)) {
       return applyCors(jsonError("لینک مدیریتی معتبر نیست یا منقضی شده است.", 401), req.headers.get("origin"));
     }
