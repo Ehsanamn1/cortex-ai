@@ -228,18 +228,21 @@ async function loadCatalogForAgent(agentModelKey: string | null | undefined) {
   });
 }
 
-async function resolveProviderFromCatalog(model: {
-  id: string;
-  provider: string;
-  modelId: string;
-  systemProvider: Awaited<ReturnType<typeof db.systemProviderConfig.findUnique>>;
-}) {
+async function resolveProviderFromCatalog(
+  model: {
+    id: string;
+    provider: string;
+    modelId: string;
+    systemProvider: Awaited<ReturnType<typeof db.systemProviderConfig.findUnique>>;
+  },
+  preferTrialProvider = false,
+) {
   if (model.systemProvider?.enabled) {
     return buildSystemProviderForModel(model.systemProvider, model.modelId);
   }
   const byProvider = await db.systemProviderConfig.findFirst({
     where: { providerName: model.provider, enabled: true },
-    orderBy: [{ isTrialProvider: "desc" }, { updatedAt: "desc" }],
+    orderBy: [{ isTrialProvider: preferTrialProvider ? "desc" : "asc" }, { updatedAt: "desc" }],
   });
   if (byProvider) return buildSystemProviderForModel(byProvider, model.modelId);
 
@@ -304,7 +307,7 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
     );
   }
 
-  const provider = await resolveProviderFromCatalog(catalog);
+  const provider = await resolveProviderFromCatalog(catalog, account.plan.key === "free");
   if (!provider || !provider.isConfigured()) {
     throw Object.assign(
       new Error("Provider این مدل از پنل مدیر پیکربندی نشده یا کلید آن فعال نیست."),
