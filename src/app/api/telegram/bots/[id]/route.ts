@@ -4,7 +4,7 @@ import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/s
 import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
 import { encryptSecret, decryptSecret } from "@/lib/server/secrets";
 import { audit } from "@/lib/server/audit";
-import { deleteWebhook, getBotInfo, setWebhook } from "@/lib/telegram/service";
+import { deleteWebhook, getBotInfo, setWebhook, verifyWebhook } from "@/lib/telegram/service";
 import { loadAgentForSession } from "@/lib/server/access";
 
 export const dynamic = "force-dynamic";
