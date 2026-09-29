@@ -67,18 +67,21 @@ export async function POST(req: Request, { params }: Params) {
     const estimatedPromptTokens =
       history.reduce((sum, item) => sum + estimateTokens(item.content), 0) +
       estimateTokens(content);
+    const ragExpansionReserve = process.env.RAG_QUERY_EXPANSION?.trim().toLowerCase() === "true"
+      ? RAG_QUERY_EXPANSION_RESERVE_TOKENS
+      : 0;
 
     reservationId = await reserveUsageWithinLimits(
       agent.workspaceId,
       1,
-      estimatedPromptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS,
+      estimatedPromptTokens + ragExpansionReserve,
       agent.maxTokens,
     );
 
     const billingReservation = await reserveBillingForAgentRequest({
       workspaceId: agent.workspaceId,
       agentId: agent.id,
-      inputTokens: estimatedPromptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS,
+      inputTokens: estimatedPromptTokens + ragExpansionReserve,
       maxOutputTokens: agent.maxTokens,
     });
     billingReservationId = billingReservation.reservationId;
