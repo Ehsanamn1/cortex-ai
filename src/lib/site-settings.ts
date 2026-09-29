@@ -38,7 +38,17 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "feature.createAgentCta": "true",
 };
 
+const SITE_SETTINGS_CACHE_MS = 30_000;
+let siteSettingsCache: { at: number; value: Record<string, string> } | null = null;
+
+export function invalidatePublicSiteSettings() {
+  siteSettingsCache = null;
+}
+
 export async function getPublicSiteSettings(): Promise<Record<string, string>> {
+  if (siteSettingsCache && Date.now() - siteSettingsCache.at < SITE_SETTINGS_CACHE_MS) {
+    return { ...siteSettingsCache.value };
+  }
   const values: Record<string, string> = { ...DEFAULT_SITE_SETTINGS };
   try {
     const rows = await db.siteSetting.findMany({
@@ -60,5 +70,6 @@ export async function getPublicSiteSettings(): Promise<Record<string, string>> {
   values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
   values["nav.admin.enabled"] = "false";
   values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
+  siteSettingsCache = { at: Date.now(), value: { ...values } };
   return values;
 }
