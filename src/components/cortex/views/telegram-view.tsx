@@ -151,7 +151,6 @@ export function TelegramView() {
 function CreateBotForm({ agents, workspaceId, pending, onSubmit }: { agents: AgentDto[]; workspaceId?: string; pending: boolean; onSubmit: (value: { workspaceId?: string; agentId: string; name: string; token: string }) => void }) {
   const [name, setName] = useState("ربات Cortex");
   const [token, setToken] = useState("");
-  const [section, setSection] = useState<BotSection>(initialSection);
   const [agentId, setAgentId] = useState("");
   const resolvedAgentId = agentId || agents[0]?.id || "";
 
@@ -171,6 +170,7 @@ function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }
   const [name, setName] = useState(bot.name);
   const [agentId, setAgentId] = useState(bot.agentId);
   const [token, setToken] = useState("");
+  const [section, setSection] = useState<BotSection>(initialSection);
   const reconnect = useMutation({
     mutationFn: () => api.reconnectTelegramBot(bot.id),
     onSuccess: ({ bot: updated }) => { onUpdated(updated); queryClient.invalidateQueries({ queryKey: ["telegram-bots"] }); toast.success("اتصال Telegram تست و تازه‌سازی شد."); },
@@ -289,7 +289,7 @@ function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }
                   {usersQuery.isLoading ? <p className="rounded-xl border border-dashed p-4 text-center text-[11px] text-muted-foreground">در حال بارگذاری کاربران…</p> : visibleBotUsers.map((user) => (
                     <TelegramUserMonitorCard key={user.id} botId={bot.id} user={user} onChanged={() => void usersQuery.refetch()} />
                   ))}
-                  {filteredBotUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">کاربری با این فیلتر پیدا نشد.</p>}
+                  {visibleBotUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">کاربری با این فیلتر پیدا نشد.</p>}
                 </div>
               </div>
             </CardContent>
