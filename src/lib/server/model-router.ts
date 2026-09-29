@@ -237,8 +237,10 @@ async function resolveProviderFromCatalog(
   },
   preferTrialProvider = false,
 ) {
-  if (model.systemProvider?.enabled) {
-    return buildSystemProviderForModel(model.systemProvider, model.modelId);
+  if (model.systemProvider) {
+    return model.systemProvider.enabled
+      ? buildSystemProviderForModel(model.systemProvider, model.modelId)
+      : null;
   }
   const byProvider = await db.systemProviderConfig.findFirst({
     where: { providerName: model.provider, enabled: true },
@@ -279,7 +281,13 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
 
 
   if (!catalog) {
-    const fallback = findManagedModel(account.plan.key === "free" ? "launch-lite" : agent?.modelKey) ?? getManagedModelCatalog()[0];
+    if (account.plan.key === "free") {
+      throw Object.assign(
+        new Error("مسیر Trial در پیشخوان مدیر هنوز پیکربندی نشده است."),
+        { status: 503, code: "trial_route_unconfigured" },
+      );
+    }
+    const fallback = findManagedModel(agent?.modelKey) ?? getManagedModelCatalog()[0];
     const envProvider = new OpenRouterProvider({ model: fallback.providerModelId });
     const provider = envProvider.isConfigured() ? envProvider : null;
     if (!provider) {

@@ -381,6 +381,7 @@ export async function getBillingSnapshot(workspaceId: string) {
   const catalog = await db.modelCatalog.findMany({
     where: { active: true },
     orderBy: [{ provider: "asc" }, { displayName: "asc" }],
+    include: { systemProvider: true },
     take: 100,
   });
   const access = await db.planModelAccess.findMany({ where: { planId: account.planId, enabled: true } });
@@ -471,8 +472,10 @@ export async function getBillingSnapshot(workspaceId: string) {
         commercialAvailable: item.commercialAvailable,
         enabledForPlan: Boolean(
           item.active &&
+          item.systemProvider?.enabled &&
+          (item.systemProvider.authMode === "none" || Boolean(item.systemProvider.apiKeyEncrypted)) &&
           (account.plan.key === "free"
-            ? item.trialEnabled && Boolean(accessMap.get(item.id)?.enabled ?? false)
+            ? item.trialEnabled && item.trialDefault && Boolean(accessMap.get(item.id)?.enabled ?? false)
             : item.commercialAvailable && Boolean(accessMap.get(item.id)?.enabled ?? (managed ? managed.planKeys.includes(account.plan.key as any) : false)))
         ),
         trialEnabled: item.trialEnabled,

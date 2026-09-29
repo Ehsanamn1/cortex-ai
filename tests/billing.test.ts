@@ -33,6 +33,7 @@ describe("Cortex commercial billing", () => {
       "enterprise",
     ]);
     expect(DEFAULT_BILLING_PLANS[0].priceToman).toBe(0);
+    expect(DEFAULT_BILLING_PLANS[0]).toMatchObject({ name: "آزمایشی", monthlyCredits: 1000 });
     expect(DEFAULT_BILLING_PLANS[1]).toMatchObject({ name: "Launch", priceToman: 3900000, monthlyCredits: 15000, overageCreditPriceToman: 260 });
     expect(DEFAULT_BILLING_PLANS[2]).toMatchObject({ name: "Growth", priceToman: 12900000, monthlyCredits: 80000, overageCreditPriceToman: 220 });
     expect(DEFAULT_BILLING_PLANS[3]).toMatchObject({ name: "Scale", priceToman: 24900000, monthlyCredits: 180000, overageCreditPriceToman: 190 });

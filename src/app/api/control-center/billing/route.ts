@@ -117,8 +117,14 @@ export async function POST(req: Request) {
       const speedTier = textValue(body.speedTier, 40) || "balanced";
       const routeKey = textValue(body.routeKey, 100)?.toLowerCase() || null;
       const systemProviderId = textValue(body.systemProviderId, 120) || null;
-      if (systemProviderId && !(await db.systemProviderConfig.findUnique({ where: { id: systemProviderId } }))) {
+      const boundProvider = systemProviderId
+        ? await db.systemProviderConfig.findUnique({ where: { id: systemProviderId }, select: { id: true, enabled: true, apiKeyEncrypted: true, authMode: true } })
+        : null;
+      if (systemProviderId && !boundProvider) {
         return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
+      }
+      if (body.trialDefault === true && (!boundProvider?.enabled || (!boundProvider.apiKeyEncrypted && boundProvider.authMode !== "none"))) {
+        return applyCors(jsonError("مدل Trial Default باید به یک Provider فعال و پیکربندی‌شده متصل باشد.", 400), req.headers.get("origin"));
       }
       if (routeKey && !/^[a-z0-9][a-z0-9._-]{1,99}$/.test(routeKey)) {
         return applyCors(jsonError("Route Key مدل معتبر نیست.", 400), req.headers.get("origin"));
@@ -198,9 +204,13 @@ export async function PATCH(req: Request) {
         if (value && !/^[a-z0-9][a-z0-9._-]{1,99}$/.test(value)) return applyCors(jsonError("Route Key مدل معتبر نیست.", 400), req.headers.get("origin"));
         data.routeKey = value || null;
       }
+      let updatedProvider: { id: string; enabled: boolean; apiKeyEncrypted: string | null; authMode: string } | null = null;
       if (body.systemProviderId !== undefined) {
         const providerId = textValue(body.systemProviderId, 120);
-        if (providerId && !(await db.systemProviderConfig.findUnique({ where: { id: providerId }, select: { id: true } }))) return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
+        updatedProvider = providerId
+          ? await db.systemProviderConfig.findUnique({ where: { id: providerId }, select: { id: true, enabled: true, apiKeyEncrypted: true, authMode: true } })
+          : null;
+        if (providerId && !updatedProvider) return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
         data.systemProviderId = providerId || null;
       }
       if (body.displayName !== undefined) data.displayName = textValue(body.displayName, 180) || "Unnamed model";
@@ -221,6 +231,13 @@ export async function PATCH(req: Request) {
       }
       let model;
       if (body.trialDefault === true) {
+        if (body.systemProviderId === undefined) {
+          const current = await db.modelCatalog.findUnique({ where: { id }, include: { systemProvider: { select: { id: true, enabled: true, apiKeyEncrypted: true, authMode: true } } } });
+          updatedProvider = current?.systemProvider ?? null;
+        }
+        if (!updatedProvider?.enabled || (!updatedProvider.apiKeyEncrypted && updatedProvider.authMode !== "none")) {
+          return applyCors(jsonError("برای Trial Default ابتدا یک Provider فعال و پیکربندی‌شده انتخاب کن.", 400), req.headers.get("origin"));
+        }
         model = await db.$transaction(async (tx) => {
           await tx.modelCatalog.updateMany({ where: { trialDefault: true, id: { not: id } }, data: { trialDefault: false } });
           return tx.modelCatalog.update({ where: { id }, data: { ...data, trialEnabled: true, trialDefault: true } });
