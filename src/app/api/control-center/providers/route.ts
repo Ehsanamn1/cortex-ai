@@ -26,6 +26,9 @@ function validateConfig(body: Record<string, unknown>) {
     throw Object.assign(new Error("اطلاعات Provider کامل یا معتبر نیست."), { status: 400 });
   }
   validateProviderBaseUrl(baseUrl);
+  if (protocol === "openrouter" && authMode !== "bearer") {
+    throw Object.assign(new Error("OpenRouter باید با Bearer API Key پیکربندی شود."), { status: 400 });
+  }
   if (protocol === "openrouter" && !/^https:\/\//i.test(baseUrl)) {
     throw Object.assign(new Error("Base URL برای OpenRouter باید HTTPS باشد."), { status: 400 });
   }
