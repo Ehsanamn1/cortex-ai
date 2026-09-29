@@ -280,8 +280,9 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
 
   if (!catalog) {
     const fallback = findManagedModel(account.plan.key === "free" ? "launch-lite" : agent?.modelKey) ?? getManagedModelCatalog()[0];
-    const provider = new OpenRouterProvider({ model: fallback.providerModelId });
-    if (!provider.isConfigured()) {
+    const envProvider = new OpenRouterProvider({ model: fallback.providerModelId });
+    const provider = envProvider.isConfigured() ? envProvider : null;
+    if (!provider) {
       throw Object.assign(new Error("هیچ Provider مدیریتی برای این مدل فعال نیست."), { status: 503, code: "managed_provider_unavailable" });
     }
     return { model: fallback, provider, planKey: account.plan.key };
