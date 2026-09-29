@@ -1407,3 +1407,150 @@ html:not(.dark) .cortex-dashstack [data-slot="card"] { color: var(--card-foregro
     overflow-y: visible;
   }
 }
+
+
+/* Cortex independent visual language: editorial instrument panel, not template-SaaS. */
+:root {
+  --background: #efece2;
+  --foreground: #171b17;
+  --card: #f9f7f0;
+  --card-foreground: #171b17;
+  --popover: #fbfaf5;
+  --popover-foreground: #171b17;
+  --primary: #8cab3e;
+  --primary-foreground: #13170d;
+  --secondary: #e6e3d8;
+  --secondary-foreground: #273025;
+  --muted: #e6e3da;
+  --muted-foreground: #687065;
+  --accent: #dedbd0;
+  --accent-foreground: #171b17;
+  --border: #d5d1c4;
+  --input: #ccc8ba;
+  --ring: #8cab3e;
+  --sidebar: #151914;
+  --sidebar-foreground: #e8ebe2;
+  --sidebar-primary: #a7c75b;
+  --sidebar-primary-foreground: #11140d;
+  --sidebar-accent: #22281e;
+  --sidebar-accent-foreground: #dbe8b7;
+  --sidebar-border: #2a3026;
+  --sidebar-ring: #8cab3e;
+}
+
+body {
+  background-image: none !important;
+}
+
+.cortex-dashstack {
+  background: #efece2 !important;
+}
+
+.cortex-dashstack .cortex-panel,
+.cortex-dashstack [data-slot="card"] {
+  border-radius: 14px !important;
+  border-color: #d5d1c4 !important;
+  background: #f9f7f0 !important;
+  box-shadow: 0 1px 0 rgba(23,27,23,.035), 0 10px 28px rgba(23,27,23,.045) !important;
+}
+
+.cortex-dashstack .cortex-hero {
+  border-radius: 18px !important;
+  border: 1px solid #cec9ba !important;
+  background: #fbfaf5 !important;
+  box-shadow: 0 1px 0 rgba(23,27,23,.04), 0 18px 48px rgba(23,27,23,.06) !important;
+}
+
+.cortex-dashstack .cortex-action {
+  border-radius: 12px !important;
+  background: #f9f7f0 !important;
+  border-color: #d2cec2 !important;
+  box-shadow: none !important;
+}
+
+.cortex-dashstack .cortex-action::after {
+  display: none !important;
+}
+
+.cortex-dashstack .cortex-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px !important;
+  border-color: #c8d6a4 !important;
+  background: #edf4d9 !important;
+  color: #5f7d26 !important;
+  box-shadow: none !important;
+}
+
+.cortex-dashstack .cortex-kicker {
+  color: #5e6e49 !important;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace !important;
+  letter-spacing: .16em !important;
+}
+
+.cortex-dashstack .cortex-status-line {
+  background: #b9c49f !important;
+  height: 1px !important;
+}
+
+.cortex-dashstack .rounded-2xl,
+.cortex-dashstack .rounded-[30px],
+.cortex-dashstack .rounded-[28px] {
+  border-radius: 14px !important;
+}
+
+.cortex-dashstack button {
+  border-radius: 10px !important;
+}
+
+.cortex-dashstack input,
+.cortex-dashstack textarea,
+.cortex-dashstack select {
+  border-radius: 9px !important;
+  background: #fbfaf5 !important;
+}
+
+.cortex-dashstack section {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 260px;
+}
+
+.cortex-control-center {
+  background: #141712 !important;
+  color: #eef0e7 !important;
+}
+
+.cortex-control-center header,
+.cortex-control-center nav,
+.cortex-control-center [data-slot="card"] {
+  border-color: #31372d !important;
+}
+
+.cortex-control-center [data-slot="card"] {
+  background: #1a1f17 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.cortex-control-center button {
+  border-radius: 9px !important;
+}
+
+.cortex-control-center input,
+.cortex-control-center textarea,
+.cortex-control-center select {
+  border-radius: 8px !important;
+}
+
+@media (max-width: 640px) {
+  .cortex-dashstack .cortex-panel,
+  .cortex-dashstack [data-slot="card"] {
+    border-radius: 12px !important;
+  }
+  .cortex-dashstack .cortex-hero {
+    border-radius: 14px !important;
+  }
+  .cortex-dashstack section {
+    contain-intrinsic-size: 0 220px;
+  }
+}
