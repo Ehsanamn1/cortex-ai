@@ -126,6 +126,9 @@ export async function POST(req: Request) {
       if (systemProviderId && !providerConfig) {
         return applyCors(jsonError("Provider سیستم پیدا نشد.", 404), req.headers.get("origin"));
       }
+      if (isTrialDefault && (!providerConfig || !providerConfig.enabled || !providerConfig.isTrialProvider)) {
+        return applyCors(jsonError("Default Trial فقط می‌تواند به یک Provider فعال و علامت‌گذاری‌شده برای Trial متصل باشد.", 400), req.headers.get("origin"));
+      }
       const model = await db.$transaction(async (tx) => {
         if (isTrialDefault) {
           await tx.modelCatalog.updateMany({ where: { isTrialDefault: true }, data: { isTrialDefault: false } });
@@ -184,6 +187,9 @@ export async function PATCH(req: Request) {
       if (systemProviderId) {
         const providerConfig = await db.systemProviderConfig.findUnique({ where: { id: systemProviderId } });
         if (!providerConfig) return applyCors(jsonError("Provider سیستم پیدا نشد.", 404), req.headers.get("origin"));
+        if (isTrialDefault && (!providerConfig.enabled || !providerConfig.isTrialProvider)) {
+          return applyCors(jsonError("Default Trial فقط می‌تواند به یک Provider فعال و Trial متصل باشد.", 400), req.headers.get("origin"));
+        }
       }
 
       const data: Record<string, unknown> = {};
