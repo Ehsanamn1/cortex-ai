@@ -5,7 +5,7 @@ import { requireSession, assertWorkspaceAccess } from '@/lib/server/auth';
 import { encryptSecret } from '@/lib/server/secrets';
 import { audit } from '@/lib/server/audit';
 import { loadAgentForSession } from '@/lib/server/access';
-import { configureBotProfile, getBotInfo, setWebhook, deleteWebhook } from '@/lib/telegram/service';
+import { configureBotProfile, getBotInfo, setWebhook, verifyWebhook, deleteWebhook } from '@/lib/telegram/service';
 import { getTelegramBotProfile } from '@/lib/telegram/profile';
 import { getPlanFeatureLimits, planFeatureError } from '@/lib/server/plan-policy';
 
