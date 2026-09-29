@@ -199,13 +199,13 @@ export function BillingView(){
           const isCurrent=item.key===plan.key;
           const featured=item.key==="growth";
           const details:Record<string,{headline:string;features:string[]}>={
-            launch:{headline:"شروع هوشمندانه",features:["تا ۲ Agent","دانش محدود","مدل‌های سریع و اقتصادی","Telegram پایه"]},
-            growth:{headline:"پیشنهاد تیمی",features:["چندین Agent","دانش بیشتر","مدل‌های با کیفیت بالاتر","تحلیل مصرف دقیق","اولویت بالاتر"]},
-            scale:{headline:"قدرت واقعی اتوماسیون",features:["Agentهای بیشتر","مدل‌های قوی‌تر","چند Bot","گزارش پیشرفته","اولویت پاسخ بالا"]},
-            enterprise:{headline:"سطح سازمانی",features:["همه امکانات","مدل‌های خاص","سفارشی‌سازی و SLA","پشتیبانی اختصاصی"]},
+            launch:{headline:"برای شروع سریع و کم‌ریسک",features:["تا ۲ Agent","دانش محدود و کنترل‌شده","مدل‌های اقتصادی و سریع","اتصال پایه Telegram"]},
+            growth:{headline:"تعادل ایده‌آل برای تیم در حال رشد",features:["چندین Agent","پایگاه دانش گسترده‌تر","مدل‌های با کیفیت بالاتر","تحلیل دقیق مصرف و هزینه","اولویت پاسخ بالاتر"]},
+            scale:{headline:"برای اتوماسیون جدی و مصرف سنگین",features:["Agentهای بیشتر","مدل‌های قوی‌تر","چند Bot","گزارش‌های پیشرفته","اولویت پاسخ‌گویی بالا"]},
+            enterprise:{headline:"کنترل کامل برای سازمان",features:["تمام ظرفیت Cortex","مدل‌های اختصاصی","سفارشی‌سازی و SLA","پشتیبانی اختصاصی و قرارداد سازمانی"]},
           };
           const meta=details[item.key] ?? details.launch;
-          return <article key={item.id} className={cn("relative flex h-full flex-col overflow-hidden rounded-2xl border p-4 sm:p-5",featured?"border-primary/45 bg-primary/[.075] shadow-[0_24px_70px_rgba(59,130,255,.16)] lg:-translate-y-1":"border-border/65 bg-background/30")}>
+          return <article key={item.id} className={cn("relative flex h-full flex-col overflow-hidden rounded-2xl border p-4 sm:p-5",featured?"border-primary/45 bg-primary/[.075] shadow-[0_24px_70px_rgba(59,130,255,.16)]":"border-border/65 bg-background/30")}>
             {featured&&<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-violet-400 to-primary"/>}
             <div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-black">{item.name}</h3>{featured&&<Badge className="bg-primary text-[8px]">پیشنهاد ویژه</Badge>}{isCurrent&&<Badge variant="outline" className="border-primary/20 bg-primary/5 text-[8px] text-primary">پلن فعلی</Badge>}</div><p className="mt-1 text-[10px] font-semibold text-primary/90">{meta.headline}</p></div><WalletCards className="size-5 text-primary"/></div>
             <p className="mt-4 text-2xl font-black">{item.priceToman?formatTomanCompact(item.priceToman):"از ۳۵٬۰۰۰٬۰۰۰"}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.priceToman?"تومان / ماه":"تومان / ماه · توافقی"}</p>
