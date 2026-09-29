@@ -126,7 +126,7 @@ export const useCortexStore = create<CortexState>()((set) => ({
   },
 
   setAgentTab: (tab) => {
-    set({ agentTab });
+    set({ agentTab: tab });
     if (typeof window !== "undefined") {
       const state = useCortexStore.getState();
       const url = new URL(window.location.href);

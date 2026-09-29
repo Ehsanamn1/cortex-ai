@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       return applyCors(jsonError("رمز عبور باید بین ۸ تا ۱۲۸ کاراکتر باشد.", 400), req.headers.get("origin"));
     }
 
-    const tokenHash = hashPasswordResetToken(token);
+    const tokenHash = await hashPasswordResetToken(token);
     const reset = await db.passwordResetToken.findUnique({ where: { tokenHash } });
     if (!reset || reset.usedAt || reset.expiresAt <= new Date()) {
       return applyCors(jsonError("این لینک بازنشانی منقضی یا قبلاً استفاده شده است.", 400), req.headers.get("origin"));

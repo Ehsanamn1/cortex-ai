@@ -71,13 +71,6 @@ function ForgotPasswordDialog({ open, onOpenChange, defaultEmail }: { open: bool
   const [sent, setSent] = useState(false);
   const [devResetUrl, setDevResetUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open) {
-      setEmail(defaultEmail);
-      setSent(false);
-      setDevResetUrl(null);
-    }
-  }, [open, defaultEmail]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -216,7 +209,7 @@ function LoginForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
         {submitting && <Loader2 aria-hidden="true" className="animate-spin" />}
         {submitting ? "در حال ورود..." : "ورود به حساب"}
       </Button>
-      <ForgotPasswordDialog open={forgotOpen} onOpenChange={setForgotOpen} defaultEmail={form.getValues("email")} />
+      <ForgotPasswordDialog key={forgotOpen ? "open" : "closed"} open={forgotOpen} onOpenChange={setForgotOpen} defaultEmail={form.getValues("email")} />
     </form>
   );
 }
