@@ -3,7 +3,7 @@
 import { useId } from "react";
 import { cn } from "@/lib/utils";
 
-/** Minimal "cortex" mark — hexagonal circuit node with primary→secondary gradient. */
+/** Cortex mark — an operational node, intentionally flat and non-neon. */
 export function CortexMark({ className, size = 40 }: { className?: string; size?: number }) {
   const gradientId = useId();
   return (
@@ -17,8 +17,8 @@ export function CortexMark({ className, size = 40 }: { className?: string; size?
     >
       <defs>
         <linearGradient id={gradientId} x1="8" y1="5" x2="40" y2="42" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#3B82FF" />
-          <stop offset="1" stopColor="#8B5CF6" />
+          <stop stopColor="#B8D75B" />
+          <stop offset="1" stopColor="#48522F" />
         </linearGradient>
       </defs>
       <path
@@ -56,7 +56,7 @@ export function CortexLogo({
         <span className="text-lg font-bold tracking-tight text-foreground">
           Cortex <span className="text-primary">AI</span>
         </span>
-        {!compact && <span className="text-[11px] font-medium text-muted-foreground">محیط هوش و دانش</span>}
+        {!compact && <span className="text-[11px] font-medium text-muted-foreground">سیستم عملیاتی هوشمند</span>}
       </div>
     </div>
   );
