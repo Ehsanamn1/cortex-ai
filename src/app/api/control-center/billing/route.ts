@@ -103,7 +103,7 @@ export async function POST(req: Request) {
         return applyCors(jsonError("اطلاعات پلن معتبر نیست.", 400), req.headers.get("origin"));
       }
       const plan = await db.plan.create({
-        data: { key, name, description: description || null, priceToman, currency: "TOMAN", monthlyCredits, monthlyTokenLimit, overageCreditPriceToman, sortOrder, active: body.active !== false },
+        data: { key, name, description: description || null, priceToman, currency: "TOMAN", monthlyCredits, monthlyTokenLimit, overageCreditPriceToman, sortOrder, active: body.active !== false, systemManaged: false },
       });
       return applyCors(jsonOk({ admin, plan }, 201), req.headers.get("origin"));
     }
@@ -198,6 +198,7 @@ export async function PATCH(req: Request) {
         data[key] = value || null;
       }
       if (typeof body.active === "boolean") data.active = body.active;
+      data.systemManaged = false;
       const plan = await db.plan.update({ where: { id }, data });
       return applyCors(jsonOk({ admin, plan }), req.headers.get("origin"));
     }
