@@ -15,18 +15,32 @@ const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
 export class OpenRouterProvider implements LLMProvider {
   readonly name = "openrouter";
   private readonly configuredModel?: string;
+  private readonly configuredBaseUrl?: string;
+  private readonly configuredApiKey?: string;
 
-  constructor(config: { model?: string } = {}) {
+  constructor(config: { model?: string; baseUrl?: string; apiKey?: string | null } = {}) {
     this.configuredModel = config.model?.trim() || undefined;
+    this.configuredBaseUrl = config.baseUrl?.trim().replace(/\/$/, "") || undefined;
+    this.configuredApiKey = config.apiKey?.trim() || undefined;
   }
 
   private apiKey(): string | undefined {
-    const key = process.env.OPENROUTER_API_KEY?.trim();
+    const key = this.configuredApiKey || process.env.OPENROUTER_API_KEY?.trim();
     return key && key.length > 0 ? key : undefined;
   }
 
+  private baseUrl(): string {
+    return this.configuredBaseUrl || OPENROUTER_BASE;
+  }
+
   isConfigured(): boolean {
-    return Boolean(this.apiKey());
+    if (!this.apiKey()) return false;
+    try {
+      new URL(this.baseUrl());
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   model(): string | null {
@@ -38,7 +52,7 @@ export class OpenRouterProvider implements LLMProvider {
     if (!key) throw new ProviderNotConfiguredError(this.name);
     const model = this.model()!;
     try {
-      const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+      const res = await fetch(`${this.baseUrl()}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${key}`,
