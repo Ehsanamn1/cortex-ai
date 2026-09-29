@@ -54,9 +54,11 @@ function validateAgentInput(body: AgentInput) {
   const maxTokens = typeof body.maxTokens === "number" && Number.isInteger(body.maxTokens) ? Math.min(8000, Math.max(128, body.maxTokens)) : 1200;
   const memoryEnabled = body.memoryEnabled !== false;
   const citationsEnabled = body.citationsEnabled !== false;
-  const modelKey = typeof body.modelKey === "string" && getManagedModelCatalog().some((model) => model.key === body.modelKey)
-    ? body.modelKey
-    : "launch-fast";
+  const rawModelKey = typeof body.modelKey === "string" ? body.modelKey.trim().slice(0, 120) : "";
+  if (rawModelKey && !/^[a-zA-Z0-9._:/-]{1,120}$/.test(rawModelKey)) {
+    return { error: "شناسه مدل انتخابی معتبر نیست." };
+  }
+  const modelKey = rawModelKey || "launch-fast";
   return {
     data: {
       name,
@@ -142,12 +144,51 @@ export async function POST(req: Request) {
       if (agentCount >= maxAgents) throw planFeatureError("تعداد Agent");
     }
 
-    if (!getManagedModelCatalog().some((model) => model.key === validated.data!.modelKey && model.planKeys.includes(billing.plan.key as any))) {
-      return applyCors(jsonError("مدل انتخابی در پلن فعلی در دسترس نیست.", 403), req.headers.get("origin"));
+    let selectedModelKey = validated.data!.modelKey;
+    const catalog = await db.modelCatalog.findFirst({
+      where: {
+        active: true,
+        OR: [
+          { routeKey: selectedModelKey },
+          { id: selectedModelKey },
+          { modelId: selectedModelKey },
+        ],
+      },
+      include: { planAccess: { where: { planId: billing.planId }, select: { enabled: true } } },
+    });
+
+    if (billing.plan.key === "free" && !(body.modelKey && typeof body.modelKey === "string")) {
+      const trialDefault = await db.modelCatalog.findFirst({
+        where: { active: true, trialDefault: true, trialEnabled: true },
+        orderBy: { updatedAt: "desc" },
+      });
+      selectedModelKey = trialDefault?.routeKey ?? trialDefault?.id ?? "launch-lite";
+    }
+
+    if (catalog || selectedModelKey !== validated.data!.modelKey) {
+      const selectedCatalog = catalog && (catalog.routeKey === selectedModelKey || catalog.id === selectedModelKey || catalog.modelId === selectedModelKey)
+        ? catalog
+        : await db.modelCatalog.findFirst({
+          where: { active: true, OR: [{ routeKey: selectedModelKey }, { id: selectedModelKey }, { modelId: selectedModelKey }] },
+          include: { planAccess: { where: { planId: billing.planId }, select: { enabled: true } } },
+        });
+      if (selectedCatalog) {
+        const allowed = billing.plan.key === "free"
+          ? selectedCatalog.trialEnabled && Boolean(selectedCatalog.planAccess[0]?.enabled ?? true)
+          : Boolean(selectedCatalog.planAccess[0]?.enabled) && selectedCatalog.commercialAvailable;
+        if (!allowed) return applyCors(jsonError("مدل انتخابی در پلن فعلی در دسترس نیست.", 403), req.headers.get("origin"));
+      } else if (billing.plan.key !== "free") {
+        return applyCors(jsonError("مدل انتخابی در کاتالوگ Cortex پیدا نشد.", 400), req.headers.get("origin"));
+      }
+    } else if (billing.plan.key !== "free") {
+      const staticModel = getManagedModelCatalog().find((model) => model.key === selectedModelKey);
+      if (!staticModel || !staticModel.planKeys.includes(billing.plan.key as any)) {
+        return applyCors(jsonError("مدل انتخابی در پلن فعلی در دسترس نیست.", 403), req.headers.get("origin"));
+      }
     }
 
     const agent = await db.agent.create({
-      data: { ...validated.data!, workspaceId: membership.workspaceId },
+      data: { ...validated.data!, modelKey: selectedModelKey, workspaceId: membership.workspaceId },
       include: { _count: { select: { knowledgeSources: true, conversations: true } } },
     });
     return applyCors(jsonOk({ agent: serializeAgent(agent, agent._count) }, 201), req.headers.get("origin"));
