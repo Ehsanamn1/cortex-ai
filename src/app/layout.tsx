@@ -12,7 +12,7 @@ const vazirmatn = Vazirmatn({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#070a0f",
+  themeColor: "#11150E",
   colorScheme: "dark",
 };
 
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   title: "Cortex AI",
   description: "ساخت و مدیریت ایجنت‌های هوش مصنوعی با دانش واقعی کسب‌وکار.",
   icons: {
-    icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 4.5 40.45 13.9v19.2L24 42.5 7.55 33.1V13.9Z' fill='none' stroke='%233B82FF' stroke-width='3.5' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='23.5' r='5.5' fill='%238B5CF6'/%3E%3C/svg%3E",
+    icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 4.5 40.45 13.9v19.2L24 42.5 7.55 33.1V13.9Z' fill='none' stroke='%23B8D75B' stroke-width='3.5' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='23.5' r='5.5' fill='%2348522F'/%3E%3C/svg%3E",
   },
 };
 
