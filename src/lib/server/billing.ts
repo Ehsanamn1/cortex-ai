@@ -102,33 +102,24 @@ async function ensurePlanCatalog() {
   if (catalogPromise) return catalogPromise;
   catalogPromise = (async () => {
     for (const plan of DEFAULT_BILLING_PLANS) {
-      await db.plan.upsert({
-        where: { key: plan.key },
-        update: {
-          name: plan.name,
-          description: plan.description,
-          priceToman: plan.priceToman,
-          currency: "TOMAN",
-          monthlyCredits: plan.monthlyCredits,
-          monthlyTokenLimit: plan.monthlyTokenLimit,
-          overageCreditPriceToman: plan.overageCreditPriceToman,
-          overageEnabled: plan.overageEnabled,
-          active: true,
-          sortOrder: plan.sortOrder,
-        },
-        create: {
-          key: plan.key,
-          name: plan.name,
-          description: plan.description,
-          priceToman: plan.priceToman,
-          currency: "TOMAN",
-          monthlyCredits: plan.monthlyCredits,
-          overageCreditPriceToman: plan.overageCreditPriceToman,
-          overageEnabled: plan.overageEnabled,
-          sortOrder: plan.sortOrder,
-          active: true,
-        },
-      });
+      const existing = await db.plan.findUnique({ where: { key: plan.key }, select: { id: true } });
+      if (!existing) {
+        await db.plan.create({
+          data: {
+            key: plan.key,
+            name: plan.name,
+            description: plan.description,
+            priceToman: plan.priceToman,
+            currency: "TOMAN",
+            monthlyCredits: plan.monthlyCredits,
+            monthlyTokenLimit: plan.monthlyTokenLimit,
+            overageCreditPriceToman: plan.overageCreditPriceToman,
+            overageEnabled: plan.overageEnabled,
+            sortOrder: plan.sortOrder,
+            active: true,
+          },
+        });
+      }
     }
   })().then(() => { catalogReadyAt = Date.now(); }).finally(() => { catalogPromise = null; });
   return catalogPromise;
@@ -186,20 +177,18 @@ async function ensureModel(provider: string, model: string) {
   const rate = managed ? getModelRate("OpenRouter", managed.providerModelId) : getModelRate(canonicalProvider, model);
   const qualityTier = managed?.qualityTier ?? known?.qualityTier ?? "balanced";
   const multiplierBps = defaultCreditMultiplierBps(qualityTier);
-  const catalog = await db.modelCatalog.upsert({
+  const existing = await db.modelCatalog.findUnique({
     where: { provider_modelId: { provider: canonicalProvider, modelId: model } },
-    update: {
-      routeKey: managed?.key ?? null,
-      displayName: managed?.displayName ?? known?.displayName ?? model,
-      inputUsdPer1M: rate.inputUsdPer1M,
-      outputUsdPer1M: rate.outputUsdPer1M,
-      qualityTier,
-      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
-      commercialAvailable: rate.known,
-    },
-    create: {
+  });
+  if (existing) {
+    return { catalog: existing, defaultMultiplierBps: defaultCreditMultiplierBps(existing.qualityTier) };
+  }
+
+  const catalog = await db.modelCatalog.create({
+    data: {
       provider: canonicalProvider,
       modelId: model,
+      routeKey: managed?.key ?? null,
       displayName: managed?.displayName ?? known?.displayName ?? model,
       inputUsdPer1M: rate.inputUsdPer1M,
       outputUsdPer1M: rate.outputUsdPer1M,
@@ -218,7 +207,6 @@ async function ensureModel(provider: string, model: string) {
   });
   return { catalog, defaultMultiplierBps: multiplierBps };
 }
-
 
 async function ensureWorkspaceBilling(workspaceId: string) {
   await ensurePlanCatalog();
