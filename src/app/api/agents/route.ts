@@ -3,6 +3,7 @@ import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/s
 import { requireSession } from "@/lib/server/auth";
 import { serializeAgent } from "@/lib/server/access";
 import { getManagedModelCatalog } from "@/lib/server/model-router";
+import { getPlanFeatureLimits, planFeatureError } from "@/lib/server/plan-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -121,6 +122,21 @@ export async function POST(req: Request) {
       session.memberships[0];
     if (!membership) {
       return applyCors(jsonError("فضای کاری معتبری برای ایجاد ایجنت یافت نشد.", 400), req.headers.get("origin"));
+    }
+
+    const billing = await db.workspaceBillingAccount.findUnique({
+      where: { workspaceId: membership.workspaceId },
+      include: { plan: true },
+    });
+    if (!billing) return applyCors(jsonError("حساب اعتبار فضای کاری پیدا نشد.", 404), req.headers.get("origin"));
+    const limits = getPlanFeatureLimits(billing.plan.key);
+    if (limits.maxAgents !== null) {
+      const agentCount = await db.agent.count({ where: { workspaceId: membership.workspaceId } });
+      if (agentCount >= limits.maxAgents) throw planFeatureError("تعداد Agent");
+    }
+
+    if (!getManagedModelCatalog().some((model) => model.key === validated.data!.modelKey && model.planKeys.includes(billing.plan.key as any))) {
+      return applyCors(jsonError("مدل انتخابی در پلن فعلی در دسترس نیست.", 403), req.headers.get("origin"));
     }
 
     const agent = await db.agent.create({
