@@ -4,8 +4,6 @@ import { NextResponse } from "next/server";
 
 const COOKIE_NAME = "cortex_admin_session";
 const TTL_SECONDS = 60 * 60 * 12;
-const TEST_USERNAME = "ehsan86";
-const TEST_PASSWORD = "ehsanam86";
 
 export class AdminConfigError extends Error {
   status = 503;
