@@ -92,14 +92,17 @@ describeDb("Cortex lifecycle integration", () => {
     });
     expect(detailResponse.status).toBe(200);
 
+    let qaWebhookUrl = "";
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
       const url = String(input);
       let result: any = true;
       if (url.endsWith("/getMe")) {
         result = { id: 4200, is_bot: true, first_name: "Cortex QA", username: "cortex_qa_bot" };
-      } else if (url.endsWith("/getWebhookInfo")) {
+      } else if (url.endsWith("/setWebhook")) {
         const body = typeof init?.body === "string" ? JSON.parse(init.body) : {};
-        result = { url: body.__qa_expected_url ?? process.env.CORTEX_QA_WEBHOOK_URL ?? "" };
+        qaWebhookUrl = typeof body.url === "string" ? body.url : "";
+      } else if (url.endsWith("/getWebhookInfo")) {
+        result = { url: qaWebhookUrl };
       }
       const responseBody = JSON.stringify({ ok: true, result });
       return new Response(responseBody, { status: 200, headers: { "content-type": "application/json" } });
