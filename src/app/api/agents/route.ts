@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireSession } from "@/lib/server/auth";
 import { serializeAgent } from "@/lib/server/access";
+import { getManagedModelCatalog } from "@/lib/server/model-router";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ interface AgentInput {
   maxTokens?: unknown;
   memoryEnabled?: unknown;
   citationsEnabled?: unknown;
+  modelKey?: unknown;
   workspaceId?: unknown;
 }
 
@@ -51,6 +53,9 @@ function validateAgentInput(body: AgentInput) {
   const maxTokens = typeof body.maxTokens === "number" && Number.isInteger(body.maxTokens) ? Math.min(8000, Math.max(128, body.maxTokens)) : 1200;
   const memoryEnabled = body.memoryEnabled !== false;
   const citationsEnabled = body.citationsEnabled !== false;
+  const modelKey = typeof body.modelKey === "string" && getManagedModelCatalog().some((model) => model.key === body.modelKey)
+    ? body.modelKey
+    : "launch-fast";
   return {
     data: {
       name,
@@ -67,6 +72,7 @@ function validateAgentInput(body: AgentInput) {
       maxTokens,
       memoryEnabled,
       citationsEnabled,
+      modelKey,
     },
   };
 }
