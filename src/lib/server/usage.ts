@@ -60,8 +60,7 @@ export async function reserveUsageWithinLimits(
   telegramUserId?: string,
 ): Promise<string | null> {
   const requestedOutputTokens = Math.max(0, Math.floor(maxOutputTokens));
-  const reservationOutputCap = policyProbe?.monthlyTokenLimit && false ? requestedOutputTokens : requestedOutputTokens;
-  let reservationTokens = Math.max(0, Math.floor(incomingTokens)) + reservationOutputCap;
+  let reservationTokens = Math.max(0, Math.floor(incomingTokens)) + requestedOutputTokens;
 
   const [policyProbe, telegramUserProbe] = await Promise.all([
     db.usagePolicy.findUnique({
@@ -75,7 +74,7 @@ export async function reserveUsageWithinLimits(
         })
       : null,
   ]);
-  const planManagedTrial = Boolean(policyProbe && (policyProbe as any).planManaged);
+  const planManagedTrial = policyProbe?.planManaged === true;
   if (planManagedTrial) {
     reservationTokens = Math.max(0, Math.floor(incomingTokens)) + Math.min(requestedOutputTokens, TRIAL_MAX_OUTPUT_TOKENS);
   }
