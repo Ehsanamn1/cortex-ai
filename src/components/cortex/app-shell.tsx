@@ -68,7 +68,7 @@ const BillingView = dynamic(() => import("@/components/cortex/views/billing-view
 
 /* ---------------- provider status pill ---------------- */
 
-function ProviderPill() {
+function ProviderPill({ className }: { className?: string } = {}) {
   const workspaceId = useCortexStore((s) => s.activeWorkspaceId);
   const setView = useCortexStore((s) => s.setView);
   const { data } = useQuery({
@@ -87,7 +87,7 @@ function ProviderPill() {
       type="button"
       onClick={() => setView("billing")}
       title="پلن و اعتبار"
-      className="inline-flex max-w-[150px] items-center gap-1.5 rounded-full border border-primary/15 bg-primary/[.045] px-2.5 py-1.5 text-[10px] font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/[.08] sm:max-w-none sm:gap-2 sm:px-3 sm:text-xs"
+      className={cn("inline-flex max-w-[150px] items-center gap-1.5 rounded-full border border-primary/15 bg-primary/[.045] px-2.5 py-1.5 text-[10px] font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/[.08] sm:max-w-none sm:gap-2 sm:px-3 sm:text-xs", className)}
     >
       <WalletCards className="size-3.5 text-primary" />
       <span>{plan.name}</span>
@@ -516,10 +516,9 @@ export function AppShell() {
         <header className="cortex-topbar relative flex h-14 min-w-0 shrink-0 items-center justify-between gap-1.5 overflow-visible border-b px-2.5 backdrop-blur-xl sm:h-16 sm:px-4 lg:px-8">          <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/35 to-transparent" />
           <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
             <CortexMark size={30} />
-            <span className="max-w-[calc(100vw-110px)] truncate text-sm font-semibold text-foreground">
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
               {activeWorkspaceName ?? "Cortex AI"}
             </span>
-            <span className="shrink-0 lg:hidden"><ProviderPill /></span>
           </div>
 
           <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><Bot className="size-4" /></span><div className="min-w-0"><p className="truncate text-[9px] font-bold tracking-[.18em] text-primary/75">CORTEX WORKSPACE</p><h1 className="truncate text-lg font-bold text-foreground">{title}</h1></div></div>
@@ -543,6 +542,10 @@ export function AppShell() {
             </div>
           </div>
         </header>
+
+        <div className="border-b border-border/60 bg-background/90 px-3 py-2 backdrop-blur-xl lg:hidden">
+          <ProviderPill className="w-full max-w-none justify-between rounded-xl px-3 py-2" />
+        </div>
 
         <main className="cortex-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
           <div className="mx-auto w-full max-w-6xl px-3 pb-40 pt-4 sm:px-4 sm:pb-36 sm:pt-6 lg:px-8 lg:pb-10 lg:pt-8">
