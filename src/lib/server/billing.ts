@@ -469,7 +469,15 @@ export async function getBillingSnapshot(workspaceId: string) {
         structuredOutput: item.structuredOutput,
         reasoning: item.reasoning,
         commercialAvailable: item.commercialAvailable,
-        enabledForPlan: Boolean(managed && managed.planKeys.includes(account.plan.key as any) && item.commercialAvailable),
+        enabledForPlan: Boolean(
+          item.active &&
+          (account.plan.key === "free"
+            ? item.trialEnabled && Boolean(accessMap.get(item.id)?.enabled ?? false)
+            : item.commercialAvailable && Boolean(accessMap.get(item.id)?.enabled ?? (managed ? managed.planKeys.includes(account.plan.key as any) : false)))
+        ),
+        trialEnabled: item.trialEnabled,
+        trialDefault: item.trialDefault,
+        systemProviderId: item.systemProviderId ?? null,
         creditMultiplierBps: accessMap.get(item.id)?.creditMultiplierBps ?? defaultCreditMultiplierBps(item.qualityTier),
         creditRatePer1K: managed?.creditRatePer1K ?? null,
       };
