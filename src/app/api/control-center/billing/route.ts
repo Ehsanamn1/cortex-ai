@@ -126,10 +126,14 @@ export async function POST(req: Request) {
       if (!provider || !modelId || !displayName || inputUsdPer1M == null || outputUsdPer1M == null) {
         return applyCors(jsonError("اطلاعات مدل معتبر نیست.", 400), req.headers.get("origin"));
       }
-      const model = await db.modelCatalog.create({
-        data: {
-          routeKey,
-          provider, modelId, displayName, inputUsdPer1M, outputUsdPer1M,
+      const model = await db.$transaction(async (tx) => {
+        if (body.trialDefault === true) {
+          await tx.modelCatalog.updateMany({ where: { trialDefault: true }, data: { trialDefault: false } });
+        }
+        return tx.modelCatalog.create({
+          data: {
+            routeKey,
+            provider, modelId, displayName, inputUsdPer1M, outputUsdPer1M,
           contextWindow: intValue(body.contextWindow, 0, 10_000_000) ?? null,
           vision: body.vision === true, tools: body.tools === true, structuredOutput: body.structuredOutput === true,
           reasoning: body.reasoning === true, qualityTier, speedTier,
@@ -138,6 +142,7 @@ export async function POST(req: Request) {
           trialDefault: body.trialDefault === true,
           systemProviderId,
         },
+      });
       });
       return applyCors(jsonOk({ admin, model }, 201), req.headers.get("origin"));
     }
