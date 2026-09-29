@@ -75,7 +75,7 @@ export interface ProviderStatus {
   provider: string;
   status: "configured" | "not_configured";
   model: string | null;
-  source: "agent" | "workspace" | "environment" | "none";
+  source: "agent" | "workspace" | "environment" | "system" | "none";
 }
 
 function buildConfiguredProvider(config: {
@@ -145,13 +145,9 @@ class ProviderManager {
   async resolveForAgent(agentId: string, workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus }> {
     if (workspaceId && process.env.APP_ENV !== "test" && process.env.NODE_ENV !== "test") {
       const managed = await resolveManagedModelForAgent(agentId, workspaceId);
-      const provider = new OpenRouterProvider({ model: managed.model.providerModelId });
-      if (!provider.isConfigured()) {
-        throw Object.assign(new Error("سرویس هوش مصنوعی Cortex از سمت سرور آماده نیست."), { status: 503, code: "managed_provider_unavailable" });
-      }
       return {
-        provider: new ResilientProvider(provider, agentId, workspaceId),
-        status: this.statusFor(provider, "environment"),
+        provider: new ResilientProvider(managed.provider, agentId, workspaceId),
+        status: this.statusFor(managed.provider, "system"),
       };
     }
 
