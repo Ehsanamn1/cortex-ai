@@ -1407,3 +1407,130 @@ html:not(.dark) .cortex-dashstack [data-slot="card"] { color: var(--card-foregro
     overflow-y: visible;
   }
 }
+
+/* ===== Cortex identity layer: authored console, not template chrome ===== */
+:root {
+  --cortex-ink: #182018;
+  --cortex-paper: #f3f5ef;
+  --cortex-line: #d7ddd0;
+  --cortex-accent: #657c2e;
+  --cortex-accent-soft: rgba(101,124,46,.10);
+}
+.dark {
+  --cortex-ink: #edf2e8;
+  --cortex-paper: #0b100b;
+  --cortex-line: #293429;
+  --cortex-accent: #b5d84b;
+  --cortex-accent-soft: rgba(181,216,75,.09);
+}
+.cortex-dashstack {
+  background: var(--cortex-paper) !important;
+  color: var(--cortex-ink) !important;
+  background-image:
+    linear-gradient(rgba(101,124,46,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(101,124,46,.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+html.dark .cortex-dashstack {
+  background-image:
+    linear-gradient(rgba(181,216,75,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(181,216,75,.03) 1px, transparent 1px);
+}
+.cortex-dashstack .cortex-panel,
+.cortex-dashstack [data-slot="card"] {
+  border-radius: 10px !important;
+  background: var(--cortex-paper) !important;
+  border: 1px solid var(--cortex-line) !important;
+  box-shadow: none !important;
+}
+html.dark .cortex-dashstack .cortex-panel,
+html.dark .cortex-dashstack [data-slot="card"] {
+  background: #0f150f !important;
+}
+.cortex-dashstack .cortex-panel:hover {
+  border-color: color-mix(in srgb, var(--cortex-accent) 45%, var(--cortex-line)) !important;
+}
+.cortex-dashstack .cortex-kicker {
+  color: var(--cortex-accent) !important;
+  letter-spacing: .18em;
+  font-size: 9px;
+}
+.cortex-dashstack .cortex-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px !important;
+  border-color: color-mix(in srgb, var(--cortex-accent) 30%, var(--cortex-line)) !important;
+  background: var(--cortex-accent-soft) !important;
+  color: var(--cortex-accent) !important;
+  box-shadow: none !important;
+}
+.cortex-dashstack .cortex-hero {
+  border-radius: 12px !important;
+  background:
+    linear-gradient(90deg, var(--cortex-accent-soft) 1px, transparent 1px) 0 0 / 18px 18px,
+    var(--cortex-paper) !important;
+  border: 1px solid color-mix(in srgb, var(--cortex-accent) 22%, var(--cortex-line)) !important;
+  box-shadow: none !important;
+}
+.cortex-dashstack .cortex-hero::after { display: none !important; }
+.cortex-dashstack .cortex-core-v2-haze {
+  background: radial-gradient(circle, color-mix(in srgb, var(--cortex-accent) 19%, transparent), transparent 68%) !important;
+}
+.cortex-dashstack .cortex-core-v2-ring {
+  border-color: color-mix(in srgb, var(--cortex-accent) 34%, transparent) !important;
+}
+.cortex-dashstack .cortex-core-v2-ring-2 {
+  border-color: color-mix(in srgb, var(--cortex-accent) 18%, transparent) !important;
+}
+.cortex-dashstack .cortex-core-v2-node {
+  background: var(--cortex-accent) !important;
+  box-shadow: 0 0 13px color-mix(in srgb, var(--cortex-accent) 70%, transparent) !important;
+}
+.cortex-dashstack .cortex-core-v2-orb {
+  background:
+    radial-gradient(circle at 28% 23%, rgba(255,255,255,.82), transparent 9%),
+    radial-gradient(circle at 55% 45%, color-mix(in srgb, var(--cortex-accent) 90%, #111), transparent 38%),
+    #121a11 !important;
+  border-color: color-mix(in srgb, var(--cortex-accent) 35%, transparent) !important;
+  box-shadow: 0 0 54px color-mix(in srgb, var(--cortex-accent) 24%, transparent), inset -16px -18px 30px rgba(0,0,0,.35) !important;
+}
+.cortex-dashstack .cortex-core-v2-caption span { color: color-mix(in srgb, var(--cortex-ink) 60%, transparent) !important; }
+.cortex-dashstack button {
+  border-radius: 8px;
+}
+html:not(.dark) .cortex-dashstack .text-primary { color: var(--cortex-accent) !important; }
+html.dark .cortex-dashstack .text-primary { color: var(--cortex-accent) !important; }
+
+/* Distinctive private admin console. */
+.cortex-control-center {
+  background:
+    linear-gradient(rgba(181,216,75,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(181,216,75,.025) 1px, transparent 1px),
+    #090d09 !important;
+  background-size: 28px 28px;
+  color: #edf2e8 !important;
+}
+.cortex-control-center [data-slot="card"] {
+  border-radius: 0 !important;
+  background: #101610 !important;
+  border-color: #2a3427 !important;
+  box-shadow: none !important;
+}
+.cortex-control-center input,
+.cortex-control-center select,
+.cortex-control-center textarea {
+  border-radius: 0 !important;
+  background: #0c110c !important;
+  border-color: #2d382a !important;
+  color: #edf2e8 !important;
+}
+.cortex-control-center button {
+  border-radius: 0 !important;
+}
+.cortex-control-center table th {
+  background: #111811;
+  color: #8e9b88;
+}
+.cortex-control-center table td {
+  border-color: #202920;
+}
