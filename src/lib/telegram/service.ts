@@ -262,7 +262,21 @@ function formatUsdMicros(value: number) {
 }
 
 async function sendAccessRequired(token: string, chatId: string | number, profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
-  return sendMessage(token, chatId, escapeTelegramHtml(profile.accessRequiredText), { parse_mode: 'HTML' });
+  return sendMessage(
+    token,
+    chatId,
+    '<b>🔐 تأیید شماره موبایل</b>\n\n' + escapeTelegramHtml(profile.accessRequiredText),
+    {
+      parse_mode: 'HTML',
+      reply_markup: {
+        keyboard: [[{ text: '📱 ارسال شماره موبایل', request_contact: true }]],
+        resize_keyboard: true,
+        one_time_keyboard: false,
+        is_persistent: true,
+        input_field_placeholder: 'دکمه ارسال شماره موبایل را بزنید…',
+      },
+    },
+  );
 }
 
 async function sendUsage(token: string, chatId: string | number, telegramUserId: string) {
