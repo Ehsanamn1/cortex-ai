@@ -375,6 +375,15 @@ jobs:
           check_authed_json "/api/search?q=Cortex&workspaceId=$smoke_workspace_id" "200"
           check_authed_json "/api/billing/topup-request?workspaceId=$smoke_workspace_id" "200"
 
+          reset_request_body="$(jq -nc '{email:"cortex-reset-nonexistent@example.invalid"}')"
+          reset_request_tmp="$(mktemp)"
+          reset_request_status="$(curl -sS --retry 3 --retry-delay 1 --retry-all-errors --max-time 20 -H "Content-Type: application/json" -d "$reset_request_body" -o "$reset_request_tmp" -w "%{http_code}" "$base/api/auth/forgot-password")"
+          echo "POST $base/api/auth/forgot-password (nonexistent email) -> HTTP $reset_request_status"
+          test "$reset_request_status" = "200"
+          jq -e '.ok == true' "$reset_request_tmp" >/dev/null
+          rm -f "$reset_request_tmp"
+
+
           check_noauth_json "/api/control-center/settings" "401"
           check_noauth_json "/api/control-center/plugins" "401"
           check_noauth_json "/api/control-center/resources?resource=users" "401"
