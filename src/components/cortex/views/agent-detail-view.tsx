@@ -520,7 +520,7 @@ function ManagedModelTab({ agentId }: { agentId: string }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {group.items.map((model) => {
-              const selected = model.modelId === currentModel || model.id === currentModel;
+              const selected = model.key === currentModel || model.modelId === currentModel || model.id === currentModel;
               const allowed = model.enabledForPlan;
               return (
                 <button
