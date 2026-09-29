@@ -475,7 +475,7 @@ export async function getBillingSnapshot(workspaceId: string) {
           item.systemProvider?.enabled &&
           (item.systemProvider.authMode === "none" || Boolean(item.systemProvider.apiKeyEncrypted)) &&
           (account.plan.key === "free"
-            ? item.trialEnabled && Boolean(accessMap.get(item.id)?.enabled ?? false)
+            ? item.trialEnabled && item.trialDefault && Boolean(accessMap.get(item.id)?.enabled ?? false)
             : item.commercialAvailable && Boolean(accessMap.get(item.id)?.enabled ?? (managed ? managed.planKeys.includes(account.plan.key as any) : false)))
         ),
         trialEnabled: item.trialEnabled,
