@@ -93,7 +93,7 @@ export async function POST(req: Request, { params }: Params) {
     if (!["owner", "admin"].includes(membership.role)) {
       throw Object.assign(new Error("دسترسی مدیریت ربات را ندارید."), { status: 403 });
     }
-    const body = await readJson<Record<string, unknown>>(req).catch(() => ({}));
+    const body = await readJson<Record<string, unknown>>(req).catch(() => ({} as Record<string, unknown>));
     if (body.action !== undefined && body.action !== "sync") {
       return applyCors(jsonError("action نامعتبر است.", 400), req.headers.get("origin"));
     }
