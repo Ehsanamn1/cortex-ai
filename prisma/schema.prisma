@@ -733,6 +733,29 @@ model Plan {
   @@index([active, sortOrder])
 }
 
+model SystemProviderConfig {
+  id                String   @id @default(cuid())
+  key               String   @unique
+  displayName       String
+  providerName      String
+  protocol          String   @default("openai-compatible")
+  authMode          String   @default("bearer")
+  baseUrl           String
+  apiKeyEncrypted   String?
+  enabled           Boolean  @default(true)
+  isTrialProvider   Boolean  @default(false)
+  lastHealthStatus  String   @default("unknown")
+  lastHealthError   String?
+  lastHealthAt      DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  models ModelCatalog[]
+
+  @@index([providerName, enabled])
+  @@index([isTrialProvider, enabled])
+}
+
 model ModelCatalog {
   id                    String   @id @default(cuid())
   provider              String
@@ -752,11 +775,17 @@ model ModelCatalog {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
+  systemProviderId      String?
+  isTrialDefault        Boolean  @default(false)
+
+  systemProvider SystemProviderConfig? @relation(fields: [systemProviderId], references: [id], onDelete: SetNull)
   planAccess PlanModelAccess[]
 
   @@unique([provider, modelId])
   @@index([active, commercialAvailable])
   @@index([provider])
+  @@index([systemProviderId, active])
+  @@index([isTrialDefault, active])
 }
 
 model PlanModelAccess {
