@@ -461,7 +461,9 @@ function ManagedModelTab({ agentId }: { agentId: string }) {
   }
 
   const plan = data.account.plan;
-  const currentModel = agentQuery.data.agent.modelKey ?? "launch-fast";
+  const currentModel = plan.key === "free"
+    ? (models.find((item) => item.trialDefault)?.id ?? "trial-default")
+    : (agentQuery.data.agent.modelKey ?? "launch-fast");
   const models = data.models ?? [];
   const grouped = ["economy", "balanced", "premium", "deep"].map((tier) => ({
     tier,
@@ -485,7 +487,7 @@ function ManagedModelTab({ agentId }: { agentId: string }) {
         <CardContent className="p-5 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="cortex-kicker">CORTEX MODEL ROUTER</p>
+              <p className="cortex-kicker">MODEL WORKBENCH</p>
               <h3 className="mt-2 text-xl font-black">مدل را انتخاب کن؛ اتصال را Cortex مدیریت می‌کند.</h3>
               <p className="mt-2 max-w-2xl text-xs leading-6 text-muted-foreground">
                 هیچ Provider، API Key یا Base URL لازم نیست. مدل انتخابی بر اساس پلن شما از زیرساخت Cortex اجرا می‌شود و هزینه آن از اعتبار کم می‌شود.
@@ -522,7 +524,8 @@ function ManagedModelTab({ agentId }: { agentId: string }) {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {group.items.map((model) => {
               const selected = model.key === currentModel || model.modelId === currentModel || model.id === currentModel;
-              const allowed = model.enabledForPlan;
+              const trialLocked = plan.key === "free";
+              const allowed = model.enabledForPlan && (!trialLocked || model.trialDefault);
               return (
                 <button
                   key={model.id}
@@ -532,13 +535,14 @@ function ManagedModelTab({ agentId }: { agentId: string }) {
                   className={cn(
                     "rounded-2xl border p-4 text-start transition-all",
                     selected ? "border-primary/40 bg-primary/[.08] shadow-[0_12px_34px_rgba(59,130,255,.10)]" : "border-border/70 bg-card/55 hover:border-primary/25",
-                    !allowed && "cursor-not-allowed opacity-60"
+                    !allowed && "cursor-not-allowed opacity-60",
+                    model.trialDefault && "border-primary/30 bg-primary/[.045]"
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-black">{model.displayName}</p>
-                      <p className="mt-1 text-[10px] leading-5 text-muted-foreground">{allowed ? "فعال برای پلن شما" : "با ارتقا باز می‌شود"}</p>
+                      <p className="mt-1 text-[10px] leading-5 text-muted-foreground">{trialLocked ? (model.trialDefault ? "موتور پیش‌فرض نسخه آزمایشی" : "در نسخه آزمایشی انتخاب نمی‌شود") : allowed ? "فعال برای پلن شما" : "با ارتقا باز می‌شود"}</p>
                     </div>
                     <Badge variant={selected ? "default" : "outline"}>{selected ? "انتخاب‌شده" : allowed ? "مجاز" : "قفل"}</Badge>
                   </div>
@@ -546,6 +550,7 @@ function ManagedModelTab({ agentId }: { agentId: string }) {
                     <span>{faNum(model.creditMultiplierBps / 100)}× ضریب کیفیت</span>
                     <span>{model.vision ? "Vision" : "Text"} · {model.tools ? "Tools" : "Basic"}</span>
                   </div>
+                  {model.trialDefault && <div className="mt-3 rounded-xl border border-primary/15 bg-primary/[.05] px-3 py-2 text-[9px] font-semibold text-primary">موتور آزمایشی انتخاب‌شده توسط مدیر سیستم</div>}
                   {!allowed && <div className="mt-3 rounded-xl border border-primary/15 bg-primary/[.04] px-3 py-2 text-[9px] text-primary">برای دسترسی به این سطح، به پلن بالاتر برو.</div>}
                 </button>
               );
