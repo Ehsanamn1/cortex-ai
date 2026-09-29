@@ -625,7 +625,7 @@ export async function reserveBillingCredits(params: {
     });
   }
 
-  if (!existingAccess?.enabled || !catalog.active || !catalog.commercialAvailable) {
+  if (!existingAccess?.enabled || !catalog.active || (account.plan.key !== "free" && !catalog.commercialAvailable)) {
     throw new BillingModelUnavailableError(params.model);
   }
 
