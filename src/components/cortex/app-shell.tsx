@@ -519,6 +519,7 @@ export function AppShell() {
             <span className="max-w-[calc(100vw-110px)] truncate text-sm font-semibold text-foreground">
               {activeWorkspaceName ?? "Cortex AI"}
             </span>
+            <span className="shrink-0 lg:hidden"><ProviderPill /></span>
           </div>
 
           <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><Bot className="size-4" /></span><div className="min-w-0"><p className="truncate text-[9px] font-bold tracking-[.18em] text-primary/75">CORTEX WORKSPACE</p><h1 className="truncate text-lg font-bold text-foreground">{title}</h1></div></div>
