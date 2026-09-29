@@ -47,7 +47,7 @@ export function parseTelegramProfile(raw: any) {
         .map((v) => ({ command: v.command.replace(/^\//, "").slice(0, 32), description: v.description.slice(0, 256) }));
     }
   } catch {}
-  return {
+  const merged = {
     botId: raw.botId,
     ...TELEGRAM_PROFILE_DEFAULTS,
     ...raw,
@@ -55,6 +55,19 @@ export function parseTelegramProfile(raw: any) {
     thinkingMessages: thinkingMessages.length ? thinkingMessages : TELEGRAM_PROFILE_DEFAULTS.thinkingMessages,
     commands,
   };
+
+  // Profiles created by older builds carried copy that required a pre-approved
+  // phone number or explicitly said no phone was needed. Normalize those legacy
+  // defaults at read time so existing bots follow the current onboarding flow
+  // without requiring a data migration.
+  if (!raw.welcomeText || /بدون ثبت شماره موبایل/.test(String(raw.welcomeText))) {
+    merged.welcomeText = TELEGRAM_PROFILE_DEFAULTS.welcomeText;
+  }
+  if (!raw.accessRequiredText || /مدیر کسب‌وکار.*شماره.*ثبت/.test(String(raw.accessRequiredText))) {
+    merged.accessRequiredText = TELEGRAM_PROFILE_DEFAULTS.accessRequiredText;
+  }
+
+  return merged;
 }
 
 async function loadProfileFromDb(botId: string) {
