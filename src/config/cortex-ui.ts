@@ -3,14 +3,14 @@ export type CortexView = "dashboard" | "workflows" | "agents" | "knowledge" | "c
 export const CORTEX_UI_CONFIG = {
   brand: {
     name: "Cortex AI",
-    eyebrow: "CORTEX WORKSPACE",
-    authBadge: "INTELLIGENCE OS",
+    eyebrow: "CORTEX / OPERATING SYSTEM",
+    authBadge: "PRIVATE COMPUTE",
   },
   theme: {
-    primary: "#3B82FF",
-    secondary: "#8B5CF6",
-    radius: "0.75rem",
-    sidebar: "#0A0D13",
+    primary: "#B8D75B",
+    secondary: "#48522F",
+    radius: "0.55rem",
+    sidebar: "#11150E",
   },
   limits: {
     maxKnowledgeUploadMb: 20,
