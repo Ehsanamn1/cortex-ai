@@ -26,23 +26,39 @@ function secret(): string {
   return g.__cortexAdminSecret as string;
 }
 
+
+const ENTRY_TOKEN_MIN_LENGTH = 48;
+
+function safeEqual(a: string, b: string): boolean {
+  const aa = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return aa.length === bb.length && crypto.timingSafeEqual(aa, bb);
+}
+
+export function verifyAdminEntryToken(value: string | null): boolean {
+  const configured = process.env.CORTEX_ADMIN_ENTRY_TOKEN?.trim();
+  const production = process.env.NODE_ENV === "production" || process.env.APP_ENV === "production";
+  if (production && (!configured || configured.length < ENTRY_TOKEN_MIN_LENGTH)) {
+    throw new AdminConfigError("کلید لینک خصوصی مدیریت در محیط تولید تنظیم نشده یا کوتاه‌تر از حد امن است.");
+  }
+  if (!configured || configured.length < ENTRY_TOKEN_MIN_LENGTH || !value) return false;
+  return safeEqual(configured, value.trim());
+}
+
+export function adminPrincipal(): string {
+  return "system-owner";
+}
+
 export function adminCredentials() {
   const username = process.env.CORTEX_ADMIN_USERNAME?.trim();
   const password = process.env.CORTEX_ADMIN_PASSWORD;
   const production = process.env.NODE_ENV === "production" || process.env.APP_ENV === "production";
+  if (production) {
+    throw new AdminConfigError("ورود با نام کاربری و رمز عبور برای پیشخوان خصوصی غیرفعال است.");
+  }
   const test = process.env.NODE_ENV === "test" || process.env.APP_ENV === "test";
-  if (production && (!username || !password)) {
-    throw new AdminConfigError("اطلاعات ورود مدیر در محیط تولید تنظیم نشده است.");
-  }
-  if (test) {
-    return {
-      username: username || TEST_USERNAME,
-      password: password || TEST_PASSWORD,
-    };
-  }
-  if (!username || !password) {
-    throw new AdminConfigError("اطلاعات ورود مدیر باید با CORTEX_ADMIN_USERNAME و CORTEX_ADMIN_PASSWORD تنظیم شود.");
-  }
+  if (test) return { username: username || TEST_USERNAME, password: password || TEST_PASSWORD };
+  if (!username || !password) throw new AdminConfigError("ورود قدیمی مدیر فقط برای محیط توسعه/آزمایش است.");
   return { username, password };
 }
 
