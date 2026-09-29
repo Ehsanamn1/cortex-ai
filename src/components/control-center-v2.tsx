@@ -183,6 +183,7 @@ function BillingPanel({ section }: { section: Section }) {
     </CardContent>
   </Card>)}</div>
     <ModelAccessMatrix plans={q.data.plans ?? []} models={q.data.models ?? []} onSave={(body) => patch.mutate({action:"set_access",id:"access",body})}/>
+    <TrialRoutePanel providers={q.data.systemProviders ?? []} models={q.data.models ?? []} plans={q.data.plans ?? []}/>
   </div>;
 
   if (section === "accounts") return <div className="grid gap-3">{(q.data.accounts ?? []).map((account:any) => <AccountEditor key={account.id} account={account} plans={q.data.plans ?? []} onSave={(body) => patch.mutate({action:"update_account",id:account.id,body})}/>)}</div>;
@@ -323,6 +324,20 @@ function Overview({summary}:{summary:any}) {
     <section className="grid gap-4 xl:grid-cols-3"><Card className="border-border"><CardHeader><CardTitle className="text-sm">Billing وضعیت</CardTitle></CardHeader><CardContent className="space-y-3"><div className="flex justify-between text-xs"><span>حساب‌های اعتباری</span><b>{Number(summary?.financial?.billingAccounts??0).toLocaleString("fa-IR")}</b></div><div className="flex justify-between text-xs"><span>Subscription فعال</span><b>{Number(summary?.financial?.activeSubscriptions??0).toLocaleString("fa-IR")}</b></div><div className="flex justify-between text-xs"><span>Credits مصرف‌شده</span><b>{Number(f.creditsConsumed??0).toLocaleString("fa-IR")}</b></div><p className="rounded-lg bg-amber-50 p-3 text-[10px] leading-5 text-amber-800">درآمد نقدی و سود تا اتصال درگاه واقعی محاسبه نمی‌شوند.</p></CardContent></Card>
       <Card className="border-border xl:col-span-2"><CardHeader><CardTitle className="text-sm">ایجنت‌های اخیر</CardTitle></CardHeader><CardContent className="divide-y">{(summary?.recentAgents??[]).slice(0,8).map((a:any)=><div key={a.id} className="flex items-center gap-3 py-3"><span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Bot className="size-4"/></span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{a.name}</p><p className="text-[10px] text-muted-foreground">{a.workspace.name} · {a.status}</p></div><span className="text-[10px] text-muted-foreground">{new Date(a.createdAt).toLocaleDateString("fa-IR")}</span></div>)}</CardContent></Card></section>
   </div>;
+}
+
+function TrialRoutePanel({providers,models,plans}:{providers:any[];models:any[];plans:any[]}) {
+  const trialProvider = providers.find((p:any)=>p.isTrialProvider);
+  const trialModel = models.find((m:any)=>m.trialDefault) ?? models.find((m:any)=>m.trialEnabled);
+  const freePlan = plans.find((p:any)=>p.key === "free");
+  return <Card className="border-[#b8d75b]/50 bg-[#f8faf3]">
+    <CardHeader><CardTitle className="text-sm">مسیر پیش‌فرض نسخه آزمایشی</CardTitle><p className="text-[10px] leading-5 text-muted-foreground">این مسیر به‌صورت مرکزی به همه حساب‌های آزمایشی متصل می‌شود؛ کاربر کلید Provider را نمی‌بیند.</p></CardHeader>
+    <CardContent className="grid gap-3 sm:grid-cols-3">
+      <div className="rounded-xl border bg-white p-3"><p className="text-[9px] text-muted-foreground">Provider</p><p className="mt-1 text-xs font-black">{trialProvider?.displayName ?? "تنظیم نشده"}</p><p className="mt-1 text-[9px] text-muted-foreground">{trialProvider?.providerName ?? "—"} · {trialProvider?.enabled ? "فعال" : "غیرفعال"}</p></div>
+      <div className="rounded-xl border bg-white p-3"><p className="text-[9px] text-muted-foreground">مدل Default</p><p className="mt-1 text-xs font-black">{trialModel?.displayName ?? "تنظیم نشده"}</p><p className="mt-1 text-[9px] text-muted-foreground">{trialModel?.modelId ?? "—"}</p></div>
+      <div className="rounded-xl border bg-white p-3"><p className="text-[9px] text-muted-foreground">بودجه Trial</p><p className="mt-1 text-xs font-black">{Number(freePlan?.monthlyTokenLimit ?? 1000).toLocaleString("fa-IR")} توکن / ماه</p><p className="mt-1 text-[9px] text-muted-foreground">اعتبار Wallet: {Number(freePlan?.monthlyCredits ?? 1000).toLocaleString("fa-IR")}</p></div>
+    </CardContent>
+  </Card>;
 }
 
 function ModelAccessMatrix({plans,models,onSave}:{plans:any[];models:any[];onSave:(body:any)=>void}) {
