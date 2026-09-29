@@ -1,24 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/db", () => ({
-  db: {
+vi.mock("@/lib/db", () => {
+  const providerFixture = {
+    id: "provider-1", key: "trial-primary", displayName: "Trial Primary", providerName: "OpenAI",
+    protocol: "openai-compatible", authMode: "bearer", baseUrl: "https://api.example.test/v1",
+    apiKeyEncrypted: "enc:SECRET", enabled: true, isTrialProvider: true,
+  };
+  const tx = {
+    systemProviderConfig: {
+      updateMany: vi.fn(),
+      create: vi.fn(async () => providerFixture),
+      update: vi.fn(async () => providerFixture),
+    },
+  };
+  const db = {
     systemProviderConfig: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
+      create: vi.fn(async () => providerFixture),
+      update: vi.fn(async () => providerFixture),
       updateMany: vi.fn(),
       delete: vi.fn(),
     },
-    $transaction: vi.fn(async (callback: any) => callback({
-      systemProviderConfig: {
-        updateMany: vi.fn(),
-        create: vi.fn(),
-        update: vi.fn(),
-      },
-    })),
-  },
-}));
+    $transaction: vi.fn(async (callback: any) => callback(tx)),
+  };
+  return { db };
+});
 vi.mock("@/lib/server/admin-auth", () => ({ requireAdmin: vi.fn(() => "owner") }));
 vi.mock("@/lib/server/secrets", () => ({
   encryptSecret: vi.fn((value: string) => "enc:" + value),
