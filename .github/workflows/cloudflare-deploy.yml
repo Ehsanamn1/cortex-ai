@@ -62,8 +62,8 @@ jobs:
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
           APP_SECRET_KEY: ${{ secrets.APP_SECRET_KEY || vars.APP_SECRET_KEY }}
-          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
-          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
+          CORTEX_ADMIN_ACCESS_TOKEN: ${{ secrets.CORTEX_ADMIN_ACCESS_TOKEN || vars.CORTEX_ADMIN_ACCESS_TOKEN }}
+          CORTEX_ADMIN_SESSION_SECRET: ${{ secrets.CORTEX_ADMIN_SESSION_SECRET || vars.CORTEX_ADMIN_SESSION_SECRET }}
           TELEGRAM_INTERNAL_SECRET: ${{ secrets.TELEGRAM_INTERNAL_SECRET || vars.TELEGRAM_INTERNAL_SECRET }}
           CORTEX_ZARINPAL_MERCHANT_ID: ${{ secrets.CORTEX_ZARINPAL_MERCHANT_ID || vars.CORTEX_ZARINPAL_MERCHANT_ID }}
           CORTEX_PAYMENT_CALLBACK_URL: ${{ secrets.CORTEX_PAYMENT_CALLBACK_URL || vars.CORTEX_PAYMENT_CALLBACK_URL }}
@@ -87,8 +87,8 @@ jobs:
           put_secret POSTGRES_PRISMA_URL "$POSTGRES_PRISMA_URL"
           put_secret POSTGRES_URL "$POSTGRES_URL"
           put_secret APP_SECRET_KEY "$APP_SECRET_KEY"
-          put_secret CORTEX_ADMIN_PASSWORD "$CORTEX_ADMIN_PASSWORD"
-          put_secret CORTEX_ADMIN_USERNAME "$CORTEX_ADMIN_USERNAME"
+          put_secret CORTEX_ADMIN_ACCESS_TOKEN "$CORTEX_ADMIN_ACCESS_TOKEN"
+          put_secret CORTEX_ADMIN_SESSION_SECRET "$CORTEX_ADMIN_SESSION_SECRET"
           put_secret TELEGRAM_INTERNAL_SECRET "$TELEGRAM_INTERNAL_SECRET"
           put_secret CORTEX_ZARINPAL_MERCHANT_ID "$CORTEX_ZARINPAL_MERCHANT_ID"
           put_secret CORTEX_PAYMENT_CALLBACK_URL "$CORTEX_PAYMENT_CALLBACK_URL"
@@ -120,7 +120,7 @@ jobs:
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "Postgres URL missing"; exit 1; }
           schema="$(DATABASE_URL="$db_url" npx prisma db pull --print --force)"
-          for model in User Workspace Agent AgentApiKey KnowledgeSource KnowledgeDocument KnowledgeChunk VectorPoint Conversation Message ProviderConfig UsagePolicy AgentProviderConfig TelegramBot TelegramUser UsageReservation UsageEvent AuditLog MemoryEntry Plan ModelCatalog PlanModelAccess WorkspaceBillingAccount Subscription CreditLedgerEntry CreditReservation BillingCharge Invoice PasswordResetToken; do
+          for model in User Workspace Agent AgentApiKey KnowledgeSource KnowledgeDocument KnowledgeChunk VectorPoint Conversation Message ProviderConfig UsagePolicy AgentProviderConfig TelegramBot TelegramUser UsageReservation UsageEvent AuditLog MemoryEntry Plan ModelCatalog PlanModelAccess SystemProviderConfig WorkspaceBillingAccount Subscription CreditLedgerEntry CreditReservation BillingCharge Invoice PasswordResetToken; do
             [[ "$schema" == *"model $model"* ]] || { echo "Missing Prisma model in production schema: $model"; exit 1; }
           done
           echo "Production database contract verified."
@@ -229,8 +229,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
-          CORTEX_ADMIN_USERNAME: ${{ secrets.CORTEX_ADMIN_USERNAME || vars.CORTEX_ADMIN_USERNAME }}
-          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
+          CORTEX_ADMIN_SESSION_SECRET: ${{ secrets.CORTEX_ADMIN_SESSION_SECRET || vars.CORTEX_ADMIN_SESSION_SECRET }}
+          CORTEX_ADMIN_ACCESS_TOKEN: ${{ secrets.CORTEX_ADMIN_ACCESS_TOKEN || vars.CORTEX_ADMIN_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           base="https://cortex-ai.dengxiao445.workers.dev"
