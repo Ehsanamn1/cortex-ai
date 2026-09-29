@@ -252,7 +252,7 @@ export function BillingView(){
       {plan.key === "free" ? (
         <div className="mb-4 rounded-2xl border border-primary/15 bg-primary/[.04] p-3 text-xs leading-6 text-muted-foreground">
           <span className="font-black text-foreground">پلن آزمایشی:</span>{" "}
-          برای کنترل هزینه، فقط دو مدل اقتصادی منتخب Cortex در این سطح فعال هستند؛
+          برای کنترل هزینه، فقط چند مدل اقتصادی منتخب Cortex در این سطح فعال هستند؛
           مدل‌های حرفه‌ای‌تر با ارتقا به پلن‌های بالاتر باز می‌شوند.
         </div>
       ) : null}
