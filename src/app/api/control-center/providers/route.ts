@@ -104,6 +104,100 @@ export async function POST(req: Request) {
     const body = await readJson<Record<string, unknown>>(req);
     const action = textValue(body.action, 40) || "create";
 
+    if (action === "configure_trial") {
+      const providerId = textValue(body.providerId, 120);
+      const modelCatalogId = textValue(body.modelCatalogId, 120);
+      if (!providerId || !modelCatalogId) {
+        return applyCors(jsonError("Provider و مدل Trial را هر دو انتخاب کن.", 400), req.headers.get("origin"));
+      }
+
+      const [provider, model] = await Promise.all([
+        db.systemProviderConfig.findUnique({ where: { id: providerId } }),
+        db.modelCatalog.findUnique({ where: { id: modelCatalogId } }),
+      ]);
+      if (!provider) return applyCors(jsonError("Provider انتخاب‌شده پیدا نشد.", 404), req.headers.get("origin"));
+      if (!model) return applyCors(jsonError("مدل انتخاب‌شده پیدا نشد.", 404), req.headers.get("origin"));
+
+      const configured = Boolean(provider.apiKeyEncrypted) || provider.authMode === "none";
+      if (!provider.enabled || !configured) {
+        return applyCors(jsonError("Provider انتخاب‌شده هنوز آماده استفاده نیست. ابتدا آن را فعال و API Key/Base URL را بررسی کن.", 400), req.headers.get("origin"));
+      }
+      if (!model.active) return applyCors(jsonError("مدل انتخاب‌شده فعال نیست.", 400), req.headers.get("origin"));
+
+      const runtime = buildSystemProviderForModel(provider, model.modelId);
+      if (!runtime.isConfigured()) {
+        return applyCors(jsonError("Provider انتخاب‌شده با تنظیمات فعلی قابل اجرا نیست.", 400), req.headers.get("origin"));
+      }
+
+      const health = await runtime.healthCheck();
+      await db.systemProviderConfig.update({
+        where: { id: providerId },
+        data: {
+          lastHealthStatus: health.ok ? "healthy" : "error",
+          lastHealthError: health.ok ? null : health.error,
+          lastHealthAt: new Date(),
+        },
+      });
+      if (!health.ok) {
+        return applyCors(jsonOk({
+          ready: false,
+          configured: true,
+          provider: publicProvider(provider),
+          model: { id: model.id, displayName: model.displayName, modelId: model.modelId },
+          health,
+        }), req.headers.get("origin"));
+      }
+
+      const result = await db.$transaction(async (tx) => {
+        await tx.systemProviderConfig.updateMany({
+          where: { id: { not: providerId } },
+          data: { isTrialProvider: false },
+        });
+        await tx.systemProviderConfig.update({
+          where: { id: providerId },
+          data: { isTrialProvider: true },
+        });
+        await tx.modelCatalog.updateMany({
+          where: { trialDefault: true, id: { not: modelCatalogId } },
+          data: { trialDefault: false },
+        });
+        const trialModel = await tx.modelCatalog.update({
+          where: { id: modelCatalogId },
+          data: {
+            systemProviderId: providerId,
+            trialEnabled: true,
+            trialDefault: true,
+            active: true,
+          },
+        });
+        const free = await tx.plan.findUnique({ where: { key: "free" }, select: { id: true } });
+        if (free) {
+          await tx.planModelAccess.upsert({
+            where: { planId_modelCatalogId: { planId: free.id, modelCatalogId } },
+            update: { enabled: true, creditMultiplierBps: 100 },
+            create: { planId: free.id, modelCatalogId, enabled: true, creditMultiplierBps: 100 },
+          });
+        }
+        return trialModel;
+      });
+
+      return applyCors(jsonOk({
+        ready: true,
+        configured: true,
+        provider: publicProvider({ ...provider, isTrialProvider: true }),
+        model: {
+          id: result.id,
+          routeKey: result.routeKey,
+          displayName: result.displayName,
+          modelId: result.modelId,
+          systemProviderId: result.systemProviderId,
+          trialEnabled: result.trialEnabled,
+          trialDefault: result.trialDefault,
+        },
+        health,
+      }), req.headers.get("origin"));
+    }
+
     if (action === "create") {
       const config = validateConfig(body);
       const apiKey = textValue(body.apiKey, 4000);
