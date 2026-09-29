@@ -1,15 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const users = new Map<string, any>();
+const { users } = vi.hoisted(() => ({ users: new Map<string, any>() }));
 
 vi.mock("@/lib/db", () => {
-  const tx = {
+  const db: any = {
     user: {
       create: vi.fn(async ({ data }: any) => {
         const user = { id: "user-" + users.size, ...data, createdAt: new Date("2026-01-01"), updatedAt: new Date("2026-01-01") };
         users.set(data.email, user);
         return user;
       }),
+      findUnique: vi.fn(async ({ where }: any) => users.get(where.email) ?? null),
     },
     workspace: {
       create: vi.fn(async ({ data }: any) => ({
@@ -20,13 +21,9 @@ vi.mock("@/lib/db", () => {
         createdAt: new Date("2026-01-01"),
       })),
     },
-    $transaction: vi.fn(async (callback: (tx: typeof tx) => Promise<any>) => callback(tx)),
-    user: {
-      ...tx.user,
-      findUnique: vi.fn(async ({ where }: any) => users.get(where.email) ?? null),
-    },
   };
-  return { db: tx };
+  db.$transaction = vi.fn(async (callback: (tx: typeof db) => Promise<any>) => callback(db));
+  return { db };
 });
 
 vi.mock("@/lib/server/rate-limit", () => ({ rateLimit: vi.fn() }));
@@ -42,7 +39,7 @@ import { db } from "@/lib/db";
 import { POST as signup } from "@/app/api/auth/signup/route";
 
 describe("Signup route contract", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => { users.clear(); vi.clearAllMocks(); });
 
   it("creates user + workspace atomically and establishes a session", async () => {
     const res = await signup(new Request("http://qa.local/api/auth/signup", {
