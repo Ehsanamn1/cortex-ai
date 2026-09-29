@@ -430,49 +430,7 @@ export function DashboardView() {
 
       )}
 
-      {!hasAgents ? (
-        <section className="cortex-panel overflow-hidden rounded-[26px] border border-primary/10 p-5 sm:p-7">
-          <div className="grid items-center gap-6 lg:grid-cols-[.72fr_1.28fr]">
-            <div className="text-center lg:text-start">
-              <div className="mx-auto grid size-20 place-items-center rounded-[24px] border border-primary/15 bg-primary/[.06] lg:mx-0">
-                <DashboardEmptyIllustration />
-              </div>
-              <p className="mt-4 text-lg font-black">اولین ایجنتت را در ۳ قدم بساز</p>
-              <p className="mt-2 text-xs leading-6 text-muted-foreground">از دانش سازمان تا اولین پاسخ، مسیر را همین‌جا شروع کن.</p>
-              <Button className="mt-4" onClick={() => setView("agent-new")}><Plus />ساخت اولین Agent</Button>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              {[
-                ["۱", "ساخت Agent", "نام، لحن و قوانین پاسخ‌گویی را تعیین کن.", "agent-new"],
-                ["۲", "پیکربندی مدل", "از تب «هوش مصنوعی» همان Agent اتصال مدل را تنظیم کن.", "agent-new"],
-                ["۳", "تست در Playground", "بعد از ساخت Agent، وارد Playground شو.", "agents"],
-              ].map(([number, title, description, target]) => (
-                <button
-                  key={number}
-                  type="button"
-                  onClick={() => {
-                    if (number === "۱") {
-                      setView("agent-new");
-                      return;
-                    }
-                    const targetAgentId = recentAgentId;
-                    if (targetAgentId) {
-                      openAgent(targetAgentId, number === "۲" ? "ai" : "playground");
-                      return;
-                    }
-                    setView("agent-new");
-                  }}
-                  className="cortex-action min-h-[150px] rounded-2xl border border-white/[.07] bg-white/[.02] p-4 text-right"
-                >
-                  <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">{number}</span>
-                  <p className="mt-7 text-sm font-bold">{title}</p>
-                  <p className="mt-1 text-xs leading-6 text-muted-foreground">{description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : (
+      {hasAgents && (
         <>
           {settingEnabled("feature.dashboardRecent") && (
             <section className="grid items-start gap-5 lg:grid-cols-2">
