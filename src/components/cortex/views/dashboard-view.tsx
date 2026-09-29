@@ -212,7 +212,7 @@ function DashboardSystemPulse({ stats, activity }: { stats: DashboardStatsDto; a
     { ready: stats.agents > 0, label: "موتور Agent", detail: stats.agents > 0 ? faNum(stats.agents) + " Agent" : "در انتظار راه‌اندازی" },
     { ready: stats.knowledgeReady > 0, label: "مغز کسب‌وکار", detail: stats.knowledgeReady > 0 ? faNum(stats.knowledgeReady) + " منبع آماده" : "هنوز دانش آماده نشده" },
     { ready: stats.conversations > 0, label: "گفتگو", detail: stats.conversations > 0 ? faNum(stats.conversations) + " گفتگوی ثبت‌شده" : "هنوز مکالمه‌ای ثبت نشده" },
-    { ready: stats.telegramBots > 0, label: "Telegram", detail: stats.telegramBots > 0 ? faNum(stats.telegramBots) + " ربات" : "قابل راه‌اندازی" },
+    { ready: (stats.telegramBots ?? 0) > 0, label: "Telegram", detail: (stats.telegramBots ?? 0) > 0 ? faNum(stats.telegramBots ?? 0) + " ربات" : "قابل راه‌اندازی" },
   ];
   return (
     <Card className="cortex-panel h-full rounded-2xl">
