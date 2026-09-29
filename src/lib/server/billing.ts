@@ -1,13 +1,15 @@
 import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
 import { getKnownModelCatalog, getModelRate, PRICING_VERIFIED_AT, PRICING_MODE } from "@/lib/server/pricing";
+import { getManagedModelCatalog } from "@/lib/server/model-router";
+import { getUsdTomanRate } from "@/lib/server/fx";
 
 export const DEFAULT_BILLING_PLANS = [
-  { key: "free", name: "رایگان", description: "برای شروع و تست Cortex", priceToman: 0, monthlyCredits: 5000, overageCreditPriceToman: 0, sortOrder: 0 },
-  { key: "starter", name: "Launch", description: "برای شروع واقعی با مدل‌های سریع و اقتصادی", priceToman: 1790000, monthlyCredits: 10000, overageCreditPriceToman: 220, sortOrder: 1 },
-  { key: "business", name: "Growth", description: "برای تیم‌ها، Agentها و مصرف حرفه‌ای", priceToman: 8900000, monthlyCredits: 50000, overageCreditPriceToman: 190, sortOrder: 2 },
-  { key: "pro", name: "Scale", description: "برای اتوماسیون سنگین و مدل‌های سطح بالا", priceToman: 17900000, monthlyCredits: 100000, overageCreditPriceToman: 175, sortOrder: 3 },
-  { key: "enterprise", name: "Enterprise", description: "قرارداد و محدودیت سفارشی", priceToman: 0, monthlyCredits: 0, overageCreditPriceToman: 0, sortOrder: 4 },
+  { key: "free", name: "Trial", description: "دسترسی آزمایشی برای انتخاب پلن تجاری", priceToman: 0, monthlyCredits: 0, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 0 },
+  { key: "launch", name: "Launch", description: "شروع هوشمندانه برای تست و راه‌اندازی", priceToman: 3_900_000, monthlyCredits: 15_000, overageCreditPriceToman: 260, overageEnabled: false, sortOrder: 1 },
+  { key: "growth", name: "Growth", description: "پیشنهاد تیمی؛ تعادل ایده‌آل بین قدرت و هزینه", priceToman: 12_900_000, monthlyCredits: 80_000, overageCreditPriceToman: 220, overageEnabled: false, sortOrder: 2 },
+  { key: "scale", name: "Scale", description: "قدرت واقعی اتوماسیون برای مصرف سنگین", priceToman: 24_900_000, monthlyCredits: 180_000, overageCreditPriceToman: 190, overageEnabled: false, sortOrder: 3 },
+  { key: "enterprise", name: "Enterprise", description: "همه امکانات با قرارداد و SLA سفارشی", priceToman: 35_000_000, monthlyCredits: 0, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 4 },
 ] as const;
 
 const CATALOG_CACHE_MS = 10 * 60 * 1000;
@@ -23,9 +25,9 @@ function periodEndFor(start: Date): Date {
 }
 
 export const CREDIT_TOP_UP_PACKAGES = {
-  starter: { credits: 10_000, amountToman: 1_990_000, label: "۱۰ هزار اعتبار" },
-  growth: { credits: 50_000, amountToman: 9_490_000, label: "۵۰ هزار اعتبار" },
-  scale: { credits: 100_000, amountToman: 19_490_000, label: "۱۰۰ هزار اعتبار" },
+  starter: { credits: 10_000, amountToman: 2_200_000, label: "۱۰ هزار اعتبار · بسته ادامه" },
+  growth: { credits: 50_000, amountToman: 9_500_000, label: "۵۰ هزار اعتبار · بسته قدرت" },
+  scale: { credits: 100_000, amountToman: 17_500_000, label: "۱۰۰ هزار اعتبار · بسته مقیاس" },
 } as const;
 export type CreditTopUpPackageKey = keyof typeof CREDIT_TOP_UP_PACKAGES;
 
@@ -102,7 +104,17 @@ async function ensurePlanCatalog() {
     for (const plan of DEFAULT_BILLING_PLANS) {
       await db.plan.upsert({
         where: { key: plan.key },
-        update: {},
+        update: {
+          name: plan.name,
+          description: plan.description,
+          priceToman: plan.priceToman,
+          currency: "TOMAN",
+          monthlyCredits: plan.monthlyCredits,
+          overageCreditPriceToman: plan.overageCreditPriceToman,
+          overageEnabled: plan.overageEnabled,
+          active: true,
+          sortOrder: plan.sortOrder,
+        },
         create: {
           key: plan.key,
           name: plan.name,
@@ -111,6 +123,7 @@ async function ensurePlanCatalog() {
           currency: "TOMAN",
           monthlyCredits: plan.monthlyCredits,
           overageCreditPriceToman: plan.overageCreditPriceToman,
+          overageEnabled: plan.overageEnabled,
           sortOrder: plan.sortOrder,
           active: true,
         },
@@ -124,19 +137,16 @@ async function ensureKnownModelCatalog() {
   if (modelCatalogReadyAt && Date.now() - modelCatalogReadyAt < CATALOG_CACHE_MS) return;
   if (modelCatalogPromise) return modelCatalogPromise;
   modelCatalogPromise = (async () => {
-    const known = getKnownModelCatalog();
-    const qualityRank: Record<string, number> = { economy: 1, balanced: 2, premium: 3, deep: 4 };
+    const known = getManagedModelCatalog();
     const plans = await db.plan.findMany({ where: { active: true }, select: { id: true, key: true } });
     for (const entry of known) {
-      const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel(entry.provider, entry.modelId);
+      const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel("OpenRouter", entry.providerModelId);
       for (const plan of plans) {
-        const maxRank = plan.key === "free" || plan.key === "starter" ? 2 : plan.key === "business" ? 3 : 4;
-        const enabled = qualityRank[entry.qualityTier] <= maxRank && Boolean(entry.commercialAvailable ?? true);
-        const multiplierBps = Math.max(1, fallbackMultiplier);
+        const enabled = plan.key !== "free" && entry.planKeys.includes(plan.key as any) && Boolean(entry.commercialAvailable ?? true);
         await db.planModelAccess.upsert({
           where: { planId_modelCatalogId: { planId: plan.id, modelCatalogId: catalog.id } },
-          update: { enabled, creditMultiplierBps: multiplierBps },
-          create: { planId: plan.id, modelCatalogId: catalog.id, enabled, creditMultiplierBps: multiplierBps },
+          update: { enabled, creditMultiplierBps: Math.max(1, fallbackMultiplier) },
+          create: { planId: plan.id, modelCatalogId: catalog.id, enabled, creditMultiplierBps: Math.max(1, fallbackMultiplier) },
         });
       }
     }
@@ -145,34 +155,46 @@ async function ensureKnownModelCatalog() {
 }
 
 async function ensureModel(provider: string, model: string) {
-  const known = getKnownModelCatalog().find(
-    (entry) => entry.provider.toLowerCase() === provider.toLowerCase() && entry.modelId.toLowerCase() === model.toLowerCase(),
+  const canonicalProvider = provider.toLowerCase() === "openrouter" ? "OpenRouter" : provider;
+  const managed = getManagedModelCatalog().find(
+    (entry) => entry.provider === canonicalProvider && entry.providerModelId.toLowerCase() === model.toLowerCase(),
   );
-  const rate = getModelRate(provider, model);
-  const qualityTier = known?.qualityTier ?? "balanced";
+  const known = getKnownModelCatalog().find(
+    (entry) => entry.provider.toLowerCase() === canonicalProvider.toLowerCase() && entry.modelId.toLowerCase() === model.toLowerCase(),
+  );
+  const rate = managed ? getModelRate("OpenRouter", managed.providerModelId) : getModelRate(canonicalProvider, model);
+  const qualityTier = managed?.qualityTier ?? known?.qualityTier ?? "balanced";
   const multiplierBps = defaultCreditMultiplierBps(qualityTier);
   const catalog = await db.modelCatalog.upsert({
-    where: { provider_modelId: { provider, modelId: model } },
-    update: {},
-    create: {
-      provider,
-      modelId: model,
-      displayName: known?.displayName ?? model,
+    where: { provider_modelId: { provider: canonicalProvider, modelId: model } },
+    update: {
+      displayName: managed?.displayName ?? known?.displayName ?? model,
       inputUsdPer1M: rate.inputUsdPer1M,
       outputUsdPer1M: rate.outputUsdPer1M,
-      contextWindow: known?.contextWindow ?? null,
-      vision: known?.vision ?? false,
-      tools: known?.tools ?? false,
-      structuredOutput: known?.structuredOutput ?? false,
-      reasoning: known?.reasoning ?? false,
       qualityTier,
-      speedTier: known?.speedTier ?? "balanced",
+      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
+      commercialAvailable: rate.known,
+    },
+    create: {
+      provider: canonicalProvider,
+      modelId: model,
+      displayName: managed?.displayName ?? known?.displayName ?? model,
+      inputUsdPer1M: rate.inputUsdPer1M,
+      outputUsdPer1M: rate.outputUsdPer1M,
+      contextWindow: managed?.contextWindow ?? known?.contextWindow ?? null,
+      vision: managed?.vision ?? known?.vision ?? false,
+      tools: managed?.tools ?? known?.tools ?? false,
+      structuredOutput: managed?.structuredOutput ?? known?.structuredOutput ?? false,
+      reasoning: managed?.reasoning ?? known?.reasoning ?? false,
+      qualityTier,
+      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
       commercialAvailable: rate.known,
       active: true,
     },
   });
   return { catalog, defaultMultiplierBps: multiplierBps };
 }
+
 
 async function ensureWorkspaceBilling(workspaceId: string) {
   await ensurePlanCatalog();
@@ -209,6 +231,20 @@ async function ensureWorkspaceBilling(workspaceId: string) {
           periodEnd: account.periodEnd,
         },
       });
+    }
+
+    const legacyPlanMap: Record<string, string> = { starter: "launch", business: "growth", pro: "scale" };
+    const migratedPlanKey = legacyPlanMap[account.plan.key];
+    if (migratedPlanKey) {
+      const targetPlan = await tx.plan.findUnique({ where: { key: migratedPlanKey } });
+      if (targetPlan) {
+        await tx.workspaceBillingAccount.update({ where: { id: account.id }, data: { planId: targetPlan.id } });
+        await tx.subscription.updateMany({
+          where: { billingAccountId: account.id, status: "active" },
+          data: { planId: targetPlan.id },
+        });
+        account = await tx.workspaceBillingAccount.findUniqueOrThrow({ where: { id: account.id }, include: { plan: true } });
+      }
     }
 
     if (envEnforcementDefault() && !account.enforcementEnabled) {
@@ -390,24 +426,31 @@ export async function getBillingSnapshot(workspaceId: string) {
           .slice(0, 12);
       })(),
     },
-    models: catalog.map((item) => ({
-      id: item.id,
-      provider: item.provider,
-      modelId: item.modelId,
-      displayName: item.displayName,
-      inputUsdPer1M: item.inputUsdPer1M,
-      outputUsdPer1M: item.outputUsdPer1M,
-      qualityTier: item.qualityTier,
-      speedTier: item.speedTier,
-      contextWindow: item.contextWindow,
-      vision: item.vision,
-      tools: item.tools,
-      structuredOutput: item.structuredOutput,
-      reasoning: item.reasoning,
-      commercialAvailable: item.commercialAvailable,
-      enabledForPlan: accessMap.get(item.id)?.enabled ?? (account.plan.priceToman === 0 ? item.commercialAvailable : false),
-      creditMultiplierBps: accessMap.get(item.id)?.creditMultiplierBps ?? defaultCreditMultiplierBps(item.qualityTier),
-    })),
+    models: catalog.map((item) => {
+      const managed = getManagedModelCatalog().find(
+        (model) => model.provider === item.provider && model.providerModelId === item.modelId,
+      );
+      return {
+        id: item.id,
+        key: managed?.key ?? item.id,
+        provider: item.provider,
+        modelId: item.modelId,
+        displayName: item.displayName,
+        inputUsdPer1M: item.inputUsdPer1M,
+        outputUsdPer1M: item.outputUsdPer1M,
+        qualityTier: item.qualityTier,
+        speedTier: item.speedTier,
+        contextWindow: item.contextWindow,
+        vision: item.vision,
+        tools: item.tools,
+        structuredOutput: item.structuredOutput,
+        reasoning: item.reasoning,
+        commercialAvailable: item.commercialAvailable,
+        enabledForPlan: accessMap.get(item.id)?.enabled ?? false,
+        creditMultiplierBps: accessMap.get(item.id)?.creditMultiplierBps ?? defaultCreditMultiplierBps(item.qualityTier),
+        creditRatePer1K: managed?.creditRatePer1K ?? null,
+      };
+    }),
     ledger: recentLedger.map((entry) => ({
       id: entry.id,
       amountCredits: entry.amountCredits,
@@ -446,6 +489,23 @@ export async function getBillingSnapshot(workspaceId: string) {
       createdAt:item.createdAt.toISOString(),
     })),
   };
+}
+
+const LOWEST_CREDIT_VALUE_TOMAN = 24_900_000 / 180_000;
+
+function calculateManagedCredits(inputTokens: number, outputTokens: number, modelKey: string | null | undefined, providerCostMicros: number, usdToman: number): number | null {
+  const managed = getManagedModelCatalog().find((entry) => entry.key === modelKey || entry.providerModelId === modelKey);
+  if (!managed) return null;
+
+  const input = Math.max(0, Math.floor(inputTokens));
+  const output = Math.max(0, Math.floor(outputTokens));
+  const baseCredits = Math.ceil(
+    (output / 1000) * managed.creditRatePer1K +
+    (input / 1000) * (managed.creditRatePer1K * 0.25),
+  );
+  const providerCostToman = Math.max(0, providerCostMicros) / 1_000_000 * Math.max(0, usdToman);
+  const marginFloor = Math.ceil((providerCostToman * 2) / LOWEST_CREDIT_VALUE_TOMAN);
+  return Math.max(1, baseCredits, marginFloor);
 }
 
 export interface BillingReservationResult {
@@ -531,10 +591,21 @@ export async function reserveBillingCredits(params: {
   const maxOutputTokens = Math.max(0, Math.floor(params.maxOutputTokens));
   const providerCostMicros = catalogCostMicros(inputTokens, maxOutputTokens, catalog.inputUsdPer1M, catalog.outputUsdPer1M);
   const multiplierBps = Math.max(1, access.creditMultiplierBps || fallbackMultiplier);
-  const estimatedCredits = creditsFromProviderCost(providerCostMicros, multiplierBps);
+  const managed = getManagedModelCatalog().find((entry) => entry.providerModelId.toLowerCase() === params.model.toLowerCase());
+  const usdToman = managed ? (await getUsdTomanRate()).usdToman : 0;
+  const managedCredits = managed
+    ? calculateManagedCredits(inputTokens, maxOutputTokens, managed.key, providerCostMicros, usdToman)
+    : null;
+  const estimatedCredits = managedCredits ?? creditsFromProviderCost(providerCostMicros, multiplierBps);
 
   if (!account.enforcementEnabled || estimatedCredits <= 0) {
-    return { reservationId: null, estimatedCredits, providerCostMicros, creditMultiplierBps: multiplierBps, enforcementEnabled: false };
+    return {
+      reservationId: null,
+      estimatedCredits,
+      providerCostMicros,
+      creditMultiplierBps: managed ? 100 : multiplierBps,
+      enforcementEnabled: false,
+    };
   }
 
   const now = new Date();
@@ -649,7 +720,12 @@ export async function recordUsageAndCharge(params: {
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
   });
   const multiplierBps = Math.max(1, access?.creditMultiplierBps || defaultMultiplierBps);
-  const chargedCredits = creditsFromProviderCost(providerCostMicros, multiplierBps);
+  const managed = getManagedModelCatalog().find((entry) => entry.providerModelId.toLowerCase() === model.toLowerCase());
+  const usdToman = managed ? (await getUsdTomanRate()).usdToman : 0;
+  const managedCredits = managed
+    ? calculateManagedCredits(inputTokens, outputTokens, managed.key, providerCostMicros, usdToman)
+    : null;
+  const chargedCredits = managedCredits ?? creditsFromProviderCost(providerCostMicros, multiplierBps);
   const totalTokens = params.usage.totalTokens ?? params.usage.inputTokens + params.usage.outputTokens;
 
   return db.$transaction(async (tx) => {

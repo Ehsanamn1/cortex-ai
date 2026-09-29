@@ -44,6 +44,7 @@ export interface AgentDto {
   instructions: string | null;
   persona: string | null;
   systemPrompt: string | null;
+  modelKey: string | null;
   temperature: number;
   topP: number;
   maxTokens: number;
@@ -70,6 +71,7 @@ export interface CreateAgentInput {
   instructions?: string;
   persona?: string;
   systemPrompt?: string;
+  modelKey?: string;
   temperature?: number;
   topP?: number;
   maxTokens?: number;
@@ -156,6 +158,11 @@ export interface ConversationDetailDto {
 export interface ChatResponse {
   userMessage: MessageDto;
   assistantMessage: MessageDto;
+  billing?: {
+    chargedCredits: number;
+    balanceCredits: number;
+    status: string;
+  };
 }
 
 export interface DashboardStatsDto {
@@ -268,7 +275,7 @@ export interface AgentToolDto { id:string; key:string; name:string; description:
 export interface WorkflowDto { id:string; workspaceId:string; agentId:string|null; name:string; description:string|null; definition:string; status:string; triggers:Array<{id:string;type:string;enabled:boolean}>; agent?:{id:string;name:string}|null; _count?:{executions:number}; }
 
 export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }
-export interface BillingModelDto { id:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; contextWindow:number|null; vision:boolean; tools:boolean; structuredOutput:boolean; reasoning:boolean; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number }
+export interface BillingModelDto { id:string; key:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; contextWindow:number|null; vision:boolean; tools:boolean; structuredOutput:boolean; reasoning:boolean; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number; creditRatePer1K:number|null }
 export interface BillingInvoiceDto { id:string; invoiceNumber:string; status:string; currency:string; subtotalToman:number; overageToman:number; totalToman:number; periodStart:string; periodEnd:string; issuedAt:string|null; dueAt:string|null; paidAt:string|null; createdAt:string }
 export interface BillingTopUpRequestDto { id:string; packageKey:string; credits:number; amountToman:number; status:string; note:string|null; paymentProvider:string|null; paymentStatus:string|null; paymentRefId:string|null; paidAt:string|null; createdAt:string; reviewedAt:string|null }
 export interface BillingLedgerEntryDto { id:string; amountCredits:number; balanceAfter:number; entryType:string; description:string|null; createdAt:string }
@@ -403,6 +410,7 @@ export const api = {
   },
   requestBillingTopUp(packageKey:string, workspaceId?:string){ return jsonRequest<{request:BillingTopUpRequestDto}>(`/api/billing/topup-request`,"POST",{packageKey,workspaceId}); },
   startBillingTopUpPayment(packageKey:string, workspaceId?:string){ return jsonRequest<{redirectUrl:string;requestId:string}>(`/api/billing/topup-payment`,"POST",{packageKey,workspaceId}); },
+  startBillingPlanPayment(planKey:string, workspaceId?:string){ return jsonRequest<{redirectUrl:string;requestId:string}>(`/api/billing/plan-payment`,"POST",{planKey,workspaceId}); },
 
   /* AUTH */
 

@@ -4,6 +4,7 @@ import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/s
 import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession, serializeAgent } from "@/lib/server/access";
 import { purgeAgentKnowledge } from "@/lib/knowledge/pipeline";
+import { getManagedModelCatalog } from "@/lib/server/model-router";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,20 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const data: Prisma.AgentUpdateInput = {};
     let requestedTone: string | undefined;
+    if (typeof body.modelKey === "string") {
+      const model = getManagedModelCatalog().find((item) => item.key === body.modelKey);
+      if (!model) {
+        return applyCors(jsonError("مدل انتخابی معتبر نیست.", 400), req.headers.get("origin"));
+      }
+      const billing = await db.workspaceBillingAccount.findUnique({
+        where: { workspaceId: agent.workspaceId },
+        include: { plan: true },
+      });
+      if (!billing || billing.plan.key === "free" || !model.planKeys.includes(billing.plan.key as any)) {
+        return applyCors(jsonError("این مدل در پلن فعلی شما در دسترس نیست. برای دسترسی به آن پلن را ارتقا دهید.", 403), req.headers.get("origin"));
+      }
+      data.modelKey = model.key;
+    }
     let requestedCustomTone: string | null | undefined;
     if (typeof body.name === "string") {
       const name = body.name.trim();

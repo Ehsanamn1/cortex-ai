@@ -427,200 +427,136 @@ function ToolsTab({ agentId }: { agentId: string }) {
 }
 
 
-function ProviderTab({ agentId }: { agentId: string }) {
+function ManagedModelTab({ agentId }: { agentId: string }) {
+  const queryClient = useQueryClient();
+  const setView = useCortexStore((s) => s.setView);
   const { data, isPending, isError, error, refetch } = useQuery({
-    queryKey: ["agent-provider", agentId],
-    queryFn: () => api.getAgentProviderConfig(agentId),
+    queryKey: ["billing", "model-picker"],
+    queryFn: () => api.getBilling(),
+    staleTime: 20_000,
+  });
+  const agentQuery = useQuery({
+    queryKey: ["agent", agentId],
+    queryFn: () => api.getAgent(agentId),
+    staleTime: 30_000,
   });
 
-  if (isPending) return <Skeleton className="h-96 rounded-2xl" />;
-  if (isError || !data) {
-    return (
-      <ErrorState
-        message={error instanceof Error ? error.message : "دریافت اتصال هوش مصنوعی ناموفق بود."}
-        onRetry={() => void refetch()}
-      />
-    );
+  const selectModel = useMutation({
+    mutationFn: (modelKey: string) => api.updateAgent(agentId, { modelKey }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
+      queryClient.invalidateQueries({ queryKey: ["billing", "model-picker"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("مدل Agent به‌روزرسانی شد.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (isPending || agentQuery.isPending) {
+    return <div className="space-y-4"><Skeleton className="h-44 rounded-2xl" /><Skeleton className="h-72 rounded-2xl" /></div>;
+  }
+  if (isError || !data || agentQuery.isError || !agentQuery.data) {
+    return <ErrorState message={error instanceof Error ? error.message : "دریافت مدل‌های Cortex ناموفق بود."} onRetry={() => { void refetch(); void agentQuery.refetch(); }} />;
+  }
+
+  const plan = data.account.plan;
+  const currentModel = agentQuery.data.agent.modelKey ?? "launch-fast";
+  const models = data.models ?? [];
+  const grouped = ["economy", "balanced", "premium", "deep"].map((tier) => ({
+    tier,
+    items: models.filter((item) => item.qualityTier === tier),
+  })).filter((group) => group.items.length > 0);
+
+  const labels: Record<string, { title: string; description: string }> = {
+    economy: { title: "سریع و اقتصادی", description: "برای پاسخ‌های روزمره با مصرف کنترل‌شده" },
+    balanced: { title: "حرفه‌ای", description: "تعادل کیفیت، سرعت و هزینه" },
+    premium: { title: "متخصص", description: "برای کارهای پیچیده‌تر و تحلیل عمیق‌تر" },
+    deep: { title: "پیشرفته", description: "مدل‌های قدرتمند برای سناریوهای سازمانی" },
+  };
+
+  function upgrade() {
+    setView("billing");
   }
 
   return (
-    <ProviderConnectionForm
-      key={data.config?.id ?? "new"}
-      agentId={agentId}
-      config={data.config}
-      configured={data.status.status === "configured"}
-    />
-  );
-}
-
-function ProviderConnectionForm({
-  agentId,
-  config,
-  configured,
-}: {
-  agentId: string;
-  config: {
-    id: string;
-    providerName: string;
-    baseUrl: string;
-    model: string;
-    protocol?: string;
-    authMode: string;
-    enabled: boolean;
-    hasApiKey: boolean;
-    updatedAt?: string;
-  } | null;
-  configured: boolean;
-}) {
-  const queryClient = useQueryClient();
-  const [providerName, setProviderName] = useState(config?.providerName ?? "AI Gateway");
-  const [baseUrl, setBaseUrl] = useState(config?.baseUrl ?? "");
-  const [model, setModel] = useState(config?.model ?? "");
-  const [protocol, setProtocol] = useState(config?.protocol ?? "openai-compatible");
-  const [authMode, setAuthMode] = useState(config?.authMode ?? "bearer");
-  const [apiKey, setApiKey] = useState("");
-  const [enabled, setEnabled] = useState(config?.enabled ?? true);
-
-  const saveMutation = useMutation({
-    mutationFn: () => api.saveAgentProviderConfig(agentId, {
-      providerName: providerName.trim(),
-      baseUrl: baseUrl.trim(),
-      model: model.trim(),
-      protocol,
-      authMode,
-      apiKey: apiKey.trim() || undefined,
-      enabled,
-    }),
-    onSuccess: () => {
-      setApiKey("");
-      queryClient.invalidateQueries({ queryKey: ["agent-provider", agentId] });
-      toast.success("اتصال هوش مصنوعی این ایجنت ذخیره شد");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const testMutation = useMutation({
-    mutationFn: () => api.testAgentProviderHealth(agentId),
-    onSuccess: (result) => {
-      toast.success("اتصال برقرار است — " + faNum(result.llm.latencyMs) + " میلی‌ثانیه");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const hasKey = Boolean(config?.hasApiKey);
-  const requiresApiKey = protocol !== "openai-compatible" || authMode !== "none";
-  const canSave =
-    providerName.trim().length >= 2 &&
-    /^https?:\/\//i.test(baseUrl.trim()) &&
-    model.trim().length > 0 &&
-    (!requiresApiKey || hasKey || apiKey.trim().length > 0);
-
-  return (
-    <div className="space-y-6">
-      <Card className="cortex-panel rounded-2xl">
-        <CardHeader className="border-b [.border-b]:pb-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="space-y-5">
+      <Card className="cortex-panel overflow-hidden rounded-2xl">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <span className="flex size-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                  <KeyRound className="size-4" />
-                </span>
-                اتصال اختصاصی هوش مصنوعی
-              </CardTitle>
-              <CardDescription className="mt-2 leading-6">
-                این اتصال فقط برای همین ایجنت استفاده می‌شود. هر تغییری در مدل، Provider یا API Key از همین تب اعمال می‌شود؛ تنظیمات عمومی فضای کاری برای این کار نیست. کلید API در سرور به‌صورت رمزنگاری‌شده ذخیره می‌شود و دوباره در رابط کاربری نمایش داده نمی‌شود. «پیکربندی‌شده» یعنی مشخصات اتصال کامل است؛ برای اطمینان از دسترسی واقعی، «تست اتصال» را اجرا کنید.
-              </CardDescription>
+              <p className="cortex-kicker">CORTEX MODEL ROUTER</p>
+              <h3 className="mt-2 text-xl font-black">مدل را انتخاب کن؛ اتصال را Cortex مدیریت می‌کند.</h3>
+              <p className="mt-2 max-w-2xl text-xs leading-6 text-muted-foreground">
+                هیچ Provider، API Key یا Base URL لازم نیست. مدل انتخابی بر اساس پلن شما از زیرساخت Cortex اجرا می‌شود و هزینه آن از اعتبار کم می‌شود.
+              </p>
             </div>
-            <Badge
-              variant={config && config.enabled && configured ? "default" : "outline"}
-              className="shrink-0"
-            >
-              {config && config.enabled && configured ? "پیکربندی‌شده" : config ? "نیاز به بررسی" : "متصل نشده"}
-            </Badge>
+            <div className="rounded-2xl border border-primary/15 bg-primary/[.05] px-4 py-3 text-start">
+              <p className="text-[10px] text-muted-foreground">پلن فعلی</p>
+              <p className="mt-1 text-sm font-black text-primary">{plan.name}</p>
+            </div>
           </div>
-        </CardHeader>
 
-        <CardContent className="grid gap-5 pt-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>نام سرویس</Label>
-            <Input value={providerName} onChange={(e) => setProviderName(e.target.value)} placeholder="مثلاً OpenRouter یا AI Gateway" />
-          </div>
-          <div className="space-y-2">
-            <Label>Base URL</Label>
-            <Input dir="ltr" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://.../v1" />
-          </div>
-          <div className="space-y-2">
-            <Label>Model ID</Label>
-            <Input dir="ltr" value={model} onChange={(e) => setModel(e.target.value)} placeholder="model-name" />
-          </div>
-          <div className="space-y-2">
-            <Label>نوع سرویس / پروتکل</Label>
-            <Select value={protocol} onValueChange={setProtocol}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="انتخاب نوع اتصال" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="openai-compatible">OpenAI Compatible / OpenRouter / Gateway</SelectItem>
-                <SelectItem value="anthropic">Anthropic Messages</SelectItem>
-                <SelectItem value="gemini">Google Gemini API</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>روش احراز</Label>
-            <Select value={authMode} onValueChange={setAuthMode}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="انتخاب روش" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bearer">Bearer</SelectItem>
-                <SelectItem value="x-api-key">X-API-Key</SelectItem>
-                <SelectItem value="none">بدون کلید</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>API Key {requiresApiKey ? (hasKey ? "(برای نگه‌داشتن کلید فعلی خالی بگذارید)" : "*") : "(اختیاری)"}</Label>
-            <Input
-              dir="ltr"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={hasKey ? "••••••••••••••••" : "کلید API سرویس‌دهنده"}
-            />
-            <p className="text-[11px] leading-relaxed text-muted-foreground">کلید خام هرگز به مرورگر برگردانده نمی‌شود.</p>
-          </div>
-          <div className="md:col-span-2 flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.02] p-4">
-            <div>
-              <p className="text-sm font-medium">استفاده برای پاسخ‌گویی این ایجنت</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">این اتصال برای Playground، تلگرام و API همین ایجنت استفاده می‌شود.</p>
+          <div className="mt-5 rounded-2xl border border-primary/15 bg-primary/[.04] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold">اعتبار باقی‌مانده</p>
+                <p className="mt-1 text-lg font-black">{faNum(data.account.balanceCredits)} <span className="text-[10px] font-medium text-muted-foreground">اعتبار</span></p>
+              </div>
+              <div className="min-w-[180px] flex-1 sm:max-w-sm">
+                <div className="flex justify-between text-[9px] text-muted-foreground"><span>پیشرفت مصرف</span><span>{faNum(plan.monthlyCredits ? Math.min(100, Math.round((data.account.balanceCredits / plan.monthlyCredits) * 100)) : 0)}٪</span></div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: (plan.monthlyCredits ? Math.min(100, Math.max(0, Math.round((data.account.balanceCredits / plan.monthlyCredits) * 100))) : 0) + "%" }} /></div>
+              </div>
+              <Button onClick={upgrade} variant="outline">مدیریت پلن و اعتبار</Button>
             </div>
-            <input
-              aria-label="فعال بودن اتصال ایجنت"
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-              className="size-4 accent-primary"
-            />
-          </div>
-          <div className="md:col-span-2 flex flex-wrap justify-end gap-2">
-            <Button variant="outline" disabled={testMutation.isPending || !config} onClick={() => testMutation.mutate()}>
-              {testMutation.isPending ? <Loader2 className="animate-spin" /> : <ShieldCheck />}
-              {testMutation.isPending ? "در حال تست..." : "تست اتصال"}
-            </Button>
-            <Button disabled={saveMutation.isPending || !canSave} onClick={() => saveMutation.mutate()}>
-              {saveMutation.isPending && <Loader2 className="animate-spin" />}
-              {saveMutation.isPending ? "در حال ذخیره..." : "ذخیره اتصال"}
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl border-amber-500/20 bg-amber-500/[.035]">
-        <CardContent className="flex gap-3 p-4">
-          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-amber-400" />
-          <div className="space-y-1 text-sm leading-7">
-            <p className="font-semibold">فرمت اتصال</p>
-            <p className="text-muted-foreground">
-              Cortex اکنون اتصال مستقیم به OpenAI-compatible، Anthropic و Gemini را پشتیبانی می‌کند؛ Base URL و Model ID را دقیقاً مطابق سرویس‌دهنده وارد کنید.
-            </p>
+      {grouped.map((group) => (
+        <section key={group.tier} className="space-y-3">
+          <div>
+            <h4 className="text-sm font-black">{labels[group.tier]?.title ?? group.tier}</h4>
+            <p className="mt-1 text-[10px] text-muted-foreground">{labels[group.tier]?.description}</p>
           </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {group.items.map((model) => {
+              const selected = model.key === currentModel || model.modelId === currentModel || model.id === currentModel;
+              const allowed = model.enabledForPlan;
+              return (
+                <button
+                  key={model.id}
+                  type="button"
+                  disabled={!allowed || selectModel.isPending}
+                  onClick={() => allowed && selectModel.mutate(model.key ?? model.modelId)}
+                  className={cn(
+                    "rounded-2xl border p-4 text-start transition-all",
+                    selected ? "border-primary/40 bg-primary/[.08] shadow-[0_12px_34px_rgba(59,130,255,.10)]" : "border-border/70 bg-card/55 hover:border-primary/25",
+                    !allowed && "cursor-not-allowed opacity-60"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black">{model.displayName}</p>
+                      <p className="mt-1 text-[10px] leading-5 text-muted-foreground">{allowed ? "فعال برای پلن شما" : "با ارتقا باز می‌شود"}</p>
+                    </div>
+                    <Badge variant={selected ? "default" : "outline"}>{selected ? "انتخاب‌شده" : allowed ? "مجاز" : "قفل"}</Badge>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-[9px] text-muted-foreground">
+                    <span>{faNum(model.creditMultiplierBps / 100)}× ضریب کیفیت</span>
+                    <span>{model.vision ? "Vision" : "Text"} · {model.tools ? "Tools" : "Basic"}</span>
+                  </div>
+                  {!allowed && <div className="mt-3 rounded-xl border border-primary/15 bg-primary/[.04] px-3 py-2 text-[9px] text-primary">برای دسترسی به این سطح، به پلن بالاتر برو.</div>}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+
+      <Card className="rounded-2xl border-emerald-400/15 bg-emerald-400/[.035]">
+        <CardContent className="p-4">
+          <p className="text-xs font-semibold">کنترل هزینه بدون دردسر</p>
+          <p className="mt-1 text-[10px] leading-5 text-muted-foreground">قبل از هر درخواست، Cortex اعتبار لازم را رزرو می‌کند. بعد از پاسخ، مصرف واقعی ثبت و از Wallet کسر می‌شود. هیچ کلید API در اختیار کاربر قرار نمی‌گیرد.</p>
         </CardContent>
       </Card>
     </div>
@@ -995,7 +931,7 @@ export function AgentDetailView() {
           <AgentTelegramTab agentId={agentId} />
         </TabsContent>
         <TabsContent value="ai" className="mt-6">
-          <ProviderTab agentId={agentId} />
+          <ManagedModelTab agentId={agentId} />
         </TabsContent>
         <TabsContent value="tools" className="mt-6">
           <ToolsTab agentId={agentId} />

@@ -40,6 +40,11 @@ export function BillingView(){
     onSuccess:(result)=>{window.location.assign(result.redirectUrl);},
     onError:(e:Error)=>toast.error(e.message),
   });
+  const planPurchase=useMutation({
+    mutationFn:(planKey:string)=>api.startBillingPlanPayment(planKey,workspaceId??undefined),
+    onSuccess:(result)=>{window.location.assign(result.redirectUrl);},
+    onError:(e:Error)=>toast.error(e.message),
+  });
 
   const enabledModels=useMemo(()=>data?.models.filter(m=>m.enabledForPlan)??[],[data]);
   if(!workspaceId) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">فضای کاری فعالی انتخاب نشده است.</CardContent></Card>;
@@ -49,6 +54,8 @@ export function BillingView(){
   const plan=data.account.plan;
   const balancePct=plan.monthlyCredits?Math.min(100,Math.round((Math.max(0,data.account.balanceCredits)/plan.monthlyCredits)*100)):0;
   const pending=data.topUpRequests.filter(x=>x.status==="pending").length;
+  const needsPlan = plan.key === "free" || (plan.monthlyCredits > 0 && data.account.balanceCredits <= 0);
+  const lowBalance = !needsPlan && plan.monthlyCredits > 0 && balancePct <= 20;
 
   const modelUsage = data.usage30Days.byModel ?? [];
   const maxModelTokens = Math.max(...modelUsage.map((usageItem) => usageItem.tokens), 1);
@@ -58,6 +65,19 @@ export function BillingView(){
   }
 
   return <div className="space-y-4 sm:space-y-5">
+    {(needsPlan || lowBalance) && <section className={cn("rounded-2xl border p-4 sm:p-5", needsPlan ? "border-primary/25 bg-primary/[.055]" : "border-amber-400/25 bg-amber-400/[.045]")}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-black">{needsPlan ? "برای شروع، یک پلن انتخاب کن." : "اعتبارت رو به اتمام است."}</p>
+          <p className="mt-1 text-xs leading-6 text-muted-foreground">{needsPlan ? "پلن را انتخاب کن تا مدل‌های managed و اجرای Agentها فعال شوند." : "برای ادامه بدون وقفه، همین حالا یک بسته اعتبار تهیه کن."}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={()=>jumpTo("cortex-plans")} className="h-10 rounded-xl bg-primary px-4 text-xs font-black text-primary-foreground">{needsPlan ? "انتخاب پلن" : "مشاهده پلن‌ها"}</button>
+          {!needsPlan && <button type="button" onClick={()=>jumpTo("cortex-topup")} className="h-10 rounded-xl border border-border/70 px-4 text-xs font-bold">شارژ سریع</button>}
+        </div>
+      </div>
+    </section>}
+
     <motion.section
       initial={{ opacity: 0, y: 10, scale: .99 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -120,6 +140,7 @@ export function BillingView(){
     <details id="cortex-cost-lab" className="cortex-panel rounded-2xl overflow-hidden"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-bold"><span className="flex items-center gap-2"><Gauge className="size-4 text-primary"/>تخمین مصرف، توکن و هزینه</span><ChevronDown className="size-4"/></summary><div className="border-t border-border/60 p-3 sm:p-4"><BillingEstimator models={data.models} monthlyCredits={plan.monthlyCredits} overageCreditPriceToman={plan.overageCreditPriceToman} plans={data.plans} pricingVerifiedAt={data.pricingVerifiedAt}/></div></details>
 
 
+    {!needsPlan && (
     <section id="cortex-topup" className="cortex-panel rounded-2xl p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div><p className="cortex-kicker">TOP UP</p><h2 className="mt-2 text-xl font-bold">شارژ سریع</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">درگاه آنلاین را باز کن، پرداخت را انجام بده و بعد از تأیید تراکنش، اعتبار به‌صورت خودکار وارد Wallet می‌شود.</p></div>
@@ -135,6 +156,7 @@ export function BillingView(){
       </div>
       {pending>0&&<div className="mt-3 rounded-xl border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[11px] text-amber-200"><Clock3 className="me-1 inline size-3.5"/>{faNum(pending)} درخواست در انتظار بررسی.</div>}
     </section>
+    )}
 
     <details id="cortex-usage-analytics" className="cortex-panel group rounded-2xl overflow-hidden">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-bold"><span className="flex items-center gap-2"><BarChart3 className="size-4 text-primary"/>آنالیز مصرف مدل‌ها و توکن‌ها</span><span className="flex items-center gap-2 text-[9px] font-normal text-muted-foreground">{formatCountCompact(modelUsage.length)} مدل · ۳۰ روز اخیر <ChevronDown className="size-4 transition-transform [details[open]_&]:rotate-180"/></span></summary>
@@ -147,7 +169,7 @@ export function BillingView(){
         <div className="mt-4 space-y-2">
           {modelUsage.length===0 ? <p className="rounded-xl border border-dashed border-border/60 p-5 text-center text-xs text-muted-foreground">هنوز مصرف مدل ثبت نشده است.</p> : modelUsage.map((usageItem) => (
             <div key={(usageItem.provider??"unknown")+"-"+(usageItem.model??"unknown")} className="rounded-2xl border border-border/50 bg-background/25 p-3">
-              <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-black">{usageItem.displayName}</p><p className="mt-1 truncate text-[9px] text-muted-foreground">{usageItem.provider ?? "Provider نامشخص"} · {usageItem.model ?? "Model نامشخص"}</p></div><div className="text-end"><p className="text-xs font-black">{formatCountCompact(usageItem.credits)} اعتبار</p><p className="mt-1 text-[9px] text-muted-foreground">{formatCountCompact(usageItem.tokens)} توکن · {formatCountCompact(usageItem.events)} رویداد</p></div></div>
+              <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-black">{usageItem.displayName}</p><p className="mt-1 truncate text-[9px] text-muted-foreground">مدل مدیریت‌شده Cortex</p></div><div className="text-end"><p className="text-xs font-black">{formatCountCompact(usageItem.credits)} اعتبار</p><p className="mt-1 text-[9px] text-muted-foreground">{formatCountCompact(usageItem.tokens)} توکن · {formatCountCompact(usageItem.events)} رویداد</p></div></div>
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400" style={{width:Math.max(3,Math.round((usageItem.tokens/maxModelTokens)*100))+"%"}}/></div>
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[9px] text-muted-foreground"><span>ورودی: {formatCountCompact(usageItem.inputTokens)}</span><span>خروجی: {formatCountCompact(usageItem.outputTokens)}</span><span>هزینه تأمین: ${((usageItem.estimatedCostMicros ?? 0)/1_000_000).toFixed(4)}</span></div>
             </div>
@@ -167,32 +189,38 @@ export function BillingView(){
       </div>
     </details>
 
-    <section className="cortex-panel rounded-2xl p-4 sm:p-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div><p className="cortex-kicker">MONTHLY PLANS</p><h2 className="mt-2 text-xl font-bold">اشتراک ماهانه</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">هر پلن سهم اعتبار و سطح دسترسی مشخص دارد؛ ۵۰٪ markup پایه روی هزینه تأمین مدل‌ها لحاظ شده و نرخ ارز قابل تنظیم است.</p></div>
-        <span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[9px] text-primary">۳ پلن اصلی</span>
+    <section id="cortex-plans" className="cortex-panel rounded-2xl p-4 sm:p-6 scroll-mt-20">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div><p className="cortex-kicker">MONTHLY PLANS</p><h2 className="mt-2 text-xl font-black sm:text-2xl">پلن مناسب استفاده‌ات را انتخاب کن.</h2><p className="mt-1 max-w-2xl text-xs leading-6 text-muted-foreground">مدل و زیرساخت را Cortex مدیریت می‌کند؛ تفاوت پلن‌ها در اعتبار، سطح مدل‌ها و امکانات تیمی است.</p></div>
+        <span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[9px] font-bold text-primary">۴ سطح Cortex</span>
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        {data.plans.filter(item=>["starter","business","pro"].includes(item.key)).map((item,index)=>{
-          const active=item.key===plan.key;
-          const modelLabel=item.key==="starter"?"Economy + Balanced":item.key==="business"?"تا Premium":"تا Deep";
-          return <div key={item.id} className={cn("relative overflow-hidden rounded-2xl border p-4",active?"border-primary/30 bg-primary/[.06]":"border-border/60 bg-background/30")}>
-            {active&&<span className="absolute end-3 top-3 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[8px] font-bold text-primary">پلن فعلی</span>}
-            <div className="flex items-start justify-between gap-3"><div><p className="text-sm font-black">{item.name}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.description}</p></div><span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary"><WalletCards className="size-4"/></span></div>
-            <p className="mt-5 text-2xl font-black">{formatTomanCompact(item.priceToman)}</p>
-            <p className="mt-1 text-[10px] text-muted-foreground">در ماه · {formatCountCompact(item.monthlyCredits)} اعتبار</p>
-            <div className="mt-3 flex flex-wrap gap-1.5"><span className="rounded-full border border-border/60 px-2 py-1 text-[8px] text-muted-foreground">{modelLabel}</span><span className="rounded-full border border-border/60 px-2 py-1 text-[8px] text-muted-foreground">Billing واقعی</span></div>
-          </div>;
+      <div className="mt-4 grid gap-3 lg:grid-cols-4">
+        {data.plans.filter(item=>["launch","growth","scale","enterprise"].includes(item.key)).map((item)=>{
+          const isCurrent=item.key===plan.key;
+          const featured=item.key==="growth";
+          const details:Record<string,{headline:string;features:string[]}>={
+            launch:{headline:"شروع هوشمندانه",features:["تا ۲ Agent","دانش محدود","مدل‌های سریع و اقتصادی","Telegram پایه"]},
+            growth:{headline:"پیشنهاد تیمی",features:["چندین Agent","دانش بیشتر","مدل‌های با کیفیت بالاتر","تحلیل مصرف دقیق","اولویت بالاتر"]},
+            scale:{headline:"قدرت واقعی اتوماسیون",features:["Agentهای بیشتر","مدل‌های قوی‌تر","چند Bot","گزارش پیشرفته","اولویت پاسخ بالا"]},
+            enterprise:{headline:"سطح سازمانی",features:["همه امکانات","مدل‌های خاص","سفارشی‌سازی و SLA","پشتیبانی اختصاصی"]},
+          };
+          const meta=details[item.key] ?? details.launch;
+          return <article key={item.id} className={cn("relative flex h-full flex-col overflow-hidden rounded-2xl border p-4 sm:p-5",featured?"border-primary/45 bg-primary/[.075] shadow-[0_24px_70px_rgba(59,130,255,.16)] lg:-translate-y-1":"border-border/65 bg-background/30")}>
+            {featured&&<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-violet-400 to-primary"/>}
+            <div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-black">{item.name}</h3>{featured&&<Badge className="bg-primary text-[8px]">پیشنهاد ویژه</Badge>}{isCurrent&&<Badge variant="outline" className="border-primary/20 bg-primary/5 text-[8px] text-primary">پلن فعلی</Badge>}</div><p className="mt-1 text-[10px] font-semibold text-primary/90">{meta.headline}</p></div><WalletCards className="size-5 text-primary"/></div>
+            <p className="mt-4 text-2xl font-black">{item.priceToman?formatTomanCompact(item.priceToman):"از ۳۵٬۰۰۰٬۰۰۰"}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.priceToman?"تومان / ماه":"تومان / ماه · توافقی"}</p>
+            <p className="mt-3 text-sm font-black">{item.monthlyCredits?formatCountCompact(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار توافقی"}</p>
+            <div className="my-4 h-px bg-border/60"/><div className="space-y-2">{meta.features.map((feature)=><div key={feature} className="flex items-start gap-2 text-[10px] leading-5 text-muted-foreground"><CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-400"/>{feature}</div>)}</div>
+            <div className="mt-auto pt-5">{isCurrent?<button type="button" disabled className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold text-muted-foreground">پلن فعلی</button>:item.key==="enterprise"?<button type="button" onClick={()=>toast.info("Enterprise به‌صورت قراردادی فعال می‌شود و شرایط SLA اختصاصی دارد.")} className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold">درخواست Enterprise</button>:<button type="button" disabled={planPurchase.isPending} onClick={()=>planPurchase.mutate(item.key)} className="flex h-10 w-full items-center justify-center rounded-xl bg-primary px-4 text-xs font-black text-primary-foreground disabled:opacity-60">{planPurchase.isPending?"در حال انتقال به پرداخت…":featured?"قدرت بیشتری آزاد کن":"انتخاب "+item.name}</button>}</div>
+            {featured&&<p className="mt-2 text-center text-[9px] text-muted-foreground">تعادل ایده‌آل بین قدرت و هزینه برای تیم‌های در حال رشد.</p>}
+          </article>;
         })}
       </div>
     </section>
 
-        <details className="cortex-panel rounded-2xl p-5">
-      <summary className="cursor-pointer list-none text-sm font-bold">پلن‌ها و مدل‌های قابل استفاده</summary>
-      <div className="mt-5 grid gap-5 xl:grid-cols-2">
-        <div className="space-y-2">{data.plans.map(item=><div key={item.id} className={cn("rounded-xl border p-3",item.key===plan.key?"border-primary/30 bg-primary/5":"border-white/[.06]")}><div className="flex justify-between gap-3"><span className="text-xs font-semibold">{item.name}</span><span className="text-[10px] text-muted-foreground">{item.priceToman?formatTomanCompact(item.priceToman):"سفارشی/رایگان"}</span></div><p className="mt-1 text-[10px] text-muted-foreground">{item.monthlyCredits?formatCountCompact(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار سفارشی"}</p></div>)}</div>
-        <div className="space-y-2">{enabledModels.slice(0,12).map(item=><div key={item.id} className="flex items-center justify-between rounded-xl border border-white/[.06] p-3"><div><p className="text-xs font-semibold">{item.displayName}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.provider} · \${item.inputUsdPer1M}/M in · \${item.outputUsdPer1M}/M out</p></div><span className="text-[10px] text-primary">{item.qualityTier}</span></div>)}{enabledModels.length===0&&<p className="text-xs text-muted-foreground">مدل فعالی برای این پلن ثبت نشده است.</p>}</div>
-      </div>
-    </details>
+    <section id="cortex-models" className="cortex-panel rounded-2xl p-4 sm:p-6 scroll-mt-20">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="cortex-kicker">CORTEX MODEL CATALOG</p><h2 className="mt-2 text-xl font-black">مدل‌ها بر اساس پلن باز می‌شوند.</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">مدل‌ها با نام و قابلیت نمایش داده می‌شوند؛ اتصال و زیرساخت را Cortex مدیریت می‌کند.</p></div><span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[9px] text-primary">{formatCountCompact(data.models.length)} مدل</span></div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{data.models.map(model=>{const allowed=model.enabledForPlan;return <article key={model.id} className={cn("rounded-2xl border p-4",allowed?"border-border/70 bg-background/30":"border-border/45 bg-background/15 opacity-65")}><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-black">{model.displayName}</p><p className="mt-1 text-[10px] text-muted-foreground">{model.qualityTier==="economy"?"سریع و اقتصادی":model.qualityTier==="balanced"?"حرفه‌ای":model.qualityTier==="premium"?"متخصص":"پیشرفته"}</p></div><Badge variant={allowed?"default":"outline"}>{allowed?"مجاز":"قفل"}</Badge></div><div className="mt-3 flex flex-wrap gap-1.5">{model.reasoning&&<span className="rounded-full border border-border/60 px-2 py-1 text-[8px]">استدلال</span>}{model.tools&&<span className="rounded-full border border-border/60 px-2 py-1 text-[8px]">ابزار</span>}{model.vision&&<span className="rounded-full border border-border/60 px-2 py-1 text-[8px]">Vision</span>}</div><p className="mt-3 text-[10px] leading-5 text-muted-foreground">{allowed?"در پلن فعلی قابل استفاده است.":"با ارتقا به پلن بالاتر باز می‌شود."}</p></article>})}</div>
+    </section>
   </div>;
 }

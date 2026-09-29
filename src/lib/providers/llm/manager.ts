@@ -6,6 +6,7 @@ import { OpenRouterProvider } from "./openrouter";
 import { OpenAICompatibleProvider, type CompatibleAuthMode } from "./openai-compatible";
 import { AnthropicProvider } from "./anthropic";
 import { GeminiProvider } from "./gemini";
+import { resolveManagedModelForAgent } from "@/lib/server/model-router";
 
 type CachedConfig = { config: { providerName:string; baseUrl:string; model:string; protocol?:string; authMode:string; apiKeyEncrypted?:string|null; enabled:boolean }; expiresAt:number };
 
@@ -142,6 +143,18 @@ class ProviderManager {
   }
 
   async resolveForAgent(agentId: string, workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus }> {
+    if (workspaceId && process.env.APP_ENV !== "test" && process.env.NODE_ENV !== "test") {
+      const managed = await resolveManagedModelForAgent(agentId, workspaceId);
+      const provider = new OpenRouterProvider({ model: managed.model.providerModelId });
+      if (!provider.isConfigured()) {
+        throw Object.assign(new Error("سرویس هوش مصنوعی Cortex از سمت سرور آماده نیست."), { status: 503, code: "managed_provider_unavailable" });
+      }
+      return {
+        provider: new ResilientProvider(provider, agentId, workspaceId),
+        status: this.statusFor(provider, "environment"),
+      };
+    }
+
     const useConfigCache = process.env.APP_ENV !== "test" && process.env.NODE_ENV !== "test";
     const cached = useConfigCache ? configCache.get(agentId) : undefined;
     const agentConfig = cached && cached.expiresAt > Date.now()

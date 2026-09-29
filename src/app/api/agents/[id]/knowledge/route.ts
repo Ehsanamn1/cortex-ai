@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { applyCors, jsonError, jsonOk, toErrorResponse } from "@/lib/server/http";
 import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
+import { getPlanFeatureLimits, planFeatureError } from "@/lib/server/plan-policy";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { processSource } from "@/lib/knowledge/pipeline";
 import { createR2PresignedPut, deleteR2Object, headR2Object, isR2Configured } from "@/lib/storage/r2";
@@ -75,6 +76,13 @@ export async function POST(req: Request, { params }: Params) {
     const session = await requireSession(req);
     const { id } = await params;
     const agent = await loadAgentForSession(session, id);
+    const billing = await db.workspaceBillingAccount.findUnique({ where: { workspaceId: agent.workspaceId }, include: { plan: true } });
+    if (!billing) return applyCors(jsonError("حساب اعتبار فضای کاری پیدا نشد.", 404), req.headers.get("origin"));
+    const limits = getPlanFeatureLimits(billing.plan.key);
+    if (limits.maxKnowledgeSources !== null) {
+      const sourceCount = await db.knowledgeSource.count({ where: { agentId: agent.id } });
+      if (sourceCount >= limits.maxKnowledgeSources) throw planFeatureError("تعداد منابع دانش");
+    }
     rateLimit(req, "knowledge-upload", 20, 60_000);
     let maxUploadMb = ENV_MAX_UPLOAD_MB;
     try {

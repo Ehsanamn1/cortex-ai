@@ -58,34 +58,6 @@ function sourceDotClass(status: string): string {
   }
 }
 
-function ProviderStatusLine() {
-  const activeWorkspaceId = useCortexStore((s) => s.activeWorkspaceId);
-  const { data } = useQuery<Awaited<ReturnType<typeof api.getProvidersStatus>>>({
-    queryKey: ["providers-status", activeWorkspaceId],
-    queryFn: () => api.getProvidersStatus(activeWorkspaceId ?? undefined),
-    staleTime: Infinity,
-    retry: 1,
-  });
-
-  if (!data) return <p className="text-xs text-muted-foreground">وضعیت سرویس‌دهنده در حال بررسی است…</p>;
-
-  return (
-    <p className="text-xs leading-relaxed text-muted-foreground">
-      {data.llm.status === "configured" ? (
-        <>
-          سرویس‌دهنده:{" "}
-          <span className="font-medium text-foreground">
-            {data.llm.provider}
-            {data.llm.model ? ` · ${data.llm.model}` : ""}
-          </span>
-        </>
-      ) : (
-        "سرویس‌دهنده هوش مصنوعی پیکربندی نشده است؛ پاسخ‌دهی فعال نخواهد بود."
-      )}
-    </p>
-  );
-}
-
 function AgentInfoPanelContent({ agentId }: { agentId: string }) {
   const { data: agentData } = useQuery({
     queryKey: ["agent", agentId],
@@ -333,6 +305,7 @@ export function Playground({ agentId }: { agentId: string }) {
   const [optimisticMessage, setOptimisticMessage] = useState<MessageDto | null>(null);
   const [showDebug, setShowDebug] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"info" | "debug" | null>(null);
+  const [lastCharge, setLastCharge] = useState<{ credits: number; balance: number } | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -434,6 +407,10 @@ export function Playground({ agentId }: { agentId: string }) {
           : old
       );
       setOptimisticMessage(null);
+      if (response.billing) {
+        setLastCharge({ credits: response.billing.chargedCredits, balance: response.billing.balanceCredits });
+        toast.success(`این درخواست ${faNum(response.billing.chargedCredits)} اعتبار مصرف کرد · مانده ${faNum(response.billing.balanceCredits)}`);
+      }
       queryClient.invalidateQueries({ queryKey: ["conversations", agentId] });
       queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -639,7 +616,10 @@ export function Playground({ agentId }: { agentId: string }) {
                 {awaiting ? <Loader2 className="animate-spin" /> : <Send className="-scale-x-100" />}
               </Button>
             </div>
-            <p className="px-1 text-[10px] text-muted-foreground">Enter برای ارسال · Shift + Enter برای خط جدید</p>
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[10px] text-muted-foreground">
+              <span>Enter برای ارسال · Shift + Enter برای خط جدید</span>
+              {lastCharge && <span className="font-semibold text-primary">{faNum(lastCharge.credits)} اعتبار این درخواست · {faNum(lastCharge.balance)} مانده</span>}
+            </div>
           </div>
         </footer>
       </section>

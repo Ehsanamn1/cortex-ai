@@ -64,104 +64,50 @@ function ProviderRow({ label, value }: { label: string; value: string }) {
 }
 
 function ProvidersSection() {
-  const workspaceId=useCortexStore((s)=>s.activeWorkspaceId);
-  const { data, isPending, isError, error, refetch } = useQuery({
-    queryKey: ["providers-status",workspaceId],
-    queryFn: ()=>api.getProvidersStatus(workspaceId??undefined),
-    staleTime: 5 * 60_000,
+  const setView = useCortexStore((s) => s.setView);
+  const { data, isPending, isError } = useQuery({
+    queryKey: ["billing", "settings"],
+    queryFn: () => api.getBilling(),
+    staleTime: 20_000,
   });
 
-  useErrorToast(isError ? error : null);
-
   if (isPending) {
-    return (
-      <div className="grid gap-4 lg:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <Skeleton key={i} className="h-52 rounded-xl" />
-        ))}
-      </div>
-    );
+    return <Skeleton className="h-48 rounded-xl" />;
   }
-
   if (isError || !data) {
     return (
-      <ErrorState
-        message={error instanceof Error ? error.message : "دریافت وضعیت زیرساخت ناموفق بود."}
-        onRetry={() => void refetch()}
-      />
+      <Card className="rounded-xl border-amber-400/20 bg-amber-400/[.035]">
+        <CardContent className="p-5">
+          <p className="text-sm font-semibold">وضعیت پلن و اعتبار فعلاً بارگذاری نشد.</p>
+          <Button className="mt-4" variant="outline" onClick={() => setView("billing")}>باز کردن پلن و اعتبار</Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="rounded-xl">
-          <CardHeader className="border-b [.border-b]:pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-lg border bg-secondary/10 text-secondary">
-                <ShieldCheck className="size-4" />
-              </span>
-              جاسازی متن (Embedding)
-            </CardTitle>
-            <CardDescription>تبدیل دانش به بردار قابل جست‌وجو</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-4">
-            <StatusBadge ok={data.embeddings.status === "configured"} readyLabel="فعال" />
-            <div className="space-y-2">
-              <ProviderRow label="سرویس‌دهنده" value={data.embeddings.provider} />
-              <ProviderRow
-                label="روش"
-                value={
-                  data.embeddings.mode === "neural"
-                    ? "عصبی"
-                    : data.embeddings.mode === "lexical"
-                      ? "واژگانی محلی (بدون شبکه عصبی)"
-                      : "—"
-                }
-              />
-            </div>
-            {data.embeddings.mode === "lexical" && (
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                بازیابی دانش در حالت فعلی با موتور واژگانی محلی انجام می‌شود و برای آن کلید جداگانه لازم نیست.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl">
-          <CardHeader className="border-b [.border-b]:pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-400">
-                <Database className="size-4" />
-              </span>
-              پایگاه داده برداری
-            </CardTitle>
-            <CardDescription>محل ذخیره و جست‌وجوی بردارهای دانش</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-4">
-            <StatusBadge ok={data.vectorStore.status === "ready"} readyLabel="آماده" />
-            <div className="space-y-2">
-              <ProviderRow
-                label="نوع"
-                value={data.vectorStore.provider === "qdrant" ? "Qdrant" : "محلی (PostgreSQL)"}
-              />
-            </div>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              {data.vectorStore.provider === "qdrant"
-                ? "بردارها در پایگاه داده برداری اختصاصی Qdrant ذخیره می‌شوند."
-                : "بردارها روی همان PostgreSQL محصول ذخیره و با شباهت کسینوسی جستجو می‌شوند."}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        اتصال مدل زبانی دیگر در این بخش انجام نمی‌شود؛ هر ایجنت از تب «هوش مصنوعی» اتصال اختصاصی خودش را مدیریت می‌کند.
-      </p>
-    </div>
+    <Card className="cortex-panel rounded-2xl">
+      <CardHeader className="border-b [.border-b]:pb-4">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><ShieldCheck className="size-4" /></span>
+          هوش مدیریت‌شده Cortex
+        </CardTitle>
+        <CardDescription>اتصال مدل‌ها توسط Cortex انجام می‌شود؛ نیازی به Provider، Base URL یا API Key از طرف شما نیست.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-4"><p className="text-[10px] text-muted-foreground">پلن</p><p className="mt-1 text-sm font-black">{data.account.plan.name}</p></div>
+          <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-4"><p className="text-[10px] text-muted-foreground">اعتبار</p><p className="mt-1 text-sm font-black">{faNum(data.account.balanceCredits)}</p></div>
+          <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-4"><p className="text-[10px] text-muted-foreground">مدل‌های فعال</p><p className="mt-1 text-sm font-black">{faNum(data.models.filter((model) => model.enabledForPlan).length)}</p></div>
+        </div>
+        <div className="flex flex-col gap-3 rounded-xl border border-primary/15 bg-primary/[.035] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><p className="text-xs font-bold">مدل را از داخل Agent انتخاب کن.</p><p className="mt-1 text-[10px] leading-5 text-muted-foreground">سطح‌های بالاتر قفل هستند و با تغییر پلن آزاد می‌شوند.</p></div>
+          <Button onClick={() => setView("billing")}>مشاهده پلن‌ها و اعتبار</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
-
 
 function LimitsSection(){
  const ws=useCortexStore(s=>s.activeWorkspaceId); const qc=useQueryClient(); const q=useQuery({queryKey:['limits',ws],queryFn:()=>api.getLimits(ws??undefined),enabled:!!ws}); const [dailyMessageLimit,setD]=useState(0);const [monthlyMessageLimit,setM]=useState(0);const [dailyTokenLimit,setDT]=useState(0);const [monthlyTokenLimit,setMT]=useState(0);

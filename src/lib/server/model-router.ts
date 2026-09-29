@@ -1,0 +1,170 @@
+import { OpenRouterProvider } from "@/lib/providers/llm/openrouter";
+import { db } from "@/lib/db";
+import { getModelRate, type KnownModelCatalogEntry } from "@/lib/server/pricing";
+import type { LLMProvider } from "@/lib/providers/llm/types";
+
+export type ManagedPlanKey = "launch" | "growth" | "scale" | "enterprise";
+export type ManagedModelTier = "economy" | "balanced" | "premium" | "deep";
+
+export interface ManagedModelDefinition extends KnownModelCatalogEntry {
+  key: string;
+  tier: ManagedModelTier;
+  description: string;
+  creditRatePer1K: number;
+  planKeys: ManagedPlanKey[];
+  providerModelId: string;
+}
+
+function envModel(name: string, fallback: string): string {
+  return process.env[name]?.trim() || fallback;
+}
+
+/**
+ * Customer-facing model catalog. Provider credentials stay server-side; the
+ * customer only sees the Cortex model name and capability tier.
+ */
+export function getManagedModelCatalog(): ManagedModelDefinition[] {
+  return [
+    {
+      key: "launch-fast",
+      provider: "OpenRouter",
+      providerModelId: envModel("CORTEX_MODEL_LAUNCH_FAST", "deepseek/deepseek-v4.1-flash"),
+      modelId: envModel("CORTEX_MODEL_LAUNCH_FAST", "deepseek/deepseek-v4.1-flash"),
+      displayName: "Cortex Fast",
+      description: "سریع و اقتصادی برای پاسخ‌های روزمره",
+      qualityTier: "economy",
+      speedTier: "fast",
+      tier: "economy",
+      creditRatePer1K: 1.5,
+      planKeys: ["launch", "growth", "scale", "enterprise"],
+      tools: true,
+      reasoning: true,
+    },
+    {
+      key: "launch-balanced",
+      provider: "OpenRouter",
+      providerModelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.7-flash"),
+      modelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.7-flash"),
+      displayName: "Cortex Smart",
+      description: "تعادل سرعت، هزینه و کیفیت",
+      qualityTier: "economy",
+      speedTier: "fast",
+      tier: "economy",
+      creditRatePer1K: 1.5,
+      planKeys: ["launch", "growth", "scale", "enterprise"],
+      tools: true,
+      reasoning: true,
+    },
+    {
+      key: "growth-flash",
+      provider: "OpenRouter",
+      providerModelId: envModel("CORTEX_MODEL_GROWTH_FLASH", "google/gemini-3.8-flash"),
+      modelId: envModel("CORTEX_MODEL_GROWTH_FLASH", "google/gemini-3.8-flash"),
+      displayName: "Cortex Pro Flash",
+      description: "کیفیت بالاتر برای کارهای حرفه‌ای روزمره",
+      qualityTier: "balanced",
+      speedTier: "fast",
+      tier: "balanced",
+      creditRatePer1K: 4.5,
+      planKeys: ["growth", "scale", "enterprise"],
+      tools: true,
+      reasoning: true,
+      vision: true,
+    },
+    {
+      key: "growth-qwen-max",
+      provider: "OpenRouter",
+      providerModelId: envModel("CORTEX_MODEL_GROWTH_MAX", "qwen/qwen3.8-max-0902"),
+      modelId: envModel("CORTEX_MODEL_GROWTH_MAX", "qwen/qwen3.8-max-0902"),
+      displayName: "Cortex Expert",
+      description: "تحلیل و استدلال قوی‌تر برای کار تیمی",
+      qualityTier: "premium",
+      speedTier: "balanced",
+      tier: "premium",
+      creditRatePer1K: 5,
+      planKeys: ["growth", "scale", "enterprise"],
+      tools: true,
+      reasoning: true,
+      vision: true,
+    },
+    {
+      key: "scale-sonnet",
+      provider: "OpenRouter",
+      providerModelId: envModel("CORTEX_MODEL_SCALE_SONNET", "anthropic/claude-sonnet-5"),
+      modelId: envModel("CORTEX_MODEL_SCALE_SONNET", "anthropic/claude-sonnet-5"),
+      displayName: "Cortex Reasoning",
+      description: "استدلال عمیق برای سناریوهای پیچیده",
+      qualityTier: "deep",
+      speedTier: "balanced",
+      tier: "deep",
+      creditRatePer1K: 10,
+      planKeys: ["scale", "enterprise"],
+      tools: true,
+      reasoning: true,
+      vision: true,
+    },
+    {
+      key: "enterprise-opus",
+      provider: "OpenRouter",
+      providerModelId: envModel("CORTEX_MODEL_ENTERPRISE_OPUS", "anthropic/claude-opus-5.5"),
+      modelId: envModel("CORTEX_MODEL_ENTERPRISE_OPUS", "anthropic/claude-opus-5.5"),
+      displayName: "Cortex Ultra",
+      description: "بالاترین سطح مدل برای پروژه‌های سازمانی",
+      qualityTier: "deep",
+      speedTier: "deep",
+      tier: "deep",
+      creditRatePer1K: 12,
+      planKeys: ["enterprise"],
+      tools: true,
+      reasoning: true,
+      vision: true,
+    },
+  ];
+}
+
+export function findManagedModel(key: string | null | undefined): ManagedModelDefinition | null {
+  return getManagedModelCatalog().find((model) => model.key === key) ?? null;
+}
+
+export function isModelAllowedForPlan(model: ManagedModelDefinition, planKey: string): boolean {
+  return model.planKeys.includes(planKey as ManagedPlanKey);
+}
+
+export async function resolveManagedModelForAgent(agentId: string, workspaceId: string): Promise<{
+  model: ManagedModelDefinition;
+  provider: LLMProvider;
+  planKey: string;
+}> {
+  const agent = await db.agent.findUnique({ where: { id: agentId }, select: { modelKey: true } });
+  const account = await db.workspaceBillingAccount.findUnique({
+    where: { workspaceId },
+    include: { plan: true },
+  });
+  if (!account) throw Object.assign(new Error("حساب اعتبار فضای کاری پیدا نشد."), { status: 404 });
+
+  const model = findManagedModel(agent?.modelKey) ?? getManagedModelCatalog()[0];
+  if (!isModelAllowedForPlan(model, account.plan.key)) {
+    throw Object.assign(
+      new Error("مدل انتخابی در پلن فعلی در دسترس نیست. برای ادامه، پلن خود را ارتقا دهید."),
+      { status: 403, code: "model_not_in_plan" },
+    );
+  }
+
+  const provider = new OpenRouterProvider();
+  if (!provider.isConfigured()) {
+    throw Object.assign(
+      new Error("سرویس هوش مصنوعی Cortex هنوز از سمت سرور پیکربندی نشده است."),
+      { status: 503, code: "managed_provider_unavailable" },
+    );
+  }
+
+  const rate = getModelRate("OpenRouter", model.providerModelId);
+  if (!rate.known) {
+    throw Object.assign(
+      new Error("قیمت تأمین این مدل در Cortex ثبت نشده است."),
+      { status: 503, code: "model_pricing_unavailable" },
+    );
+  }
+
+  return { model, provider, planKey: account.plan.key };
+}
