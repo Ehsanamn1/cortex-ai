@@ -523,7 +523,7 @@ function ProviderConnectionForm({
                 اتصال اختصاصی هوش مصنوعی
               </CardTitle>
               <CardDescription className="mt-2 leading-6">
-                این اتصال فقط برای همین ایجنت استفاده می‌شود. کلید API در سرور به‌صورت رمزنگاری‌شده ذخیره می‌شود و دوباره در رابط کاربری نمایش داده نمی‌شود. «پیکربندی‌شده» یعنی مشخصات اتصال کامل است؛ برای اطمینان از دسترسی واقعی، «تست اتصال» را اجرا کنید.
+                این اتصال فقط برای همین ایجنت استفاده می‌شود. هر تغییری در مدل، Provider یا API Key از همین تب اعمال می‌شود؛ تنظیمات عمومی فضای کاری برای این کار نیست. کلید API در سرور به‌صورت رمزنگاری‌شده ذخیره می‌شود و دوباره در رابط کاربری نمایش داده نمی‌شود. «پیکربندی‌شده» یعنی مشخصات اتصال کامل است؛ برای اطمینان از دسترسی واقعی، «تست اتصال» را اجرا کنید.
               </CardDescription>
             </div>
             <Badge
@@ -857,13 +857,13 @@ export function AgentDetailView() {
         <TabsContent value="telegram" className="mt-6">
           <AgentTelegramTab agentId={agentId} />
         </TabsContent>
-        <TabsContent value="telegram" className="mt-6">
-          <AgentTelegramTab agentId={agentId} />
-        </TabsContent>
         <TabsContent value="ai" className="mt-6">
           <ProviderTab agentId={agentId} />
         </TabsContent>
-        <TabsContent value="tools" className="mt-6">\n          <ToolsTab agentId={agentId} />\n        </TabsContent>\n        <TabsContent value="playground" className="mt-4">
+        <TabsContent value="tools" className="mt-6">
+          <ToolsTab agentId={agentId} />
+        </TabsContent>
+        <TabsContent value="playground" className="mt-4">
           <Playground agentId={agentId} />
         </TabsContent>
         <TabsContent value="api" className="mt-6">
