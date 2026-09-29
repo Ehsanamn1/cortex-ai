@@ -141,13 +141,19 @@ async function ensureKnownModelCatalog() {
     const plans = await db.plan.findMany({ where: { active: true }, select: { id: true, key: true } });
     for (const entry of known) {
       const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel("OpenRouter", entry.providerModelId);
-      for (const plan of plans) {
-        const enabled = entry.planKeys.includes(plan.key as any) && Boolean(entry.commercialAvailable ?? true);
-        await db.planModelAccess.upsert({
-          where: { planId_modelCatalogId: { planId: plan.id, modelCatalogId: catalog.id } },
-          update: { enabled, creditMultiplierBps: Math.max(1, fallbackMultiplier) },
-          create: { planId: plan.id, modelCatalogId: catalog.id, enabled, creditMultiplierBps: Math.max(1, fallbackMultiplier) },
-        });
+      const accessCount = await db.planModelAccess.count({ where: { modelCatalogId: catalog.id } });
+      if (accessCount === 0) {
+        for (const plan of plans) {
+          const enabled = entry.planKeys.includes(plan.key as any) && Boolean(entry.commercialAvailable ?? true);
+          await db.planModelAccess.create({
+            data: {
+              planId: plan.id,
+              modelCatalogId: catalog.id,
+              enabled,
+              creditMultiplierBps: Math.max(1, fallbackMultiplier),
+            },
+          });
+        }
       }
     }
   })().then(() => { modelCatalogReadyAt = Date.now(); }).finally(() => { modelCatalogPromise = null; });
@@ -359,8 +365,9 @@ export async function getBillingSnapshot(workspaceId: string) {
     where: { active: true },
     orderBy: [{ provider: "asc" }, { displayName: "asc" }],
     take: 100,
+    include: { systemProvider: { select: { id: true, enabled: true, isTrialProvider: true, displayName: true } } },
   });
-  const access = await db.planModelAccess.findMany({ where: { planId: account.planId, enabled: true } });
+  const access = await db.planModelAccess.findMany({ where: { planId: account.planId } });
   const accessMap = new Map(access.map((item) => [item.modelCatalogId, item]));
 
   return {
@@ -446,7 +453,14 @@ export async function getBillingSnapshot(workspaceId: string) {
         structuredOutput: item.structuredOutput,
         reasoning: item.reasoning,
         commercialAvailable: item.commercialAvailable,
-        enabledForPlan: Boolean(managed && managed.planKeys.includes(account.plan.key as any) && item.commercialAvailable),
+        enabledForPlan: Boolean(
+          accessMap.get(item.id)?.enabled &&
+          item.commercialAvailable &&
+          item.systemProvider?.enabled
+        ),
+        systemProviderId: item.systemProvider?.id ?? null,
+        systemProviderName: item.systemProvider?.displayName ?? null,
+        trialDefault: item.isTrialDefault,
         creditMultiplierBps: accessMap.get(item.id)?.creditMultiplierBps ?? defaultCreditMultiplierBps(item.qualityTier),
         creditRatePer1K: managed?.creditRatePer1K ?? null,
       };
@@ -577,18 +591,11 @@ export async function reserveBillingCredits(params: {
   const existingAccess = await db.planModelAccess.findUnique({
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
   });
-  const managedForPlan = getManagedModelCatalog().find(
-    (entry) => entry.providerModelId.toLowerCase() === params.model.toLowerCase(),
-  );
-
-  if (!managedForPlan || !managedForPlan.planKeys.includes(account.plan.key as any) || !existingAccess?.enabled) {
+  if (!existingAccess?.enabled || !catalog.active || !catalog.commercialAvailable) {
     throw new BillingModelUnavailableError(params.model);
   }
 
-  const access = existingAccess ?? {
-    enabled: true,
-    creditMultiplierBps: fallbackMultiplier,
-  };
+  const access = existingAccess;
 
   const inputTokens = Math.max(0, Math.floor(params.inputTokens));
   const maxOutputTokens = Math.max(0, Math.floor(params.maxOutputTokens));
@@ -606,7 +613,7 @@ export async function reserveBillingCredits(params: {
       reservationId: null,
       estimatedCredits,
       providerCostMicros,
-      creditMultiplierBps: managed ? 100 : multiplierBps,
+      creditMultiplierBps: multiplierBps,
       enforcementEnabled: false,
     };
   }
