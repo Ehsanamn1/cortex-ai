@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity, Bot, Boxes, CheckCircle2, CircleX, Clock3, CreditCard, Database, FileText, Gauge, History, LayoutDashboard,
-  LogOut, MessageSquare, Pencil, Plug, Power, RefreshCw, Save, Search, Send, Settings2,
+  LogOut, MessageSquare, Pencil, Power, RefreshCw, Save, Search, Send, Settings2,
   Users, WalletCards, Workflow, Server, KeyRound
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -298,17 +298,28 @@ function ControlCenterRuntime() {
   if(session.isPending) return <div className="min-h-screen bg-[#f6f7fb] p-8"><div className="mx-auto max-w-7xl rounded-xl bg-white p-12 text-center">در حال بارگذاری مرکز مدیریت…</div></div>;
   if(session.isError) return <AdminLogin />;
   const groups=[...new Set(SECTIONS.map(x=>x.group))]; const m=summary.data?.metrics??{}; const activeSection=SECTIONS.find(x=>x.id===section)!;
-  return <div className="cortex-control-center min-h-screen bg-[#f6f7fb] text-foreground" dir="rtl"><div className="flex min-h-screen">
-    <aside className="hidden w-[250px] shrink-0 border-l border-border bg-white lg:flex lg:flex-col">
-      <div className="border-b border-border p-5"><div className="text-lg font-extrabold tracking-tight text-slate-900">Cortex <span className="text-primary">Admin</span></div><p className="mt-1 text-[10px] text-muted-foreground">Operational Control Center</p></div>
-      <nav className="flex-1 overflow-y-auto p-3">{groups.map(group=><div key={group} className="mb-5"><p className="px-3 pb-2 text-[9px] font-bold tracking-[.18em] text-slate-400">{group.toUpperCase()}</p><div className="space-y-1">{SECTIONS.filter(s=>s.group===group).map(s=><button key={s.id} type="button" onClick={()=>{setSection(s.id);setSearch("");}} className={cn("flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium",section===s.id?"bg-[#eef3ff] text-[#3f6fe5]":"text-slate-600 hover:bg-slate-50")}><s.icon className="size-4 shrink-0"/><span>{s.label}</span></button>)}</div></div>)}</nav>
-      <div className="border-t border-border p-4"><div className="flex items-center gap-2 rounded-lg bg-slate-50 p-2.5"><span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-[10px] font-bold text-primary">{session.data?.username?.slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{session.data?.username}</p><p className="text-[9px] text-muted-foreground">Administrator</p></div><Button variant="ghost" size="icon" onClick={()=>logout.mutate()}><LogOut className="size-4"/></Button></div></div>
-    </aside>
-    <div className="min-w-0 flex-1"><header className="sticky top-0 z-30 border-b border-border bg-white/95 backdrop-blur"><div className="flex items-center gap-3 px-4 py-3 lg:px-7"><div className="min-w-0 flex-1"><p className="text-[9px] font-bold tracking-[.18em] text-primary">CORTEX CONTROL CENTER</p><h1 className="truncate text-lg font-bold">{activeSection.label}</h1></div><div className="hidden w-[260px] items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 md:flex"><Search className="size-4 text-muted-foreground"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-0" placeholder="جستجو…"/></div><Button variant="outline" size="icon" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button></div></header>
-      <div className="flex gap-1 overflow-x-auto border-b bg-white px-3 py-2 lg:hidden">
-        {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-[10px] font-medium",section===s.id?"bg-[#eef3ff] text-[#3f6fe5]":"text-slate-600")}>{s.label}</button>)}
+  return <div className="cortex-control-center min-h-screen bg-[#0d110d] text-[#e8eadf]" dir="rtl"><div className="flex min-h-screen">
+    <aside className="hidden w-[258px] shrink-0 border-l border-[#263021] bg-[#111611] lg:flex lg:flex-col">
+      <div className="border-b border-[#293324] px-5 py-6">
+        <p className="text-[9px] font-bold tracking-[.26em] text-[#b9d95d]">CORTEX / SYSTEM</p>
+        <div className="mt-2 text-xl font-black tracking-tight text-[#eff1e7]">پیشخوان زیرساخت</div>
+        <p className="mt-2 max-w-[190px] text-[10px] leading-6 text-[#7e8877]">محیط خصوصی مدیریت مدل، Provider، پلن، کاربران و مسیرهای اجرایی.</p>
       </div>
-      <main className="mx-auto max-w-[1400px] space-y-5 p-4 lg:p-7">
+      <nav className="flex-1 overflow-y-auto px-3 py-4">{groups.map(group=><div key={group} className="mb-6"><p className="px-2 pb-2 text-[8px] font-bold tracking-[.24em] text-[#606b5b]">{group.toUpperCase()}</p><div className="space-y-1">{SECTIONS.filter(s=>s.group===group).map(s=><button key={s.id} type="button" onClick={()=>{setSection(s.id);setSearch("");}} className={cn("group relative flex w-full items-center gap-2 border px-3 py-2.5 text-xs font-semibold transition",section===s.id?"border-[#b9d95d]/30 bg-[#b9d95d]/10 text-[#d5eb8f]":"border-transparent text-[#96a08f] hover:border-[#293324] hover:bg-[#171c16] hover:text-[#e5e8dd]")}><span className={cn("absolute start-0 top-1/2 h-5 w-[2px] -translate-y-1/2 transition",section===s.id?"bg-[#b9d95d]":"bg-transparent")}/><s.icon className="size-4 shrink-0"/><span>{s.label}</span></button>)}</div></div>)}</nav>
+      <div className="border-t border-[#293324] p-4"><div className="flex items-center gap-2 border border-[#303a2c] bg-[#171c16] p-2.5"><span className="flex size-8 items-center justify-center bg-[#b9d95d] text-[10px] font-black text-[#1b210f]">CX</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-[#dfe4d7]">مالک سیستم</p><p className="text-[9px] text-[#687362]">Private operator</p></div><Button variant="ghost" size="icon" className="text-[#8e9a86] hover:bg-[#20271d] hover:text-white" onClick={()=>logout.mutate()}><LogOut className="size-4"/></Button></div></div>
+    </aside>
+    <div className="min-w-0 flex-1">
+      <header className="sticky top-0 z-30 border-b border-[#263021] bg-[#0f130f]/95 backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-4 py-4 lg:px-7">
+          <div className="min-w-0 flex-1"><p className="text-[8px] font-bold tracking-[.26em] text-[#839078]">SYSTEM WORKBENCH</p><h1 className="mt-1 truncate text-xl font-black text-[#eef0e6]">{activeSection.label}</h1></div>
+          <div className="hidden w-[280px] items-center gap-2 border border-[#2d3829] bg-[#141914] px-3 py-2 md:flex"><Search className="size-4 text-[#6f7a69]"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs text-[#e8eadf] shadow-none placeholder:text-[#66705f] focus-visible:ring-0" placeholder="جستجو در سیستم…"/></div>
+          <Button variant="outline" size="icon" className="border-[#32402c] bg-[#151a15] text-[#aab3a3] hover:bg-[#20271d] hover:text-white" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button>
+        </div>
+      </header>
+      <div className="flex gap-1 overflow-x-auto border-b border-[#263021] bg-[#111611] px-3 py-2 lg:hidden">
+        {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap border px-3 py-2 text-[10px] font-semibold transition",section===s.id?"border-[#b9d95d]/30 bg-[#b9d95d]/10 text-[#d5eb8f]":"border-transparent text-[#8f9a88]")}>{s.label}</button>)}
+      </div>
+      <main className="mx-auto max-w-[1460px] space-y-6 p-4 lg:p-8">
         {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>}
       </main>
     </div>
@@ -502,10 +513,10 @@ function SettingsPanel() {
 }
 
 function AdminLogin() {
-  return <div className="grid min-h-screen place-items-center bg-[#10130f] p-4" dir="rtl">
-    <Card className="w-full max-w-lg border-[#35402f] bg-[#151914] text-[#ecebe3]">
-      <CardHeader><CardTitle className="text-xl">پیشخوان خصوصی Cortex</CardTitle><p className="text-xs leading-6 text-[#9fa896]">این محیط فقط از طریق لینک مدیریتی خصوصی قابل ورود است. فرم نام کاربری و رمز عبور عمداً در این پنل ارائه نمی‌شود.</p></CardHeader>
-      <CardContent className="space-y-3"><div className="flex items-center gap-3 rounded-xl border border-[#3a4633] bg-[#0f120e] p-4"><KeyRound className="size-5 text-[#b9db55]"/><p className="text-xs leading-6 text-[#a9b2a2]">از لینک خصوصی مدیر استفاده کن؛ پس از تأیید، یک نشست کوتاه‌مدت HttpOnly ساخته می‌شود.</p></div><p className="text-[10px] leading-5 text-[#737b70]">توکن لینک در رابط کاربری یا پاسخ‌های API نمایش داده نمی‌شود.</p></CardContent>
-    </Card>
+  return <div className="grid min-h-screen place-items-center bg-[#0d110d] p-5" dir="rtl">
+    <section className="w-full max-w-xl border border-[#313b2d] bg-[#141914] p-7 text-[#e9ece1] shadow-[0_28px_90px_rgba(0,0,0,.35)]">
+      <div className="flex items-start gap-4"><span className="grid size-12 place-items-center border border-[#b9d95d]/30 bg-[#b9d95d]/10 text-[#c7e86a]"><KeyRound className="size-5"/></span><div><p className="text-[8px] font-bold tracking-[.28em] text-[#87947c]">PRIVATE ENTRY</p><h1 className="mt-2 text-2xl font-black">این پیشخوان عمومی نیست.</h1><p className="mt-2 text-xs leading-7 text-[#8f9a89]">ورود فقط از لینک اختصاصی مدیر انجام می‌شود؛ نام کاربری و رمز عبور در این مسیر وجود ندارد.</p></div></div>
+      <div className="mt-6 border-t border-[#293324] pt-4 text-[10px] leading-6 text-[#697464]">برای دسترسی، لینک خصوصی را باز کن تا یک نشست HttpOnly کوتاه‌مدت ساخته شود.</div>
+    </section>
   </div>;
 }
