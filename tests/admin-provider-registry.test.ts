@@ -7,6 +7,7 @@ vi.mock("@/lib/db", () => ({
     systemProviderConfig: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
