@@ -422,6 +422,14 @@ export const api = {
     return jsonRequest("/api/auth/login", "POST", input);
   },
 
+  requestPasswordReset(email: string): Promise<{ ok: boolean; message: string; devResetUrl?: string }> {
+    return jsonRequest("/api/auth/forgot-password", "POST", { email });
+  },
+
+  resetPassword(token: string, password: string): Promise<{ ok: boolean; message: string }> {
+    return jsonRequest("/api/auth/reset-password", "POST", { token, password });
+  },
+
   logout(): Promise<{ ok: boolean }> {
     return jsonRequest("/api/auth/logout", "POST");
   },
