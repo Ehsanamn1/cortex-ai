@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
 import { getKnownModelCatalog, getModelRate, PRICING_VERIFIED_AT, PRICING_MODE } from "@/lib/server/pricing";
+import { getManagedModelCatalog } from "@/lib/server/model-router";
 
 export const DEFAULT_BILLING_PLANS = [
   { key: "free", name: "رایگان", description: "برای شروع و تست Cortex", priceToman: 0, monthlyCredits: 5000, overageCreditPriceToman: 0, sortOrder: 0 },
@@ -125,14 +126,12 @@ async function ensureKnownModelCatalog() {
   if (modelCatalogReadyAt && Date.now() - modelCatalogReadyAt < CATALOG_CACHE_MS) return;
   if (modelCatalogPromise) return modelCatalogPromise;
   modelCatalogPromise = (async () => {
-    const known = getKnownModelCatalog();
-    const qualityRank: Record<string, number> = { economy: 1, balanced: 2, premium: 3, deep: 4 };
+    const known = getManagedModelCatalog();
     const plans = await db.plan.findMany({ where: { active: true }, select: { id: true, key: true } });
     for (const entry of known) {
-      const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel(entry.provider, entry.modelId);
+      const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel("OpenRouter", entry.providerModelId);
       for (const plan of plans) {
-        const maxRank = plan.key === "free" || plan.key === "starter" ? 2 : plan.key === "business" ? 3 : 4;
-        const enabled = qualityRank[entry.qualityTier] <= maxRank && Boolean(entry.commercialAvailable ?? true);
+        const enabled = plan.key !== "free" && entry.planKeys.includes(plan.key as any) && Boolean(entry.commercialAvailable ?? true);
         const multiplierBps = Math.max(1, fallbackMultiplier);
         await db.planModelAccess.upsert({
           where: { planId_modelCatalogId: { planId: plan.id, modelCatalogId: catalog.id } },
@@ -146,6 +145,45 @@ async function ensureKnownModelCatalog() {
 }
 
 async function ensureModel(provider: string, model: string) {
+  const managed = getManagedModelCatalog().find(
+    (entry) => entry.provider === provider && entry.providerModelId.toLowerCase() === model.toLowerCase(),
+  );
   const known = getKnownModelCatalog().find(
     (entry) => entry.provider.toLowerCase() === provider.toLowerCase() && entry.modelId.toLowerCase() === model.toLowerCase(),
   );
+  const rate = managed
+    ? getModelRate("OpenRouter", managed.providerModelId)
+    : getModelRate(provider, model);
+  const qualityTier = managed?.qualityTier ?? known?.qualityTier ?? "balanced";
+  const multiplierBps = defaultCreditMultiplierBps(qualityTier);
+  const catalog = await db.modelCatalog.upsert({
+    where: { provider_modelId: { provider, modelId: model } },
+    update: {
+      displayName: managed?.displayName ?? known?.displayName ?? model,
+      inputUsdPer1M: rate.inputUsdPer1M,
+      outputUsdPer1M: rate.outputUsdPer1M,
+      qualityTier,
+      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
+      commercialAvailable: rate.known,
+    },
+    create: {
+      provider,
+      modelId: model,
+      displayName: managed?.displayName ?? known?.displayName ?? model,
+      inputUsdPer1M: rate.inputUsdPer1M,
+      outputUsdPer1M: rate.outputUsdPer1M,
+      contextWindow: managed?.contextWindow ?? known?.contextWindow ?? null,
+      vision: managed?.vision ?? known?.vision ?? false,
+      tools: managed?.tools ?? known?.tools ?? false,
+      structuredOutput: managed?.structuredOutput ?? known?.structuredOutput ?? false,
+      reasoning: managed?.reasoning ?? known?.reasoning ?? false,
+      qualityTier,
+      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
+      commercialAvailable: rate.known,
+      active: true,
+    },
+  });
+  return { catalog, defaultMultiplierBps: multiplierBps };
+}
+
+;
