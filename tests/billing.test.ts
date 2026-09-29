@@ -27,9 +27,9 @@ describe("Cortex commercial billing", () => {
   it("keeps the commercial plan catalog internally consistent", () => {
     expect(DEFAULT_BILLING_PLANS.map((plan) => plan.key)).toEqual([
       "free",
-      "starter",
-      "business",
-      "pro",
+      "launch",
+      "growth",
+      "scale",
       "enterprise",
     ]);
     expect(DEFAULT_BILLING_PLANS[0].priceToman).toBe(0);
