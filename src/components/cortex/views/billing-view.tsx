@@ -140,6 +140,7 @@ export function BillingView(){
     <details id="cortex-cost-lab" className="cortex-panel rounded-2xl overflow-hidden"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-bold"><span className="flex items-center gap-2"><Gauge className="size-4 text-primary"/>تخمین مصرف، توکن و هزینه</span><ChevronDown className="size-4"/></summary><div className="border-t border-border/60 p-3 sm:p-4"><BillingEstimator models={data.models} monthlyCredits={plan.monthlyCredits} overageCreditPriceToman={plan.overageCreditPriceToman} plans={data.plans} pricingVerifiedAt={data.pricingVerifiedAt}/></div></details>
 
 
+    {!needsPlan && (
     <section id="cortex-topup" className="cortex-panel rounded-2xl p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div><p className="cortex-kicker">TOP UP</p><h2 className="mt-2 text-xl font-bold">شارژ سریع</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">درگاه آنلاین را باز کن، پرداخت را انجام بده و بعد از تأیید تراکنش، اعتبار به‌صورت خودکار وارد Wallet می‌شود.</p></div>
@@ -155,6 +156,7 @@ export function BillingView(){
       </div>
       {pending>0&&<div className="mt-3 rounded-xl border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[11px] text-amber-200"><Clock3 className="me-1 inline size-3.5"/>{faNum(pending)} درخواست در انتظار بررسی.</div>}
     </section>
+    )}
 
     <details id="cortex-usage-analytics" className="cortex-panel group rounded-2xl overflow-hidden">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-bold"><span className="flex items-center gap-2"><BarChart3 className="size-4 text-primary"/>آنالیز مصرف مدل‌ها و توکن‌ها</span><span className="flex items-center gap-2 text-[9px] font-normal text-muted-foreground">{formatCountCompact(modelUsage.length)} مدل · ۳۰ روز اخیر <ChevronDown className="size-4 transition-transform [details[open]_&]:rotate-180"/></span></summary>
