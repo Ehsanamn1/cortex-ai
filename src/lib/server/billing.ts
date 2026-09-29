@@ -86,6 +86,15 @@ export class BillingModelUnavailableError extends Error {
   }
 }
 
+export class BillingOverageDisabledError extends Error {
+  status = 402;
+  code = "overage_disabled";
+  constructor() {
+    super("اعتبار کافی نیست و پلن فعلی اجازه مصرف مازاد را نمی‌دهد.");
+    this.name = "BillingOverageDisabledError";
+  }
+}
+
 async function ensurePlanCatalog() {
   if (catalogReadyAt && Date.now() - catalogReadyAt < CATALOG_CACHE_MS) return;
   if (catalogPromise) return catalogPromise;
@@ -693,6 +702,10 @@ export async function recordUsageAndCharge(params: {
       _sum: { reservedCredits: true },
     });
     const available = fresh.balanceCredits - (pending._sum.reservedCredits ?? 0);
+    if (available < chargedCredits && !account.plan.overageEnabled) {
+      throw new BillingOverageDisabledError();
+    }
+
     if (available < chargedCredits) {
       const nextBalance = fresh.balanceCredits - chargedCredits;
       await tx.workspaceBillingAccount.update({ where: { id: fresh.id }, data: { balanceCredits: nextBalance } });
