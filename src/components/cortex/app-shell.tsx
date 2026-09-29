@@ -69,29 +69,32 @@ const BillingView = dynamic(() => import("@/components/cortex/views/billing-view
 /* ---------------- provider status pill ---------------- */
 
 function ProviderPill() {
-  const activeWorkspaceId = useCortexStore((s) => s.activeWorkspaceId);
-  const { data, isLoading } = useQuery<Awaited<ReturnType<typeof api.getProvidersStatus>>>({
-    queryKey: ["providers-status", activeWorkspaceId],
-    queryFn: () => api.getProvidersStatus(activeWorkspaceId ?? undefined),
-    enabled: !!activeWorkspaceId,
-    staleTime: Infinity,
-    retry: 1,
+  const workspaceId = useCortexStore((s) => s.activeWorkspaceId);
+  const setView = useCortexStore((s) => s.setView);
+  const { data } = useQuery({
+    queryKey: ["billing", "header", workspaceId],
+    queryFn: () => api.getBilling(workspaceId ?? undefined),
+    enabled: !!workspaceId,
+    staleTime: 20_000,
   });
 
-  if (isLoading) {
-    return <span aria-hidden="true" className="hidden h-8 w-28 animate-pulse rounded-full border bg-muted sm:inline-block" />;
-  }
   if (!data) return null;
-
-  const configured = data.llm.status === "configured";
+  const plan = data.account.plan;
+  const balance = data.account.balanceCredits;
+  const percentage = plan.monthlyCredits > 0 ? Math.min(100, Math.round((balance / plan.monthlyCredits) * 100)) : null;
   return (
-    <span
-      title={configured ? `${data.llm.provider}${data.llm.model ? ` · ${data.llm.model}` : ""}` : "سرویس‌دهنده هوش مصنوعی پیکربندی نشده است"}
-      className="hidden items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground sm:inline-flex"
+    <button
+      type="button"
+      onClick={() => setView("billing")}
+      title="پلن و اعتبار"
+      className="hidden items-center gap-2 rounded-full border border-primary/15 bg-primary/[.045] px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/[.08] sm:inline-flex"
     >
-      <span aria-hidden="true" className={cn("size-2 rounded-full", configured ? "bg-emerald-400" : "bg-amber-400")} />
-      {configured ? "متصل" : "هوش مصنوعی پیکربندی نشده"}
-    </span>
+      <WalletCards className="size-3.5 text-primary" />
+      <span>{plan.name}</span>
+      <span className="text-muted-foreground">·</span>
+      <span className="text-primary">{faNum(balance)} اعتبار</span>
+      {percentage !== null && <span className="text-[9px] text-muted-foreground">({faNum(percentage)}٪)</span>}
+    </button>
   );
 }
 
