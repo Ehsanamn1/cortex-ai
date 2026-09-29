@@ -118,7 +118,12 @@ function AgentInfoPanelContent({ agentId }: { agentId: string }) {
 
       <Separator />
 
-      <ProviderStatusLine />
+      <div className="rounded-xl border bg-card px-3 py-2">
+        <p className="text-[11px] font-semibold text-foreground">زیرساخت هوش مصنوعی</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+          مدل و اتصال توسط Cortex مدیریت می‌شود؛ کلیدهای سرویس‌دهنده در رابط کاربری نمایش داده نمی‌شوند.
+        </p>
+      </div>
     </div>
   );
 }
