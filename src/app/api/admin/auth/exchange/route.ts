@@ -1,4 +1,4 @@
-import { applyCors, jsonError, jsonWithAdminCookie, toErrorResponse } from "@/lib/server/http";
+import { applyCors, jsonError, toErrorResponse } from "@/lib/server/http";
 import { jsonWithAdminCookie as setAdminCookie, signAdminSession, verifyAdminAccessToken } from "@/lib/server/admin-auth";
 import { rateLimit } from "@/lib/server/rate-limit";
 
