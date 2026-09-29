@@ -90,6 +90,16 @@ export function readAdminUsername(req: Request) {
   return verifyAdminSession(decodeURIComponent(part.slice(COOKIE_NAME.length + 1)));
 }
 
+export function verifyAdminAccessToken(token: string | null | undefined) {
+  const expected = process.env.CORTEX_ADMIN_ACCESS_TOKEN?.trim();
+  if (!expected || expected.length < 32 || !token) return false;
+  const actual = crypto.createHmac("sha256", secret()).update(token).digest("hex");
+  const target = crypto.createHmac("sha256", secret()).update(expected).digest("hex");
+  const a = Buffer.from(actual);
+  const b = Buffer.from(target);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 export function requireAdmin(req: Request) {
   const username = readAdminUsername(req);
   if (!username) {
