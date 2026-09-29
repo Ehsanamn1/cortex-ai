@@ -10,6 +10,7 @@ export default function PrivateAdminAccessPage({ params }: { params: Promise<{ a
     let active = true;
     void params.then(async ({ accessToken }) => {
       try {
+        window.history.replaceState(null, "", "/admin/access");
         const response = await fetch("/api/admin/auth/exchange", {
           method: "POST",
           headers: { "content-type": "application/json" },

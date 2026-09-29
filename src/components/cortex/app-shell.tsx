@@ -61,7 +61,6 @@ const ConversationsView = dynamic(() => import("@/components/cortex/views/conver
 const SettingsView = dynamic(() => import("@/components/cortex/views/settings-view").then(m => m.SettingsView), { ssr:false, loading:ViewLoading });
 const TelegramView = dynamic(() => import("@/components/cortex/views/telegram-view").then(m => m.TelegramView), { ssr:false, loading:ViewLoading });
 const AnalyticsView = dynamic(() => import("@/components/cortex/views/analytics-view").then(m => m.AnalyticsView), { ssr:false, loading:ViewLoading });
-const AdminView = dynamic(() => import("@/components/cortex/views/admin-view").then(m => m.AdminView), { ssr:false, loading:ViewLoading });
 const LearnView = dynamic(() => import("@/components/cortex/views/learn-view").then(m => m.LearnView), { ssr:false, loading:ViewLoading });
 const WorkflowsView = dynamic(() => import("@/components/cortex/views/workflows-view").then(m => m.WorkflowsView), { ssr:false, loading:ViewLoading });
 const BillingView = dynamic(() => import("@/components/cortex/views/billing-view").then(m => m.BillingView), { ssr:false, loading:ViewLoading });
@@ -253,7 +252,6 @@ const ICONS = {
   conversations: MessagesSquare,
   telegram: ShieldCheck,
   analytics: BarChart3,
-  admin: ShieldCheck,
   learn: GraduationCap,
   billing: WalletCards,
 } as const;
@@ -417,8 +415,6 @@ function usePageTitle(siteName?: string): string {
       return "تحلیل و بینش";
     case "billing":
       return "اعتبار و صورتحساب";
-    case "admin":
-      return "مدیریت";
     case "learn":
       return "آموزش";
     default:
@@ -452,8 +448,6 @@ function renderView(view: View) {
       return <AnalyticsView />;
     case "billing":
       return <BillingView />;
-    case "admin":
-      return <AdminView />;
     case "learn":
       return <LearnView />;
     default:
@@ -490,7 +484,7 @@ export function AppShell() {
   }, [syncFromUrl]);
 
   return (
-    <div className="cortex-dashstack flex h-dvh overflow-hidden bg-background">
+    <div className="cortex-operating-surface flex h-dvh overflow-hidden bg-background">
       {/* Sidebar — first in DOM = right side in RTL */}
       <aside className="cortex-sidebar hidden w-[268px] shrink-0 flex-col gap-5 border-l p-4 lg:flex">
         <div className="px-1 pt-1">

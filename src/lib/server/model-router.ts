@@ -237,7 +237,7 @@ async function resolveProviderFromCatalog(
   },
   preferTrialProvider = false,
 ) {
-  if (model.systemProvider?.enabled) {
+  if (model.systemProvider?.enabled && (!preferTrialProvider || model.systemProvider.isTrialProvider)) {
     return buildSystemProviderForModel(model.systemProvider, model.modelId);
   }
   const byProvider = await db.systemProviderConfig.findFirst({
@@ -279,7 +279,23 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
 
 
   if (!catalog) {
-    const fallback = findManagedModel(account.plan.key === "free" ? "launch-lite" : agent?.modelKey) ?? getManagedModelCatalog()[0];
+    if (account.plan.key === "free") {
+      const trialProvider = await db.systemProviderConfig.findFirst({
+        where: { enabled: true, isTrialProvider: true },
+        orderBy: { updatedAt: "desc" },
+      });
+      const fallback = findManagedModel("launch-lite") ?? getManagedModelCatalog()[0];
+      if (!trialProvider) {
+        throw Object.assign(new Error("Provider پیش‌فرض Trial در پیشخوان مدیر تنظیم نشده است."), { status: 503, code: "trial_provider_unavailable" });
+      }
+      const provider = buildSystemProviderForModel(trialProvider, fallback.providerModelId);
+      if (!provider.isConfigured()) {
+        throw Object.assign(new Error("Provider پیش‌فرض Trial کلید معتبر ندارد."), { status: 503, code: "trial_provider_unconfigured" });
+      }
+      return { model: fallback, provider, planKey: account.plan.key };
+    }
+
+    const fallback = findManagedModel(agent?.modelKey) ?? getManagedModelCatalog()[0];
     const envProvider = new OpenRouterProvider({ model: fallback.providerModelId });
     const provider = envProvider.isConfigured() ? envProvider : null;
     if (!provider) {

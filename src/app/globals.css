@@ -43,79 +43,79 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Cortex/DashStack design system: light operational workspace by default. */
+/* Cortex design system: a restrained operating surface, not a template dashboard. */
 :root {
-  --radius: 0.65rem;
-  --background: #f6f7fb;
-  --foreground: #1f2937;
-  --card: #ffffff;
-  --card-foreground: #1f2937;
-  --popover: #ffffff;
-  --popover-foreground: #1f2937;
-  --primary: #4880ff;
-  --primary-foreground: #ffffff;
-  --secondary: #eef2ff;
-  --secondary-foreground: #334155;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-  --accent: #f4f6fa;
-  --accent-foreground: #1f2937;
-  --destructive: #e05260;
-  --border: #e6e9ef;
-  --input: #e1e5ec;
-  --ring: #4880ff;
-  --chart-1: #4880ff;
-  --chart-2: #6f5ce7;
-  --chart-3: #22a06b;
-  --chart-4: #e6a23c;
-  --chart-5: #e05260;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1f2937;
-  --sidebar-primary: #4880ff;
+  --radius: 0.55rem;
+  --background: #f2f2e9;
+  --foreground: #171a13;
+  --card: #f8f8f1;
+  --card-foreground: #171a13;
+  --popover: #f7f7ef;
+  --popover-foreground: #171a13;
+  --primary: #b8d75b;
+  --primary-foreground: #202616;
+  --secondary: #e3e8d5;
+  --secondary-foreground: #38422b;
+  --muted: #e8e9e0;
+  --muted-foreground: #69705e;
+  --accent: #e9ebdf;
+  --accent-foreground: #171a13;
+  --destructive: #c45454;
+  --border: #d6d9ca;
+  --input: #cfd3c4;
+  --ring: #b8d75b;
+  --chart-1: #b8d75b;
+  --chart-2: #48522f;
+  --chart-3: #73834b;
+  --chart-4: #a5b77a;
+  --chart-5: #c45454;
+  --sidebar: #f7f7ef;
+  --sidebar-foreground: #171a13;
+  --sidebar-primary: #657c2e;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef3ff;
-  --sidebar-accent-foreground: #2f62d6;
-  --sidebar-border: #e6e9ef;
-  --sidebar-ring: #4880ff;
-  --surface-glow: rgba(72, 128, 255, 0.08);
-  --surface-2: #f7f8fb;
+  --sidebar-accent: #e8efd3;
+  --sidebar-accent-foreground: #415026;
+  --sidebar-border: #d9dacd;
+  --sidebar-ring: #b8d75b;
+  --surface-glow: rgba(184, 215, 91, 0.12);
+  --surface-2: #ecece3;
 }
 
 .dark {
-  --radius: 0.65rem;
-  --background: #070a0f;
-  --foreground: #eef2ff;
-  --card: #0f151d;
-  --card-foreground: #eef2ff;
-  --popover: #0b1017;
-  --popover-foreground: #eef2ff;
-  --primary: #5b8cff;
-  --primary-foreground: #ffffff;
-  --secondary: #151c28;
-  --secondary-foreground: #dce5f2;
-  --muted: #111823;
-  --muted-foreground: #93a0b2;
-  --accent: #151d29;
-  --accent-foreground: #eef2ff;
-  --destructive: #ef6573;
-  --border: #202a38;
-  --input: #263244;
-  --ring: #5b8cff;
-  --chart-1: #5b8cff;
-  --chart-2: #8b5cf6;
-  --chart-3: #34d399;
-  --chart-4: #fbbf24;
-  --chart-5: #ef6573;
-  --sidebar: #090d13;
-  --sidebar-foreground: #eef2ff;
-  --sidebar-primary: #5b8cff;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #151d29;
-  --sidebar-accent-foreground: #dbeafe;
-  --sidebar-border: #202a38;
-  --sidebar-ring: #5b8cff;
-  --surface-glow: rgba(91, 140, 255, 0.12);
-  --surface-2: #0d121a;
+  --radius: 0.55rem;
+  --background: #0f120e;
+  --foreground: #eceee3;
+  --card: #141810;
+  --card-foreground: #eceee3;
+  --popover: #12160f;
+  --popover-foreground: #eceee3;
+  --primary: #b8d75b;
+  --primary-foreground: #1d2413;
+  --secondary: #20271a;
+  --secondary-foreground: #dbe5c7;
+  --muted: #171c13;
+  --muted-foreground: #9ba78b;
+  --accent: #20271a;
+  --accent-foreground: #eceee3;
+  --destructive: #e06b67;
+  --border: #2a3023;
+  --input: #37402f;
+  --ring: #b8d75b;
+  --chart-1: #b8d75b;
+  --chart-2: #8da052;
+  --chart-3: #6c7b43;
+  --chart-4: #a4b878;
+  --chart-5: #e06b67;
+  --sidebar: #11150e;
+  --sidebar-foreground: #eceee3;
+  --sidebar-primary: #b8d75b;
+  --sidebar-primary-foreground: #1d2413;
+  --sidebar-accent: #252d1d;
+  --sidebar-accent-foreground: #b8d75b;
+  --sidebar-border: #252a20;
+  --sidebar-ring: #b8d75b;
+  --surface-glow: rgba(184, 215, 91, 0.12);
+  --surface-2: #0b0d0a;
 }
 
 @layer base {
@@ -135,8 +135,8 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     background-image:
-      radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
-      radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%);
+      radial-gradient(circle at 92% -12%, rgba(184,215,91,.09), transparent 24%),
+      radial-gradient(circle at 7% 88%, rgba(72,82,47,.08), transparent 22%);
     background-attachment: scroll;
     overflow-x: hidden;
     overflow-y: auto;
@@ -144,7 +144,7 @@
     -webkit-overflow-scrolling: touch;
   }
   ::selection {
-    background: rgba(59, 130, 255, 0.32);
+    background: rgba(184, 215, 91, 0.32);
     color: #f8fafc;
   }
 }
@@ -208,16 +208,16 @@
 }
 
 .cortex-panel{background:linear-gradient(145deg,rgba(17,21,28,.95),rgba(10,13,19,.92));border:1px solid rgba(148,163,184,.11);box-shadow:0 18px 60px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.025)}
-.cortex-icon-box{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:15px;border:1px solid rgba(59,130,255,.16);background:radial-gradient(circle at 30% 25%,rgba(59,130,255,.28),transparent 55%),rgba(59,130,255,.07);color:#8db8ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 26px rgba(59,130,255,.08)}
+.cortex-icon-box{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:15px;border:1px solid rgba(184,215,91,.16);background:radial-gradient(circle at 30% 25%,rgba(184,215,91,.28),transparent 55%),rgba(184,215,91,.07);color:#8db8ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 26px rgba(184,215,91,.08)}
 .cortex-kicker{font-size:10px;letter-spacing:.22em;color:#6f86a6;font-weight:700}
-.cortex-shell-glow::before{content:"";position:absolute;inset:-18%;background:radial-gradient(circle at 70% 20%,rgba(59,130,255,.13),transparent 28%),radial-gradient(circle at 20% 60%,rgba(139,92,246,.09),transparent 24%);filter:blur(18px);pointer-events:none}
+.cortex-shell-glow::before{content:"";position:absolute;inset:-18%;background:radial-gradient(circle at 70% 20%,rgba(184,215,91,.13),transparent 28%),radial-gradient(circle at 20% 60%,rgba(72,82,47,.09),transparent 24%);filter:blur(18px);pointer-events:none}
 
-.cortex-core-orbit{position:absolute;inset:11%;border:1px solid rgba(59,130,255,.16);border-radius:50%;transform-style:preserve-3d}.cortex-orbit-a{transform:rotateX(66deg) rotateY(18deg);animation:cortexOrbit1 14s linear infinite}.cortex-orbit-b{inset:7%;transform:rotateX(12deg) rotateY(68deg);border-color:rgba(139,92,246,.18);animation:cortexOrbit2 18s linear infinite}.cortex-orbit-c{inset:15%;transform:rotateX(42deg) rotateY(50deg);border-color:rgba(255,255,255,.08);animation:cortexOrbit3 11s linear infinite}@keyframes cortexOrbit1{to{transform:rotateX(66deg) rotateY(18deg) rotateZ(360deg)}}@keyframes cortexOrbit2{to{transform:rotateX(12deg) rotateY(68deg) rotateZ(-360deg)}}@keyframes cortexOrbit3{to{transform:rotateX(42deg) rotateY(50deg) rotateZ(360deg)}}.cortex-core-sphere{filter:drop-shadow(0 20px 55px rgba(59,130,255,.18))}@media(prefers-reduced-motion:reduce){.cortex-core-orbit{animation:none!important}}
+.cortex-core-orbit{position:absolute;inset:11%;border:1px solid rgba(184,215,91,.16);border-radius:50%;transform-style:preserve-3d}.cortex-orbit-a{transform:rotateX(66deg) rotateY(18deg);animation:cortexOrbit1 14s linear infinite}.cortex-orbit-b{inset:7%;transform:rotateX(12deg) rotateY(68deg);border-color:rgba(72,82,47,.18);animation:cortexOrbit2 18s linear infinite}.cortex-orbit-c{inset:15%;transform:rotateX(42deg) rotateY(50deg);border-color:rgba(255,255,255,.08);animation:cortexOrbit3 11s linear infinite}@keyframes cortexOrbit1{to{transform:rotateX(66deg) rotateY(18deg) rotateZ(360deg)}}@keyframes cortexOrbit2{to{transform:rotateX(12deg) rotateY(68deg) rotateZ(-360deg)}}@keyframes cortexOrbit3{to{transform:rotateX(42deg) rotateY(50deg) rotateZ(360deg)}}.cortex-core-sphere{filter:drop-shadow(0 20px 55px rgba(184,215,91,.18))}@media(prefers-reduced-motion:reduce){.cortex-core-orbit{animation:none!important}}
 
 
 .cortex-sidebar {
   background:
-    radial-gradient(circle at 20% 10%, rgba(59,130,255,.08), transparent 24%),
+    radial-gradient(circle at 20% 10%, rgba(184,215,91,.08), transparent 24%),
     linear-gradient(180deg, rgba(10,13,19,.98), rgba(7,9,13,.96));
 }
 .cortex-topbar {
@@ -238,16 +238,16 @@
   position: absolute;
   inset: auto -18% -60% 25%;
   height: 120px;
-  background: radial-gradient(circle, rgba(59,130,255,.13), transparent 68%);
+  background: radial-gradient(circle, rgba(184,215,91,.13), transparent 68%);
   pointer-events: none;
 }
 .cortex-action:hover {
   transform: translateY(-2px);
-  border-color: rgba(59,130,255,.28);
+  border-color: rgba(184,215,91,.28);
   background-color: rgba(255,255,255,.025);
 }
 .cortex-status-line {
-  background: linear-gradient(90deg, transparent, rgba(59,130,255,.35), transparent);
+  background: linear-gradient(90deg, transparent, rgba(184,215,91,.35), transparent);
 }
 @media (max-width: 1023px) {
   .cortex-sidebar {
@@ -255,13 +255,13 @@
   }
 }
 .cortex-hero{box-shadow:0 26px 90px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.04)}
-.cortex-hero::after{content:"";position:absolute;inset:auto 8% -42% auto;width:280px;height:220px;background:radial-gradient(circle,rgba(59,130,255,.14),transparent 68%);filter:blur(18px);pointer-events:none}
+.cortex-hero::after{content:"";position:absolute;inset:auto 8% -42% auto;width:280px;height:220px;background:radial-gradient(circle,rgba(184,215,91,.14),transparent 68%);filter:blur(18px);pointer-events:none}
 
 /* Premium Cortex surfaces — intentionally restrained to keep the UI product-first. */
 .cortex-auth {
   background-image:
-    radial-gradient(circle at 88% 6%, rgba(59,130,255,.10), transparent 24%),
-    radial-gradient(circle at 6% 90%, rgba(139,92,246,.08), transparent 22%);
+    radial-gradient(circle at 88% 6%, rgba(184,215,91,.10), transparent 24%),
+    radial-gradient(circle at 6% 90%, rgba(72,82,47,.08), transparent 22%);
 }
 .cortex-auth-card {
   position: relative;
@@ -274,7 +274,7 @@
   pointer-events: none;
   background:
     linear-gradient(120deg, rgba(255,255,255,.04), transparent 34%),
-    linear-gradient(300deg, rgba(59,130,255,.035), transparent 38%);
+    linear-gradient(300deg, rgba(184,215,91,.035), transparent 38%);
 }
 
 
@@ -297,18 +297,18 @@
 
 
 /* Mobile performance/responsiveness hardening. */
-.cortex-dashstack {
+.cortex-operating-surface {
   contain: layout paint;
 }
-.cortex-dashstack button,
-.cortex-dashstack [role="button"] {
+.cortex-operating-surface button,
+.cortex-operating-surface [role="button"] {
   touch-action: manipulation;
 }
 .cortex-scroll {
   scrollbar-gutter: stable;
 }
 @media (max-width: 1023px) {
-  .cortex-dashstack { contain: layout; }
+  .cortex-operating-surface { contain: layout; }
   .cortex-topbar { min-height: 56px; padding-top: env(safe-area-inset-top); }
   .cortex-mobile-nav {
     padding-bottom: max(env(safe-area-inset-bottom), 4px);
@@ -319,19 +319,19 @@
   }
 }
 @media (max-width: 640px) {
-  .cortex-dashstack .cortex-topbar > div { min-width: 0; }
-  .cortex-dashstack main > div {
+  .cortex-operating-surface .cortex-topbar > div { min-width: 0; }
+  .cortex-operating-surface main > div {
     padding-inline: 10px;
   }
-  .cortex-dashstack [data-slot="dialog-content"] {
+  .cortex-operating-surface [data-slot="dialog-content"] {
     border-radius: 20px;
   }
-  .cortex-dashstack [data-slot="dialog-content"] [data-slot="dialog-header"] {
+  .cortex-operating-surface [data-slot="dialog-content"] [data-slot="dialog-header"] {
     padding-top: 2px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cortex-dashstack * {
+  .cortex-operating-surface * {
     scroll-behavior: auto !important;
   }
 }
@@ -352,77 +352,77 @@
 }
 
 
-/* DashStack-inspired admin workspace: clean light canvas, white cards, compact sidebar, blue active state. */
-.cortex-dashstack,
+/* Cortex operating surface: editorial rules, graphite surfaces and restrained lime signals. */
+.cortex-operating-surface,
 .cortex-control-center {
   background: #f6f7fb !important;
   color: #1f2937 !important;
 }
-.cortex-dashstack .cortex-sidebar {
+.cortex-operating-surface .cortex-sidebar {
   background: #ffffff !important;
   border-color: #e6e9ef !important;
   box-shadow: 4px 0 24px rgba(15, 23, 42, 0.035);
 }
-.cortex-dashstack .cortex-sidebar nav button {
+.cortex-operating-surface .cortex-sidebar nav button {
   border-radius: 8px;
 }
-.cortex-dashstack .cortex-sidebar nav button[aria-current="page"] {
+.cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] {
   background: #eef3ff !important;
   color: #3f6fe5 !important;
 }
-.cortex-dashstack .cortex-sidebar nav button[aria-current="page"] > span:first-child {
+.cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] > span:first-child {
   background: #4880ff !important;
 }
-.cortex-dashstack .cortex-topbar {
+.cortex-operating-surface .cortex-topbar {
   background: rgba(255,255,255,.96) !important;
   border-color: #e6e9ef !important;
   box-shadow: 0 1px 0 rgba(15,23,42,.025), 0 8px 24px rgba(15,23,42,.035) !important;
 }
-.cortex-dashstack .cortex-status-line {
+.cortex-operating-surface .cortex-status-line {
   background: linear-gradient(90deg, transparent, rgba(72,128,255,.24), transparent);
 }
-.cortex-dashstack .cortex-panel,
-.cortex-dashstack [data-slot="card"],
+.cortex-operating-surface .cortex-panel,
+.cortex-operating-surface [data-slot="card"],
 .cortex-control-center [data-slot="card"] {
   background: #ffffff !important;
   border-color: #e6e9ef !important;
   box-shadow: 0 4px 18px rgba(15,23,42,.035);
 }
-.cortex-dashstack .cortex-action {
+.cortex-operating-surface .cortex-action {
   background: #ffffff !important;
   border-color: #e6e9ef !important;
 }
-.cortex-dashstack .cortex-action:hover {
+.cortex-operating-surface .cortex-action:hover {
   background: #fafbfe !important;
   border-color: #cbd8f6 !important;
 }
-.cortex-dashstack .cortex-hero {
+.cortex-operating-surface .cortex-hero {
   background: #ffffff !important;
   border: 1px solid #e6e9ef !important;
   box-shadow: 0 8px 28px rgba(15,23,42,.045) !important;
 }
-.cortex-dashstack .cortex-hero > div:first-child {
+.cortex-operating-surface .cortex-hero > div:first-child {
   display: none;
 }
-.cortex-dashstack .cortex-hero h2,
-.cortex-dashstack .cortex-hero p,
-.cortex-dashstack .cortex-hero span,
-.cortex-dashstack .cortex-hero .text-white,
-.cortex-dashstack .cortex-hero .text-slate-300,
-.cortex-dashstack .cortex-hero .text-slate-400 {
+.cortex-operating-surface .cortex-hero h2,
+.cortex-operating-surface .cortex-hero p,
+.cortex-operating-surface .cortex-hero span,
+.cortex-operating-surface .cortex-hero .text-white,
+.cortex-operating-surface .cortex-hero .text-slate-300,
+.cortex-operating-surface .cortex-hero .text-slate-400 {
   color: #1f2937 !important;
 }
-.cortex-dashstack .cortex-hero [class*="bg-black/25"],
-.cortex-dashstack .cortex-hero [class*="bg-white/[.035]"] {
+.cortex-operating-surface .cortex-hero [class*="bg-black/25"],
+.cortex-operating-surface .cortex-hero [class*="bg-white/[.035]"] {
   background: #f8fafc !important;
   border-color: #e6e9ef !important;
 }
-.cortex-dashstack .cortex-core-sphere {
+.cortex-operating-surface .cortex-core-sphere {
   filter: drop-shadow(0 18px 40px rgba(72,128,255,.15));
 }
-.cortex-dashstack .cortex-topbar .border,
-.cortex-dashstack .cortex-sidebar .border,
-.cortex-dashstack .cortex-panel .border {
+.cortex-operating-surface .cortex-topbar .border,
+.cortex-operating-surface .cortex-sidebar .border,
+.cortex-operating-surface .cortex-panel .border {
   border-color: #e6e9ef !important;
 }
 .cortex-control-center header {
@@ -456,11 +456,11 @@
   color: #4880ff !important;
   border-color: #dbe5ff !important;
 }
-.cortex-dashstack button,
+.cortex-operating-surface button,
 .cortex-control-center button {
   transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
 }
-.cortex-dashstack [data-slot="select-trigger"],
+.cortex-operating-surface [data-slot="select-trigger"],
 .cortex-control-center [data-slot="select-trigger"],
 .cortex-control-center input,
 .cortex-control-center textarea {
@@ -513,46 +513,46 @@ html.dark body {
   background: #070a0f !important;
   background-image:
     radial-gradient(circle at 90% -10%, rgba(59,130,246,.11), transparent 28%),
-    radial-gradient(circle at 8% 92%, rgba(139,92,246,.09), transparent 24%) !important;
+    radial-gradient(circle at 8% 92%, rgba(72,82,47,.09), transparent 24%) !important;
   color: var(--foreground) !important;
 }
-html.dark .cortex-dashstack {
+html.dark .cortex-operating-surface {
   background: #070a0f !important;
   color: #eef2ff !important;
 }
-html.dark .cortex-dashstack .cortex-sidebar {
+html.dark .cortex-operating-surface .cortex-sidebar {
   background:
     radial-gradient(circle at 18% 4%, rgba(91,140,255,.10), transparent 23%),
     linear-gradient(180deg, rgba(9,13,19,.98), rgba(6,9,13,.97)) !important;
   border-color: #1b2634 !important;
   box-shadow: 10px 0 40px rgba(0,0,0,.22) !important;
 }
-html.dark .cortex-dashstack .cortex-topbar {
+html.dark .cortex-operating-surface .cortex-topbar {
   background: rgba(7,10,15,.78) !important;
   border-color: #1a2532 !important;
   box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 12px 40px rgba(0,0,0,.16) !important;
 }
-html.dark .cortex-dashstack .cortex-panel,
-html.dark .cortex-dashstack [data-slot="card"] {
+html.dark .cortex-operating-surface .cortex-panel,
+html.dark .cortex-operating-surface [data-slot="card"] {
   background: linear-gradient(145deg, rgba(15,21,29,.95), rgba(9,13,18,.94)) !important;
   color: var(--card-foreground) !important;
   border-color: rgba(148,163,184,.11) !important;
   box-shadow: 0 20px 65px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.025) !important;
 }
-html.dark .cortex-dashstack .cortex-action {
+html.dark .cortex-operating-surface .cortex-action {
   background: rgba(13,18,25,.76) !important;
   border-color: rgba(148,163,184,.10) !important;
 }
-html.dark .cortex-dashstack .cortex-action:hover {
+html.dark .cortex-operating-surface .cortex-action:hover {
   background: rgba(22,31,43,.9) !important;
   border-color: rgba(91,140,255,.34) !important;
   box-shadow: 0 14px 36px rgba(0,0,0,.16) !important;
 }
-html.dark .cortex-dashstack .cortex-search-trigger {
+html.dark .cortex-operating-surface .cortex-search-trigger {
   background: rgba(16,22,30,.78) !important;
   border-color: rgba(148,163,184,.12) !important;
 }
-html.dark .cortex-dashstack .cortex-search-trigger:hover {
+html.dark .cortex-operating-surface .cortex-search-trigger:hover {
   border-color: rgba(91,140,255,.36) !important;
   box-shadow: 0 0 0 1px rgba(91,140,255,.08), 0 10px 24px rgba(0,0,0,.15) !important;
 }
@@ -635,7 +635,7 @@ html.dark .cortex-dashstack .cortex-search-trigger:hover {
   isolation: isolate;
   background:
     radial-gradient(circle at 78% 28%, rgba(91,140,255,.24), transparent 25%),
-    radial-gradient(circle at 22% 78%, rgba(139,92,246,.18), transparent 23%),
+    radial-gradient(circle at 22% 78%, rgba(72,82,47,.18), transparent 23%),
     linear-gradient(145deg, #111a28 0%, #0a0f17 58%, #080b11 100%);
   border: 1px solid rgba(148,163,184,.13);
   box-shadow: 0 28px 80px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.045);
@@ -645,7 +645,7 @@ html.dark .cortex-dashstack .cortex-search-trigger:hover {
   position: absolute;
   inset: -45% -18%;
   z-index: -1;
-  background: conic-gradient(from 130deg, transparent 0 18%, rgba(91,140,255,.10) 24%, transparent 34%, rgba(139,92,246,.08) 51%, transparent 65%);
+  background: conic-gradient(from 130deg, transparent 0 18%, rgba(91,140,255,.10) 24%, transparent 34%, rgba(72,82,47,.08) 51%, transparent 65%);
   filter: blur(24px);
   animation: cortex-wallet-shift 14s linear infinite;
 }
@@ -657,7 +657,7 @@ html.dark .cortex-dashstack .cortex-search-trigger:hover {
   background:
     radial-gradient(circle at 31% 24%, rgba(255,255,255,.72), transparent 8%),
     radial-gradient(circle at 43% 38%, rgba(91,140,255,.96), transparent 31%),
-    radial-gradient(circle at 70% 66%, rgba(139,92,246,.92), transparent 52%),
+    radial-gradient(circle at 70% 66%, rgba(72,82,47,.92), transparent 52%),
     radial-gradient(circle at 42% 30%, #17273e, #08101a 70%);
   border: 1px solid rgba(255,255,255,.10);
   box-shadow: inset -18px -24px 42px rgba(0,0,0,.35), inset 12px 12px 28px rgba(255,255,255,.06), 0 0 90px rgba(91,140,255,.16);
@@ -717,26 +717,26 @@ html.dark .cortex-dashstack .cortex-search-trigger:hover {
   .cortex-wallet-orb { width: 118px; height: 118px; }
 }
 
-html.dark .cortex-dashstack .cortex-hero {
+html.dark .cortex-operating-surface .cortex-hero {
   background:
     radial-gradient(circle at 80% 12%, rgba(91,140,255,.16), transparent 30%),
-    radial-gradient(circle at 12% 82%, rgba(139,92,246,.12), transparent 26%),
+    radial-gradient(circle at 12% 82%, rgba(72,82,47,.12), transparent 26%),
     linear-gradient(145deg,#101722,#080c12) !important;
   border-color: rgba(148,163,184,.12) !important;
 }
-html.dark .cortex-dashstack .cortex-hero > div:first-child { display: block !important; }
-html.dark .cortex-dashstack .cortex-hero h2,
-html.dark .cortex-dashstack .cortex-hero p,
-html.dark .cortex-dashstack .cortex-hero span,
-html.dark .cortex-dashstack .cortex-hero .text-white,
-html.dark .cortex-dashstack .cortex-hero .text-slate-300,
-html.dark .cortex-dashstack .cortex-hero .text-slate-400 { color: #eef2ff !important; }
-html.dark .cortex-dashstack .cortex-hero .text-slate-300 { color: #aab7c9 !important; }
-html.dark .cortex-dashstack .cortex-sidebar nav button[aria-current="page"] {
+html.dark .cortex-operating-surface .cortex-hero > div:first-child { display: block !important; }
+html.dark .cortex-operating-surface .cortex-hero h2,
+html.dark .cortex-operating-surface .cortex-hero p,
+html.dark .cortex-operating-surface .cortex-hero span,
+html.dark .cortex-operating-surface .cortex-hero .text-white,
+html.dark .cortex-operating-surface .cortex-hero .text-slate-300,
+html.dark .cortex-operating-surface .cortex-hero .text-slate-400 { color: #eef2ff !important; }
+html.dark .cortex-operating-surface .cortex-hero .text-slate-300 { color: #aab7c9 !important; }
+html.dark .cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] {
   background: rgba(91,140,255,.10) !important;
   color: #86adff !important;
 }
-html.dark .cortex-dashstack .cortex-sidebar nav button[aria-current="page"] > span:first-child {
+html.dark .cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] > span:first-child {
   background: #5b8cff !important;
 }
 .cortex-mobile-nav {
@@ -797,28 +797,28 @@ html:not(.dark) .cortex-wallet-quick-btn { color:#3f6fe5; background:rgba(63,111
 html:not(.dark) .cortex-wallet-mini { background: linear-gradient(135deg,#ffffff,#f6f8ff) !important; border-color:#dfe5f0 !important; }
 
 /* Dark/light contract normalization for legacy utility classes */
-html.dark .cortex-dashstack [class*="bg-white/"] {
+html.dark .cortex-operating-surface [class*="bg-white/"] {
   background-color: rgba(255,255,255,.025) !important;
 }
-html.dark .cortex-dashstack [class*="border-white/"] {
+html.dark .cortex-operating-surface [class*="border-white/"] {
   border-color: rgba(148,163,184,.11) !important;
 }
-html.dark .cortex-dashstack [class*="text-slate-"] {
+html.dark .cortex-operating-surface [class*="text-slate-"] {
   color: #9aa8bb !important;
 }
-html.dark .cortex-dashstack .text-white {
+html.dark .cortex-operating-surface .text-white {
   color: #f1f5fb !important;
 }
-html:not(.dark) .cortex-dashstack [class*="bg-white/"] {
+html:not(.dark) .cortex-operating-surface [class*="bg-white/"] {
   background-color: rgba(255,255,255,.82) !important;
 }
-html:not(.dark) .cortex-dashstack [class*="border-white/"] {
+html:not(.dark) .cortex-operating-surface [class*="border-white/"] {
   border-color: rgba(15,23,42,.10) !important;
 }
-html:not(.dark) .cortex-dashstack [class*="text-slate-"] {
+html:not(.dark) .cortex-operating-surface [class*="text-slate-"] {
   color: #5f6b7a !important;
 }
-html:not(.dark) .cortex-dashstack .text-white {
+html:not(.dark) .cortex-operating-surface .text-white {
   color: #121826 !important;
 }
 
@@ -830,7 +830,7 @@ html:not(.dark) .cortex-dashstack .text-white {
 .cortex-auth {
   background:
     radial-gradient(circle at 82% 10%, rgba(91,140,255,.08), transparent 24%),
-    radial-gradient(circle at 14% 85%, rgba(139,92,246,.07), transparent 24%);
+    radial-gradient(circle at 14% 85%, rgba(72,82,47,.07), transparent 24%);
 }
 .cortex-auth-card {
   position: relative;
@@ -868,24 +868,24 @@ html:not(.dark) .cortex-auth .bg-white/\[\.025\] { background:rgba(255,255,255,.
 .cortex-core-sphere > div:first-child {
   background:
     radial-gradient(circle at 32% 26%, rgba(255,255,255,.48), transparent 12%),
-    radial-gradient(circle at 55% 44%, rgba(59,130,255,.98), transparent 38%),
-    radial-gradient(circle at 72% 72%, rgba(139,92,246,.96), transparent 48%),
+    radial-gradient(circle at 55% 44%, rgba(184,215,91,.98), transparent 38%),
+    radial-gradient(circle at 72% 72%, rgba(72,82,47,.96), transparent 48%),
     #07101c !important;
 }
 html:not(.dark) .cortex-core-sphere > div:first-child {
   background:
     radial-gradient(circle at 32% 26%, rgba(255,255,255,.98), transparent 12%),
     radial-gradient(circle at 55% 44%, rgba(91,140,255,.78), transparent 38%),
-    radial-gradient(circle at 72% 72%, rgba(139,92,246,.72), transparent 48%),
+    radial-gradient(circle at 72% 72%, rgba(72,82,47,.72), transparent 48%),
     #edf3fb !important;
-  box-shadow: 0 0 80px rgba(59,130,255,.18), inset 0 1px 0 rgba(255,255,255,.78) !important;
+  box-shadow: 0 0 80px rgba(184,215,91,.18), inset 0 1px 0 rgba(255,255,255,.78) !important;
 }
 html:not(.dark) .cortex-core-node {
   background:#ffffff !important;
-  box-shadow:0 0 15px rgba(59,130,255,.44),0 0 3px rgba(49,64,88,.30) !important;
+  box-shadow:0 0 15px rgba(184,215,91,.44),0 0 3px rgba(49,64,88,.30) !important;
 }
 html:not(.dark) .cortex-core-shell,
-html:not(.dark) .cortex-core-ring { border-color: rgba(59,130,255,.20) !important; }
+html:not(.dark) .cortex-core-ring { border-color: rgba(184,215,91,.20) !important; }
 html:not(.dark) .cortex-core-stage .text-slate-400 { color:#5f6d80 !important; }
 
 /* Compact wallet language */
@@ -898,64 +898,64 @@ html:not(.dark) .cortex-core-stage .text-slate-400 { color:#5f6d80 !important; }
 
 
 /* ===== Final theme contract: eliminate legacy light utility leakage in dark mode ===== */
-html.dark .cortex-dashstack,
-html.dark .cortex-dashstack main,
-html.dark .cortex-dashstack header,
-html.dark .cortex-dashstack aside,
-html.dark .cortex-dashstack [data-slot="card"],
-html.dark .cortex-dashstack [data-slot="sheet-content"],
-html.dark .cortex-dashstack [data-slot="popover-content"] {
+html.dark .cortex-operating-surface,
+html.dark .cortex-operating-surface main,
+html.dark .cortex-operating-surface header,
+html.dark .cortex-operating-surface aside,
+html.dark .cortex-operating-surface [data-slot="card"],
+html.dark .cortex-operating-surface [data-slot="sheet-content"],
+html.dark .cortex-operating-surface [data-slot="popover-content"] {
   color-scheme: dark;
 }
-html.dark .cortex-dashstack [class*="bg-white"],
-html.dark .cortex-dashstack [class*="bg-slate-50"],
-html.dark .cortex-dashstack [class*="bg-slate-100"],
-html.dark .cortex-dashstack [class*="bg-gray-50"],
-html.dark .cortex-dashstack [class*="bg-gray-100"] {
+html.dark .cortex-operating-surface [class*="bg-white"],
+html.dark .cortex-operating-surface [class*="bg-slate-50"],
+html.dark .cortex-operating-surface [class*="bg-slate-100"],
+html.dark .cortex-operating-surface [class*="bg-gray-50"],
+html.dark .cortex-operating-surface [class*="bg-gray-100"] {
   background-color: #0d121a !important;
   background-image: none !important;
 }
-html.dark .cortex-dashstack [class*="bg-gray-200"],
-html.dark .cortex-dashstack [class*="bg-slate-200"] {
+html.dark .cortex-operating-surface [class*="bg-gray-200"],
+html.dark .cortex-operating-surface [class*="bg-slate-200"] {
   background-color: #141b25 !important;
 }
-html.dark .cortex-dashstack [class*="border-white"],
-html.dark .cortex-dashstack [class*="border-gray-"],
-html.dark .cortex-dashstack [class*="border-slate-"] {
+html.dark .cortex-operating-surface [class*="border-white"],
+html.dark .cortex-operating-surface [class*="border-gray-"],
+html.dark .cortex-operating-surface [class*="border-slate-"] {
   border-color: #202a38 !important;
 }
-html.dark .cortex-dashstack [class*="text-gray-"],
-html.dark .cortex-dashstack [class*="text-slate-"] {
+html.dark .cortex-operating-surface [class*="text-gray-"],
+html.dark .cortex-operating-surface [class*="text-slate-"] {
   color: #9aa8bb !important;
 }
-html.dark .cortex-dashstack [class*="text-black"] {
+html.dark .cortex-operating-surface [class*="text-black"] {
   color: #eef2ff !important;
 }
-html.dark .cortex-dashstack input,
-html.dark .cortex-dashstack textarea,
-html.dark .cortex-dashstack select,
-html.dark .cortex-dashstack [data-slot="select-trigger"] {
+html.dark .cortex-operating-surface input,
+html.dark .cortex-operating-surface textarea,
+html.dark .cortex-operating-surface select,
+html.dark .cortex-operating-surface [data-slot="select-trigger"] {
   color: #eef2ff !important;
   background-color: #0d121a !important;
   border-color: #263244 !important;
 }
-html.dark .cortex-dashstack input::placeholder,
-html.dark .cortex-dashstack textarea::placeholder {
+html.dark .cortex-operating-surface input::placeholder,
+html.dark .cortex-operating-surface textarea::placeholder {
   color: #738095 !important;
 }
-html.dark .cortex-dashstack [data-slot="dialog-content"],
-html.dark .cortex-dashstack [data-slot="popover-content"],
-html.dark .cortex-dashstack [data-slot="select-content"],
-html.dark .cortex-dashstack [data-slot="sheet-content"] {
+html.dark .cortex-operating-surface [data-slot="dialog-content"],
+html.dark .cortex-operating-surface [data-slot="popover-content"],
+html.dark .cortex-operating-surface [data-slot="select-content"],
+html.dark .cortex-operating-surface [data-slot="sheet-content"] {
   background: #0b1017 !important;
   color: #eef2ff !important;
   border-color: #202a38 !important;
 }
-html:not(.dark) .cortex-dashstack [class*="bg-slate-950"],
-html:not(.dark) .cortex-dashstack [class*="bg-gray-950"] {
+html:not(.dark) .cortex-operating-surface [class*="bg-slate-950"],
+html:not(.dark) .cortex-operating-surface [class*="bg-gray-950"] {
   background-color: #ffffff !important;
 }
-html:not(.dark) .cortex-dashstack [class*="text-white"] {
+html:not(.dark) .cortex-operating-surface [class*="text-white"] {
   color: #111827 !important;
 }
 
@@ -995,7 +995,7 @@ html:not(.dark) .cortex-core-stage > div:nth-child(2) { border-color: rgba(91,14
   background:
     radial-gradient(circle at 31% 24%, rgba(255,255,255,.70), transparent 9%),
     radial-gradient(circle at 54% 46%, rgba(91,140,255,.92), transparent 34%),
-    radial-gradient(circle at 70% 70%, rgba(139,92,246,.82), transparent 52%),
+    radial-gradient(circle at 70% 70%, rgba(72,82,47,.82), transparent 52%),
     #08101a;
   box-shadow: 0 0 85px rgba(91,140,255,.20), inset -16px -18px 32px rgba(0,0,0,.34), inset 10px 10px 24px rgba(255,255,255,.06);
   animation: cortex-auth-orb-pulse 7s ease-in-out infinite;
@@ -1008,7 +1008,7 @@ html:not(.dark) .cortex-core-stage > div:nth-child(2) { border-color: rgba(91,14
   transform-style:preserve-3d;
 }
 .cortex-auth-core-ring-a { transform:rotateX(68deg); animation:cortex-auth-ring-a 13s linear infinite; }
-.cortex-auth-core-ring-b { transform:rotateY(66deg); animation:cortex-auth-ring-b 17s linear infinite reverse; border-color:rgba(139,92,246,.16); }
+.cortex-auth-core-ring-b { transform:rotateY(66deg); animation:cortex-auth-ring-b 17s linear infinite reverse; border-color:rgba(72,82,47,.16); }
 @keyframes cortex-auth-orb-pulse { 50% { transform:scale(1.035) translateZ(8px); } }
 @keyframes cortex-auth-ring-a { to { transform:rotateX(68deg) rotateZ(360deg); } }
 @keyframes cortex-auth-ring-b { to { transform:rotateY(66deg) rotateZ(360deg); } }
@@ -1016,7 +1016,7 @@ html:not(.dark) .cortex-auth-core-orb {
   background:
     radial-gradient(circle at 31% 24%, rgba(255,255,255,.96), transparent 9%),
     radial-gradient(circle at 54% 46%, rgba(91,140,255,.72), transparent 34%),
-    radial-gradient(circle at 70% 70%, rgba(139,92,246,.56), transparent 52%),
+    radial-gradient(circle at 70% 70%, rgba(72,82,47,.56), transparent 52%),
     #edf3fb;
   box-shadow:0 0 72px rgba(91,140,255,.14), inset -12px -14px 24px rgba(100,116,139,.14), inset 10px 10px 24px rgba(255,255,255,.90);
 }
@@ -1044,7 +1044,7 @@ html:not(.dark) .cortex-auth-core-ring { border-color:rgba(63,111,229,.16); }
 .cortex-estimator {
   background:
     radial-gradient(circle at 84% 18%, rgba(91,140,255,.09), transparent 24%),
-    radial-gradient(circle at 15% 84%, rgba(139,92,246,.07), transparent 24%),
+    radial-gradient(circle at 15% 84%, rgba(72,82,47,.07), transparent 24%),
     linear-gradient(145deg, rgba(16,22,30,.94), rgba(9,13,18,.96));
 }
 .cortex-model-guide {
@@ -1061,7 +1061,7 @@ html.dark .cortex-infra-value { color: #e8eef8 !important; }
 html.dark .cortex-wallet-card {
   background:
     radial-gradient(circle at 82% 24%, rgba(91,140,255,.20), transparent 25%),
-    radial-gradient(circle at 18% 80%, rgba(139,92,246,.15), transparent 23%),
+    radial-gradient(circle at 18% 80%, rgba(72,82,47,.15), transparent 23%),
     linear-gradient(145deg, #111a28 0%, #0a0f17 58%, #080b11 100%) !important;
   border-color: rgba(148,163,184,.13) !important;
   color: #eef2ff !important;
@@ -1071,7 +1071,7 @@ html.dark .cortex-wallet-card .text-muted-foreground { color: #93a0b2 !important
 html:not(.dark) .cortex-wallet-card {
   background:
     radial-gradient(circle at 82% 24%, rgba(91,140,255,.13), transparent 25%),
-    radial-gradient(circle at 18% 80%, rgba(139,92,246,.10), transparent 23%),
+    radial-gradient(circle at 18% 80%, rgba(72,82,47,.10), transparent 23%),
     linear-gradient(145deg, #ffffff 0%, #f3f7fd 62%, #edf2f9 100%) !important;
   border-color: #dfe6ef !important;
   color: #121826 !important;
@@ -1089,7 +1089,7 @@ html:not(.dark) .cortex-wallet-orb {
   background:
     radial-gradient(circle at 31% 24%, rgba(255,255,255,.98), transparent 8%),
     radial-gradient(circle at 43% 38%, rgba(91,140,255,.80), transparent 31%),
-    radial-gradient(circle at 70% 66%, rgba(139,92,246,.62), transparent 52%),
+    radial-gradient(circle at 70% 66%, rgba(72,82,47,.62), transparent 52%),
     radial-gradient(circle at 42% 30%, #dfe8f5, #f6f9fd 70%) !important;
   border-color: rgba(63,111,229,.18) !important;
   box-shadow: inset -18px -24px 42px rgba(89,109,138,.14), inset 12px 12px 28px rgba(255,255,255,.9), 0 0 65px rgba(91,140,255,.12) !important;
@@ -1098,7 +1098,7 @@ html:not(.dark) .cortex-wallet-orb {
 html:not(.dark) .cortex-estimator {
   background:
     radial-gradient(circle at 84% 18%, rgba(91,140,255,.08), transparent 24%),
-    radial-gradient(circle at 15% 84%, rgba(139,92,246,.06), transparent 24%),
+    radial-gradient(circle at 15% 84%, rgba(72,82,47,.06), transparent 24%),
     linear-gradient(145deg, #ffffff, #f5f8fd) !important;
   border-color: #dfe6ef !important;
 }
@@ -1112,19 +1112,19 @@ html.dark .cortex-estimator select option { background: #0d121a; color: #eef2ff;
 html:not(.dark) .cortex-estimator select option { background: #ffffff; color: #111827; }
 
 /* Hero itself owns its palette; do not let old utility colors leak across themes. */
-html:not(.dark) .cortex-dashstack .cortex-hero {
+html:not(.dark) .cortex-operating-surface .cortex-hero {
   background: linear-gradient(145deg,#ffffff,#f4f7fb) !important;
   border-color: #dfe6ef !important;
 }
-html:not(.dark) .cortex-dashstack .cortex-hero > div:first-child {
+html:not(.dark) .cortex-operating-surface .cortex-hero > div:first-child {
   background:
     radial-gradient(circle at 78% 14%, rgba(91,140,255,.12), transparent 28%),
-    radial-gradient(circle at 18% 82%, rgba(139,92,246,.08), transparent 26%),
+    radial-gradient(circle at 18% 82%, rgba(72,82,47,.08), transparent 26%),
     linear-gradient(145deg,#ffffff,#f3f6fb) !important;
 }
-html:not(.dark) .cortex-dashstack .cortex-hero .text-white { color: #111827 !important; }
-html:not(.dark) .cortex-dashstack .cortex-hero .text-slate-300 { color: #5f6d80 !important; }
-html:not(.dark) .cortex-dashstack .cortex-hero .text-slate-500 { color: #7b8796 !important; }
+html:not(.dark) .cortex-operating-surface .cortex-hero .text-white { color: #111827 !important; }
+html:not(.dark) .cortex-operating-surface .cortex-hero .text-slate-300 { color: #5f6d80 !important; }
+html:not(.dark) .cortex-operating-surface .cortex-hero .text-slate-500 { color: #7b8796 !important; }
 
 /* ===== Final Cortex theme + lightweight 3D core contract ===== */
 :root {
@@ -1145,27 +1145,27 @@ html.dark body {
 }
 
 /* The customer shell owns all legacy utility colors in dark mode. */
-html.dark .cortex-dashstack .bg-white,
-html.dark .cortex-dashstack [class*="bg-white/"],
-html.dark .cortex-dashstack [class*="bg-slate-"],
-html.dark .cortex-dashstack [class*="bg-gray-"] {
+html.dark .cortex-operating-surface .bg-white,
+html.dark .cortex-operating-surface [class*="bg-white/"],
+html.dark .cortex-operating-surface [class*="bg-slate-"],
+html.dark .cortex-operating-surface [class*="bg-gray-"] {
   background-color: #0d121a !important;
 }
-html.dark .cortex-dashstack [class*="border-white/"],
-html.dark .cortex-dashstack [class*="border-slate-"],
-html.dark .cortex-dashstack [class*="border-gray-"] {
+html.dark .cortex-operating-surface [class*="border-white/"],
+html.dark .cortex-operating-surface [class*="border-slate-"],
+html.dark .cortex-operating-surface [class*="border-gray-"] {
   border-color: #202a38 !important;
 }
-html.dark .cortex-dashstack [class*="text-white"],
-html.dark .cortex-dashstack [class*="text-slate-"],
-html.dark .cortex-dashstack [class*="text-gray-"] {
+html.dark .cortex-operating-surface [class*="text-white"],
+html.dark .cortex-operating-surface [class*="text-slate-"],
+html.dark .cortex-operating-surface [class*="text-gray-"] {
   color: #dce5f2 !important;
 }
-html:not(.dark) .cortex-dashstack [class*="bg-slate-950"],
-html:not(.dark) .cortex-dashstack [class*="bg-gray-950"] {
+html:not(.dark) .cortex-operating-surface [class*="bg-slate-950"],
+html:not(.dark) .cortex-operating-surface [class*="bg-gray-950"] {
   background-color: #ffffff !important;
 }
-html:not(.dark) .cortex-dashstack [class*="text-white"] {
+html:not(.dark) .cortex-operating-surface [class*="text-white"] {
   color: #111827 !important;
 }
 
@@ -1219,7 +1219,7 @@ html:not(.dark) .cortex-auth aside {
   will-change: transform;
 }
 .cortex-core-v2-ring-1 { inset: 9%; transform: rotateX(67deg) rotateZ(12deg); animation: cortex-core-r1 14s linear infinite; }
-.cortex-core-v2-ring-2 { inset: 15%; border-color: rgba(139,92,246,.18); transform: rotateY(64deg) rotateZ(-18deg); animation: cortex-core-r2 18s linear infinite reverse; }
+.cortex-core-v2-ring-2 { inset: 15%; border-color: rgba(72,82,47,.18); transform: rotateY(64deg) rotateZ(-18deg); animation: cortex-core-r2 18s linear infinite reverse; }
 .cortex-core-v2-ring-3 { inset: 20%; border-style: dashed; border-color: rgba(148,163,184,.12); transform: rotateX(42deg) rotateY(25deg); animation: cortex-core-r3 11s linear infinite; }
 .cortex-core-v2-node {
   position: absolute;
@@ -1239,7 +1239,7 @@ html:not(.dark) .cortex-auth aside {
   background:
     radial-gradient(circle at 30% 24%, rgba(255,255,255,.78), transparent 10%),
     radial-gradient(circle at 53% 42%, rgba(91,140,255,.96), transparent 38%),
-    radial-gradient(circle at 73% 70%, rgba(139,92,246,.94), transparent 52%),
+    radial-gradient(circle at 73% 70%, rgba(72,82,47,.94), transparent 52%),
     #07101c;
   border: 1px solid rgba(255,255,255,.10);
   box-shadow:
@@ -1288,7 +1288,7 @@ html:not(.dark) .cortex-core-v2-orb {
   background:
     radial-gradient(circle at 30% 24%, rgba(255,255,255,.98), transparent 10%),
     radial-gradient(circle at 53% 42%, rgba(91,140,255,.76), transparent 38%),
-    radial-gradient(circle at 73% 70%, rgba(139,92,246,.60), transparent 52%),
+    radial-gradient(circle at 73% 70%, rgba(72,82,47,.60), transparent 52%),
     #edf3fb;
   border-color: rgba(63,111,229,.16);
   box-shadow: 0 0 70px rgba(91,140,255,.14), inset -16px -17px 30px rgba(88,108,138,.12), inset 12px 12px 24px rgba(255,255,255,.9);
@@ -1308,8 +1308,8 @@ html:not(.dark) .cortex-core-v2-caption span { color: #5f6d80; }
 html.dark body {
   background-color: #070a0f !important;
   background-image:
-    radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
-    radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%) !important;
+    radial-gradient(circle at 90% -10%, rgba(184,215,91,.10), transparent 26%),
+    radial-gradient(circle at 5% 90%, rgba(72,82,47,.08), transparent 24%) !important;
   color: #eef2ff !important;
 }
 html:not(.dark) body {
@@ -1334,23 +1334,23 @@ html:not(.dark) body {
 }
 
 /* Light-mode cleanup for intentionally dark utility accents used by legacy dashboard cards. */
-html:not(.dark) .cortex-dashstack [class*="bg-black/"] {
+html:not(.dark) .cortex-operating-surface [class*="bg-black/"] {
   background-color: rgba(15,23,42,.045) !important;
 }
-html:not(.dark) .cortex-dashstack [class*="border-white/"] {
+html:not(.dark) .cortex-operating-surface [class*="border-white/"] {
   border-color: rgba(15,23,42,.10) !important;
 }
-html:not(.dark) .cortex-dashstack [class*="hover:bg-white"]:hover {
+html:not(.dark) .cortex-operating-surface [class*="hover:bg-white"]:hover {
   background-color: rgba(15,23,42,.035) !important;
 }
-html.dark .cortex-dashstack [class*="hover:bg-white"]:hover {
+html.dark .cortex-operating-surface [class*="hover:bg-white"]:hover {
   background-color: rgba(255,255,255,.035) !important;
 }
 /* Keep cards readable while the page switches themes; never inherit a stale hard-coded surface. */
-html.dark .cortex-dashstack .cortex-panel,
-html.dark .cortex-dashstack [data-slot="card"] { color: var(--card-foreground) !important; }
-html:not(.dark) .cortex-dashstack .cortex-panel,
-html:not(.dark) .cortex-dashstack [data-slot="card"] { color: var(--card-foreground) !important; }
+html.dark .cortex-operating-surface .cortex-panel,
+html.dark .cortex-operating-surface [data-slot="card"] { color: var(--card-foreground) !important; }
+html:not(.dark) .cortex-operating-surface .cortex-panel,
+html:not(.dark) .cortex-operating-surface [data-slot="card"] { color: var(--card-foreground) !important; }
 
 
 /* ===== Mobile customer navigation ===== */
@@ -1363,21 +1363,21 @@ html:not(.dark) .cortex-dashstack [data-slot="card"] { color: var(--card-foregro
   -webkit-tap-highlight-color: transparent;
 }
 @media (max-width: 1023px) {
-  .cortex-dashstack main {
+  .cortex-operating-surface main {
     overscroll-behavior-y: contain;
   }
-  .cortex-dashstack .cortex-scroll {
+  .cortex-operating-surface .cortex-scroll {
     scroll-padding-bottom: 96px;
   }
-  .cortex-dashstack .cortex-mobile-nav {
+  .cortex-operating-surface .cortex-mobile-nav {
     box-shadow: 0 -18px 45px rgba(2, 6, 23, .18);
   }
-  html.dark .cortex-dashstack .cortex-mobile-nav {
+  html.dark .cortex-operating-surface .cortex-mobile-nav {
     background: rgba(7, 10, 15, .90);
     border-top-color: rgba(148,163,184,.14);
     box-shadow: 0 -18px 45px rgba(0,0,0,.28);
   }
-  html:not(.dark) .cortex-dashstack .cortex-mobile-nav {
+  html:not(.dark) .cortex-operating-surface .cortex-mobile-nav {
     background: rgba(255,255,255,.92);
     border-top-color: rgba(15,23,42,.10);
   }
@@ -1442,37 +1442,37 @@ body {
   background-image: none !important;
 }
 
-.cortex-dashstack {
+.cortex-operating-surface {
   background: #efece2 !important;
 }
 
-.cortex-dashstack .cortex-panel,
-.cortex-dashstack [data-slot="card"] {
+.cortex-operating-surface .cortex-panel,
+.cortex-operating-surface [data-slot="card"] {
   border-radius: 14px !important;
   border-color: #d5d1c4 !important;
   background: #f9f7f0 !important;
   box-shadow: 0 1px 0 rgba(23,27,23,.035), 0 10px 28px rgba(23,27,23,.045) !important;
 }
 
-.cortex-dashstack .cortex-hero {
+.cortex-operating-surface .cortex-hero {
   border-radius: 18px !important;
   border: 1px solid #cec9ba !important;
   background: #fbfaf5 !important;
   box-shadow: 0 1px 0 rgba(23,27,23,.04), 0 18px 48px rgba(23,27,23,.06) !important;
 }
 
-.cortex-dashstack .cortex-action {
+.cortex-operating-surface .cortex-action {
   border-radius: 12px !important;
   background: #f9f7f0 !important;
   border-color: #d2cec2 !important;
   box-shadow: none !important;
 }
 
-.cortex-dashstack .cortex-action::after {
+.cortex-operating-surface .cortex-action::after {
   display: none !important;
 }
 
-.cortex-dashstack .cortex-icon-box {
+.cortex-operating-surface .cortex-icon-box {
   width: 42px;
   height: 42px;
   border-radius: 10px !important;
@@ -1482,35 +1482,35 @@ body {
   box-shadow: none !important;
 }
 
-.cortex-dashstack .cortex-kicker {
+.cortex-operating-surface .cortex-kicker {
   color: #5e6e49 !important;
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace !important;
   letter-spacing: .16em !important;
 }
 
-.cortex-dashstack .cortex-status-line {
+.cortex-operating-surface .cortex-status-line {
   background: #b9c49f !important;
   height: 1px !important;
 }
 
-.cortex-dashstack .rounded-2xl,
-.cortex-dashstack .rounded-[30px],
-.cortex-dashstack .rounded-[28px] {
+.cortex-operating-surface .rounded-2xl,
+.cortex-operating-surface .rounded-[30px],
+.cortex-operating-surface .rounded-[28px] {
   border-radius: 14px !important;
 }
 
-.cortex-dashstack button {
+.cortex-operating-surface button {
   border-radius: 10px !important;
 }
 
-.cortex-dashstack input,
-.cortex-dashstack textarea,
-.cortex-dashstack select {
+.cortex-operating-surface input,
+.cortex-operating-surface textarea,
+.cortex-operating-surface select {
   border-radius: 9px !important;
   background: #fbfaf5 !important;
 }
 
-.cortex-dashstack section {
+.cortex-operating-surface section {
   content-visibility: auto;
   contain-intrinsic-size: 0 260px;
 }
@@ -1543,14 +1543,14 @@ body {
 }
 
 @media (max-width: 640px) {
-  .cortex-dashstack .cortex-panel,
-  .cortex-dashstack [data-slot="card"] {
+  .cortex-operating-surface .cortex-panel,
+  .cortex-operating-surface [data-slot="card"] {
     border-radius: 12px !important;
   }
-  .cortex-dashstack .cortex-hero {
+  .cortex-operating-surface .cortex-hero {
     border-radius: 14px !important;
   }
-  .cortex-dashstack section {
+  .cortex-operating-surface section {
     contain-intrinsic-size: 0 220px;
   }
 }
@@ -1589,28 +1589,168 @@ body {
   background-image: none !important;
 }
 
-.dark .cortex-dashstack {
+.dark .cortex-operating-surface {
   background: #11140f !important;
   color: #ecefe6 !important;
 }
 
-.dark .cortex-dashstack .cortex-panel,
-.dark .cortex-dashstack [data-slot="card"] {
+.dark .cortex-operating-surface .cortex-panel,
+.dark .cortex-operating-surface [data-slot="card"] {
   border-color: #343b2f !important;
   background: #171b14 !important;
   color: #ecefe6 !important;
   box-shadow: 0 1px 0 rgba(255,255,255,.025), 0 12px 32px rgba(0,0,0,.20) !important;
 }
 
-.dark .cortex-dashstack .cortex-hero {
+.dark .cortex-operating-surface .cortex-hero {
   border-color: #3a4333 !important;
   background: #1a1f17 !important;
 }
 
-.dark .cortex-dashstack input,
-.dark .cortex-dashstack textarea,
-.dark .cortex-dashstack select {
+.dark .cortex-operating-surface input,
+.dark .cortex-operating-surface textarea,
+.dark .cortex-operating-surface select {
   background: #131711 !important;
   border-color: #3a4333 !important;
   color: #ecefe6 !important;
 }
+
+/* Cortex identity layer — product-specific surfaces instead of stock AI dashboard patterns. */
+:root {
+  --cortex-lime: #b8d75b;
+  --cortex-olive: #48522f;
+  --cortex-paper: #f2f2e9;
+  --cortex-graphite: #151812;
+}
+.cortex-operating-surface {
+  background: var(--cortex-paper) !important;
+  color: #171a13 !important;
+}
+html.dark .cortex-operating-surface {
+  background: #0f120e !important;
+  color: #eceee3 !important;
+}
+.cortex-operating-surface .cortex-sidebar {
+  background: #f7f7ef !important;
+  border-color: #d9dacd !important;
+  box-shadow: none !important;
+}
+html.dark .cortex-operating-surface .cortex-sidebar {
+  background: #131710 !important;
+  border-color: #252a20 !important;
+}
+.cortex-operating-surface .cortex-topbar {
+  background: rgba(242,242,233,.96) !important;
+  border-color: #d9dacd !important;
+  box-shadow: none !important;
+}
+html.dark .cortex-operating-surface .cortex-topbar {
+  background: rgba(15,18,14,.96) !important;
+  border-color: #252a20 !important;
+}
+.cortex-operating-surface [data-slot="card"],
+.cortex-operating-surface .cortex-panel,
+.cortex-operating-surface .cortex-action,
+.cortex-operating-surface .cortex-hero {
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.cortex-operating-surface .cortex-panel,
+.cortex-operating-surface [data-slot="card"] {
+  background: #f8f8f1 !important;
+  border-color: #dfe0d4 !important;
+}
+html.dark .cortex-operating-surface .cortex-panel,
+html.dark .cortex-operating-surface [data-slot="card"] {
+  background: #141810 !important;
+  border-color: #2a3023 !important;
+}
+.cortex-operating-surface .cortex-hero {
+  background: #f7f7ef !important;
+  border-color: #d2d4c8 !important;
+}
+html.dark .cortex-operating-surface .cortex-hero {
+  background: #141810 !important;
+  border-color: #2b3124 !important;
+}
+.cortex-operating-surface .cortex-icon-box {
+  border-radius: 9px !important;
+  background: transparent !important;
+  border-color: #c9ccb9 !important;
+  box-shadow: none !important;
+  color: #657c2e !important;
+}
+html.dark .cortex-operating-surface .cortex-icon-box {
+  border-color: #38412f !important;
+  color: #b8d75b !important;
+}
+.cortex-operating-surface .cortex-kicker {
+  color: #687157 !important;
+  letter-spacing: .12em !important;
+}
+html.dark .cortex-operating-surface .cortex-kicker {
+  color: #9ba78b !important;
+}
+.cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] {
+  background: #e8efd3 !important;
+  color: #415026 !important;
+}
+html.dark .cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] {
+  background: #252d1d !important;
+  color: #b8d75b !important;
+}
+.cortex-operating-surface button { border-radius: 10px; }
+.cortex-operating-surface input,
+.cortex-operating-surface textarea,
+.cortex-operating-surface select { border-radius: 9px; }
+.cortex-operating-surface .cortex-mobile-nav {
+  background: rgba(242,242,233,.98) !important;
+  border-color: #d4d7c8 !important;
+  box-shadow: 0 -8px 22px rgba(32,36,24,.08) !important;
+}
+html.dark .cortex-operating-surface .cortex-mobile-nav {
+  background: rgba(15,18,14,.98) !important;
+  border-color: #252a20 !important;
+}
+.cortex-operating-surface .cortex-mobile-nav [aria-current="page"] { color: #657c2e !important; }
+html.dark .cortex-operating-surface .cortex-mobile-nav [aria-current="page"] { color: #b8d75b !important; }
+
+/* Private System Desk — intentionally unlike the customer workspace. */
+.cortex-control-center {
+  background: #0d100e !important;
+  color: #edf0e5 !important;
+}
+.cortex-control-center aside,
+.cortex-control-center header,
+.cortex-control-center [data-slot="card"] {
+  background: #121610 !important;
+  border-color: #30372b !important;
+  color: #edf0e5 !important;
+  box-shadow: none !important;
+}
+.cortex-control-center .bg-white,
+.cortex-control-center .bg-slate-50,
+.cortex-control-center [class*="bg-white/"] {
+  background: #121610 !important;
+}
+.cortex-control-center [class*="text-slate-900"],
+.cortex-control-center [class*="text-slate-800"],
+.cortex-control-center [class*="text-slate-700"],
+.cortex-control-center [class*="text-slate-600"] {
+  color: #d8ddcf !important;
+}
+.cortex-control-center [class*="text-slate-400"] { color: #89927f !important; }
+.cortex-control-center button[aria-current="page"] {
+  background: #252d1d !important;
+  color: #b8d75b !important;
+}
+.cortex-control-center button { border-radius: 9px; }
+.cortex-control-center input,
+.cortex-control-center textarea,
+.cortex-control-center select {
+  background: #0f120e !important;
+  border-color: #30372b !important;
+  color: #edf0e5 !important;
+}
+.cortex-control-center .border-b,
+.cortex-control-center .border-t { border-color: #30372b !important; }

@@ -319,6 +319,7 @@ model UsagePolicy {
   monthlyMessageLimit  Int      @default(0)
   dailyTokenLimit      Int      @default(0)
   monthlyTokenLimit    Int      @default(0)
+  planManaged          Boolean  @default(false)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -742,6 +743,8 @@ model Plan {
   priceToman                 Int      @default(0)
   currency                   String   @default("TOMAN")
   monthlyCredits             Int      @default(0)
+  monthlyTokenLimit          Int      @default(0)
+  systemManaged              Boolean  @default(true)
   overageCreditPriceToman    Int      @default(0)
   overageEnabled              Boolean  @default(false)
   active                     Boolean  @default(true)

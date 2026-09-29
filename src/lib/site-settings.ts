@@ -9,7 +9,7 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "site.welcomeTitle": CORTEX_UI_CONFIG.copy.welcomeTitle,
   "site.primaryColor": CORTEX_UI_CONFIG.theme.primary,
   "site.secondaryColor": CORTEX_UI_CONFIG.theme.secondary,
-  "site.radius": "0.75",
+  "site.radius": CORTEX_UI_CONFIG.theme.radius.replace("rem",""),
   "site.sidebarColor": CORTEX_UI_CONFIG.theme.sidebar,
   "site.authTitle": CORTEX_UI_CONFIG.copy.authTitle,
   "site.authDescription": CORTEX_UI_CONFIG.copy.authDescription,
@@ -38,7 +38,17 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "feature.createAgentCta": "true",
 };
 
+const SITE_SETTINGS_CACHE_MS = 30_000;
+let siteSettingsCache: { at: number; value: Record<string, string> } | null = null;
+
+export function invalidatePublicSiteSettings() {
+  siteSettingsCache = null;
+}
+
 export async function getPublicSiteSettings(): Promise<Record<string, string>> {
+  if (siteSettingsCache && Date.now() - siteSettingsCache.at < SITE_SETTINGS_CACHE_MS) {
+    return { ...siteSettingsCache.value };
+  }
   const values: Record<string, string> = { ...DEFAULT_SITE_SETTINGS };
   try {
     const rows = await db.siteSetting.findMany({
@@ -49,10 +59,17 @@ export async function getPublicSiteSettings(): Promise<Record<string, string>> {
   } catch {
     // Settings are optional; the shell must still render with defaults.
   }
+  // Migrate the old template palette silently; administrators can still override it later.
+  if (values["site.primaryColor"].toUpperCase() === "#3B82FF") values["site.primaryColor"] = CORTEX_UI_CONFIG.theme.primary;
+  if (values["site.secondaryColor"].toUpperCase() === "#8B5CF6") values["site.secondaryColor"] = CORTEX_UI_CONFIG.theme.secondary;
+  if (values["site.sidebarColor"].toUpperCase() === "#0A0D13") values["site.sidebarColor"] = CORTEX_UI_CONFIG.theme.sidebar;
+  if (values["site.radius"] === "0.75") values["site.radius"] = CORTEX_UI_CONFIG.theme.radius.replace("rem","");
+
   // The admin console is deliberately outside the customer navigation surface.
   values["nav.admin.enabled"] = "false";
   values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
   values["nav.admin.enabled"] = "false";
   values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
+  siteSettingsCache = { at: Date.now(), value: { ...values } };
   return values;
 }

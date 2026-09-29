@@ -5,11 +5,11 @@ import { getManagedModelCatalog } from "@/lib/server/model-router";
 import { getUsdTomanRate } from "@/lib/server/fx";
 
 export const DEFAULT_BILLING_PLANS = [
-  { key: "free", name: "آزمایشی", description: "دسترسی محدود برای آشنایی با Cortex؛ فقط مدل‌های اقتصادی منتخب", priceToman: 0, monthlyCredits: 1_000, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 0 },
-  { key: "launch", name: "Launch", description: "شروع هوشمندانه برای تست و راه‌اندازی", priceToman: 3_900_000, monthlyCredits: 15_000, overageCreditPriceToman: 260, overageEnabled: false, sortOrder: 1 },
-  { key: "growth", name: "Growth", description: "پیشنهاد تیمی؛ تعادل ایده‌آل بین قدرت و هزینه", priceToman: 12_900_000, monthlyCredits: 80_000, overageCreditPriceToman: 220, overageEnabled: false, sortOrder: 2 },
-  { key: "scale", name: "Scale", description: "قدرت واقعی اتوماسیون برای مصرف سنگین", priceToman: 24_900_000, monthlyCredits: 180_000, overageCreditPriceToman: 190, overageEnabled: false, sortOrder: 3 },
-  { key: "enterprise", name: "Enterprise", description: "همه امکانات با قرارداد و SLA سفارشی", priceToman: 35_000_000, monthlyCredits: 0, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 4 },
+  { key: "free", name: "آزمایشی", description: "دسترسی محدود برای آشنایی با Cortex؛ فقط مدل‌های اقتصادی منتخب", priceToman: 0, monthlyCredits: 1_000, monthlyTokenLimit: 1_000, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 0 },
+  { key: "launch", name: "Launch", description: "شروع هوشمندانه برای تست و راه‌اندازی", priceToman: 3_900_000, monthlyCredits: 15_000, monthlyTokenLimit: 0, overageCreditPriceToman: 260, overageEnabled: false, sortOrder: 1 },
+  { key: "growth", name: "Growth", description: "پیشنهاد تیمی؛ تعادل ایده‌آل بین قدرت و هزینه", priceToman: 12_900_000, monthlyCredits: 80_000, monthlyTokenLimit: 0, overageCreditPriceToman: 220, overageEnabled: false, sortOrder: 2 },
+  { key: "scale", name: "Scale", description: "قدرت واقعی اتوماسیون برای مصرف سنگین", priceToman: 24_900_000, monthlyCredits: 180_000, monthlyTokenLimit: 0, overageCreditPriceToman: 190, overageEnabled: false, sortOrder: 3 },
+  { key: "enterprise", name: "Enterprise", description: "همه امکانات با قرارداد و SLA سفارشی", priceToman: 35_000_000, monthlyCredits: 0, monthlyTokenLimit: 0, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 4 },
 ] as const;
 
 const CATALOG_CACHE_MS = 10 * 60 * 1000;
@@ -102,32 +102,45 @@ async function ensurePlanCatalog() {
   if (catalogPromise) return catalogPromise;
   catalogPromise = (async () => {
     for (const plan of DEFAULT_BILLING_PLANS) {
-      await db.plan.upsert({
+      const existing = await db.plan.findUnique({
         where: { key: plan.key },
-        update: {
-          name: plan.name,
-          description: plan.description,
-          priceToman: plan.priceToman,
-          currency: "TOMAN",
-          monthlyCredits: plan.monthlyCredits,
-          overageCreditPriceToman: plan.overageCreditPriceToman,
-          overageEnabled: plan.overageEnabled,
-          active: true,
-          sortOrder: plan.sortOrder,
-        },
-        create: {
-          key: plan.key,
-          name: plan.name,
-          description: plan.description,
-          priceToman: plan.priceToman,
-          currency: "TOMAN",
-          monthlyCredits: plan.monthlyCredits,
-          overageCreditPriceToman: plan.overageCreditPriceToman,
-          overageEnabled: plan.overageEnabled,
-          sortOrder: plan.sortOrder,
-          active: true,
-        },
+        select: { id: true, systemManaged: true },
       });
+      if (existing && existing.systemManaged) {
+        await db.plan.update({
+          where: { id: existing.id },
+          data: {
+            name: plan.name,
+            description: plan.description,
+            priceToman: plan.priceToman,
+            currency: "TOMAN",
+            monthlyCredits: plan.monthlyCredits,
+            monthlyTokenLimit: plan.monthlyTokenLimit,
+            overageCreditPriceToman: plan.overageCreditPriceToman,
+            overageEnabled: plan.overageEnabled,
+            active: true,
+            sortOrder: plan.sortOrder,
+          },
+        });
+      }
+      if (!existing) {
+        await db.plan.create({
+          data: {
+            key: plan.key,
+            name: plan.name,
+            description: plan.description,
+            priceToman: plan.priceToman,
+            currency: "TOMAN",
+            monthlyCredits: plan.monthlyCredits,
+            monthlyTokenLimit: plan.monthlyTokenLimit,
+            overageCreditPriceToman: plan.overageCreditPriceToman,
+            overageEnabled: plan.overageEnabled,
+            sortOrder: plan.sortOrder,
+            active: true,
+            systemManaged: true,
+          },
+        });
+      }
     }
   })().then(() => { catalogReadyAt = Date.now(); }).finally(() => { catalogPromise = null; });
   return catalogPromise;
@@ -185,20 +198,18 @@ async function ensureModel(provider: string, model: string) {
   const rate = managed ? getModelRate("OpenRouter", managed.providerModelId) : getModelRate(canonicalProvider, model);
   const qualityTier = managed?.qualityTier ?? known?.qualityTier ?? "balanced";
   const multiplierBps = defaultCreditMultiplierBps(qualityTier);
-  const catalog = await db.modelCatalog.upsert({
+  const existing = await db.modelCatalog.findUnique({
     where: { provider_modelId: { provider: canonicalProvider, modelId: model } },
-    update: {
-      routeKey: managed?.key ?? null,
-      displayName: managed?.displayName ?? known?.displayName ?? model,
-      inputUsdPer1M: rate.inputUsdPer1M,
-      outputUsdPer1M: rate.outputUsdPer1M,
-      qualityTier,
-      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
-      commercialAvailable: rate.known,
-    },
-    create: {
+  });
+  if (existing) {
+    return { catalog: existing, defaultMultiplierBps: defaultCreditMultiplierBps(existing.qualityTier) };
+  }
+
+  const catalog = await db.modelCatalog.create({
+    data: {
       provider: canonicalProvider,
       modelId: model,
+      routeKey: managed?.key ?? null,
       displayName: managed?.displayName ?? known?.displayName ?? model,
       inputUsdPer1M: rate.inputUsdPer1M,
       outputUsdPer1M: rate.outputUsdPer1M,
@@ -217,7 +228,6 @@ async function ensureModel(provider: string, model: string) {
   });
   return { catalog, defaultMultiplierBps: multiplierBps };
 }
-
 
 async function ensureWorkspaceBilling(workspaceId: string) {
   await ensurePlanCatalog();
@@ -310,6 +320,32 @@ async function ensureWorkspaceBilling(workspaceId: string) {
         await tx.workspaceBillingAccount.update({ where: { id: account.id }, data: { status: "past_due" } });
         account = await tx.workspaceBillingAccount.findUniqueOrThrow({ where: { id: account.id }, include: { plan: true } });
       }
+    }
+
+    const planTokenLimit = account.plan.key === "free" ? Math.max(0, account.plan.monthlyTokenLimit ?? 0) : 0;
+    const existingPolicy = await tx.usagePolicy.findUnique({ where: { workspaceId } });
+    if (!existingPolicy && planTokenLimit > 0) {
+      await tx.usagePolicy.create({
+        data: {
+          workspaceId,
+          dailyMessageLimit: 0,
+          monthlyMessageLimit: 0,
+          dailyTokenLimit: 0,
+          monthlyTokenLimit: planTokenLimit,
+          planManaged: true,
+        },
+      });
+    } else if (existingPolicy?.planManaged) {
+      await tx.usagePolicy.update({
+        where: { workspaceId },
+        data: {
+          dailyMessageLimit: 0,
+          monthlyMessageLimit: 0,
+          dailyTokenLimit: 0,
+          monthlyTokenLimit: planTokenLimit,
+          planManaged: account.plan.key === "free" && planTokenLimit > 0,
+        },
+      });
     }
 
     const initialGrantKey = "initial-grant:" + account.id;

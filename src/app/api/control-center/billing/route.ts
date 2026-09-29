@@ -96,13 +96,14 @@ export async function POST(req: Request) {
       const description = textValue(body.description, 500);
       const priceToman = intValue(body.priceToman, 0, 2_000_000_000);
       const monthlyCredits = intValue(body.monthlyCredits, 0, 10_000_000_000);
+      const monthlyTokenLimit = intValue(body.monthlyTokenLimit, 0, 100_000_000);
       const overageCreditPriceToman = intValue(body.overageCreditPriceToman, 0, 10_000_000);
       const sortOrder = intValue(body.sortOrder, 0, 10000);
-      if (!key || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(key) || !name || priceToman == null || monthlyCredits == null || overageCreditPriceToman == null || sortOrder == null) {
+      if (!key || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(key) || !name || priceToman == null || monthlyCredits == null || monthlyTokenLimit == null || overageCreditPriceToman == null || sortOrder == null) {
         return applyCors(jsonError("اطلاعات پلن معتبر نیست.", 400), req.headers.get("origin"));
       }
       const plan = await db.plan.create({
-        data: { key, name, description: description || null, priceToman, currency: "TOMAN", monthlyCredits, overageCreditPriceToman, sortOrder, active: body.active !== false },
+        data: { key, name, description: description || null, priceToman, currency: "TOMAN", monthlyCredits, monthlyTokenLimit, overageCreditPriceToman, sortOrder, active: body.active !== false, systemManaged: false },
       });
       return applyCors(jsonOk({ admin, plan }, 201), req.headers.get("origin"));
     }
@@ -116,7 +117,17 @@ export async function POST(req: Request) {
       const qualityTier = textValue(body.qualityTier, 40) || "balanced";
       const speedTier = textValue(body.speedTier, 40) || "balanced";
       const routeKey = textValue(body.routeKey, 100)?.toLowerCase() || null;
-      const systemProviderId = textValue(body.systemProviderId, 120) || null;
+      let systemProviderId = textValue(body.systemProviderId, 120) || null;
+      if (body.trialDefault === true) {
+        const provider = systemProviderId
+          ? await db.systemProviderConfig.findUnique({ where: { id: systemProviderId }, select: { id: true, enabled: true, isTrialProvider: true } })
+          : await db.systemProviderConfig.findFirst({ where: { enabled: true, isTrialProvider: true }, orderBy: { updatedAt: "desc" }, select: { id: true, enabled: true, isTrialProvider: true } });
+        if (!provider || !provider.enabled || !provider.isTrialProvider) {
+          return applyCors(jsonError("برای Default Trial ابتدا یک Provider فعال با نقش «Provider پیش‌فرض Trial» تنظیم کنید.", 400), req.headers.get("origin"));
+        }
+        systemProviderId = provider.id;
+      }
+      const trialEnabled = body.trialDefault === true || body.trialEnabled === true;
       if (systemProviderId && !(await db.systemProviderConfig.findUnique({ where: { id: systemProviderId } }))) {
         return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
       }
@@ -138,7 +149,7 @@ export async function POST(req: Request) {
           vision: body.vision === true, tools: body.tools === true, structuredOutput: body.structuredOutput === true,
           reasoning: body.reasoning === true, qualityTier, speedTier,
           commercialAvailable: body.commercialAvailable !== false, active: body.active !== false,
-          trialEnabled: body.trialEnabled === true,
+          trialEnabled,
           trialDefault: body.trialDefault === true,
           systemProviderId,
         },
@@ -174,7 +185,7 @@ export async function PATCH(req: Request) {
 
     if (action === "update_plan" && id) {
       const data: Record<string, unknown> = {};
-      for (const [key, min, max] of [["priceToman",0,2_000_000_000],["monthlyCredits",0,10_000_000_000],["overageCreditPriceToman",0,10_000_000],["sortOrder",0,10000]] as const) {
+      for (const [key, min, max] of [["priceToman",0,2_000_000_000],["monthlyCredits",0,10_000_000_000],["monthlyTokenLimit",0,100_000_000],["overageCreditPriceToman",0,10_000_000],["sortOrder",0,10000]] as const) {
         if (body[key] !== undefined) {
           const value = intValue(body[key], min, max);
           if (value == null) return applyCors(jsonError("مقدار عددی پلن نامعتبر است.", 400), req.headers.get("origin"));
@@ -187,6 +198,7 @@ export async function PATCH(req: Request) {
         data[key] = value || null;
       }
       if (typeof body.active === "boolean") data.active = body.active;
+      data.systemManaged = false;
       const plan = await db.plan.update({ where: { id }, data });
       return applyCors(jsonOk({ admin, plan }), req.headers.get("origin"));
     }
@@ -202,6 +214,16 @@ export async function PATCH(req: Request) {
         const providerId = textValue(body.systemProviderId, 120);
         if (providerId && !(await db.systemProviderConfig.findUnique({ where: { id: providerId }, select: { id: true } }))) return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
         data.systemProviderId = providerId || null;
+      }
+      if (body.trialDefault === true) {
+        const trialProviderId = data.systemProviderId ? String(data.systemProviderId) : "";
+        const provider = trialProviderId
+          ? await db.systemProviderConfig.findUnique({ where: { id: trialProviderId }, select: { id: true, enabled: true, isTrialProvider: true } })
+          : await db.systemProviderConfig.findFirst({ where: { enabled: true, isTrialProvider: true }, orderBy: { updatedAt: "desc" }, select: { id: true, enabled: true, isTrialProvider: true } });
+        if (!provider || !provider.enabled || !provider.isTrialProvider) {
+          return applyCors(jsonError("برای Default Trial ابتدا یک Provider فعال با نقش «Provider پیش‌فرض Trial» تنظیم کنید.", 400), req.headers.get("origin"));
+        }
+        data.systemProviderId = provider.id;
       }
       if (body.displayName !== undefined) data.displayName = textValue(body.displayName, 180) || "Unnamed model";
       if (body.qualityTier !== undefined) data.qualityTier = textValue(body.qualityTier, 40) || "balanced";
@@ -267,6 +289,32 @@ export async function PATCH(req: Request) {
               where: { billingAccountId: id, status: "active" },
               data: { planId: String(data.planId) },
             });
+            const plan = await tx.plan.findUniqueOrThrow({ where: { id: String(data.planId) } });
+            const managedLimit = plan.key === "free" ? Math.max(0, plan.monthlyTokenLimit) : 0;
+            const policy = await tx.usagePolicy.findUnique({ where: { workspaceId: account.workspaceId } });
+            if (policy?.planManaged) {
+              await tx.usagePolicy.update({
+                where: { workspaceId: account.workspaceId },
+                data: {
+                  dailyMessageLimit: 0,
+                  monthlyMessageLimit: 0,
+                  dailyTokenLimit: 0,
+                  monthlyTokenLimit: managedLimit,
+                  planManaged: plan.key === "free" && managedLimit > 0,
+                },
+              });
+            } else if (!policy && managedLimit > 0) {
+              await tx.usagePolicy.create({
+                data: {
+                  workspaceId: account.workspaceId,
+                  dailyMessageLimit: 0,
+                  monthlyMessageLimit: 0,
+                  dailyTokenLimit: 0,
+                  monthlyTokenLimit: managedLimit,
+                  planManaged: true,
+                },
+              });
+            }
           }
           return updated;
         });

@@ -1,5 +1,7 @@
-import { ControlCenter } from "@/components/control-center";
+import { notFound } from "next/navigation";
 
-export default function ControlCenterPage() {
-  return <ControlCenter />;
+export const dynamic = "force-dynamic";
+
+export default function LegacyControlCenterRoute() {
+  notFound();
 }
