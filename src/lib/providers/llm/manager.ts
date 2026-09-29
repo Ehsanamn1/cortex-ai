@@ -145,9 +145,9 @@ class ProviderManager {
   async resolveForAgent(agentId: string, workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus }> {
     if (workspaceId && process.env.APP_ENV !== "test" && process.env.NODE_ENV !== "test") {
       const managed = await resolveManagedModelForAgent(agentId, workspaceId);
-      const provider = new OpenRouterProvider({ model: managed.model.providerModelId });
+      const provider = managed.provider;
       if (!provider.isConfigured()) {
-        throw Object.assign(new Error("سرویس هوش مصنوعی Cortex از سمت سرور آماده نیست."), { status: 503, code: "managed_provider_unavailable" });
+        throw Object.assign(new Error("Provider این مدل از سمت سرور آماده نیست."), { status: 503, code: "managed_provider_unavailable" });
       }
       return {
         provider: new ResilientProvider(provider, agentId, workspaceId),
