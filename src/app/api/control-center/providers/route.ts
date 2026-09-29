@@ -26,7 +26,7 @@ function validateConfig(body: Record<string, unknown>) {
     throw Object.assign(new Error("اطلاعات Provider کامل یا معتبر نیست."), { status: 400 });
   }
   validateProviderBaseUrl(baseUrl);
-  if (protocol === "openrouter" && !/^https:///i.test(baseUrl)) {
+  if (protocol === "openrouter" && !/^https:\/\//i.test(baseUrl)) {
     throw Object.assign(new Error("Base URL برای OpenRouter باید HTTPS باشد."), { status: 400 });
   }
   return { key, displayName, providerName, protocol, authMode, baseUrl };
