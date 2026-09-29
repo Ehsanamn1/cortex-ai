@@ -87,7 +87,7 @@ function ProviderPill() {
       type="button"
       onClick={() => setView("billing")}
       title="پلن و اعتبار"
-      className="hidden items-center gap-2 rounded-full border border-primary/15 bg-primary/[.045] px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/[.08] sm:inline-flex"
+      className="inline-flex max-w-[150px] items-center gap-1.5 rounded-full border border-primary/15 bg-primary/[.045] px-2.5 py-1.5 text-[10px] font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/[.08] sm:max-w-none sm:gap-2 sm:px-3 sm:text-xs"
     >
       <WalletCards className="size-3.5 text-primary" />
       <span>{plan.name}</span>
