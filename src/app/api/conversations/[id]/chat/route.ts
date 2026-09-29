@@ -174,6 +174,11 @@ export async function POST(req: Request, { params }: Params) {
           createdAt: assistantMessage.createdAt.toISOString(),
           metadata,
         },
+        billing: {
+          chargedCredits: billingResult.chargedCredits,
+          balanceCredits: billingResult.balanceCredits,
+          status: billingResult.status,
+        },
       }),
       req.headers.get("origin"),
     );
