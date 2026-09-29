@@ -47,7 +47,7 @@ export function parseTelegramProfile(raw: any) {
         .map((v) => ({ command: v.command.replace(/^\//, "").slice(0, 32), description: v.description.slice(0, 256) }));
     }
   } catch {}
-  return {
+  const merged = {
     botId: raw.botId,
     ...TELEGRAM_PROFILE_DEFAULTS,
     ...raw,
@@ -55,6 +55,23 @@ export function parseTelegramProfile(raw: any) {
     thinkingMessages: thinkingMessages.length ? thinkingMessages : TELEGRAM_PROFILE_DEFAULTS.thinkingMessages,
     commands,
   };
+
+  // Profiles created by older builds carried copy that required a pre-approved
+  // phone number or explicitly said no phone was needed. Normalize those legacy
+  // defaults at read time so existing bots follow the current onboarding flow
+  // without requiring a data migration.
+  const legacyWelcomeText =
+    "من دستیار هوشمند Cortex هستم و به دانش و ایجنت این ربات متصل‌ام.\n\nبدون ثبت شماره موبایل شروع کنید؛ فقط پیام‌تان را بفرستید. 🚀";
+  const legacyAccessText =
+    "🔐 برای استفاده از این دستیار، مدیر کسب‌وکار باید شماره شما را در پنل ثبت کند و لینک ورود را برایتان بفرستد.";
+  if (!raw.welcomeText || String(raw.welcomeText).trim() === legacyWelcomeText) {
+    merged.welcomeText = TELEGRAM_PROFILE_DEFAULTS.welcomeText;
+  }
+  if (!raw.accessRequiredText || String(raw.accessRequiredText).trim() === legacyAccessText) {
+    merged.accessRequiredText = TELEGRAM_PROFILE_DEFAULTS.accessRequiredText;
+  }
+
+  return merged;
 }
 
 async function loadProfileFromDb(botId: string) {

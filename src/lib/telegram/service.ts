@@ -182,7 +182,7 @@ export async function requestContact(token: string, chatId: string | number) {
   return sendMessage(
     token,
     chatId,
-    '<b>🔐 یک مرحله امنیتی</b>\n\nبرای شناسایی و بررسی دسترسی، شماره موبایل خودتان را با دکمه زیر ارسال کنید.\n\nفقط شماره‌هایی که در پنل Cortex ثبت شده‌اند اجازه استفاده دارند.',
+    '<b>🔐 یک مرحله امنیتی</b>\n\nبرای شناسایی و فعال‌سازی حساب، شماره موبایل خودتان را با دکمه زیر ارسال کنید.\n\nاگر برای این شماره قانون دسترسی اختصاصی ثبت شده باشد، همان قوانین اعمال می‌شوند؛ در غیر این صورت دسترسی پایه فعال خواهد شد.',
     {
       parse_mode: 'HTML',
       reply_markup: {
@@ -262,20 +262,8 @@ function formatUsdMicros(value: number) {
 }
 
 async function sendAccessRequired(token: string, chatId: string | number, profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
-  return sendMessage(
-    token,
-    chatId,
-    '<b>🔐 تأیید شماره موبایل</b>\n\n' + escapeTelegramHtml(profile.accessRequiredText),
-    {
-      parse_mode: 'HTML',
-      reply_markup: {
-        keyboard: [[{ text: '📱 ارسال شماره موبایل', request_contact: true }]],
-        resize_keyboard: true,
-        one_time_keyboard: false,
-        is_persistent: true,
-        input_field_placeholder: 'دکمه ارسال شماره موبایل را بزنید…',
-      },
-    },
+  return requestContact(token, chatId).catch(async () =>
+    sendMessage(token, chatId, '<b>🔐 تأیید شماره موبایل</b>\n\n' + escapeTelegramHtml(profile.accessRequiredText), { parse_mode: 'HTML' }),
   );
 }
 
@@ -439,11 +427,20 @@ export async function processTelegramUpdate(botId: string, update: any) {
   }
 
   const contactPhone = msg.contact?.phone_number ? normalizeTelegramPhone(msg.contact.phone_number) : '';
+  let contactActivated = false;
   if (contactPhone && msg.contact?.user_id != null && String(msg.contact.user_id) === tgId && user.status !== 'blocked') {
     const invite = await db.telegramAllowlistEntry.findUnique({
       where: { botId_phoneNumber: { botId: bot.id, phoneNumber: contactPhone } },
     });
-    if (invite?.status === 'allowed' && (!invite.claimedTelegramUserId || invite.claimedTelegramUserId === tgId)) {
+
+    if (invite?.status === 'blocked') {
+      await db.telegramUser.update({
+        where: { id: user.id },
+        data: { phoneNumber: contactPhone, status: 'blocked' },
+      });
+      user.phoneNumber = contactPhone;
+      user.status = 'blocked';
+    } else if (invite?.status === 'allowed' && (!invite.claimedTelegramUserId || invite.claimedTelegramUserId === tgId)) {
       await db.$transaction([
         db.telegramAllowlistEntry.update({
           where: { id: invite.id },
@@ -467,9 +464,17 @@ export async function processTelegramUpdate(botId: string, update: any) {
       user.monthlyMessageLimit = invite.monthlyMessageLimit;
       user.dailyTokenLimit = invite.dailyTokenLimit;
       user.monthlyTokenLimit = invite.monthlyTokenLimit;
+      contactActivated = true;
     } else {
-      await db.telegramUser.update({ where: { id: user.id }, data: { phoneNumber: contactPhone } });
+      // Sharing the user's own Telegram contact is enough to activate basic access.
+      // The allowlist remains an optional mechanism for per-user limits / explicit blocking.
+      await db.telegramUser.update({
+        where: { id: user.id },
+        data: { phoneNumber: contactPhone, status: 'allowed' },
+      });
       user.phoneNumber = contactPhone;
+      user.status = 'allowed';
+      contactActivated = true;
     }
   }
 
@@ -479,6 +484,11 @@ export async function processTelegramUpdate(botId: string, update: any) {
   }
   if (user.status !== 'allowed') {
     await sendAccessRequired(token, msg.chat.id, profile);
+    return;
+  }
+
+  if (contactActivated) {
+    await sendWelcome(token, msg.chat.id, profile);
     return;
   }
 

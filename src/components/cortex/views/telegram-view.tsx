@@ -240,7 +240,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
             <CardContent className="space-y-4">
               <div className="rounded-xl border border-emerald-400/15 bg-emerald-400/[.06] p-4">
                 <p className="flex items-center gap-2 text-sm font-semibold text-emerald-200"><ShieldCheck className="size-4" />دسترسی مدیریت‌شده فعال است</p>
-                <p className="mt-1 text-xs leading-6 text-muted-foreground">فقط شماره‌هایی که شما ثبت و تأیید می‌کنید می‌توانند با ربات گفتگو کنند. کاربر بعد از ثبت شماره، با لینک ورود یک‌بارمصرف حساب تلگرامش را متصل می‌کند.</p>
+                <p className="mt-1 text-xs leading-6 text-muted-foreground">کاربر می‌تواند شماره خودش را مستقیماً از تلگرام ارسال کند و دسترسی پایه بگیرد. شماره‌های ثبت‌شده در این بخش برای محدودیت‌های اختصاصی، مدیریت دستی و لینک ورود یک‌بارمصرف استفاده می‌شوند.</p>
               </div>
               <div className="border-t border-white/[.06] pt-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
