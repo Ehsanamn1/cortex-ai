@@ -146,40 +146,104 @@ export function isModelAllowedForPlan(model: ManagedModelDefinition, planKey: st
 }
 
 export async function resolveManagedModelForAgent(agentId: string, workspaceId: string): Promise<{
-  model: ManagedModelDefinition;
+  model: ManagedModelDefinition & { catalogId: string; systemProviderId: string | null };
   provider: LLMProvider;
   planKey: string;
 }> {
-  const agent = await db.agent.findUnique({ where: { id: agentId }, select: { modelKey: true } });
   const account = await db.workspaceBillingAccount.findUnique({
     where: { workspaceId },
     include: { plan: true },
   });
   if (!account) throw Object.assign(new Error("حساب اعتبار فضای کاری پیدا نشد."), { status: 404 });
 
-  const model = findManagedModel(agent?.modelKey) ?? getManagedModelCatalog()[0];
-  if (!isModelAllowedForPlan(model, account.plan.key)) {
+  const agent = await db.agent.findUnique({
+    where: { id: agentId },
+    select: { modelKey: true },
+  });
+
+  const catalogModels = await db.modelCatalog.findMany({
+    where: {
+      active: true,
+      commercialAvailable: true,
+      planAccess: { some: { planId: account.planId, enabled: true } },
+    },
+    include: { systemProvider: true, planAccess: { where: { planId: account.planId, enabled: true } } },
+    orderBy: [{ isTrialDefault: "desc" }, { updatedAt: "desc" }],
+  });
+
+  const staticKey = findManagedModel(agent?.modelKey);
+  const requested = agent?.modelKey
+    ? catalogModels.find((item) => item.id === agent.modelKey)
+      ?? (staticKey
+        ? catalogModels.find((item) => item.provider === staticKey.provider && item.modelId === staticKey.providerModelId)
+        : undefined)
+    : undefined;
+
+  let selected = requested;
+
+  if (!selected) {
+    selected = catalogModels.find((item) => item.isTrialDefault && item.systemProvider?.enabled && item.systemProvider?.isTrialProvider)
+      ?? catalogModels.find((item) => item.systemProvider?.enabled && item.systemProvider?.isTrialProvider);
+  }
+
+  if (!selected) {
     throw Object.assign(
-      new Error("مدل انتخابی در پلن فعلی در دسترس نیست. برای ادامه، پلن خود را ارتقا دهید."),
-      { status: 403, code: "model_not_in_plan" },
+      new Error("هیچ مدل فعالی برای پلن فعلی از سمت پیشخوان مدیر متصل نشده است."),
+      { status: 503, code: "managed_model_unavailable" },
     );
   }
 
-  const provider = new OpenRouterProvider();
-  if (!provider.isConfigured()) {
+  const providerRecord = selected.systemProvider?.enabled
+    ? selected.systemProvider
+    : await db.systemProviderConfig.findFirst({
+        where: { providerName: selected.provider, enabled: true },
+        orderBy: [{ isTrialProvider: "desc" }, { updatedAt: "desc" }],
+      });
+
+  if (!providerRecord) {
     throw Object.assign(
-      new Error("سرویس هوش مصنوعی Cortex هنوز از سمت سرور پیکربندی نشده است."),
+      new Error("Provider مدل «" + selected.displayName + "» از سمت پیشخوان مدیر متصل نشده است."),
       { status: 503, code: "managed_provider_unavailable" },
     );
   }
 
-  const rate = getModelRate("OpenRouter", model.providerModelId);
-  if (!rate.known) {
+  const provider = requireSystemProviderForModel(providerRecord, selected.modelId);
+  if (!provider.isConfigured()) {
     throw Object.assign(
-      new Error("قیمت تأمین این مدل در Cortex ثبت نشده است."),
-      { status: 503, code: "model_pricing_unavailable" },
+      new Error("Provider مدل «" + selected.displayName + "» تنظیمات معتبر ندارد."),
+      { status: 503, code: "managed_provider_unavailable" },
     );
   }
 
-  return { model, provider, planKey: account.plan.key };
+  const staticModel = findManagedModelByProvider(selected.provider, selected.modelId);
+  return {
+    model: {
+      ...selected,
+      catalogId: selected.id,
+      systemProviderId: selected.systemProviderId,
+      provider: selected.provider,
+      modelId: selected.modelId,
+      displayName: selected.displayName,
+      description: staticModel?.description ?? "مدل مدیریت‌شده توسط پیشخوان Cortex",
+      tier: (selected.qualityTier as ManagedModelTier) || "balanced",
+      creditRatePer1K: staticModel?.creditRatePer1K ?? 1,
+      planKeys: ["free", "launch", "growth", "scale", "enterprise"],
+      providerModelId: selected.modelId,
+      speedTier: selected.speedTier,
+      qualityTier: selected.qualityTier,
+      tools: selected.tools,
+      reasoning: selected.reasoning,
+      vision: selected.vision,
+    } as ManagedModelDefinition & { catalogId: string; systemProviderId: string | null },
+    provider,
+    planKey: account.plan.key,
+  };
 }
+
+function findManagedModelByProvider(provider: string, modelId: string): ManagedModelDefinition | null {
+  return getManagedModelCatalog().find(
+    (model) => model.provider === provider && model.providerModelId.toLowerCase() === modelId.toLowerCase(),
+  ) ?? null;
+}
+
+import { buildSystemProviderForModel as requireSystemProviderForModel } from "@/lib/server/system-provider";
