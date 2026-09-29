@@ -296,7 +296,22 @@ jobs:
             rm -f "$tmp"
           }
 
-          check_html "$base/control-center"
+          control_tmp="$(mktemp)"
+          control_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -D "$control_tmp.headers" -o "$control_tmp.body" -w "%{http_code}" "$base/control-center")"
+          echo "GET $base/control-center -> HTTP $control_status"
+          if [ "$control_status" = "200" ]; then
+            grep -q "پیشخوان" "$control_tmp.body" || grep -q "Cortex" "$control_tmp.body"
+          elif [ "$control_status" = "307" ]; then
+            location="$(awk 'tolower($1) == "location:" {print $2}' "$control_tmp.headers" | tr -d '\r' | tail -n1)"
+            test "$location" = "/admin"
+          elif [ "$control_status" = "429" ]; then
+            echo "Cloudflare edge rate limited this canonical-route check."
+            EDGE_RATE_LIMITED=1
+          else
+            echo "Unexpected /control-center status: $control_status"
+            exit 1
+          fi
+          rm -f "$control_tmp.headers" "$control_tmp.body"
           if [ "${EDGE_RATE_LIMITED:-0}" = "1" ]; then
             echo "Stopping live route smoke: Cloudflare edge is temporarily rate-limiting this runner."
             exit 0
