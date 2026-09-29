@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     rateLimit(req, "public-health", 30, 60_000);
     const now = Date.now();
     if (now - cache.at < 5_000) {
-      return NextResponse.json({ ok: true, database: cache.ok ? "connected" : "degraded" }, {
+      return NextResponse.json({ ok: true, database: "deferred" }, {
         status: 200,
         headers: { "Cache-Control": "public, max-age=5, stale-while-revalidate=30" },
       });
