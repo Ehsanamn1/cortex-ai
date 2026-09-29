@@ -104,7 +104,17 @@ async function ensurePlanCatalog() {
     for (const plan of DEFAULT_BILLING_PLANS) {
       await db.plan.upsert({
         where: { key: plan.key },
-        update: {},
+        update: {
+          name: plan.name,
+          description: plan.description,
+          priceToman: plan.priceToman,
+          currency: "TOMAN",
+          monthlyCredits: plan.monthlyCredits,
+          overageCreditPriceToman: plan.overageCreditPriceToman,
+          overageEnabled: plan.overageEnabled,
+          active: true,
+          sortOrder: plan.sortOrder,
+        },
         create: {
           key: plan.key,
           name: plan.name,
@@ -113,6 +123,7 @@ async function ensurePlanCatalog() {
           currency: "TOMAN",
           monthlyCredits: plan.monthlyCredits,
           overageCreditPriceToman: plan.overageCreditPriceToman,
+          overageEnabled: plan.overageEnabled,
           sortOrder: plan.sortOrder,
           active: true,
         },
@@ -126,19 +137,16 @@ async function ensureKnownModelCatalog() {
   if (modelCatalogReadyAt && Date.now() - modelCatalogReadyAt < CATALOG_CACHE_MS) return;
   if (modelCatalogPromise) return modelCatalogPromise;
   modelCatalogPromise = (async () => {
-    const known = getKnownModelCatalog();
-    const qualityRank: Record<string, number> = { economy: 1, balanced: 2, premium: 3, deep: 4 };
+    const known = getManagedModelCatalog();
     const plans = await db.plan.findMany({ where: { active: true }, select: { id: true, key: true } });
     for (const entry of known) {
-      const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel(entry.provider, entry.modelId);
+      const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel("OpenRouter", entry.providerModelId);
       for (const plan of plans) {
-        const maxRank = plan.key === "free" || plan.key === "starter" ? 2 : plan.key === "business" ? 3 : 4;
-        const enabled = qualityRank[entry.qualityTier] <= maxRank && Boolean(entry.commercialAvailable ?? true);
-        const multiplierBps = Math.max(1, fallbackMultiplier);
+        const enabled = plan.key !== "free" && entry.planKeys.includes(plan.key as any) && Boolean(entry.commercialAvailable ?? true);
         await db.planModelAccess.upsert({
           where: { planId_modelCatalogId: { planId: plan.id, modelCatalogId: catalog.id } },
-          update: { enabled, creditMultiplierBps: multiplierBps },
-          create: { planId: plan.id, modelCatalogId: catalog.id, enabled, creditMultiplierBps: multiplierBps },
+          update: { enabled, creditMultiplierBps: Math.max(1, fallbackMultiplier) },
+          create: { planId: plan.id, modelCatalogId: catalog.id, enabled, creditMultiplierBps: Math.max(1, fallbackMultiplier) },
         });
       }
     }
@@ -147,34 +155,45 @@ async function ensureKnownModelCatalog() {
 }
 
 async function ensureModel(provider: string, model: string) {
+  const managed = getManagedModelCatalog().find(
+    (entry) => entry.provider === provider && entry.providerModelId.toLowerCase() === model.toLowerCase(),
+  );
   const known = getKnownModelCatalog().find(
     (entry) => entry.provider.toLowerCase() === provider.toLowerCase() && entry.modelId.toLowerCase() === model.toLowerCase(),
   );
-  const rate = getModelRate(provider, model);
-  const qualityTier = known?.qualityTier ?? "balanced";
+  const rate = managed ? getModelRate("OpenRouter", managed.providerModelId) : getModelRate(provider, model);
+  const qualityTier = managed?.qualityTier ?? known?.qualityTier ?? "balanced";
   const multiplierBps = defaultCreditMultiplierBps(qualityTier);
   const catalog = await db.modelCatalog.upsert({
     where: { provider_modelId: { provider, modelId: model } },
-    update: {},
+    update: {
+      displayName: managed?.displayName ?? known?.displayName ?? model,
+      inputUsdPer1M: rate.inputUsdPer1M,
+      outputUsdPer1M: rate.outputUsdPer1M,
+      qualityTier,
+      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
+      commercialAvailable: rate.known,
+    },
     create: {
       provider,
       modelId: model,
-      displayName: known?.displayName ?? model,
+      displayName: managed?.displayName ?? known?.displayName ?? model,
       inputUsdPer1M: rate.inputUsdPer1M,
       outputUsdPer1M: rate.outputUsdPer1M,
-      contextWindow: known?.contextWindow ?? null,
-      vision: known?.vision ?? false,
-      tools: known?.tools ?? false,
-      structuredOutput: known?.structuredOutput ?? false,
-      reasoning: known?.reasoning ?? false,
+      contextWindow: managed?.contextWindow ?? known?.contextWindow ?? null,
+      vision: managed?.vision ?? known?.vision ?? false,
+      tools: managed?.tools ?? known?.tools ?? false,
+      structuredOutput: managed?.structuredOutput ?? known?.structuredOutput ?? false,
+      reasoning: managed?.reasoning ?? known?.reasoning ?? false,
       qualityTier,
-      speedTier: known?.speedTier ?? "balanced",
+      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
       commercialAvailable: rate.known,
       active: true,
     },
   });
   return { catalog, defaultMultiplierBps: multiplierBps };
 }
+
 
 async function ensureWorkspaceBilling(workspaceId: string) {
   await ensurePlanCatalog();
@@ -448,6 +467,23 @@ export async function getBillingSnapshot(workspaceId: string) {
       createdAt:item.createdAt.toISOString(),
     })),
   };
+}
+
+const LOWEST_CREDIT_VALUE_TOMAN = 24_900_000 / 180_000;
+
+function calculateManagedCredits(inputTokens: number, outputTokens: number, modelKey: string | null | undefined, providerCostMicros: number, usdToman: number): number | null {
+  const managed = getManagedModelCatalog().find((entry) => entry.key === modelKey || entry.providerModelId === modelKey);
+  if (!managed) return null;
+
+  const input = Math.max(0, Math.floor(inputTokens));
+  const output = Math.max(0, Math.floor(outputTokens));
+  const baseCredits = Math.ceil(
+    (output / 1000) * managed.creditRatePer1K +
+    (input / 1000) * (managed.creditRatePer1K * 0.25),
+  );
+  const providerCostToman = Math.max(0, providerCostMicros) / 1_000_000 * Math.max(0, usdToman);
+  const marginFloor = Math.ceil((providerCostToman * 2) / LOWEST_CREDIT_VALUE_TOMAN);
+  return Math.max(1, baseCredits, marginFloor);
 }
 
 export interface BillingReservationResult {
