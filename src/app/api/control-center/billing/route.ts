@@ -66,12 +66,17 @@ export async function GET(req: Request) {
       }),
     ]);
 
+    const systemProviders = await db.systemProviderConfig.findMany({
+      orderBy: [{ isTrialProvider: "desc" }, { enabled: "desc" }, { updatedAt: "desc" }],
+      select: { id: true, key: true, displayName: true, providerName: true, protocol: true, baseUrl: true, enabled: true, isTrialProvider: true },
+    });
     return applyCors(jsonOk({
       plans,
       models,
       accounts,
       invoices,
       recentCharges,
+      systemProviders,
       defaults: { economy: 100, balanced: 200, premium: 400, deep: 800 },
     }), req.headers.get("origin"));
   } catch (error) {
