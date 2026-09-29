@@ -44,6 +44,7 @@ export interface AgentDto {
   instructions: string | null;
   persona: string | null;
   systemPrompt: string | null;
+  modelKey: string | null;
   temperature: number;
   topP: number;
   maxTokens: number;
@@ -70,6 +71,7 @@ export interface CreateAgentInput {
   instructions?: string;
   persona?: string;
   systemPrompt?: string;
+  modelKey?: string;
   temperature?: number;
   topP?: number;
   maxTokens?: number;
