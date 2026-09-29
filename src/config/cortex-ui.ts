@@ -16,13 +16,13 @@ export const CORTEX_UI_CONFIG = {
     maxKnowledgeUploadMb: 20,
   },
   navigation: [
+    { view: "billing" as CortexView, label: "پلن و اعتبار", mobile: true },
     { view: "dashboard" as CortexView, label: "داشبورد", mobile: true },
-    { view: "agents" as CortexView, label: "ایجنت", mobile: true },
-    { view: "knowledge" as CortexView, label: "پایگاه دانش", mobile: true },
-    { view: "billing" as CortexView, label: "اعتبار", mobile: true },
+    { view: "agents" as CortexView, label: "ایجنت‌ها", mobile: true },
+    { view: "knowledge" as CortexView, label: "پایگاه دانش", mobile: false },
     { view: "conversations" as CortexView, label: "گفتگوها", mobile: false },
     { view: "telegram" as CortexView, label: "تلگرام", mobile: false },
-    { view: "analytics" as CortexView, label: "تحلیل و بینش", mobile: false },
+    { view: "analytics" as CortexView, label: "تحلیل", mobile: false },
     { view: "workflows" as CortexView, label: "گردش‌کارها", mobile: false },
   ],
   copy: {
