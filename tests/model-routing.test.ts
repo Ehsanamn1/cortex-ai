@@ -31,7 +31,7 @@ describe("Central model routing", () => {
   });
 
   it("routes a Trial agent to the admin-selected default catalog model", async () => {
-    vi.mocked(db.modelCatalog.findUnique).mockResolvedValue({
+    vi.mocked(db.modelCatalog.findFirst).mockResolvedValue({
       id: "catalog-trial", routeKey: "trial-default", provider: "TrialProvider", modelId: "trial-model",
       displayName: "Trial", qualityTier: "economy", speedTier: "fast", contextWindow: null,
       vision: false, tools: true, structuredOutput: false, reasoning: false,
