@@ -7,6 +7,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
+    if (process.env.APP_ENV === "production") {
+      return applyCors(jsonError("ورود مستقیم مدیر غیرفعال است. از لینک خصوصی پیشخوان استفاده کنید.", 410), req.headers.get("origin"));
+    }
     rateLimit(req, "admin-login", 10, 60_000);
     const body = await readJson<{ username?: unknown; password?: unknown }>(req);
     const username = typeof body.username === "string" ? body.username.trim() : "";
