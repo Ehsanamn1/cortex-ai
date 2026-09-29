@@ -537,7 +537,7 @@ export function AppShell() {
                 ایجاد ایجنت
               </Button>
             )}
-            <ProviderPill />
+            <span className="hidden lg:inline-flex"><ProviderPill /></span>
             <div className="shrink-0 lg:hidden">
               <MobileUserMenu />
             </div>
