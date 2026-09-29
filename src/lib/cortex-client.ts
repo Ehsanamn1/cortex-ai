@@ -275,7 +275,7 @@ export interface AgentApiKeyDto { id:string; name:string; keyPrefix:string; acti
 export interface AgentToolDto { id:string; key:string; name:string; description:string; inputSchema:string; permissions:string; attached:boolean; }
 export interface WorkflowDto { id:string; workspaceId:string; agentId:string|null; name:string; description:string|null; definition:string; status:string; triggers:Array<{id:string;type:string;enabled:boolean}>; agent?:{id:string;name:string}|null; _count?:{executions:number}; }
 
-export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }
+export interface BillingPlanDto { id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; monthlyTokenLimit:number; overageCreditPriceToman:number }
 export interface BillingModelDto { id:string; key:string; provider:string; modelId:string; displayName:string; inputUsdPer1M:number; outputUsdPer1M:number; qualityTier:string; speedTier:string; contextWindow:number|null; vision:boolean; tools:boolean; structuredOutput:boolean; reasoning:boolean; commercialAvailable:boolean; enabledForPlan:boolean; creditMultiplierBps:number; creditRatePer1K:number|null }
 export interface BillingInvoiceDto { id:string; invoiceNumber:string; status:string; currency:string; subtotalToman:number; overageToman:number; totalToman:number; periodStart:string; periodEnd:string; issuedAt:string|null; dueAt:string|null; paidAt:string|null; createdAt:string }
 export interface BillingTopUpRequestDto { id:string; packageKey:string; credits:number; amountToman:number; status:string; note:string|null; paymentProvider:string|null; paymentStatus:string|null; paymentRefId:string|null; paidAt:string|null; createdAt:string; reviewedAt:string|null }
@@ -285,7 +285,7 @@ export interface SearchResultDto { type:"agent"|"knowledge"|"conversation"; id:s
 
 export interface BillingSnapshotDto {
   pricing: { verifiedAt:string; mode:string };
-  account:{ id:string; plan:{ id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; overageCreditPriceToman:number }; balanceCredits:number; status:string; enforcementEnabled:boolean; periodStart:string; periodEnd:string };
+  account:{ id:string; plan:{ id:string; key:string; name:string; description:string|null; priceToman:number; currency:string; monthlyCredits:number; monthlyTokenLimit:number; overageCreditPriceToman:number }; balanceCredits:number; status:string; enforcementEnabled:boolean; periodStart:string; periodEnd:string };
   pricingVerifiedAt: string;
   topUpPackages: Array<{key:string;credits:number;amountToman:number;label:string}>;
   plans: BillingPlanDto[];
