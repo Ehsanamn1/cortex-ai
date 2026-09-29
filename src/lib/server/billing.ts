@@ -569,10 +569,21 @@ export async function reserveBillingCredits(params: {
   const maxOutputTokens = Math.max(0, Math.floor(params.maxOutputTokens));
   const providerCostMicros = catalogCostMicros(inputTokens, maxOutputTokens, catalog.inputUsdPer1M, catalog.outputUsdPer1M);
   const multiplierBps = Math.max(1, access.creditMultiplierBps || fallbackMultiplier);
-  const estimatedCredits = creditsFromProviderCost(providerCostMicros, multiplierBps);
+  const managed = getManagedModelCatalog().find((entry) => entry.providerModelId.toLowerCase() === params.model.toLowerCase());
+  const usdToman = managed ? (await getUsdTomanRate()).usdToman : 0;
+  const managedCredits = managed
+    ? calculateManagedCredits(inputTokens, maxOutputTokens, managed.key, providerCostMicros, usdToman)
+    : null;
+  const estimatedCredits = managedCredits ?? creditsFromProviderCost(providerCostMicros, multiplierBps);
 
   if (!account.enforcementEnabled || estimatedCredits <= 0) {
-    return { reservationId: null, estimatedCredits, providerCostMicros, creditMultiplierBps: multiplierBps, enforcementEnabled: false };
+    return {
+      reservationId: null,
+      estimatedCredits,
+      providerCostMicros,
+      creditMultiplierBps: managed ? 100 : multiplierBps,
+      enforcementEnabled: false,
+    };
   }
 
   const now = new Date();
@@ -687,7 +698,12 @@ export async function recordUsageAndCharge(params: {
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
   });
   const multiplierBps = Math.max(1, access?.creditMultiplierBps || defaultMultiplierBps);
-  const chargedCredits = creditsFromProviderCost(providerCostMicros, multiplierBps);
+  const managed = getManagedModelCatalog().find((entry) => entry.providerModelId.toLowerCase() === model.toLowerCase());
+  const usdToman = managed ? (await getUsdTomanRate()).usdToman : 0;
+  const managedCredits = managed
+    ? calculateManagedCredits(inputTokens, outputTokens, managed.key, providerCostMicros, usdToman)
+    : null;
+  const chargedCredits = managedCredits ?? creditsFromProviderCost(providerCostMicros, multiplierBps);
   const totalTokens = params.usage.totalTokens ?? params.usage.inputTokens + params.usage.outputTokens;
 
   return db.$transaction(async (tx) => {
