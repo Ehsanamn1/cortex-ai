@@ -75,7 +75,7 @@ function DashboardOnboarding({
 }: {
   onNavigate: (view: "knowledge" | "agent-new" | "agents") => void;
   recentAgentId?: string;
-  onOpenAgent: (agentId: string, tab: "ai" | "playground") => void;
+  onOpenAgent: (agentId: string, tab: "overview" | "ai" | "playground") => void;
 }) {
   const [open, setOpen] = useState(
     () => typeof window !== "undefined" && window.localStorage.getItem("cortex:onboarding:dismissed") !== "1",
@@ -315,20 +315,13 @@ export function DashboardView() {
         <StatCard icon={Activity} label="امروز" value={faNum(stats.todayMessages ?? 0)} caption={faNum(stats.todayTokens ?? 0) + " توکن امروز"} tint="border-amber-400/25 bg-amber-400/10 text-amber-300" />
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        {[
-          { title: "ساخت Agent", text: "ایجنت جدید بساز و آماده انتخاب مدلش کن.", icon: Bot, onClick: () => setView("agent-new") },
-          { title: "مدل و هوش مصنوعی", text: recentAgentId ? "مدل Agent فعلی را عوض کن یا سطح قوی‌تری باز کن." : "ابتدا یک Agent بساز.", icon: Sparkles, onClick: () => recentAgentId ? openAgent(recentAgentId, "ai") : setView("agent-new") },
-          { title: "پایگاه دانش", text: "فایل، متن یا URL را به دانش Agent اضافه کن.", icon: BookPlus, onClick: () => setView("knowledge") },
-          { title: "Telegram", text: "Bot، شماره‌ها و شخصی‌سازی را مدیریت کن.", icon: Send, onClick: () => setView("telegram") },
-        ].map((item) => (
-          <button key={item.title} type="button" onClick={item.onClick} className="cortex-action group min-h-[118px] rounded-2xl border border-white/[.07] bg-white/[.02] p-4 text-start sm:min-h-[132px]">
-            <div className="flex items-start justify-between gap-3"><span className="cortex-icon-box"><item.icon className="size-[18px]" /></span><ArrowUpLeft className="size-4 text-muted-foreground transition group-hover:-translate-y-1 group-hover:-translate-x-1" /></div>
-            <p className="mt-5 text-sm font-bold">{item.title}</p>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">{item.text}</p>
-          </button>
-        ))}
-      </section>
+      <Capabilities onOpen={setView} />
+
+      <DashboardOnboarding
+        onNavigate={(next) => setView(next)}
+        recentAgentId={recentAgentId}
+        onOpenAgent={(agentId, tab) => openAgent(agentId, tab)}
+      />
 
       <section className="grid items-start gap-4 lg:grid-cols-2">
         <Card className="cortex-panel rounded-2xl">
