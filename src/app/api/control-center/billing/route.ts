@@ -35,7 +35,14 @@ export async function GET(req: Request) {
       }),
       db.modelCatalog.findMany({
         orderBy: [{ provider: "asc" }, { displayName: "asc" }],
-        include: { planAccess: { include: { plan: { select: { id: true, key: true, name: true } } } } },
+        include: {
+          systemProvider: { select: { id: true, key: true, displayName: true, providerName: true, protocol: true, baseUrl: true, enabled: true, isTrialProvider: true } },
+          planAccess: { include: { plan: { select: { id: true, key: true, name: true } } } },
+        },
+      }),
+      db.systemProviderConfig.findMany({
+        orderBy: [{ isTrialProvider: "desc" }, { enabled: "desc" }, { updatedAt: "desc" }],
+        select: { id:true, key:true, displayName:true, providerName:true, protocol:true, authMode:true, baseUrl:true, enabled:true, isTrialProvider:true, lastHealthStatus:true, lastHealthError:true, lastHealthAt:true },
       }),
       db.workspaceBillingAccount.findMany({
         take: 100,
@@ -66,9 +73,11 @@ export async function GET(req: Request) {
     return applyCors(jsonOk({
       plans,
       models,
+      systemProviders,
       accounts,
       invoices,
       recentCharges,
+      systemProviders,
       defaults: { economy: 100, balanced: 200, premium: 400, deep: 800 },
     }), req.headers.get("origin"));
   } catch (error) {
@@ -107,16 +116,28 @@ export async function POST(req: Request) {
       const outputUsdPer1M = floatValue(body.outputUsdPer1M);
       const qualityTier = textValue(body.qualityTier, 40) || "balanced";
       const speedTier = textValue(body.speedTier, 40) || "balanced";
+      const routeKey = textValue(body.routeKey, 100)?.toLowerCase() || null;
+      const systemProviderId = textValue(body.systemProviderId, 120) || null;
+      if (systemProviderId && !(await db.systemProviderConfig.findUnique({ where: { id: systemProviderId } }))) {
+        return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
+      }
+      if (routeKey && !/^[a-z0-9][a-z0-9._-]{1,99}$/.test(routeKey)) {
+        return applyCors(jsonError("Route Key مدل معتبر نیست.", 400), req.headers.get("origin"));
+      }
       if (!provider || !modelId || !displayName || inputUsdPer1M == null || outputUsdPer1M == null) {
         return applyCors(jsonError("اطلاعات مدل معتبر نیست.", 400), req.headers.get("origin"));
       }
       const model = await db.modelCatalog.create({
         data: {
+          routeKey,
           provider, modelId, displayName, inputUsdPer1M, outputUsdPer1M,
           contextWindow: intValue(body.contextWindow, 0, 10_000_000) ?? null,
           vision: body.vision === true, tools: body.tools === true, structuredOutput: body.structuredOutput === true,
           reasoning: body.reasoning === true, qualityTier, speedTier,
           commercialAvailable: body.commercialAvailable !== false, active: body.active !== false,
+          trialEnabled: body.trialEnabled === true,
+          trialDefault: body.trialDefault === true,
+          systemProviderId,
         },
       });
       return applyCors(jsonOk({ admin, model }, 201), req.headers.get("origin"));
@@ -156,6 +177,16 @@ export async function PATCH(req: Request) {
 
     if (action === "update_model" && id) {
       const data: Record<string, unknown> = {};
+      if (body.routeKey !== undefined) {
+        const value = textValue(body.routeKey, 100)?.toLowerCase();
+        if (value && !/^[a-z0-9][a-z0-9._-]{1,99}$/.test(value)) return applyCors(jsonError("Route Key مدل معتبر نیست.", 400), req.headers.get("origin"));
+        data.routeKey = value || null;
+      }
+      if (body.systemProviderId !== undefined) {
+        const providerId = textValue(body.systemProviderId, 120);
+        if (providerId && !(await db.systemProviderConfig.findUnique({ where: { id: providerId }, select: { id: true } }))) return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
+        data.systemProviderId = providerId || null;
+      }
       if (body.displayName !== undefined) data.displayName = textValue(body.displayName, 180) || "Unnamed model";
       if (body.qualityTier !== undefined) data.qualityTier = textValue(body.qualityTier, 40) || "balanced";
       if (body.speedTier !== undefined) data.speedTier = textValue(body.speedTier, 40) || "balanced";
@@ -169,10 +200,19 @@ export async function PATCH(req: Request) {
         if (value == null) return applyCors(jsonError("contextWindow نامعتبر است.", 400), req.headers.get("origin"));
         data.contextWindow = value;
       }
-      for (const key of ["vision","tools","structuredOutput","reasoning","commercialAvailable","active"] as const) {
+      for (const key of ["vision","tools","structuredOutput","reasoning","commercialAvailable","active","trialEnabled"] as const) {
         if (typeof body[key] === "boolean") data[key] = body[key];
       }
-      const model = await db.modelCatalog.update({ where: { id }, data });
+      let model;
+      if (body.trialDefault === true) {
+        model = await db.$transaction(async (tx) => {
+          await tx.modelCatalog.updateMany({ where: { trialDefault: true, id: { not: id } }, data: { trialDefault: false } });
+          return tx.modelCatalog.update({ where: { id }, data: { ...data, trialEnabled: true, trialDefault: true } });
+        });
+      } else {
+        if (body.trialDefault === false) data.trialDefault = false;
+        model = await db.modelCatalog.update({ where: { id }, data });
+      }
       return applyCors(jsonOk({ admin, model }), req.headers.get("origin"));
     }
 
