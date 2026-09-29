@@ -38,7 +38,15 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "feature.createAgentCta": "true",
 };
 
+let publicSettingsCache: { at: number; value: Record<string, string> } | null = null;
+const PUBLIC_SETTINGS_CACHE_MS = 30_000;
+
 export async function getPublicSiteSettings(): Promise<Record<string, string>> {
+  const now = Date.now();
+  if (publicSettingsCache && now - publicSettingsCache.at < PUBLIC_SETTINGS_CACHE_MS) {
+    return { ...publicSettingsCache.value };
+  }
+
   const values: Record<string, string> = { ...DEFAULT_SITE_SETTINGS };
   try {
     const rows = await db.siteSetting.findMany({
@@ -48,11 +56,11 @@ export async function getPublicSiteSettings(): Promise<Record<string, string>> {
     for (const row of rows) values[row.key] = row.value;
   } catch {
     // Settings are optional; the shell must still render with defaults.
+    if (publicSettingsCache) return { ...publicSettingsCache.value };
   }
-  // The admin console is deliberately outside the customer navigation surface.
+
   values["nav.admin.enabled"] = "false";
   values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
-  values["nav.admin.enabled"] = "false";
-  values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
-  return values;
+  publicSettingsCache = { at: now, value: { ...values } };
+  return { ...values };
 }
