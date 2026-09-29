@@ -114,4 +114,26 @@ describe("Central model routing", () => {
     expect(result.model.providerModelId).toBe("trial-model");
     expect(result.provider.isConfigured()).toBe(true);
   });
+  it("falls back to the central Trial Provider before the catalog is warmed", async () => {
+    vi.mocked(db.modelCatalog.findFirst).mockResolvedValue(null);
+    vi.mocked(db.workspaceBillingAccount.findUnique).mockResolvedValue({
+      planId: "plan-free", plan: { key: "free" },
+    } as never);
+    vi.mocked(db.systemProviderConfig.findFirst).mockResolvedValue({
+      id: "provider-central", key: "central", displayName: "Central Trial", providerName: "CentralProvider",
+      protocol: "openai-compatible", authMode: "bearer", baseUrl: "https://central.example/v1",
+      apiKeyEncrypted: "enc:key", enabled: true, isTrialProvider: true,
+    } as never);
+
+    const { buildSystemProviderForModel } = await import("@/lib/server/system-provider");
+    const result = await resolveManagedModelForAgent("agent-1", "workspace-1");
+
+    expect(result.planKey).toBe("free");
+    expect(result.model.key).toBe("launch-lite");
+    expect(vi.mocked(buildSystemProviderForModel)).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "provider-central", isTrialProvider: true }),
+      result.model.providerModelId,
+    );
+  });
+
 });
