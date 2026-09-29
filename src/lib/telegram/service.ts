@@ -589,11 +589,14 @@ export async function processTelegramUpdate(botId: string, update: any) {
     const estimatedPromptTokens =
       promptHistory.reduce((sum, item) => sum + estimateTokens(item.content), 0) +
       estimateTokens(rawText);
+    const ragExpansionReserve = process.env.RAG_QUERY_EXPANSION?.trim().toLowerCase() === "true"
+      ? RAG_QUERY_EXPANSION_RESERVE_TOKENS
+      : 0;
 
     reservationId = await reserveUsageWithinLimits(
       bot.workspaceId,
       1,
-      estimatedPromptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS,
+      estimatedPromptTokens + ragExpansionReserve,
       botAgent.maxTokens,
       user.id,
     );
@@ -601,7 +604,7 @@ export async function processTelegramUpdate(botId: string, update: any) {
     billingReservationId = (await reserveBillingForAgentRequest({
       workspaceId: bot.workspaceId,
       agentId: botAgent.id,
-      inputTokens: estimatedPromptTokens + RAG_QUERY_EXPANSION_RESERVE_TOKENS,
+      inputTokens: estimatedPromptTokens + ragExpansionReserve,
       maxOutputTokens: botAgent.maxTokens,
     })).reservationId;
 
