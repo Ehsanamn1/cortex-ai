@@ -63,7 +63,7 @@ function CortexCore() {
       </div>
       <div className="cortex-core-v2-caption">
         <p>هسته Cortex</p>
-        <span>مرکز کنترل هوش و دانش</span>
+        <span>سیگنال‌های Runtime</span>
       </div>
     </div>
   );
@@ -87,12 +87,12 @@ function DashboardOnboarding({
   ];
 
   return (
-    <motion.section initial={{ opacity: 0, y: -8, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-card/70 p-5 shadow-[0_24px_70px_rgba(59,130,255,.08)] sm:p-6">
+    <motion.section initial={{ opacity: 0, y: -8, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-card/70 p-5 shadow-[0_24px_70px_rgba(101,124,46,.08)] sm:p-6">
       <div className="absolute -start-20 -top-24 size-56 rounded-full bg-primary/10 blur-3xl" />
       <div className="relative">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="cortex-kicker">START HERE</p>
+            <p className="cortex-kicker">SETUP PATH</p>
             <h2 className="mt-2 text-xl font-black sm:text-2xl">آموزش و راه‌اندازی قدم‌به‌قدم</h2>
             <p className="mt-2 text-xs leading-6 text-muted-foreground">همه مراحل اصلی راه‌اندازی Cortex را از همین داشبورد دنبال کن؛ این بخش همیشه در دسترس می‌ماند.</p>
           </div>
@@ -124,11 +124,11 @@ function DashboardEmptyIllustration() {
   return (
     <svg width="180" height="120" viewBox="0 0 180 120" fill="none" aria-hidden="true">
       <path d="M90 18 122 36.5v37L90 92 58 73.5v-37L90 18Z" stroke="rgba(148,163,184,0.25)" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M90 38 106.5 47.5v19L90 76 73.5 66.5v-19L90 38Z" stroke="rgba(59,130,255,0.45)" strokeWidth="2" strokeLinejoin="round" />
-      <circle cx="90" cy="57" r="6" fill="#3B82FF" fillOpacity="0.9" />
-      <circle cx="90" cy="57" r="11" stroke="rgba(59,130,255,0.3)" strokeWidth="2" />
-      <circle cx="58" cy="36.5" r="3" fill="#8B5CF6" fillOpacity="0.8" />
-      <circle cx="122" cy="36.5" r="3" fill="#8B5CF6" fillOpacity="0.8" />
+      <path d="M90 38 106.5 47.5v19L90 76 73.5 66.5v-19L90 38Z" stroke="rgba(101,124,46,0.45)" strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="90" cy="57" r="6" fill="#8cab3e" fillOpacity="0.9" />
+      <circle cx="90" cy="57" r="11" stroke="rgba(101,124,46,0.3)" strokeWidth="2" />
+      <circle cx="58" cy="36.5" r="3" fill="#657c2e" fillOpacity="0.8" />
+      <circle cx="122" cy="36.5" r="3" fill="#657c2e" fillOpacity="0.8" />
       <circle cx="58" cy="73.5" r="3" fill="rgba(148,163,184,0.5)" />
       <circle cx="122" cy="73.5" r="3" fill="rgba(148,163,184,0.5)" />
     </svg>
@@ -186,8 +186,8 @@ function DashboardLaunchpad({
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between gap-3">
-        <div><p className="cortex-kicker">LAUNCHPAD</p><h2 className="mt-1 text-lg font-black">دسترسی سریع برای اجرای Cortex</h2></div>
-        <span className="hidden text-[10px] text-muted-foreground sm:inline">همه مسیرهای اصلی در یک نگاه</span>
+        <div><p className="cortex-kicker">EXECUTION PATH</p><h2 className="mt-1 text-lg font-black">مسیرهای اصلی اجرا</h2></div>
+        <span className="hidden text-[10px] text-muted-foreground sm:inline">ساخت، اتصال، دانش و انتشار در یک نما</span>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => {

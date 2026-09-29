@@ -264,22 +264,19 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
   });
   if (!account) throw Object.assign(new Error("حساب اعتبار فضای کاری پیدا نشد."), { status: 404 });
 
-  let catalog = await loadCatalogForAgent(agent?.modelKey);
-  if (!catalog && account.plan.key === "free") {
-    catalog = await db.modelCatalog.findFirst({
-      where: { active: true, trialDefault: true, trialEnabled: true },
-      include: { systemProvider: true },
-      orderBy: { updatedAt: "desc" },
-    });
-  }
+  let catalog =
+    account.plan.key === "free"
+      ? await db.modelCatalog.findFirst({
+          where: {
+            active: true,
+            trialEnabled: true,
+            OR: [{ trialDefault: true }, { isTrialDefault: true }],
+          },
+          include: { systemProvider: true },
+          orderBy: [{ trialDefault: "desc" }, { isTrialDefault: "desc" }, { updatedAt: "desc" }],
+        })
+      : await loadCatalogForAgent(agent?.modelKey);
 
-  if (account.plan.key === "free" && catalog && !catalog.trialEnabled) {
-    catalog = await db.modelCatalog.findFirst({
-      where: { active: true, trialDefault: true, trialEnabled: true },
-      include: { systemProvider: true },
-      orderBy: { updatedAt: "desc" },
-    });
-  }
 
   if (!catalog) {
     const fallback = findManagedModel(account.plan.key === "free" ? "launch-lite" : agent?.modelKey) ?? getManagedModelCatalog()[0];
