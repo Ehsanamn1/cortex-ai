@@ -35,6 +35,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
   if (!agent) throw Object.assign(new Error("ایجنت فعال پیدا نشد."), { status: 404 });
 
   const resolved = await llmManager.resolveForAgent(agent.id, input.workspaceId);
+  const effectiveMaxTokens = resolved.planKey === "free" ? Math.min(agent.maxTokens, 768) : agent.maxTokens;
   if (!resolved.provider) throw Object.assign(new Error("سرویس‌دهنده هوش مصنوعی برای این ایجنت پیکربندی نشده است. از تب «هوش مصنوعی» ایجنت استفاده کنید."), { status: 503 });
 
   const tools = await listAgentTools(agent.id);
@@ -57,7 +58,15 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
     if (tools.length === 0) {
       await input.onProgress?.("🔎 در حال بررسی دانش و زمینه گفتگو…");
       const generationStartedAt = Date.now();
-      const answer = await answerWithKnowledge({ agentId: agent.id, workspaceId: input.workspaceId, conversationId: input.conversationId, memorySubjectKey: input.memorySubjectKey, persona: agent, history, question: input.input });
+      const answer = await answerWithKnowledge({
+        agentId: agent.id,
+        workspaceId: input.workspaceId,
+        conversationId: input.conversationId,
+        memorySubjectKey: input.memorySubjectKey,
+        persona: { ...agent, maxTokens: effectiveMaxTokens },
+        history,
+        question: input.input,
+      });
       finalContent = answer.content;
       retrieval = answer.retrieval;
       auxiliaryInputTokens = answer.auxiliaryInputTokens ?? 0;
@@ -76,7 +85,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
           () => resolved.provider!.generateResponse({
             messages: modelMessages,
             temperature: agent.temperature,
-            maxTokens: agent.maxTokens,
+            maxTokens: effectiveMaxTokens,
           }));
         const plannedContent = (planned as { content: string }).content;
         const call = parseToolCall(plannedContent);
