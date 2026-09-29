@@ -168,18 +168,33 @@ async function ensureModel(provider: string, model: string) {
   const known = getKnownModelCatalog().find(
     (entry) => entry.provider.toLowerCase() === canonicalProvider.toLowerCase() && entry.modelId.toLowerCase() === model.toLowerCase(),
   );
+  const existing = await db.modelCatalog.findUnique({
+    where: { provider_modelId: { provider: canonicalProvider, modelId: model } },
+  });
+
+  // Admin-owned catalog rows are authoritative. A custom Provider/Model must not
+  // be downgraded to "commercialAvailable=false" merely because it is absent
+  // from Cortex's public pricing table.
+  if (existing && !managed && !known) {
+    return {
+      catalog: existing,
+      defaultMultiplierBps: defaultCreditMultiplierBps(existing.qualityTier),
+    };
+  }
+
   const rate = managed ? getModelRate("OpenRouter", managed.providerModelId) : getModelRate(canonicalProvider, model);
-  const qualityTier = managed?.qualityTier ?? known?.qualityTier ?? "balanced";
+  const qualityTier = managed?.qualityTier ?? known?.qualityTier ?? existing?.qualityTier ?? "balanced";
   const multiplierBps = defaultCreditMultiplierBps(qualityTier);
+
   const catalog = await db.modelCatalog.upsert({
     where: { provider_modelId: { provider: canonicalProvider, modelId: model } },
     update: {
-      displayName: managed?.displayName ?? known?.displayName ?? model,
-      inputUsdPer1M: rate.inputUsdPer1M,
-      outputUsdPer1M: rate.outputUsdPer1M,
+      displayName: managed?.displayName ?? known?.displayName ?? existing?.displayName ?? model,
+      inputUsdPer1M: rate.known ? rate.inputUsdPer1M : existing?.inputUsdPer1M ?? rate.inputUsdPer1M,
+      outputUsdPer1M: rate.known ? rate.outputUsdPer1M : existing?.outputUsdPer1M ?? rate.outputUsdPer1M,
       qualityTier,
-      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
-      commercialAvailable: rate.known,
+      speedTier: managed?.speedTier ?? known?.speedTier ?? existing?.speedTier ?? "balanced",
+      commercialAvailable: rate.known ? true : Boolean(existing?.commercialAvailable),
     },
     create: {
       provider: canonicalProvider,
@@ -200,7 +215,6 @@ async function ensureModel(provider: string, model: string) {
   });
   return { catalog, defaultMultiplierBps: multiplierBps };
 }
-
 
 async function ensureWorkspaceBilling(workspaceId: string) {
   await ensurePlanCatalog();
