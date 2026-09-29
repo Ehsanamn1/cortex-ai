@@ -302,7 +302,7 @@ export function DashboardView() {
                 <motion.span animate={{ y: [0, -2, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }} className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-black text-primary">{plan?.name ?? "پلن"}</motion.span>
                 <span className="rounded-full border border-border/70 bg-background/45 px-2.5 py-1 text-[9px] text-muted-foreground">اعتبار امن و کنترل‌شده</span>
               </div>
-              <h2 className="mt-3 text-2xl font-black sm:text-3xl">مرکز فرمان اعتبار و هوش</h2>
+              <h2 className="mt-3 text-2xl font-black sm:text-3xl">وضعیت اعتبار و مصرف هوش</h2>
               <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">موجودی، سطح مدل‌ها و مصرف را در یک نمای زنده ببین و بدون خارج‌شدن از داشبورد به پلن و مدل دسترسی پیدا کن.</p>
               <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div className="rounded-2xl border border-border/60 bg-background/35 p-3"><p className="text-[9px] text-muted-foreground">اعتبار فعلی</p><p className="mt-1 text-lg font-black">{faNum(balance)}</p></div>
