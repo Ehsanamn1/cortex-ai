@@ -92,6 +92,7 @@ model Agent {
   memoryEnabled    Boolean  @default(true)
   citationsEnabled Boolean  @default(true)
   status           String   @default("active")
+  modelKey         String?  @default("launch-fast")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -705,6 +706,7 @@ model Plan {
   currency                   String   @default("TOMAN")
   monthlyCredits             Int      @default(0)
   overageCreditPriceToman    Int      @default(0)
+  overageEnabled              Boolean  @default(false)
   active                     Boolean  @default(true)
   sortOrder                  Int      @default(0)
   createdAt                  DateTime @default(now())
