@@ -45,77 +45,77 @@
 
 /* Cortex/DashStack design system: light operational workspace by default. */
 :root {
-  --radius: 0.65rem;
-  --background: #f6f7fb;
-  --foreground: #1f2937;
-  --card: #ffffff;
-  --card-foreground: #1f2937;
-  --popover: #ffffff;
-  --popover-foreground: #1f2937;
-  --primary: #4880ff;
-  --primary-foreground: #ffffff;
-  --secondary: #eef2ff;
-  --secondary-foreground: #334155;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-  --accent: #f4f6fa;
-  --accent-foreground: #1f2937;
-  --destructive: #e05260;
-  --border: #e6e9ef;
-  --input: #e1e5ec;
-  --ring: #4880ff;
-  --chart-1: #4880ff;
-  --chart-2: #6f5ce7;
-  --chart-3: #22a06b;
-  --chart-4: #e6a23c;
-  --chart-5: #e05260;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1f2937;
-  --sidebar-primary: #4880ff;
+  --radius: 0.55rem;
+  --background: #f2f2e9;
+  --foreground: #171a13;
+  --card: #f8f8f1;
+  --card-foreground: #171a13;
+  --popover: #f7f7ef;
+  --popover-foreground: #171a13;
+  --primary: #b8d75b;
+  --primary-foreground: #202616;
+  --secondary: #e3e8d5;
+  --secondary-foreground: #38422b;
+  --muted: #e8e9e0;
+  --muted-foreground: #69705e;
+  --accent: #e9ebdf;
+  --accent-foreground: #171a13;
+  --destructive: #c45454;
+  --border: #d6d9ca;
+  --input: #cfd3c4;
+  --ring: #b8d75b;
+  --chart-1: #b8d75b;
+  --chart-2: #48522f;
+  --chart-3: #73834b;
+  --chart-4: #a5b77a;
+  --chart-5: #c45454;
+  --sidebar: #f7f7ef;
+  --sidebar-foreground: #171a13;
+  --sidebar-primary: #657c2e;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef3ff;
-  --sidebar-accent-foreground: #2f62d6;
-  --sidebar-border: #e6e9ef;
-  --sidebar-ring: #4880ff;
-  --surface-glow: rgba(72, 128, 255, 0.08);
-  --surface-2: #f7f8fb;
+  --sidebar-accent: #e8efd3;
+  --sidebar-accent-foreground: #415026;
+  --sidebar-border: #d9dacd;
+  --sidebar-ring: #b8d75b;
+  --surface-glow: rgba(184, 215, 91, 0.12);
+  --surface-2: #ecece3;
 }
 
 .dark {
-  --radius: 0.65rem;
-  --background: #070a0f;
-  --foreground: #eef2ff;
-  --card: #0f151d;
-  --card-foreground: #eef2ff;
-  --popover: #0b1017;
-  --popover-foreground: #eef2ff;
-  --primary: #5b8cff;
-  --primary-foreground: #ffffff;
-  --secondary: #151c28;
-  --secondary-foreground: #dce5f2;
-  --muted: #111823;
-  --muted-foreground: #93a0b2;
-  --accent: #151d29;
-  --accent-foreground: #eef2ff;
-  --destructive: #ef6573;
-  --border: #202a38;
-  --input: #263244;
-  --ring: #5b8cff;
-  --chart-1: #5b8cff;
-  --chart-2: #8b5cf6;
-  --chart-3: #34d399;
-  --chart-4: #fbbf24;
-  --chart-5: #ef6573;
-  --sidebar: #090d13;
-  --sidebar-foreground: #eef2ff;
-  --sidebar-primary: #5b8cff;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #151d29;
-  --sidebar-accent-foreground: #dbeafe;
-  --sidebar-border: #202a38;
-  --sidebar-ring: #5b8cff;
-  --surface-glow: rgba(91, 140, 255, 0.12);
-  --surface-2: #0d121a;
+  --radius: 0.55rem;
+  --background: #0f120e;
+  --foreground: #eceee3;
+  --card: #141810;
+  --card-foreground: #eceee3;
+  --popover: #12160f;
+  --popover-foreground: #eceee3;
+  --primary: #b8d75b;
+  --primary-foreground: #1d2413;
+  --secondary: #20271a;
+  --secondary-foreground: #dbe5c7;
+  --muted: #171c13;
+  --muted-foreground: #9ba78b;
+  --accent: #20271a;
+  --accent-foreground: #eceee3;
+  --destructive: #e06b67;
+  --border: #2a3023;
+  --input: #37402f;
+  --ring: #b8d75b;
+  --chart-1: #b8d75b;
+  --chart-2: #8da052;
+  --chart-3: #6c7b43;
+  --chart-4: #a4b878;
+  --chart-5: #e06b67;
+  --sidebar: #11150e;
+  --sidebar-foreground: #eceee3;
+  --sidebar-primary: #b8d75b;
+  --sidebar-primary-foreground: #1d2413;
+  --sidebar-accent: #252d1d;
+  --sidebar-accent-foreground: #b8d75b;
+  --sidebar-border: #252a20;
+  --sidebar-ring: #b8d75b;
+  --surface-glow: rgba(184, 215, 91, 0.12);
+  --surface-2: #0b0d0a;
 }
 
 @layer base {
@@ -135,8 +135,8 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     background-image:
-      radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
-      radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%);
+      radial-gradient(circle at 92% -12%, rgba(184,215,91,.09), transparent 24%),
+      radial-gradient(circle at 7% 88%, rgba(72,82,47,.08), transparent 22%);
     background-attachment: scroll;
     overflow-x: hidden;
     overflow-y: auto;
@@ -144,7 +144,7 @@
     -webkit-overflow-scrolling: touch;
   }
   ::selection {
-    background: rgba(59, 130, 255, 0.32);
+    background: rgba(184, 215, 91, 0.32);
     color: #f8fafc;
   }
 }
@@ -208,16 +208,16 @@
 }
 
 .cortex-panel{background:linear-gradient(145deg,rgba(17,21,28,.95),rgba(10,13,19,.92));border:1px solid rgba(148,163,184,.11);box-shadow:0 18px 60px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.025)}
-.cortex-icon-box{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:15px;border:1px solid rgba(59,130,255,.16);background:radial-gradient(circle at 30% 25%,rgba(59,130,255,.28),transparent 55%),rgba(59,130,255,.07);color:#8db8ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 26px rgba(59,130,255,.08)}
+.cortex-icon-box{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:15px;border:1px solid rgba(184,215,91,.16);background:radial-gradient(circle at 30% 25%,rgba(184,215,91,.28),transparent 55%),rgba(184,215,91,.07);color:#8db8ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 26px rgba(184,215,91,.08)}
 .cortex-kicker{font-size:10px;letter-spacing:.22em;color:#6f86a6;font-weight:700}
-.cortex-shell-glow::before{content:"";position:absolute;inset:-18%;background:radial-gradient(circle at 70% 20%,rgba(59,130,255,.13),transparent 28%),radial-gradient(circle at 20% 60%,rgba(139,92,246,.09),transparent 24%);filter:blur(18px);pointer-events:none}
+.cortex-shell-glow::before{content:"";position:absolute;inset:-18%;background:radial-gradient(circle at 70% 20%,rgba(184,215,91,.13),transparent 28%),radial-gradient(circle at 20% 60%,rgba(72,82,47,.09),transparent 24%);filter:blur(18px);pointer-events:none}
 
-.cortex-core-orbit{position:absolute;inset:11%;border:1px solid rgba(59,130,255,.16);border-radius:50%;transform-style:preserve-3d}.cortex-orbit-a{transform:rotateX(66deg) rotateY(18deg);animation:cortexOrbit1 14s linear infinite}.cortex-orbit-b{inset:7%;transform:rotateX(12deg) rotateY(68deg);border-color:rgba(139,92,246,.18);animation:cortexOrbit2 18s linear infinite}.cortex-orbit-c{inset:15%;transform:rotateX(42deg) rotateY(50deg);border-color:rgba(255,255,255,.08);animation:cortexOrbit3 11s linear infinite}@keyframes cortexOrbit1{to{transform:rotateX(66deg) rotateY(18deg) rotateZ(360deg)}}@keyframes cortexOrbit2{to{transform:rotateX(12deg) rotateY(68deg) rotateZ(-360deg)}}@keyframes cortexOrbit3{to{transform:rotateX(42deg) rotateY(50deg) rotateZ(360deg)}}.cortex-core-sphere{filter:drop-shadow(0 20px 55px rgba(59,130,255,.18))}@media(prefers-reduced-motion:reduce){.cortex-core-orbit{animation:none!important}}
+.cortex-core-orbit{position:absolute;inset:11%;border:1px solid rgba(184,215,91,.16);border-radius:50%;transform-style:preserve-3d}.cortex-orbit-a{transform:rotateX(66deg) rotateY(18deg);animation:cortexOrbit1 14s linear infinite}.cortex-orbit-b{inset:7%;transform:rotateX(12deg) rotateY(68deg);border-color:rgba(72,82,47,.18);animation:cortexOrbit2 18s linear infinite}.cortex-orbit-c{inset:15%;transform:rotateX(42deg) rotateY(50deg);border-color:rgba(255,255,255,.08);animation:cortexOrbit3 11s linear infinite}@keyframes cortexOrbit1{to{transform:rotateX(66deg) rotateY(18deg) rotateZ(360deg)}}@keyframes cortexOrbit2{to{transform:rotateX(12deg) rotateY(68deg) rotateZ(-360deg)}}@keyframes cortexOrbit3{to{transform:rotateX(42deg) rotateY(50deg) rotateZ(360deg)}}.cortex-core-sphere{filter:drop-shadow(0 20px 55px rgba(184,215,91,.18))}@media(prefers-reduced-motion:reduce){.cortex-core-orbit{animation:none!important}}
 
 
 .cortex-sidebar {
   background:
-    radial-gradient(circle at 20% 10%, rgba(59,130,255,.08), transparent 24%),
+    radial-gradient(circle at 20% 10%, rgba(184,215,91,.08), transparent 24%),
     linear-gradient(180deg, rgba(10,13,19,.98), rgba(7,9,13,.96));
 }
 .cortex-topbar {
@@ -238,16 +238,16 @@
   position: absolute;
   inset: auto -18% -60% 25%;
   height: 120px;
-  background: radial-gradient(circle, rgba(59,130,255,.13), transparent 68%);
+  background: radial-gradient(circle, rgba(184,215,91,.13), transparent 68%);
   pointer-events: none;
 }
 .cortex-action:hover {
   transform: translateY(-2px);
-  border-color: rgba(59,130,255,.28);
+  border-color: rgba(184,215,91,.28);
   background-color: rgba(255,255,255,.025);
 }
 .cortex-status-line {
-  background: linear-gradient(90deg, transparent, rgba(59,130,255,.35), transparent);
+  background: linear-gradient(90deg, transparent, rgba(184,215,91,.35), transparent);
 }
 @media (max-width: 1023px) {
   .cortex-sidebar {
@@ -255,13 +255,13 @@
   }
 }
 .cortex-hero{box-shadow:0 26px 90px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.04)}
-.cortex-hero::after{content:"";position:absolute;inset:auto 8% -42% auto;width:280px;height:220px;background:radial-gradient(circle,rgba(59,130,255,.14),transparent 68%);filter:blur(18px);pointer-events:none}
+.cortex-hero::after{content:"";position:absolute;inset:auto 8% -42% auto;width:280px;height:220px;background:radial-gradient(circle,rgba(184,215,91,.14),transparent 68%);filter:blur(18px);pointer-events:none}
 
 /* Premium Cortex surfaces — intentionally restrained to keep the UI product-first. */
 .cortex-auth {
   background-image:
-    radial-gradient(circle at 88% 6%, rgba(59,130,255,.10), transparent 24%),
-    radial-gradient(circle at 6% 90%, rgba(139,92,246,.08), transparent 22%);
+    radial-gradient(circle at 88% 6%, rgba(184,215,91,.10), transparent 24%),
+    radial-gradient(circle at 6% 90%, rgba(72,82,47,.08), transparent 22%);
 }
 .cortex-auth-card {
   position: relative;
@@ -274,7 +274,7 @@
   pointer-events: none;
   background:
     linear-gradient(120deg, rgba(255,255,255,.04), transparent 34%),
-    linear-gradient(300deg, rgba(59,130,255,.035), transparent 38%);
+    linear-gradient(300deg, rgba(184,215,91,.035), transparent 38%);
 }
 
 
@@ -513,7 +513,7 @@ html.dark body {
   background: #070a0f !important;
   background-image:
     radial-gradient(circle at 90% -10%, rgba(59,130,246,.11), transparent 28%),
-    radial-gradient(circle at 8% 92%, rgba(139,92,246,.09), transparent 24%) !important;
+    radial-gradient(circle at 8% 92%, rgba(72,82,47,.09), transparent 24%) !important;
   color: var(--foreground) !important;
 }
 html.dark .cortex-operating-surface {
@@ -635,7 +635,7 @@ html.dark .cortex-operating-surface .cortex-search-trigger:hover {
   isolation: isolate;
   background:
     radial-gradient(circle at 78% 28%, rgba(91,140,255,.24), transparent 25%),
-    radial-gradient(circle at 22% 78%, rgba(139,92,246,.18), transparent 23%),
+    radial-gradient(circle at 22% 78%, rgba(72,82,47,.18), transparent 23%),
     linear-gradient(145deg, #111a28 0%, #0a0f17 58%, #080b11 100%);
   border: 1px solid rgba(148,163,184,.13);
   box-shadow: 0 28px 80px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.045);
@@ -645,7 +645,7 @@ html.dark .cortex-operating-surface .cortex-search-trigger:hover {
   position: absolute;
   inset: -45% -18%;
   z-index: -1;
-  background: conic-gradient(from 130deg, transparent 0 18%, rgba(91,140,255,.10) 24%, transparent 34%, rgba(139,92,246,.08) 51%, transparent 65%);
+  background: conic-gradient(from 130deg, transparent 0 18%, rgba(91,140,255,.10) 24%, transparent 34%, rgba(72,82,47,.08) 51%, transparent 65%);
   filter: blur(24px);
   animation: cortex-wallet-shift 14s linear infinite;
 }
@@ -657,7 +657,7 @@ html.dark .cortex-operating-surface .cortex-search-trigger:hover {
   background:
     radial-gradient(circle at 31% 24%, rgba(255,255,255,.72), transparent 8%),
     radial-gradient(circle at 43% 38%, rgba(91,140,255,.96), transparent 31%),
-    radial-gradient(circle at 70% 66%, rgba(139,92,246,.92), transparent 52%),
+    radial-gradient(circle at 70% 66%, rgba(72,82,47,.92), transparent 52%),
     radial-gradient(circle at 42% 30%, #17273e, #08101a 70%);
   border: 1px solid rgba(255,255,255,.10);
   box-shadow: inset -18px -24px 42px rgba(0,0,0,.35), inset 12px 12px 28px rgba(255,255,255,.06), 0 0 90px rgba(91,140,255,.16);
@@ -720,7 +720,7 @@ html.dark .cortex-operating-surface .cortex-search-trigger:hover {
 html.dark .cortex-operating-surface .cortex-hero {
   background:
     radial-gradient(circle at 80% 12%, rgba(91,140,255,.16), transparent 30%),
-    radial-gradient(circle at 12% 82%, rgba(139,92,246,.12), transparent 26%),
+    radial-gradient(circle at 12% 82%, rgba(72,82,47,.12), transparent 26%),
     linear-gradient(145deg,#101722,#080c12) !important;
   border-color: rgba(148,163,184,.12) !important;
 }
@@ -830,7 +830,7 @@ html:not(.dark) .cortex-operating-surface .text-white {
 .cortex-auth {
   background:
     radial-gradient(circle at 82% 10%, rgba(91,140,255,.08), transparent 24%),
-    radial-gradient(circle at 14% 85%, rgba(139,92,246,.07), transparent 24%);
+    radial-gradient(circle at 14% 85%, rgba(72,82,47,.07), transparent 24%);
 }
 .cortex-auth-card {
   position: relative;
@@ -868,24 +868,24 @@ html:not(.dark) .cortex-auth .bg-white/\[\.025\] { background:rgba(255,255,255,.
 .cortex-core-sphere > div:first-child {
   background:
     radial-gradient(circle at 32% 26%, rgba(255,255,255,.48), transparent 12%),
-    radial-gradient(circle at 55% 44%, rgba(59,130,255,.98), transparent 38%),
-    radial-gradient(circle at 72% 72%, rgba(139,92,246,.96), transparent 48%),
+    radial-gradient(circle at 55% 44%, rgba(184,215,91,.98), transparent 38%),
+    radial-gradient(circle at 72% 72%, rgba(72,82,47,.96), transparent 48%),
     #07101c !important;
 }
 html:not(.dark) .cortex-core-sphere > div:first-child {
   background:
     radial-gradient(circle at 32% 26%, rgba(255,255,255,.98), transparent 12%),
     radial-gradient(circle at 55% 44%, rgba(91,140,255,.78), transparent 38%),
-    radial-gradient(circle at 72% 72%, rgba(139,92,246,.72), transparent 48%),
+    radial-gradient(circle at 72% 72%, rgba(72,82,47,.72), transparent 48%),
     #edf3fb !important;
-  box-shadow: 0 0 80px rgba(59,130,255,.18), inset 0 1px 0 rgba(255,255,255,.78) !important;
+  box-shadow: 0 0 80px rgba(184,215,91,.18), inset 0 1px 0 rgba(255,255,255,.78) !important;
 }
 html:not(.dark) .cortex-core-node {
   background:#ffffff !important;
-  box-shadow:0 0 15px rgba(59,130,255,.44),0 0 3px rgba(49,64,88,.30) !important;
+  box-shadow:0 0 15px rgba(184,215,91,.44),0 0 3px rgba(49,64,88,.30) !important;
 }
 html:not(.dark) .cortex-core-shell,
-html:not(.dark) .cortex-core-ring { border-color: rgba(59,130,255,.20) !important; }
+html:not(.dark) .cortex-core-ring { border-color: rgba(184,215,91,.20) !important; }
 html:not(.dark) .cortex-core-stage .text-slate-400 { color:#5f6d80 !important; }
 
 /* Compact wallet language */
@@ -995,7 +995,7 @@ html:not(.dark) .cortex-core-stage > div:nth-child(2) { border-color: rgba(91,14
   background:
     radial-gradient(circle at 31% 24%, rgba(255,255,255,.70), transparent 9%),
     radial-gradient(circle at 54% 46%, rgba(91,140,255,.92), transparent 34%),
-    radial-gradient(circle at 70% 70%, rgba(139,92,246,.82), transparent 52%),
+    radial-gradient(circle at 70% 70%, rgba(72,82,47,.82), transparent 52%),
     #08101a;
   box-shadow: 0 0 85px rgba(91,140,255,.20), inset -16px -18px 32px rgba(0,0,0,.34), inset 10px 10px 24px rgba(255,255,255,.06);
   animation: cortex-auth-orb-pulse 7s ease-in-out infinite;
@@ -1008,7 +1008,7 @@ html:not(.dark) .cortex-core-stage > div:nth-child(2) { border-color: rgba(91,14
   transform-style:preserve-3d;
 }
 .cortex-auth-core-ring-a { transform:rotateX(68deg); animation:cortex-auth-ring-a 13s linear infinite; }
-.cortex-auth-core-ring-b { transform:rotateY(66deg); animation:cortex-auth-ring-b 17s linear infinite reverse; border-color:rgba(139,92,246,.16); }
+.cortex-auth-core-ring-b { transform:rotateY(66deg); animation:cortex-auth-ring-b 17s linear infinite reverse; border-color:rgba(72,82,47,.16); }
 @keyframes cortex-auth-orb-pulse { 50% { transform:scale(1.035) translateZ(8px); } }
 @keyframes cortex-auth-ring-a { to { transform:rotateX(68deg) rotateZ(360deg); } }
 @keyframes cortex-auth-ring-b { to { transform:rotateY(66deg) rotateZ(360deg); } }
@@ -1016,7 +1016,7 @@ html:not(.dark) .cortex-auth-core-orb {
   background:
     radial-gradient(circle at 31% 24%, rgba(255,255,255,.96), transparent 9%),
     radial-gradient(circle at 54% 46%, rgba(91,140,255,.72), transparent 34%),
-    radial-gradient(circle at 70% 70%, rgba(139,92,246,.56), transparent 52%),
+    radial-gradient(circle at 70% 70%, rgba(72,82,47,.56), transparent 52%),
     #edf3fb;
   box-shadow:0 0 72px rgba(91,140,255,.14), inset -12px -14px 24px rgba(100,116,139,.14), inset 10px 10px 24px rgba(255,255,255,.90);
 }
@@ -1044,7 +1044,7 @@ html:not(.dark) .cortex-auth-core-ring { border-color:rgba(63,111,229,.16); }
 .cortex-estimator {
   background:
     radial-gradient(circle at 84% 18%, rgba(91,140,255,.09), transparent 24%),
-    radial-gradient(circle at 15% 84%, rgba(139,92,246,.07), transparent 24%),
+    radial-gradient(circle at 15% 84%, rgba(72,82,47,.07), transparent 24%),
     linear-gradient(145deg, rgba(16,22,30,.94), rgba(9,13,18,.96));
 }
 .cortex-model-guide {
@@ -1061,7 +1061,7 @@ html.dark .cortex-infra-value { color: #e8eef8 !important; }
 html.dark .cortex-wallet-card {
   background:
     radial-gradient(circle at 82% 24%, rgba(91,140,255,.20), transparent 25%),
-    radial-gradient(circle at 18% 80%, rgba(139,92,246,.15), transparent 23%),
+    radial-gradient(circle at 18% 80%, rgba(72,82,47,.15), transparent 23%),
     linear-gradient(145deg, #111a28 0%, #0a0f17 58%, #080b11 100%) !important;
   border-color: rgba(148,163,184,.13) !important;
   color: #eef2ff !important;
@@ -1071,7 +1071,7 @@ html.dark .cortex-wallet-card .text-muted-foreground { color: #93a0b2 !important
 html:not(.dark) .cortex-wallet-card {
   background:
     radial-gradient(circle at 82% 24%, rgba(91,140,255,.13), transparent 25%),
-    radial-gradient(circle at 18% 80%, rgba(139,92,246,.10), transparent 23%),
+    radial-gradient(circle at 18% 80%, rgba(72,82,47,.10), transparent 23%),
     linear-gradient(145deg, #ffffff 0%, #f3f7fd 62%, #edf2f9 100%) !important;
   border-color: #dfe6ef !important;
   color: #121826 !important;
@@ -1089,7 +1089,7 @@ html:not(.dark) .cortex-wallet-orb {
   background:
     radial-gradient(circle at 31% 24%, rgba(255,255,255,.98), transparent 8%),
     radial-gradient(circle at 43% 38%, rgba(91,140,255,.80), transparent 31%),
-    radial-gradient(circle at 70% 66%, rgba(139,92,246,.62), transparent 52%),
+    radial-gradient(circle at 70% 66%, rgba(72,82,47,.62), transparent 52%),
     radial-gradient(circle at 42% 30%, #dfe8f5, #f6f9fd 70%) !important;
   border-color: rgba(63,111,229,.18) !important;
   box-shadow: inset -18px -24px 42px rgba(89,109,138,.14), inset 12px 12px 28px rgba(255,255,255,.9), 0 0 65px rgba(91,140,255,.12) !important;
@@ -1098,7 +1098,7 @@ html:not(.dark) .cortex-wallet-orb {
 html:not(.dark) .cortex-estimator {
   background:
     radial-gradient(circle at 84% 18%, rgba(91,140,255,.08), transparent 24%),
-    radial-gradient(circle at 15% 84%, rgba(139,92,246,.06), transparent 24%),
+    radial-gradient(circle at 15% 84%, rgba(72,82,47,.06), transparent 24%),
     linear-gradient(145deg, #ffffff, #f5f8fd) !important;
   border-color: #dfe6ef !important;
 }
@@ -1119,7 +1119,7 @@ html:not(.dark) .cortex-operating-surface .cortex-hero {
 html:not(.dark) .cortex-operating-surface .cortex-hero > div:first-child {
   background:
     radial-gradient(circle at 78% 14%, rgba(91,140,255,.12), transparent 28%),
-    radial-gradient(circle at 18% 82%, rgba(139,92,246,.08), transparent 26%),
+    radial-gradient(circle at 18% 82%, rgba(72,82,47,.08), transparent 26%),
     linear-gradient(145deg,#ffffff,#f3f6fb) !important;
 }
 html:not(.dark) .cortex-operating-surface .cortex-hero .text-white { color: #111827 !important; }
@@ -1219,7 +1219,7 @@ html:not(.dark) .cortex-auth aside {
   will-change: transform;
 }
 .cortex-core-v2-ring-1 { inset: 9%; transform: rotateX(67deg) rotateZ(12deg); animation: cortex-core-r1 14s linear infinite; }
-.cortex-core-v2-ring-2 { inset: 15%; border-color: rgba(139,92,246,.18); transform: rotateY(64deg) rotateZ(-18deg); animation: cortex-core-r2 18s linear infinite reverse; }
+.cortex-core-v2-ring-2 { inset: 15%; border-color: rgba(72,82,47,.18); transform: rotateY(64deg) rotateZ(-18deg); animation: cortex-core-r2 18s linear infinite reverse; }
 .cortex-core-v2-ring-3 { inset: 20%; border-style: dashed; border-color: rgba(148,163,184,.12); transform: rotateX(42deg) rotateY(25deg); animation: cortex-core-r3 11s linear infinite; }
 .cortex-core-v2-node {
   position: absolute;
@@ -1239,7 +1239,7 @@ html:not(.dark) .cortex-auth aside {
   background:
     radial-gradient(circle at 30% 24%, rgba(255,255,255,.78), transparent 10%),
     radial-gradient(circle at 53% 42%, rgba(91,140,255,.96), transparent 38%),
-    radial-gradient(circle at 73% 70%, rgba(139,92,246,.94), transparent 52%),
+    radial-gradient(circle at 73% 70%, rgba(72,82,47,.94), transparent 52%),
     #07101c;
   border: 1px solid rgba(255,255,255,.10);
   box-shadow:
@@ -1288,7 +1288,7 @@ html:not(.dark) .cortex-core-v2-orb {
   background:
     radial-gradient(circle at 30% 24%, rgba(255,255,255,.98), transparent 10%),
     radial-gradient(circle at 53% 42%, rgba(91,140,255,.76), transparent 38%),
-    radial-gradient(circle at 73% 70%, rgba(139,92,246,.60), transparent 52%),
+    radial-gradient(circle at 73% 70%, rgba(72,82,47,.60), transparent 52%),
     #edf3fb;
   border-color: rgba(63,111,229,.16);
   box-shadow: 0 0 70px rgba(91,140,255,.14), inset -16px -17px 30px rgba(88,108,138,.12), inset 12px 12px 24px rgba(255,255,255,.9);
@@ -1308,8 +1308,8 @@ html:not(.dark) .cortex-core-v2-caption span { color: #5f6d80; }
 html.dark body {
   background-color: #070a0f !important;
   background-image:
-    radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
-    radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%) !important;
+    radial-gradient(circle at 90% -10%, rgba(184,215,91,.10), transparent 26%),
+    radial-gradient(circle at 5% 90%, rgba(72,82,47,.08), transparent 24%) !important;
   color: #eef2ff !important;
 }
 html:not(.dark) body {
