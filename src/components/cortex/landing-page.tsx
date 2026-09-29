@@ -226,7 +226,7 @@ export function LandingPage() {
           </div>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {PLANS.map((plan) => (
-              <article key={plan.name} className={plan.featured ? "relative overflow-hidden rounded-[14px] border border-primary/30 bg-primary/[.07] p-6 shadow-[0_24px_70px_rgba(59,130,255,.12)]" : "rounded-[14px] border border-border/65 bg-card/70 p-6"}>
+              <article key={plan.name} className={plan.featured ? "relative overflow-hidden rounded-[14px] border border-primary/30 bg-primary/[.07] p-6 shadow-[0_24px_70px_rgba(184,215,91,.12)]" : "rounded-[14px] border border-border/65 bg-card/70 p-6"}>
                 {plan.featured && <span className="absolute end-4 top-4 rounded-md bg-primary px-2.5 py-1 text-[8px] font-bold text-primary-foreground">پیشنهاد تیمی</span>}
                 <h3 className="text-lg font-black">{plan.name}</h3>
                 <p className="mt-1 text-xs text-muted-foreground">{plan.text}</p>
