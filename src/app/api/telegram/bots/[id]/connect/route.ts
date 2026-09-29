@@ -3,6 +3,7 @@ import { applyCors, jsonError, jsonOk, toErrorResponse } from "@/lib/server/http
 import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
 import { decryptSecret, encryptSecret } from "@/lib/server/secrets";
 import { configureBotProfile, getBotInfo, setWebhook, verifyWebhook, deleteWebhook } from "@/lib/telegram/service";
+import { getTelegramBotProfile } from "@/lib/telegram/profile";
 import { audit } from "@/lib/server/audit";
 import { randomBytes } from "@/lib/server/random";
 
@@ -21,7 +22,12 @@ export async function POST(req:Request,{params}:Params){
     const token=decryptSecret(bot.tokenEncrypted);
     const info=await getBotInfo(token);
     if(!info) return applyCors(jsonError("توکن ربات معتبر نیست.",502),req.headers.get("origin"));
-    await configureBotProfile(token,bot.name);
+    const profile = await getTelegramBotProfile(bot.id);
+    const profileSync = await configureBotProfile(token, String(profile.displayName || bot.name), {
+      shortDescription: profile.shortDescription,
+      description: profile.description,
+      commands: profile.commands,
+    });
 
     if(bot.mode==="webhook"){
       const secret=bot.webhookSecretEncrypted?decryptSecret(bot.webhookSecretEncrypted):Buffer.from(randomBytes(24)).toString("hex");
@@ -36,7 +42,7 @@ export async function POST(req:Request,{params}:Params){
 
     const updated=await db.telegramBot.update({
       where:{id:bot.id},
-      data:{username:info.username??null,status:"connected",lastError:null,lastSeenAt:new Date()},
+      data:{username:info.username??null,status:"connected",lastError:profileSync.ok?null:"پروفایل Telegram ناقص همگام شد: "+profileSync.failures.map((item)=>item.method).join(", "),lastSeenAt:new Date()},
       include:{agent:{select:{name:true}},_count:{select:{allowlist:true,users:true}}},
     });
     await audit(bot.workspaceId,session.user.id,"telegram-bot.reconnected","telegram_bot",bot.id,{mode:bot.mode});
