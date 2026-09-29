@@ -187,6 +187,7 @@ function SidebarUserCard() {
 function MobileUserMenu() {
   const user = useCortexStore((s) => s.user);
   const setView = useCortexStore((s) => s.setView);
+  const syncFromUrl = useCortexStore((s) => s.syncFromUrl);
   const signOutNow = useSignOut();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -474,9 +475,11 @@ export function AppShell() {
   const showCta = (view === "dashboard" || view === "agents") && settingEnabled(siteConfig.data?.settings, "feature.createAgentCta");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("view") === "billing") setView("billing");
-  }, [setView]);
+    syncFromUrl();
+    const handlePopState = () => syncFromUrl();
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [syncFromUrl]);
 
   return (
     <div className="cortex-dashstack flex h-dvh overflow-hidden bg-background">
