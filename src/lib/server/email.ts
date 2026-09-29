@@ -21,12 +21,15 @@ function appBaseUrl(): string {
 }
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>\\"\x27]/g, (char) => {
-    if (char === "&") return "&amp;";
-    if (char === "<") return "&lt;";
-    if (char === ">") return "&gt;";
-    if (char === "\\\"") return "&quot;";
-    return "&#39;";
+  return value.replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&": return "&amp;";
+      case "<": return "&lt;";
+      case ">": return "&gt;";
+      case '"': return "&quot;";
+      case "'": return "&#39;";
+      default: return char;
+    }
   });
 }
 
