@@ -52,5 +52,7 @@ export async function getPublicSiteSettings(): Promise<Record<string, string>> {
   // The admin console is deliberately outside the customer navigation surface.
   values["nav.admin.enabled"] = "false";
   values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
+  values["nav.admin.enabled"] = "false";
+  values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
   return values;
 }
