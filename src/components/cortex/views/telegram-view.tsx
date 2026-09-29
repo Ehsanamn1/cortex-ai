@@ -181,22 +181,20 @@ function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }
     onSuccess: ({ bot: updated }) => { onUpdated(updated); setToken(""); queryClient.invalidateQueries({ queryKey: ["telegram-bots"] }); toast.success(updated.status === "connected" ? "تنظیمات ربات و اتصال به‌روز شد." : "تنظیمات ذخیره شد؛ وضعیت اتصال را بررسی کن."); },
     onError: (error: Error) => toast.error(error.message),
   });
-  const usersQuery = useQuery({
-    queryKey: ["telegram-bot-users", bot.id],
-    queryFn: () => api.getTelegramBotUsers(bot.id),
-    enabled: !!bot.id && section === "access",
-    staleTime: 10_000,
-    refetchInterval: 20_000,
-  });
-  const botUsers = (usersQuery.data?.users ?? []).filter((item) => item.botId === bot.id).sort((a, b) => (b.usage?.tokens ?? 0) - (a.usage?.tokens ?? 0));
   const [userSearch, setUserSearch] = useState("");
   const [showAllUsers, setShowAllUsers] = useState(false);
-  const filteredBotUsers = useMemo(() => {
-    const q = userSearch.trim().toLowerCase();
-    if (!q) return botUsers;
-    return botUsers.filter((user) => [user.phoneNumber, user.username, user.firstName, user.lastName, user.telegramUserId].filter(Boolean).join(" ").toLowerCase().includes(q));
-  }, [botUsers, userSearch]);
-  const visibleBotUsers = showAllUsers ? filteredBotUsers : filteredBotUsers.slice(0, 6);
+  const userPageSize = showAllUsers ? 100 : 30;
+  const usersQuery = useQuery({
+    queryKey: ["telegram-bot-users", bot.id, userSearch, userPageSize],
+    queryFn: () => api.getTelegramBotUsers(bot.id, { search: userSearch, limit: userPageSize }),
+    enabled: !!bot.id && section === "access",
+    staleTime: 20_000,
+    refetchInterval: 30_000,
+    placeholderData: (previous) => previous,
+  });
+  const botUsers = (usersQuery.data?.users ?? []).filter((item) => item.botId === bot.id).sort((a, b) => (b.usage?.tokens ?? 0) - (a.usage?.tokens ?? 0));
+  const visibleBotUsers = botUsers;
+  const hasMoreUsers = usersQuery.data?.hasMore ?? false;
   const dailyTokensTotal = botUsers.reduce((sum, user) => sum + (user.dailyUsage?.tokens ?? 0), 0);
   const dailyMessagesTotal = botUsers.reduce((sum, user) => sum + (user.dailyUsage?.events ?? 0), 0);
   const monthlyTokensTotal = botUsers.reduce((sum, user) => sum + (user.monthlyUsage?.tokens ?? 0), 0);
@@ -285,10 +283,10 @@ function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }
                 </div>
                 <div className="mt-3 flex items-center gap-2">
                   <div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute start-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"/><Input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder="شماره، نام کاربر یا Telegram ID..." className="ps-9 text-xs" /></div>
-                  {botUsers.length > 6 && <Button size="sm" variant="outline" onClick={() => setShowAllUsers((value) => !value)}>{showAllUsers ? "جمع‌کردن" : "نمایش همه"}</Button>}
+                  {(hasMoreUsers || showAllUsers) && <Button size="sm" variant="outline" disabled={usersQuery.isFetching} onClick={() => setShowAllUsers((value) => !value)}>{showAllUsers ? "نمایش جمع‌وجور" : "بارگذاری کاربران بیشتر"}</Button>}
                 </div>
                 <div className="mt-3 space-y-2">
-                  {visibleBotUsers.map((user) => (
+                  {usersQuery.isLoading ? <p className="rounded-xl border border-dashed p-4 text-center text-[11px] text-muted-foreground">در حال بارگذاری کاربران…</p> : visibleBotUsers.map((user) => (
                     <TelegramUserMonitorCard key={user.id} botId={bot.id} user={user} onChanged={() => void usersQuery.refetch()} />
                   ))}
                   {filteredBotUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">کاربری با این فیلتر پیدا نشد.</p>}
