@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import {
   Activity,
   ArrowUpLeft,
+  BarChart3,
   Bot,
   BookPlus,
   ChevronLeft,
