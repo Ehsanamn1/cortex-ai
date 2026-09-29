@@ -35,7 +35,10 @@ export async function GET(req: Request) {
       }),
       db.modelCatalog.findMany({
         orderBy: [{ provider: "asc" }, { displayName: "asc" }],
-        include: { planAccess: { include: { plan: { select: { id: true, key: true, name: true } } } } },
+        include: {
+          planAccess: { include: { plan: { select: { id: true, key: true, name: true } } } },
+          systemProvider: { select: { id: true, key: true, displayName: true, providerName: true, enabled: true, isTrialProvider: true } },
+        },
       }),
       db.workspaceBillingAccount.findMany({
         take: 100,
@@ -102,6 +105,8 @@ export async function POST(req: Request) {
     if (action === "create_model") {
       const provider = textValue(body.provider, 80);
       const modelId = textValue(body.modelId, 180);
+      const systemProviderId = textValue(body.systemProviderId, 120);
+      const isTrialDefault = body.isTrialDefault === true;
       const displayName = textValue(body.displayName, 180);
       const inputUsdPer1M = floatValue(body.inputUsdPer1M);
       const outputUsdPer1M = floatValue(body.outputUsdPer1M);
@@ -110,14 +115,28 @@ export async function POST(req: Request) {
       if (!provider || !modelId || !displayName || inputUsdPer1M == null || outputUsdPer1M == null) {
         return applyCors(jsonError("اطلاعات مدل معتبر نیست.", 400), req.headers.get("origin"));
       }
-      const model = await db.modelCatalog.create({
-        data: {
-          provider, modelId, displayName, inputUsdPer1M, outputUsdPer1M,
-          contextWindow: intValue(body.contextWindow, 0, 10_000_000) ?? null,
-          vision: body.vision === true, tools: body.tools === true, structuredOutput: body.structuredOutput === true,
-          reasoning: body.reasoning === true, qualityTier, speedTier,
-          commercialAvailable: body.commercialAvailable !== false, active: body.active !== false,
-        },
+      const providerConfig = systemProviderId
+        ? await db.systemProviderConfig.findUnique({ where: { id: systemProviderId } })
+        : null;
+      if (systemProviderId && !providerConfig) {
+        return applyCors(jsonError("Provider سیستم پیدا نشد.", 404), req.headers.get("origin"));
+      }
+      const model = await db.$transaction(async (tx) => {
+        if (isTrialDefault) {
+          await tx.modelCatalog.updateMany({ where: { isTrialDefault: true }, data: { isTrialDefault: false } });
+        }
+        return tx.modelCatalog.create({
+          data: {
+            provider: providerConfig?.providerName ?? provider,
+            modelId, displayName, inputUsdPer1M, outputUsdPer1M,
+            contextWindow: intValue(body.contextWindow, 0, 10_000_000) ?? null,
+            vision: body.vision === true, tools: body.tools === true, structuredOutput: body.structuredOutput === true,
+            reasoning: body.reasoning === true, qualityTier, speedTier,
+            commercialAvailable: body.commercialAvailable !== false, active: body.active !== false,
+            systemProviderId: systemProviderId || null,
+            isTrialDefault,
+          },
+        });
       });
       return applyCors(jsonOk({ admin, model }, 201), req.headers.get("origin"));
     }
@@ -155,6 +174,13 @@ export async function PATCH(req: Request) {
     }
 
     if (action === "update_model" && id) {
+      const systemProviderId = body.systemProviderId !== undefined ? textValue(body.systemProviderId, 120) : undefined;
+      const isTrialDefault = typeof body.isTrialDefault === "boolean" ? body.isTrialDefault : undefined;
+      if (systemProviderId) {
+        const providerConfig = await db.systemProviderConfig.findUnique({ where: { id: systemProviderId } });
+        if (!providerConfig) return applyCors(jsonError("Provider سیستم پیدا نشد.", 404), req.headers.get("origin"));
+      }
+
       const data: Record<string, unknown> = {};
       if (body.displayName !== undefined) data.displayName = textValue(body.displayName, 180) || "Unnamed model";
       if (body.qualityTier !== undefined) data.qualityTier = textValue(body.qualityTier, 40) || "balanced";
@@ -172,7 +198,14 @@ export async function PATCH(req: Request) {
       for (const key of ["vision","tools","structuredOutput","reasoning","commercialAvailable","active"] as const) {
         if (typeof body[key] === "boolean") data[key] = body[key];
       }
-      const model = await db.modelCatalog.update({ where: { id }, data });
+      if (systemProviderId !== undefined) data.systemProviderId = systemProviderId || null;
+      if (isTrialDefault !== undefined) data.isTrialDefault = isTrialDefault;
+      const model = await db.$transaction(async (tx) => {
+        if (isTrialDefault) {
+          await tx.modelCatalog.updateMany({ where: { id: { not: id }, isTrialDefault: true }, data: { isTrialDefault: false } });
+        }
+        return tx.modelCatalog.update({ where: { id }, data });
+      });
       return applyCors(jsonOk({ admin, model }), req.headers.get("origin"));
     }
 
