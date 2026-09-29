@@ -20,7 +20,7 @@ Advanced roadmap capabilities remain intentionally out of the active MVP path un
 - **Knowledge files (production):** private Cloudflare R2 through S3-compatible presigned requests. Raw upload bytes do not pass through the Worker in the normal flow.
 - **Knowledge files (local/development):** a small PostgreSQL `db64://` fallback remains available only outside production when R2 is unavailable.
 - **Vector store:** tenant-scoped local PostgreSQL vector records by default, with optional Qdrant adapter.
-- **LLM:** each Agent has its own encrypted OpenAI-compatible provider configuration; legacy workspace-level configuration and environment fallback remain only for backward compatibility.
+- **LLM:** customer-facing models are selected from the central Model Catalog. Provider credentials, Base URLs and routing are stored server-side in the private Admin Provider Registry; the customer never receives an API key or upstream Base URL. Trial can point to one admin-selected default model/provider and consume the workspace's 1,000 monthly trial credits.
 - **Embeddings:** OpenAI-compatible neural embeddings when configured; otherwise the built-in deterministic lexical engine.
 
 The production Worker runs with `APP_ENV=production` and Node.js compatibility.
@@ -79,7 +79,7 @@ Keep application secrets in Cloudflare Worker Secrets or the protected GitHub En
 
 ## AI provider
 
-New workspaces should configure the real provider **inside each Agent → هوش مصنوعی**. The provider configuration is stored encrypted server-side and belongs to that Agent. Each Agent can use a different provider, Base URL and model. Legacy workspace-level configuration and environment fallback remain only for backward compatibility; an explicitly configured disabled Agent does not silently fall back. When the Agent has no usable provider, Cortex deliberately returns a `503` configuration error instead of generating a fake answer.
+New deployments can configure upstream AI providers centrally from **Admin → AI زیرساخت**. Define the Provider name, protocol, Base URL and API key once, then attach models to that Provider from the Model Catalog. Customer Agents select the Cortex model/route only; credentials stay encrypted server-side. One model can be marked as the Trial Default so newly created Trial workspaces use it automatically until their 1,000 credits are exhausted. Legacy environment/provider fallback remains only for backward compatibility.
 
 The lexical embedding engine is real deterministic retrieval, not a mock. For neural embeddings, configure `OPENAI_API_KEY` and the desired embeddings model.
 
@@ -99,7 +99,7 @@ See `docs/API_ACCESS.md` for the client contract.
 - Knowledge URL ingestion blocks local/private destinations, re-checks redirects and bounds downloads.
 - Provider credentials, Telegram tokens and webhook secrets are encrypted at rest with `APP_SECRET_KEY`.
 - Production sessions require a persistent `APP_SECRET_KEY` of at least 32 characters.
-- Production admin credentials are explicit; the development-only `admin` fallback is disabled in production.
+- The production Control Center is passwordless at the UI layer: the owner enters through a private access-link route backed by `CORTEX_ADMIN_ACCESS_TOKEN`, which exchanges for an HttpOnly admin session. Legacy username/password remains only as a compatibility API path.
 - Chat POST requests are not automatically retried by the frontend/API client; only idempotent GET/HEAD/OPTIONS calls are retried.
 - Usage limits use durable PostgreSQL reservations and transaction-scoped advisory locks so concurrent Worker isolates cannot bypass the same quota.
 
@@ -153,3 +153,13 @@ The codebase is treated as release-ready when:
 5. R2 browser upload + knowledge processing succeeds on the target Worker.
 6. Telegram credentials/webhook configuration are present when Telegram is enabled.
 
+
+
+## Private Admin Control Center
+
+The owner entry point is `/admin/access/<CORTEX_ADMIN_ACCESS_TOKEN>`. The access token is never rendered back into API responses. After exchange, the browser receives only the short-lived HttpOnly admin session cookie.
+
+Inside **AI زیرساخت**, the owner can create/rotate/disable system Providers, set Base URLs and API keys, inspect provider health, attach Model Catalog entries, and select the default Trial model. Plan/model access is controlled separately through the billing matrix.
+
+
+**Trial routing:** `Trial Provider` is the upstream credential/endpoint, while `Trial Default Model` is the Model Catalog route. The default model should be attached to the intended Trial Provider; the Free workspace then uses that route and its normal billing reservation decrements the Trial credit balance.

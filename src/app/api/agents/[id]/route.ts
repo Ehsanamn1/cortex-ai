@@ -54,18 +54,37 @@ export async function PATCH(req: Request, { params }: Params) {
     const data: Prisma.AgentUpdateInput = {};
     let requestedTone: string | undefined;
     if (typeof body.modelKey === "string") {
-      const model = getManagedModelCatalog().find((item) => item.key === body.modelKey);
-      if (!model) {
-        return applyCors(jsonError("مدل انتخابی معتبر نیست.", 400), req.headers.get("origin"));
-      }
+      const requestedModelKey = body.modelKey.trim().slice(0, 120);
       const billing = await db.workspaceBillingAccount.findUnique({
         where: { workspaceId: agent.workspaceId },
         include: { plan: true },
       });
-      if (!billing || billing.plan.key === "free" || !model.planKeys.includes(billing.plan.key as any)) {
-        return applyCors(jsonError("این مدل در پلن فعلی شما در دسترس نیست. برای دسترسی به آن پلن را ارتقا دهید.", 403), req.headers.get("origin"));
+      if (!billing) return applyCors(jsonError("حساب اعتبار فضای کاری پیدا نشد.", 404), req.headers.get("origin"));
+
+      const catalog = await db.modelCatalog.findFirst({
+        where: {
+          active: true,
+          OR: [
+            { routeKey: requestedModelKey },
+            { id: requestedModelKey },
+            { modelId: requestedModelKey },
+          ],
+        },
+        include: { planAccess: { where: { planId: billing.planId }, select: { enabled: true } } },
+      });
+      if (catalog) {
+        const allowed = billing.plan.key === "free"
+          ? catalog.trialEnabled && Boolean(catalog.planAccess[0]?.enabled ?? true)
+          : catalog.commercialAvailable && Boolean(catalog.planAccess[0]?.enabled);
+        if (!allowed) return applyCors(jsonError("این مدل در پلن فعلی شما در دسترس نیست.", 403), req.headers.get("origin"));
+        data.modelKey = catalog.routeKey ?? catalog.id;
+      } else {
+        const model = getManagedModelCatalog().find((item) => item.key === requestedModelKey);
+        if (!model || !model.planKeys.includes(billing.plan.key as any)) {
+          return applyCors(jsonError("مدل انتخابی در کاتالوگ Cortex پیدا نشد.", 400), req.headers.get("origin"));
+        }
+        data.modelKey = model.key;
       }
-      data.modelKey = model.key;
     }
     let requestedCustomTone: string | null | undefined;
     if (typeof body.name === "string") {

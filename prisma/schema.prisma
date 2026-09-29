@@ -41,6 +41,29 @@ model PasswordResetToken {
   @@index([userId, expiresAt])
 }
 
+model SystemProviderConfig {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  displayName     String
+  providerName    String
+  protocol        String   @default("openai-compatible")
+  authMode        String   @default("bearer")
+  baseUrl         String
+  apiKeyEncrypted String?
+  enabled         Boolean  @default(true)
+  isTrialProvider Boolean  @default(false)
+  lastHealthStatus String?
+  lastHealthError  String?
+  lastHealthAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  models ModelCatalog[]
+
+  @@index([enabled])
+  @@index([isTrialProvider, enabled])
+}
+
 model Workspace {
   id        String   @id @default(cuid())
   name      String
@@ -735,6 +758,7 @@ model Plan {
 
 model ModelCatalog {
   id                    String   @id @default(cuid())
+  routeKey              String?  @unique
   provider              String
   modelId               String
   displayName           String
@@ -749,6 +773,10 @@ model ModelCatalog {
   speedTier             String   @default("balanced")
   commercialAvailable   Boolean  @default(true)
   active                Boolean  @default(true)
+  trialEnabled          Boolean  @default(false)
+  trialDefault          Boolean  @default(false)
+  systemProviderId      String?
+  systemProvider        SystemProviderConfig? @relation(fields: [systemProviderId], references: [id], onDelete: SetNull)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

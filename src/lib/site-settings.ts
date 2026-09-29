@@ -13,7 +13,7 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "site.sidebarColor": CORTEX_UI_CONFIG.theme.sidebar,
   "site.authTitle": CORTEX_UI_CONFIG.copy.authTitle,
   "site.authDescription": CORTEX_UI_CONFIG.copy.authDescription,
-  "site.navOrder": "dashboard,agents,knowledge,conversations,telegram,analytics,admin,learn",
+  "site.navOrder": "dashboard,agents,knowledge,conversations,telegram,analytics,learn",
   "nav.dashboard.enabled": "true",
   "nav.dashboard.label": "داشبورد",
   "nav.agents.enabled": "true",
@@ -26,7 +26,7 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "nav.telegram.label": "تلگرام",
   "nav.analytics.enabled": "true",
   "nav.analytics.label": "تحلیل",
-  "nav.admin.enabled": "true",
+  "nav.admin.enabled": "false",
   "nav.admin.label": "مدیریت",
   "nav.learn.enabled": "true",
   "nav.learn.label": "آموزش",
@@ -49,5 +49,10 @@ export async function getPublicSiteSettings(): Promise<Record<string, string>> {
   } catch {
     // Settings are optional; the shell must still render with defaults.
   }
+  // The admin console is deliberately outside the customer navigation surface.
+  values["nav.admin.enabled"] = "false";
+  values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
+  values["nav.admin.enabled"] = "false";
+  values["site.navOrder"] = values["site.navOrder"].split(",").filter((item) => item.trim() !== "admin").join(",");
   return values;
 }

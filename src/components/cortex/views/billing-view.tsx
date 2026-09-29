@@ -127,7 +127,7 @@ export function BillingView(){
             <div><p className="text-[10px] text-muted-foreground">موجودی فعلی</p><p className="mt-1 text-4xl font-black">{formatCountCompact(data.account.balanceCredits)}</p><p className="mt-1 text-[10px] text-muted-foreground">اعتبار</p></div>
             <div><p className="text-[10px] text-muted-foreground">مصرف ۳۰ روز</p><p className="mt-1 text-2xl font-bold">{formatCountCompact(data.usage30Days.credits)}</p><p className="mt-1 text-[10px] text-muted-foreground">اعتبار مصرف‌شده</p></div>
           </div>
-          <div className="mt-5 max-w-xl"><div className="flex justify-between text-[10px] text-muted-foreground"><span>نسبت موجودی به اعتبار ماهانه</span><span>{faNum(balancePct)}٪</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400" style={{width:balancePct+"%"}}/></div></div>
+          <div className="mt-5 max-w-xl"><div className="flex justify-between text-[10px] text-muted-foreground"><span>نسبت موجودی به اعتبار ماهانه</span><span>{faNum(balancePct)}٪</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60" style={{width:balancePct+"%"}}/></div></div>
         </div>
         <div className="hidden place-items-center lg:grid"><div className="cortex-wallet-orb relative grid place-items-center"><div className="grid size-14 place-items-center rounded-2xl bg-black/20 text-white"><WalletCards className="size-6"/></div></div></div>
       </div>
@@ -172,7 +172,7 @@ export function BillingView(){
           {modelUsage.length===0 ? <p className="rounded-xl border border-dashed border-border/60 p-5 text-center text-xs text-muted-foreground">هنوز مصرف مدل ثبت نشده است.</p> : modelUsage.map((usageItem) => (
             <div key={(usageItem.provider??"unknown")+"-"+(usageItem.model??"unknown")} className="rounded-2xl border border-border/50 bg-background/25 p-3">
               <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-black">{usageItem.displayName}</p><p className="mt-1 truncate text-[9px] text-muted-foreground">مدل مدیریت‌شده Cortex</p></div><div className="text-end"><p className="text-xs font-black">{formatCountCompact(usageItem.credits)} اعتبار</p><p className="mt-1 text-[9px] text-muted-foreground">{formatCountCompact(usageItem.tokens)} توکن · {formatCountCompact(usageItem.events)} رویداد</p></div></div>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400" style={{width:Math.max(3,Math.round((usageItem.tokens/maxModelTokens)*100))+"%"}}/></div>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60" style={{width:Math.max(3,Math.round((usageItem.tokens/maxModelTokens)*100))+"%"}}/></div>
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[9px] text-muted-foreground"><span>ورودی: {formatCountCompact(usageItem.inputTokens)}</span><span>خروجی: {formatCountCompact(usageItem.outputTokens)}</span><span>هزینه تأمین: ${((usageItem.estimatedCostMicros ?? 0)/1_000_000).toFixed(4)}</span></div>
             </div>
           ))}
@@ -218,7 +218,7 @@ export function BillingView(){
               featured ? "border-primary/45 bg-primary/[.075] shadow-[0_24px_70px_rgba(59,130,255,.16)]" : "border-border/65 bg-background/30",
               selectedPlanKey === item.key ? "ring-2 ring-primary/35 shadow-[0_25px_70px_rgba(59,130,255,.18)]" : ""
             )}>
-            {featured&&<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-violet-400 to-primary"/>}
+            {featured&&<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary to-primary"/>}
             <div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-black">{item.name}</h3>{featured&&<Badge className="bg-primary text-[8px]">پیشنهاد ویژه</Badge>}{isCurrent&&<Badge variant="outline" className="border-primary/20 bg-primary/5 text-[8px] text-primary">پلن فعلی</Badge>}</div><p className="mt-1 text-[10px] font-semibold text-primary/90">{meta.headline}</p></div><WalletCards className="size-5 text-primary"/></div>
             <p className="mt-4 text-2xl font-black">{item.priceToman?formatTomanCompact(item.priceToman):"از ۳۵٬۰۰۰٬۰۰۰"}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.priceToman?"تومان / ماه":"تومان / ماه · توافقی"}</p>
             <p className="mt-3 text-sm font-black">{item.monthlyCredits?formatCountCompact(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار توافقی"}</p>

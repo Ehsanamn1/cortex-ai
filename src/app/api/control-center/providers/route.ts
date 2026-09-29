@@ -10,7 +10,6 @@ export const dynamic = "force-dynamic";
 function textValue(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
-
 const PROTOCOLS = new Set(["openai-compatible", "openrouter", "anthropic", "gemini"]);
 const AUTH_MODES = new Set(["bearer", "x-api-key", "none"]);
 
@@ -26,13 +25,13 @@ function validateConfig(body: Record<string, unknown>) {
     throw Object.assign(new Error("اطلاعات Provider کامل یا معتبر نیست."), { status: 400 });
   }
   validateProviderBaseUrl(baseUrl);
-  if (protocol === "openrouter" && !/^https:///i.test(baseUrl)) {
+  if (protocol === "openrouter" && !/^https:\/\//i.test(baseUrl)) {
     throw Object.assign(new Error("Base URL برای OpenRouter باید HTTPS باشد."), { status: 400 });
   }
   return { key, displayName, providerName, protocol, authMode, baseUrl };
 }
 
-function publicProvider(row: any) {
+function publicProvider(row: any, testModelId: string | null = null) {
   return {
     id: row.id,
     key: row.key,
@@ -48,6 +47,7 @@ function publicProvider(row: any) {
     lastHealthError: row.lastHealthError,
     lastHealthAt: row.lastHealthAt,
     modelsCount: row._count?.models ?? 0,
+    testModelId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -58,9 +58,12 @@ export async function GET(req: Request) {
     requireAdmin(req);
     const providers = await db.systemProviderConfig.findMany({
       orderBy: [{ isTrialProvider: "desc" }, { enabled: "desc" }, { updatedAt: "desc" }],
-      include: { _count: { select: { models: true } } },
+      include: {
+        _count: { select: { models: true } },
+        models: { where: { active: true }, orderBy: { updatedAt: "desc" }, take: 1, select: { modelId: true } },
+      },
     });
-    return applyCors(jsonOk({ providers: providers.map(publicProvider) }), req.headers.get("origin"));
+    return applyCors(jsonOk({ providers: providers.map((row) => publicProvider(row, row.models[0]?.modelId ?? null)) }), req.headers.get("origin"));
   } catch (error) {
     return toErrorResponse(error);
   }
@@ -83,11 +86,7 @@ export async function POST(req: Request) {
       const health = await runtime.healthCheck();
       await db.systemProviderConfig.update({
         where: { id },
-        data: {
-          lastHealthStatus: health.ok ? "healthy" : "error",
-          lastHealthError: health.ok ? null : health.error,
-          lastHealthAt: new Date(),
-        },
+        data: { lastHealthStatus: health.ok ? "healthy" : "error", lastHealthError: health.ok ? null : health.error, lastHealthAt: new Date() },
       });
       return applyCors(jsonOk({ providerId: id, modelId, health }), req.headers.get("origin"));
     }
@@ -95,19 +94,16 @@ export async function POST(req: Request) {
     if (action === "create") {
       const config = validateConfig(body);
       const apiKey = textValue(body.apiKey, 4000);
-      const trial = body.isTrialProvider === true;
-      if (body.authMode !== "none" && !apiKey) return applyCors(jsonError("برای Provider احراز هویت‌شده API Key لازم است.", 400), req.headers.get("origin"));
-
+      if (config.authMode !== "none" && !apiKey) return applyCors(jsonError("برای Provider احراز هویت‌شده API Key لازم است.", 400), req.headers.get("origin"));
+      const isTrialProvider = body.isTrialProvider === true;
       const provider = await db.$transaction(async (tx) => {
-        if (trial) {
-          await tx.systemProviderConfig.updateMany({ data: { isTrialProvider: false } });
-        }
+        if (isTrialProvider) await tx.systemProviderConfig.updateMany({ data: { isTrialProvider: false } });
         return tx.systemProviderConfig.create({
           data: {
             ...config,
             apiKeyEncrypted: apiKey ? encryptSecret(apiKey) : null,
             enabled: body.enabled !== false,
-            isTrialProvider: trial,
+            isTrialProvider,
           },
         });
       });
@@ -128,33 +124,20 @@ export async function PATCH(req: Request) {
     if (!id) return applyCors(jsonError("شناسه Provider الزامی است.", 400), req.headers.get("origin"));
     const existing = await db.systemProviderConfig.findUnique({ where: { id } });
     if (!existing) return applyCors(jsonError("Provider پیدا نشد.", 404), req.headers.get("origin"));
-
-    const merged = {
-      ...existing,
-      ...body,
-      displayName: body.displayName ?? existing.displayName,
-      key: body.key ?? existing.key,
-      providerName: body.providerName ?? existing.providerName,
-      protocol: body.protocol ?? existing.protocol,
-      authMode: body.authMode ?? existing.authMode,
-      baseUrl: body.baseUrl ?? existing.baseUrl,
-    };
+    const merged = { ...existing, ...body, displayName: body.displayName ?? existing.displayName, key: body.key ?? existing.key, providerName: body.providerName ?? existing.providerName, protocol: body.protocol ?? existing.protocol, authMode: body.authMode ?? existing.authMode, baseUrl: body.baseUrl ?? existing.baseUrl };
     const config = validateConfig(merged);
     const apiKey = textValue(body.apiKey, 4000);
-    if (config.authMode !== "none" && !apiKey && !existing.apiKeyEncrypted) {
-      return applyCors(jsonError("برای Provider احراز هویت‌شده API Key لازم است.", 400), req.headers.get("origin"));
-    }
-
-    const shouldBeTrial = body.isTrialProvider === true;
+    if (config.authMode !== "none" && !apiKey && !existing.apiKeyEncrypted) return applyCors(jsonError("برای Provider احراز هویت‌شده API Key لازم است.", 400), req.headers.get("origin"));
+    const isTrialProvider = body.isTrialProvider === true;
     const provider = await db.$transaction(async (tx) => {
-      if (shouldBeTrial) await tx.systemProviderConfig.updateMany({ where: { id: { not: id } }, data: { isTrialProvider: false } });
+      if (isTrialProvider) await tx.systemProviderConfig.updateMany({ where: { id: { not: id } }, data: { isTrialProvider: false } });
       return tx.systemProviderConfig.update({
         where: { id },
         data: {
           ...config,
           ...(apiKey ? { apiKeyEncrypted: encryptSecret(apiKey) } : {}),
           enabled: typeof body.enabled === "boolean" ? body.enabled : existing.enabled,
-          isTrialProvider: typeof body.isTrialProvider === "boolean" ? shouldBeTrial : existing.isTrialProvider,
+          isTrialProvider: typeof body.isTrialProvider === "boolean" ? isTrialProvider : existing.isTrialProvider,
           lastHealthStatus: "unknown",
           lastHealthError: null,
           lastHealthAt: null,

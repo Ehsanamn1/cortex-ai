@@ -2,6 +2,7 @@ import { OpenRouterProvider } from "@/lib/providers/llm/openrouter";
 import { db } from "@/lib/db";
 import { getModelRate, type KnownModelCatalogEntry } from "@/lib/server/pricing";
 import type { LLMProvider } from "@/lib/providers/llm/types";
+import { buildSystemProviderForModel } from "@/lib/server/system-provider";
 
 export type ManagedPlanKey = "free" | "launch" | "growth" | "scale" | "enterprise";
 export type ManagedModelTier = "economy" | "balanced" | "premium" | "deep";
@@ -145,6 +146,112 @@ export function isModelAllowedForPlan(model: ManagedModelDefinition, planKey: st
   return model.planKeys.includes(planKey as ManagedPlanKey);
 }
 
+function modelFromCatalog(
+  catalog: {
+    id: string;
+    routeKey: string | null;
+    provider: string;
+    modelId: string;
+    displayName: string;
+    qualityTier: string;
+    speedTier: string;
+    contextWindow: number | null;
+    vision: boolean;
+    tools: boolean;
+    structuredOutput: boolean;
+    reasoning: boolean;
+    commercialAvailable: boolean;
+    trialEnabled: boolean;
+    trialDefault: boolean;
+  },
+): ManagedModelDefinition {
+  const staticModel = findManagedModel(catalog.routeKey) ?? findManagedModel(catalog.modelId);
+  const qualityTier = (["economy", "balanced", "premium", "deep"].includes(catalog.qualityTier)
+    ? catalog.qualityTier
+    : "balanced") as ManagedModelTier;
+  const speedTier = (["fast", "balanced", "deep"].includes(catalog.speedTier)
+    ? catalog.speedTier
+    : "balanced") as ManagedModelDefinition["speedTier"];
+
+  return {
+    ...(staticModel ?? {
+      provider: catalog.provider,
+      modelId: catalog.modelId,
+      displayName: catalog.displayName,
+      qualityTier,
+      speedTier,
+      contextWindow: catalog.contextWindow ?? undefined,
+      vision: catalog.vision,
+      tools: catalog.tools,
+      structuredOutput: catalog.structuredOutput,
+      reasoning: catalog.reasoning,
+      commercialAvailable: catalog.commercialAvailable,
+    }),
+    key: catalog.routeKey ?? catalog.id,
+    provider: catalog.provider,
+    modelId: catalog.modelId,
+    providerModelId: catalog.modelId,
+    displayName: catalog.displayName,
+    description: staticModel?.description ?? "مدل مدیریت‌شده Cortex",
+    tier: qualityTier,
+    qualityTier,
+    speedTier,
+    creditRatePer1K: staticModel?.creditRatePer1K ?? 1.5,
+    planKeys: staticModel?.planKeys ?? ["launch", "growth", "scale", "enterprise"],
+    contextWindow: catalog.contextWindow ?? staticModel?.contextWindow,
+    vision: catalog.vision,
+    tools: catalog.tools,
+    structuredOutput: catalog.structuredOutput,
+    reasoning: catalog.reasoning,
+    commercialAvailable: catalog.commercialAvailable,
+  };
+}
+
+async function loadCatalogForAgent(agentModelKey: string | null | undefined) {
+  if (!agentModelKey) {
+    return db.modelCatalog.findFirst({
+      where: { trialDefault: true, active: true },
+      include: { systemProvider: true },
+    });
+  }
+
+  return db.modelCatalog.findFirst({
+    where: {
+      active: true,
+      OR: [
+        { routeKey: agentModelKey },
+        { id: agentModelKey },
+        { modelId: agentModelKey },
+      ],
+    },
+    include: { systemProvider: true },
+  });
+}
+
+async function resolveProviderFromCatalog(
+  model: {
+    id: string;
+    provider: string;
+    modelId: string;
+    systemProvider: Awaited<ReturnType<typeof db.systemProviderConfig.findUnique>>;
+  },
+  preferTrialProvider = false,
+) {
+  if (model.systemProvider?.enabled) {
+    return buildSystemProviderForModel(model.systemProvider, model.modelId);
+  }
+  const byProvider = await db.systemProviderConfig.findFirst({
+    where: { providerName: model.provider, enabled: true },
+    orderBy: [{ isTrialProvider: preferTrialProvider ? "desc" : "asc" }, { updatedAt: "desc" }],
+  });
+  if (byProvider) return buildSystemProviderForModel(byProvider, model.modelId);
+
+  // Backward-compatible OpenRouter environment fallback. New production
+  // installations should use the admin-managed provider registry instead.
+  const legacy = model.provider.toLowerCase() === "openrouter" ? new OpenRouterProvider({ model: model.modelId }) : null;
+  return legacy?.isConfigured() ? legacy : null;
+}
+
 export async function resolveManagedModelForAgent(agentId: string, workspaceId: string): Promise<{
   model: ManagedModelDefinition;
   provider: LLMProvider;
@@ -157,24 +264,59 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
   });
   if (!account) throw Object.assign(new Error("حساب اعتبار فضای کاری پیدا نشد."), { status: 404 });
 
-  const model = findManagedModel(agent?.modelKey) ?? getManagedModelCatalog()[0];
-  if (!isModelAllowedForPlan(model, account.plan.key)) {
+  let catalog = await loadCatalogForAgent(agent?.modelKey);
+  if (!catalog && account.plan.key === "free") {
+    catalog = await db.modelCatalog.findFirst({
+      where: { active: true, trialDefault: true, trialEnabled: true },
+      include: { systemProvider: true },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
+
+  if (account.plan.key === "free" && catalog && !catalog.trialEnabled) {
+    catalog = await db.modelCatalog.findFirst({
+      where: { active: true, trialDefault: true, trialEnabled: true },
+      include: { systemProvider: true },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
+
+  if (!catalog) {
+    const fallback = findManagedModel(account.plan.key === "free" ? "launch-lite" : agent?.modelKey) ?? getManagedModelCatalog()[0];
+    const envProvider = new OpenRouterProvider({ model: fallback.providerModelId });
+    const provider = envProvider.isConfigured() ? envProvider : null;
+    if (!provider) {
+      throw Object.assign(new Error("هیچ Provider مدیریتی برای این مدل فعال نیست."), { status: 503, code: "managed_provider_unavailable" });
+    }
+    return { model: fallback, provider, planKey: account.plan.key };
+  }
+
+  const access = await db.planModelAccess.findUnique({
+    where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
+  });
+  const model = modelFromCatalog(catalog);
+
+  const isAllowed = account.plan.key === "free"
+    ? catalog.trialEnabled && Boolean(access?.enabled ?? true)
+    : Boolean(access?.enabled);
+
+  if (!isAllowed) {
     throw Object.assign(
       new Error("مدل انتخابی در پلن فعلی در دسترس نیست. برای ادامه، پلن خود را ارتقا دهید."),
       { status: 403, code: "model_not_in_plan" },
     );
   }
 
-  const provider = new OpenRouterProvider();
-  if (!provider.isConfigured()) {
+  const provider = await resolveProviderFromCatalog(catalog, account.plan.key === "free");
+  if (!provider || !provider.isConfigured()) {
     throw Object.assign(
-      new Error("سرویس هوش مصنوعی Cortex هنوز از سمت سرور پیکربندی نشده است."),
+      new Error("Provider این مدل از پنل مدیر پیکربندی نشده یا کلید آن فعال نیست."),
       { status: 503, code: "managed_provider_unavailable" },
     );
   }
 
-  const rate = getModelRate("OpenRouter", model.providerModelId);
-  if (!rate.known) {
+  const rate = getModelRate(catalog.provider, catalog.modelId);
+  if (!rate.known && catalog.inputUsdPer1M <= 0 && catalog.outputUsdPer1M <= 0) {
     throw Object.assign(
       new Error("قیمت تأمین این مدل در Cortex ثبت نشده است."),
       { status: 503, code: "model_pricing_unavailable" },

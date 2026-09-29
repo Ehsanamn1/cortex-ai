@@ -19,38 +19,6 @@ export type SystemProviderRecord = {
   isTrialProvider: boolean;
 };
 
-export function buildSystemProvider(config: SystemProviderRecord): LLMProvider {
-  const apiKey = config.apiKeyEncrypted ? decryptSecret(config.apiKeyEncrypted) : undefined;
-  const protocol = config.protocol.trim().toLowerCase();
-
-  if (protocol === "anthropic") {
-    return new AnthropicProvider({
-      name: config.providerName,
-      baseUrl: config.baseUrl,
-      apiKey,
-      model: "",
-    });
-  }
-  if (protocol === "gemini") {
-    return new GeminiProvider({
-      name: config.providerName,
-      baseUrl: config.baseUrl,
-      apiKey,
-      model: "",
-    });
-  }
-  if (protocol === "openrouter") {
-    return new OpenRouterProvider();
-  }
-  return new OpenAICompatibleProvider({
-    name: config.providerName,
-    baseUrl: config.baseUrl,
-    apiKey,
-    model: "",
-    authMode: (config.authMode || "bearer") as CompatibleAuthMode,
-  });
-}
-
 export function buildSystemProviderForModel(config: SystemProviderRecord, modelId: string): LLMProvider {
   const apiKey = config.apiKeyEncrypted ? decryptSecret(config.apiKeyEncrypted) : undefined;
   const protocol = config.protocol.trim().toLowerCase();
@@ -62,8 +30,7 @@ export function buildSystemProviderForModel(config: SystemProviderRecord, modelI
     return new GeminiProvider({ name: config.providerName, baseUrl: config.baseUrl, apiKey, model: modelId });
   }
   if (protocol === "openrouter") {
-    const provider = new OpenRouterProvider({ model: modelId });
-    return provider;
+    return new OpenRouterProvider({ model: modelId, baseUrl: config.baseUrl, apiKey });
   }
   return new OpenAICompatibleProvider({
     name: config.providerName,
@@ -75,10 +42,7 @@ export function buildSystemProviderForModel(config: SystemProviderRecord, modelI
 }
 
 export async function resolveSystemProviderForModel(modelCatalogId: string) {
-  const model = await db.modelCatalog.findUnique({
-    where: { id: modelCatalogId },
-    include: { systemProvider: true },
-  });
+  const model = await db.modelCatalog.findUnique({ where: { id: modelCatalogId }, include: { systemProvider: true } });
   if (!model) return null;
   if (model.systemProvider?.enabled) return { model, provider: buildSystemProviderForModel(model.systemProvider, model.modelId) };
 
