@@ -5,6 +5,7 @@ import {
   creditsFromProviderCost,
   catalogCostMicros,
   defaultCreditMultiplierBps,
+  BillingOverageDisabledError,
 } from "@/lib/server/billing";
 
 describe("Cortex commercial billing", () => {
@@ -48,4 +49,10 @@ describe("Cortex commercial billing", () => {
     expect(error.status).toBe(402);
     expect(error.code).toBe("insufficient_credits");
   });
+  it("uses HTTP 402 semantics when overage is disabled", () => {
+    const error = new BillingOverageDisabledError();
+    expect(error.status).toBe(402);
+    expect(error.code).toBe("overage_disabled");
+  });
+
 });
