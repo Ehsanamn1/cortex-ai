@@ -461,10 +461,10 @@ function ManagedModelTab({ agentId }: { agentId: string }) {
   }
 
   const plan = data.account.plan;
+  const models = data.models ?? [];
   const currentModel = plan.key === "free"
     ? (models.find((item) => item.trialDefault)?.id ?? "trial-default")
     : (agentQuery.data.agent.modelKey ?? "launch-fast");
-  const models = data.models ?? [];
   const grouped = ["economy", "balanced", "premium", "deep"].map((tier) => ({
     tier,
     items: models.filter((item) => item.qualityTier === tier),
