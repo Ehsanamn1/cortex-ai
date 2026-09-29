@@ -43,8 +43,8 @@ export function getManagedModelCatalog(): ManagedModelDefinition[] {
     {
       key: "launch-balanced",
       provider: "OpenRouter",
-      providerModelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.7-flash"),
-      modelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.7-flash"),
+      providerModelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.5-flash-02-23"),
+      modelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.5-flash-02-23"),
       displayName: "Cortex Smart",
       description: "تعادل سرعت، هزینه و کیفیت",
       qualityTier: "economy",
