@@ -80,7 +80,7 @@ export function TelegramView() {
           <div className="max-w-2xl">
             <p className="cortex-kicker">TELEGRAM CHANNEL</p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">ایجنتت را با چند کلیک روی تلگرام بیاور.</h2>
-            <p className="mt-3 text-sm leading-8 text-muted-foreground">Cortex توکن BotFather را سمت سرور رمزنگاری می‌کند، اتصال را تست می‌کند و Webhook را خودکار روی ربات ثبت می‌کند.</p>
+            <p className="mt-3 text-sm leading-8 text-muted-foreground">Cortex توکن BotFather را سمت سرور رمزنگاری می‌کند، اتصال را تست می‌کند و Webhook را خودکار روی ربات ثبت می‌کند. بعد از ساخت ربات، از همان کارت می‌توانی ایجنت، شماره‌های مجاز، سقف مصرف، متن‌های Bot و منوی آن را تنظیم کنی.</p>
           </div>
           <Button onClick={() => setOpen(true)} disabled={agents.length === 0}><Plus />ساخت و اتصال ربات</Button>
         </div>
@@ -113,7 +113,13 @@ export function TelegramView() {
                     <div className="mt-6 grid grid-cols-2 gap-3"><Mini label="کانال" value="Webhook" /><Mini label="کاربر" value={String(bot.usersCount)} /></div>
                     <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground"><span>{bot.lastSeenAt ? "آخرین فعالیت: " + new Date(bot.lastSeenAt).toLocaleString("fa-IR") : "هنوز رویدادی ثبت نشده"}</span></div>
                     {bot.lastError && <p className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs leading-6 text-destructive">{bot.lastError}</p>}
-                    <div className="mt-4 flex items-center gap-2 border-t border-white/[.06] pt-3 text-[10px] text-primary"><Pencil className="size-3.5" />مدیریت اتصال، ایجنت و دسترسی</div>
+                    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/[.06] pt-3 text-[10px] text-primary">
+                      <span className="inline-flex items-center gap-1"><Pencil className="size-3.5" />ویرایش Bot</span>
+                      <span className="text-muted-foreground">·</span>
+                      <span>شماره‌ها و دسترسی</span>
+                      <span className="text-muted-foreground">·</span>
+                      <span>شخصی‌سازی و منو</span>
+                    </div>
                   </CardContent>
                 </Card>
               </button>
@@ -199,13 +205,19 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
       <DialogContent className="w-[calc(100vw-0.75rem)] max-h-[92dvh] overflow-y-auto rounded-[22px] p-3 sm:p-6 max-w-2xl">
         <DialogHeader>
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0"><DialogTitle className="truncate">{bot.name}</DialogTitle><DialogDescription className="mt-1">مدیریت ایجنت، اتصال، Webhook و کاربران مجاز ربات.</DialogDescription></div>
+            <div className="min-w-0"><DialogTitle className="truncate">{bot.name}</DialogTitle><DialogDescription className="mt-1">اتصال، ایجنت، شماره‌های مجاز، سقف مصرف و شخصی‌سازی کامل ربات از همین پنجره.</DialogDescription></div>
             <Badge className={cn("shrink-0 font-normal", meta.className)}><Icon className="size-3.5" />{meta.label}</Badge>
           </div>
         </DialogHeader>
 
+        <div className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-2 rounded-xl border border-white/[.06] bg-background/95 p-2 backdrop-blur">
+          <Button size="sm" variant="outline" onClick={() => document.getElementById("telegram-bot-connection")?.scrollIntoView({ behavior: "smooth", block: "start" })}>اتصال Bot</Button>
+          <Button size="sm" variant="outline" onClick={() => document.getElementById("telegram-bot-access")?.scrollIntoView({ behavior: "smooth", block: "start" })}>شماره‌ها و دسترسی</Button>
+          <Button size="sm" variant="outline" onClick={() => document.getElementById("telegram-bot-customizer")?.scrollIntoView({ behavior: "smooth", block: "start" })}>شخصی‌سازی Bot</Button>
+        </div>
+
         <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
-          <Card className="border-white/[.06] bg-white/[.02]">
+          <Card id="telegram-bot-connection" className="border-white/[.06] bg-white/[.02]">
             <CardHeader><CardTitle className="text-sm">تنظیمات ربات</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label>نام نمایشی</Label><Input value={name} onChange={(event) => setName(event.target.value)} /></div>
@@ -317,7 +329,7 @@ export function TelegramAccessManager({ botId }: { botId: string }) {
   const parseLimit = (value: string) => Math.max(0, Math.min(10_000_000, Math.floor(Number(value) || 0)));
 
   return (
-    <Card className="border-white/[.06] bg-white/[.02]">
+    <Card id="telegram-bot-access" className="border-white/[.06] bg-white/[.02]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />مدیریت دسترسی کاربران</CardTitle>
         <p className="text-xs leading-6 text-muted-foreground">شماره‌ها را یکی‌یکی یا فله‌ای وارد کن. برای هر شماره، دسترسی و سقف مصرف جداگانه نگه داشته می‌شود.</p>
@@ -506,7 +518,7 @@ function TelegramCustomizerForm({
   });
 
   return (
-    <Card className="border-primary/15 bg-primary/[.025]">
+    <Card id="telegram-bot-customizer" className="border-primary/15 bg-primary/[.025]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm"><Pencil className="size-4 text-primary" />استودیو شخصی‌سازی ربات</CardTitle>
         <p className="text-xs leading-6 text-muted-foreground">متن‌های خوش‌آمد، راهنما، دکمه‌ها، پیام‌های «در حال کار» و بنر را برای همین ربات تغییر بده. ذخیره‌سازی روی خود Bot Profile انجام می‌شود.</p>
