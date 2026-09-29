@@ -160,3 +160,6 @@ The codebase is treated as release-ready when:
 The owner entry point is `/admin/access/<CORTEX_ADMIN_ACCESS_TOKEN>`. The access token is never rendered back into API responses. After exchange, the browser receives only the short-lived HttpOnly admin session cookie.
 
 Inside **AI زیرساخت**, the owner can create/rotate/disable system Providers, set Base URLs and API keys, inspect provider health, attach Model Catalog entries, and select the default Trial model. Plan/model access is controlled separately through the billing matrix.
+
+
+**Trial routing:** `Trial Provider` is the upstream credential/endpoint, while `Trial Default Model` is the Model Catalog route. The default model should be attached to the intended Trial Provider; the Free workspace then uses that route and its normal billing reservation decrements the Trial credit balance.
