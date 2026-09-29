@@ -54,7 +54,7 @@ export function BillingView(){
   const plan=data.account.plan;
   const balancePct=plan.monthlyCredits?Math.min(100,Math.round((Math.max(0,data.account.balanceCredits)/plan.monthlyCredits)*100)):0;
   const pending=data.topUpRequests.filter(x=>x.status==="pending").length;
-  const needsPlan = plan.key === "free" || (plan.monthlyCredits > 0 && data.account.balanceCredits <= 0);
+  const needsPlan = plan.monthlyCredits > 0 && data.account.balanceCredits <= 0;
   const lowBalance = !needsPlan && plan.monthlyCredits > 0 && balancePct <= 20;
 
   const modelUsage = data.usage30Days.byModel ?? [];
@@ -199,26 +199,29 @@ export function BillingView(){
           const isCurrent=item.key===plan.key;
           const featured=item.key==="growth";
           const details:Record<string,{headline:string;features:string[]}>={
-            launch:{headline:"شروع هوشمندانه",features:["تا ۲ Agent","دانش محدود","مدل‌های سریع و اقتصادی","Telegram پایه"]},
-            growth:{headline:"پیشنهاد تیمی",features:["چندین Agent","دانش بیشتر","مدل‌های با کیفیت بالاتر","تحلیل مصرف دقیق","اولویت بالاتر"]},
-            scale:{headline:"قدرت واقعی اتوماسیون",features:["Agentهای بیشتر","مدل‌های قوی‌تر","چند Bot","گزارش پیشرفته","اولویت پاسخ بالا"]},
-            enterprise:{headline:"سطح سازمانی",features:["همه امکانات","مدل‌های خاص","سفارشی‌سازی و SLA","پشتیبانی اختصاصی"]},
+            launch:{headline:"برای شروع سریع و کم‌ریسک",features:["تا ۲ Agent","دانش محدود و کنترل‌شده","مدل‌های اقتصادی و سریع","اتصال پایه Telegram"]},
+            growth:{headline:"تعادل ایده‌آل برای تیم در حال رشد",features:["چندین Agent","پایگاه دانش گسترده‌تر","مدل‌های با کیفیت بالاتر","تحلیل دقیق مصرف و هزینه","اولویت پاسخ بالاتر"]},
+            scale:{headline:"برای اتوماسیون جدی و مصرف سنگین",features:["Agentهای بیشتر","مدل‌های قوی‌تر","چند Bot","گزارش‌های پیشرفته","اولویت پاسخ‌گویی بالا"]},
+            enterprise:{headline:"کنترل کامل برای سازمان",features:["تمام ظرفیت Cortex","مدل‌های اختصاصی","سفارشی‌سازی و SLA","پشتیبانی اختصاصی و قرارداد سازمانی"]},
           };
           const meta=details[item.key] ?? details.launch;
-          return <article key={item.id} className={cn("relative flex h-full flex-col overflow-hidden rounded-2xl border p-4 sm:p-5",featured?"border-primary/45 bg-primary/[.075] shadow-[0_24px_70px_rgba(59,130,255,.16)] lg:-translate-y-1":"border-border/65 bg-background/30")}>
+          return <article key={item.id} className={cn("relative flex min-h-[430px] h-full sm:min-h-[460px] lg:min-h-[500px] flex-col overflow-hidden rounded-2xl border p-4 sm:p-5",featured?"border-primary/45 bg-primary/[.075] shadow-[0_24px_70px_rgba(59,130,255,.16)]":"border-border/65 bg-background/30")}>
             {featured&&<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-violet-400 to-primary"/>}
             <div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-black">{item.name}</h3>{featured&&<Badge className="bg-primary text-[8px]">پیشنهاد ویژه</Badge>}{isCurrent&&<Badge variant="outline" className="border-primary/20 bg-primary/5 text-[8px] text-primary">پلن فعلی</Badge>}</div><p className="mt-1 text-[10px] font-semibold text-primary/90">{meta.headline}</p></div><WalletCards className="size-5 text-primary"/></div>
             <p className="mt-4 text-2xl font-black">{item.priceToman?formatTomanCompact(item.priceToman):"از ۳۵٬۰۰۰٬۰۰۰"}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.priceToman?"تومان / ماه":"تومان / ماه · توافقی"}</p>
             <p className="mt-3 text-sm font-black">{item.monthlyCredits?formatCountCompact(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار توافقی"}</p>
             <div className="my-4 h-px bg-border/60"/><div className="space-y-2">{meta.features.map((feature)=><div key={feature} className="flex items-start gap-2 text-[10px] leading-5 text-muted-foreground"><CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-400"/>{feature}</div>)}</div>
-            <div className="mt-auto pt-5">{isCurrent?<button type="button" disabled className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold text-muted-foreground">پلن فعلی</button>:item.key==="enterprise"?<button type="button" onClick={()=>toast.info("Enterprise به‌صورت قراردادی فعال می‌شود و شرایط SLA اختصاصی دارد.")} className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold">درخواست Enterprise</button>:<button type="button" disabled={planPurchase.isPending} onClick={()=>planPurchase.mutate(item.key)} className="flex h-10 w-full items-center justify-center rounded-xl bg-primary px-4 text-xs font-black text-primary-foreground disabled:opacity-60">{planPurchase.isPending?"در حال انتقال به پرداخت…":featured?"قدرت بیشتری آزاد کن":"انتخاب "+item.name}</button>}</div>
-            {featured&&<p className="mt-2 text-center text-[9px] text-muted-foreground">تعادل ایده‌آل بین قدرت و هزینه برای تیم‌های در حال رشد.</p>}
+            <div className="mt-auto min-h-14 pt-5">{isCurrent?<button type="button" disabled className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold text-muted-foreground">پلن فعلی</button>:item.key==="enterprise"?<button type="button" onClick={()=>toast.info("Enterprise به‌صورت قراردادی فعال می‌شود و شرایط SLA اختصاصی دارد.")} className="flex h-10 w-full items-center justify-center rounded-xl border border-border/70 text-xs font-bold">درخواست Enterprise</button>:<button type="button" disabled={planPurchase.isPending} onClick={()=>planPurchase.mutate(item.key)} className="flex h-10 w-full items-center justify-center rounded-xl bg-primary px-4 text-xs font-black text-primary-foreground disabled:opacity-60">{planPurchase.isPending?"در حال انتقال به پرداخت…":featured?"قدرت بیشتری آزاد کن":"انتخاب "+item.name}</button>}</div>
+            <p className="mt-2 min-h-4 text-center text-[9px] text-muted-foreground">{featured?"تعادل ایده‌آل بین قدرت و هزینه برای تیم‌های در حال رشد.":"\u00A0"}</p>
           </article>;
         })}
       </div>
     </section>
 
     <section id="cortex-models" className="cortex-panel rounded-2xl p-4 sm:p-6 scroll-mt-20">
+      {plan.key === "free" && <div className="mb-4 rounded-2xl border border-primary/15 bg-primary/[.04] p-3 text-xs leading-6 text-muted-foreground">
+        <span className="font-black text-foreground">پلن آزمایشی:</span> برای کنترل هزینه، فقط دو مدل اقتصادی منتخب Cortex در این سطح فعال هستند؛ مدل‌های حرفه‌ای‌تر با ارتقا به پلن‌های بالاتر باز می‌شوند.
+      </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="cortex-kicker">CORTEX MODEL CATALOG</p><h2 className="mt-2 text-xl font-black">مدل‌ها بر اساس پلن باز می‌شوند.</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">مدل‌ها با نام و قابلیت نمایش داده می‌شوند؛ اتصال و زیرساخت را Cortex مدیریت می‌کند.</p></div><span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[9px] text-primary">{formatCountCompact(data.models.length)} مدل</span></div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{data.models.map(model=>{const allowed=model.enabledForPlan;return <article key={model.id} className={cn("rounded-2xl border p-4",allowed?"border-border/70 bg-background/30":"border-border/45 bg-background/15 opacity-65")}><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-black">{model.displayName}</p><p className="mt-1 text-[10px] text-muted-foreground">{model.qualityTier==="economy"?"سریع و اقتصادی":model.qualityTier==="balanced"?"حرفه‌ای":model.qualityTier==="premium"?"متخصص":"پیشرفته"}</p></div><Badge variant={allowed?"default":"outline"}>{allowed?"مجاز":"قفل"}</Badge></div><div className="mt-3 flex flex-wrap gap-1.5">{model.reasoning&&<span className="rounded-full border border-border/60 px-2 py-1 text-[8px]">استدلال</span>}{model.tools&&<span className="rounded-full border border-border/60 px-2 py-1 text-[8px]">ابزار</span>}{model.vision&&<span className="rounded-full border border-border/60 px-2 py-1 text-[8px]">Vision</span>}</div><p className="mt-3 text-[10px] leading-5 text-muted-foreground">{allowed?"در پلن فعلی قابل استفاده است.":"با ارتقا به پلن بالاتر باز می‌شود."}</p></article>})}</div>
     </section>

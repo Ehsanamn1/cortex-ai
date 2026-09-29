@@ -69,6 +69,8 @@ jobs:
           CORTEX_PAYMENT_CALLBACK_URL: ${{ secrets.CORTEX_PAYMENT_CALLBACK_URL || vars.CORTEX_PAYMENT_CALLBACK_URL }}
           CORTEX_CUSTOMER_APP_URL: ${{ secrets.CORTEX_CUSTOMER_APP_URL || vars.CORTEX_CUSTOMER_APP_URL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || vars.OPENROUTER_API_KEY }}
+          CORTEX_RESEND_API_KEY: ${{ secrets.CORTEX_RESEND_API_KEY || vars.CORTEX_RESEND_API_KEY }}
+          CORTEX_EMAIL_FROM: ${{ secrets.CORTEX_EMAIL_FROM || vars.CORTEX_EMAIL_FROM }}
         run: |
           set -euo pipefail
           put_secret() {
@@ -92,6 +94,8 @@ jobs:
           put_secret CORTEX_PAYMENT_CALLBACK_URL "$CORTEX_PAYMENT_CALLBACK_URL"
           put_secret CORTEX_CUSTOMER_APP_URL "$CORTEX_CUSTOMER_APP_URL"
           put_secret OPENROUTER_API_KEY "$OPENROUTER_API_KEY"
+          put_secret CORTEX_RESEND_API_KEY "$CORTEX_RESEND_API_KEY"
+          put_secret CORTEX_EMAIL_FROM "$CORTEX_EMAIL_FROM"
       - name: Synchronize production database schema
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
@@ -116,7 +120,7 @@ jobs:
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "Postgres URL missing"; exit 1; }
           schema="$(DATABASE_URL="$db_url" npx prisma db pull --print --force)"
-          for model in User Workspace Agent AgentApiKey KnowledgeSource KnowledgeDocument KnowledgeChunk VectorPoint Conversation Message ProviderConfig UsagePolicy AgentProviderConfig TelegramBot TelegramUser UsageReservation UsageEvent AuditLog MemoryEntry Plan ModelCatalog PlanModelAccess WorkspaceBillingAccount Subscription CreditLedgerEntry CreditReservation BillingCharge Invoice; do
+          for model in User Workspace Agent AgentApiKey KnowledgeSource KnowledgeDocument KnowledgeChunk VectorPoint Conversation Message ProviderConfig UsagePolicy AgentProviderConfig TelegramBot TelegramUser UsageReservation UsageEvent AuditLog MemoryEntry Plan ModelCatalog PlanModelAccess WorkspaceBillingAccount Subscription CreditLedgerEntry CreditReservation BillingCharge Invoice PasswordResetToken; do
             [[ "$schema" == *"model $model"* ]] || { echo "Missing Prisma model in production schema: $model"; exit 1; }
           done
           echo "Production database contract verified."
@@ -370,6 +374,15 @@ jobs:
           check_authed_json "/api/notifications?workspaceId=$smoke_workspace_id" "200"
           check_authed_json "/api/search?q=Cortex&workspaceId=$smoke_workspace_id" "200"
           check_authed_json "/api/billing/topup-request?workspaceId=$smoke_workspace_id" "200"
+
+          reset_request_body="$(jq -nc '{email:"cortex-reset-nonexistent@example.invalid"}')"
+          reset_request_tmp="$(mktemp)"
+          reset_request_status="$(curl -sS --retry 3 --retry-delay 1 --retry-all-errors --max-time 20 -H "Content-Type: application/json" -d "$reset_request_body" -o "$reset_request_tmp" -w "%{http_code}" "$base/api/auth/forgot-password")"
+          echo "POST $base/api/auth/forgot-password (nonexistent email) -> HTTP $reset_request_status"
+          test "$reset_request_status" = "200"
+          jq -e '.ok == true' "$reset_request_tmp" >/dev/null
+          rm -f "$reset_request_tmp"
+
 
           check_noauth_json "/api/control-center/settings" "401"
           check_noauth_json "/api/control-center/plugins" "401"

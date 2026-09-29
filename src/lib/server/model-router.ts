@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { getModelRate, type KnownModelCatalogEntry } from "@/lib/server/pricing";
 import type { LLMProvider } from "@/lib/providers/llm/types";
 
-export type ManagedPlanKey = "launch" | "growth" | "scale" | "enterprise";
+export type ManagedPlanKey = "free" | "launch" | "growth" | "scale" | "enterprise";
 export type ManagedModelTier = "economy" | "balanced" | "premium" | "deep";
 
 export interface ManagedModelDefinition extends KnownModelCatalogEntry {
@@ -36,15 +36,15 @@ export function getManagedModelCatalog(): ManagedModelDefinition[] {
       speedTier: "fast",
       tier: "economy",
       creditRatePer1K: 1.5,
-      planKeys: ["launch", "growth", "scale", "enterprise"],
+      planKeys: ["free", "launch", "growth", "scale", "enterprise"],
       tools: true,
       reasoning: true,
     },
     {
       key: "launch-balanced",
       provider: "OpenRouter",
-      providerModelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.7-flash"),
-      modelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.7-flash"),
+      providerModelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.5-flash-02-23"),
+      modelId: envModel("CORTEX_MODEL_LAUNCH_BALANCED", "qwen/qwen3.5-flash-02-23"),
       displayName: "Cortex Smart",
       description: "تعادل سرعت، هزینه و کیفیت",
       qualityTier: "economy",

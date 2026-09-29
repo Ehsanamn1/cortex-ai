@@ -5,7 +5,7 @@ import { getManagedModelCatalog } from "@/lib/server/model-router";
 import { getUsdTomanRate } from "@/lib/server/fx";
 
 export const DEFAULT_BILLING_PLANS = [
-  { key: "free", name: "Trial", description: "دسترسی آزمایشی برای انتخاب پلن تجاری", priceToman: 0, monthlyCredits: 0, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 0 },
+  { key: "free", name: "آزمایشی", description: "دسترسی محدود برای آشنایی با Cortex؛ فقط مدل‌های اقتصادی منتخب", priceToman: 0, monthlyCredits: 1_000, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 0 },
   { key: "launch", name: "Launch", description: "شروع هوشمندانه برای تست و راه‌اندازی", priceToman: 3_900_000, monthlyCredits: 15_000, overageCreditPriceToman: 260, overageEnabled: false, sortOrder: 1 },
   { key: "growth", name: "Growth", description: "پیشنهاد تیمی؛ تعادل ایده‌آل بین قدرت و هزینه", priceToman: 12_900_000, monthlyCredits: 80_000, overageCreditPriceToman: 220, overageEnabled: false, sortOrder: 2 },
   { key: "scale", name: "Scale", description: "قدرت واقعی اتوماسیون برای مصرف سنگین", priceToman: 24_900_000, monthlyCredits: 180_000, overageCreditPriceToman: 190, overageEnabled: false, sortOrder: 3 },
@@ -142,7 +142,7 @@ async function ensureKnownModelCatalog() {
     for (const entry of known) {
       const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel("OpenRouter", entry.providerModelId);
       for (const plan of plans) {
-        const enabled = plan.key !== "free" && entry.planKeys.includes(plan.key as any) && Boolean(entry.commercialAvailable ?? true);
+        const enabled = entry.planKeys.includes(plan.key as any) && Boolean(entry.commercialAvailable ?? true);
         await db.planModelAccess.upsert({
           where: { planId_modelCatalogId: { planId: plan.id, modelCatalogId: catalog.id } },
           update: { enabled, creditMultiplierBps: Math.max(1, fallbackMultiplier) },
@@ -446,7 +446,7 @@ export async function getBillingSnapshot(workspaceId: string) {
         structuredOutput: item.structuredOutput,
         reasoning: item.reasoning,
         commercialAvailable: item.commercialAvailable,
-        enabledForPlan: accessMap.get(item.id)?.enabled ?? false,
+        enabledForPlan: Boolean(managed && managed.planKeys.includes(account.plan.key as any) && item.commercialAvailable),
         creditMultiplierBps: accessMap.get(item.id)?.creditMultiplierBps ?? defaultCreditMultiplierBps(item.qualityTier),
         creditRatePer1K: managed?.creditRatePer1K ?? null,
       };
@@ -577,8 +577,11 @@ export async function reserveBillingCredits(params: {
   const existingAccess = await db.planModelAccess.findUnique({
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
   });
+  const managedForPlan = getManagedModelCatalog().find(
+    (entry) => entry.providerModelId.toLowerCase() === params.model.toLowerCase(),
+  );
 
-  if (account.enforcementEnabled && account.plan.priceToman > 0 && !existingAccess?.enabled) {
+  if (!managedForPlan || !managedForPlan.planKeys.includes(account.plan.key as any) || !existingAccess?.enabled) {
     throw new BillingModelUnavailableError(params.model);
   }
 

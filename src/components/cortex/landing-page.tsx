@@ -58,7 +58,7 @@ export function LandingPage() {
   }
 
   return (
-    <main id="top" dir="rtl" className="min-h-dvh overflow-x-hidden bg-background pb-20 text-foreground sm:pb-0">
+    <main id="top" dir="rtl" className="cortex-landing min-h-dvh overflow-x-clip overflow-y-visible bg-background pb-20 text-foreground sm:pb-0">
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/75 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <a href="#top" className="shrink-0" aria-label="Cortex AI">

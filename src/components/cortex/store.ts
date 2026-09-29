@@ -59,7 +59,7 @@ export const useCortexStore = create<CortexState>()((set) => ({
       user,
       workspaces,
       activeWorkspaceId: workspaces[0]?.id ?? null,
-      view: "billing",
+      view: "dashboard",
       activeAgentId: null,
       activeConversationId: null,
       agentTab: "overview",

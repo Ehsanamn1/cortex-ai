@@ -56,7 +56,7 @@ export function getModelRate(provider: string, model: string): ModelRate {
     return { inputUsdPer1M: 0.66, outputUsdPer1M: 1.98, known: true, label: "DeepSeek V4 Pro (off-peak base)" };
   }
 
-  if (routedProvider.includes("qwen") && m.includes("qwen3.7-flash")) return { inputUsdPer1M: 0.03, outputUsdPer1M: 0.13, known: true, label: "Qwen3.7 Flash" };
+  if (routedProvider.includes("qwen") && (m.includes("qwen3.5-flash") || m.includes("qwen3.7-flash"))) return { inputUsdPer1M: 0.065, outputUsdPer1M: 0.26, known: true, label: "Qwen3.5 Flash" };
   if (routedProvider.includes("qwen") && m.includes("qwen3.8-max")) return { inputUsdPer1M: 2, outputUsdPer1M: 6, known: true, label: "Qwen3.8 Max" };
 
   const input = envRate("CORTEX_INPUT_USD_PER_1M");

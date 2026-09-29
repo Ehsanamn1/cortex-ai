@@ -341,7 +341,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
   const view = useCortexStore((s) => s.view);
   const setView = useCortexStore((s) => s.setView);
 
-  const mobileItems = (["billing", "dashboard", "agents", "telegram"] as View[])
+  const mobileItems = (["dashboard", "billing", "agents", "telegram"] as View[])
     .map((view) => items.find((item) => item.view === view))
     .filter((item): item is NavItem => Boolean(item));
   return (
@@ -349,7 +349,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
       aria-label="ناوبری موبایل"
       className="cortex-mobile-nav fixed inset-x-0 bottom-0 z-50 border-t shadow-[0_-12px_35px_rgba(0,0,0,.18)] backdrop-blur-xl lg:hidden"
     >
-      <div className="mx-auto grid w-full max-w-lg grid-cols-4 items-stretch px-2">
+      <div className="mx-auto grid w-full max-w-lg grid-cols-4 items-stretch gap-0.5 px-2 pb-[max(env(safe-area-inset-bottom),4px)]">
         {mobileItems.map((item) => {
           const active = item.matches.includes(view);
           return (
@@ -370,7 +370,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
               )}>
                 <item.icon aria-hidden="true" className="size-[18px]" />
               </span>
-              <span>{item.view === "billing" ? "پلن" : item.view === "dashboard" ? "خانه" : item.view === "agents" ? "ایجنت‌ها" : "تلگرام"}</span>
+              <span>{item.view === "dashboard" ? "داشبورد" : item.view === "billing" ? "پلن و اعتبار" : item.view === "agents" ? "ایجنت‌ها" : "تلگرام"}</span>
             </button>
           );
         })}
@@ -543,7 +543,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main className="cortex-scroll flex-1 overflow-y-auto">
+        <main className="cortex-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
           <div className="mx-auto w-full max-w-6xl px-3 pb-40 pt-4 sm:px-4 sm:pb-36 sm:pt-6 lg:px-8 lg:pb-10 lg:pt-8">
             <AnimatePresence mode="wait">
               <ViewErrorBoundary key={viewKey}>
