@@ -363,8 +363,15 @@ function SystemProvidersPanel() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(mode === "update" ? body : { ...body, action: mode }),
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error?.message || payload.message || "عملیات Provider ناموفق بود.");
+      const payload = await response.json().catch(() => ({})) as {
+        data?: unknown;
+        error?: { message?: string } | string;
+        message?: string;
+      };
+      if (!response.ok) {
+        const errorMessage = typeof payload.error === "string" ? payload.error : payload.error?.message;
+        throw new Error(errorMessage || payload.message || "عملیات Provider ناموفق بود.");
+      }
       return payload.data ?? payload;
     },
     onSuccess: (_, vars) => {
