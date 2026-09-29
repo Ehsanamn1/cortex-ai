@@ -20,7 +20,7 @@ Advanced roadmap capabilities remain intentionally out of the active MVP path un
 - **Knowledge files (production):** private Cloudflare R2 through S3-compatible presigned requests. Raw upload bytes do not pass through the Worker in the normal flow.
 - **Knowledge files (local/development):** a small PostgreSQL `db64://` fallback remains available only outside production when R2 is unavailable.
 - **Vector store:** tenant-scoped local PostgreSQL vector records by default, with optional Qdrant adapter.
-- **LLM:** each Agent has its own encrypted OpenAI-compatible provider configuration; legacy workspace-level configuration and environment fallback remain only for backward compatibility.
+- **LLM:** production customer Agents resolve an admin-owned **System Provider Registry** from the database. Each ModelCatalog entry can bind to a Provider with encrypted API credentials, Base URL, protocol and auth mode. PlanModelAccess controls which models a plan can use. The zero-price `free`/آزمایشی plan can be routed to one admin-selected `isTrialDefault` model backed by an `isTrialProvider`; its 1,000 monthly credits are consumed through the same billing reservation/charge path as paid plans. Legacy per-Agent/workspace provider configuration remains only for backward compatibility.
 - **Embeddings:** OpenAI-compatible neural embeddings when configured; otherwise the built-in deterministic lexical engine.
 
 The production Worker runs with `APP_ENV=production` and Node.js compatibility.
@@ -46,13 +46,14 @@ The Cloudflare Worker needs:
 ```text
 DATABASE_URL
 APP_SECRET_KEY
-CORTEX_ADMIN_USERNAME
-CORTEX_ADMIN_PASSWORD
+CORTEX_ADMIN_ENTRY_TOKEN
 R2_ACCOUNT_ID
 R2_BUCKET_NAME
 R2_ACCESS_KEY_ID
 R2_SECRET_ACCESS_KEY
 ```
+
+The private system console is available at `/admin`. Production does not expose a username/password form. Set `CORTEX_ADMIN_ENTRY_TOKEN` to a long random value (at least 48 characters) and use the owner link `/admin/access/<CORTEX_ADMIN_ENTRY_TOKEN>`. The token is never stored in the repository; configure it as a Cloudflare Worker Secret / protected GitHub Environment secret. After exchange, the browser receives a short-lived admin session cookie and is redirected to `/admin`.
 
 Optional runtime settings include:
 
@@ -79,7 +80,14 @@ Keep application secrets in Cloudflare Worker Secrets or the protected GitHub En
 
 ## AI provider
 
-New workspaces should configure the real provider **inside each Agent → هوش مصنوعی**. The provider configuration is stored encrypted server-side and belongs to that Agent. Each Agent can use a different provider, Base URL and model. Legacy workspace-level configuration and environment fallback remain only for backward compatibility; an explicitly configured disabled Agent does not silently fall back. When the Agent has no usable provider, Cortex deliberately returns a `503` configuration error instead of generating a fake answer.
+The owner configures Providers and Models from the private System Desk:
+
+1. Add a Provider with protocol, Base URL, auth mode and API key.
+2. Add a ModelCatalog entry and bind it to that Provider.
+3. Enable that model for the desired Plans in **دسترسی مدل‌ها در هر پلن**.
+4. Mark exactly one active model as **Default Trial** when a zero-plan Trial route is desired.
+
+Customer requests never receive the provider API key or Base URL. The runtime resolves the Agent/model through the database registry and the same billing reservation layer enforces plan access and credit consumption.
 
 The lexical embedding engine is real deterministic retrieval, not a mock. For neural embeddings, configure `OPENAI_API_KEY` and the desired embeddings model.
 
@@ -99,7 +107,8 @@ See `docs/API_ACCESS.md` for the client contract.
 - Knowledge URL ingestion blocks local/private destinations, re-checks redirects and bounds downloads.
 - Provider credentials, Telegram tokens and webhook secrets are encrypted at rest with `APP_SECRET_KEY`.
 - Production sessions require a persistent `APP_SECRET_KEY` of at least 32 characters.
-- Production admin credentials are explicit; the development-only `admin` fallback is disabled in production.
+- Production admin access is passwordless and token-gated through a private entry URL; username/password login is not exposed in production.
+- Provider API keys are encrypted at rest and are never returned by customer-facing APIs.
 - Chat POST requests are not automatically retried by the frontend/API client; only idempotent GET/HEAD/OPTIONS calls are retried.
 - Usage limits use durable PostgreSQL reservations and transaction-scoped advisory locks so concurrent Worker isolates cannot bypass the same quota.
 
