@@ -68,7 +68,15 @@ function CortexCore() {
   );
 }
 
-function DashboardOnboarding({ onNavigate }: { onNavigate: (view: "knowledge" | "agent-new" | "agents") => void }) {
+function DashboardOnboarding({
+  onNavigate,
+  recentAgentId,
+  onOpenAgent,
+}: {
+  onNavigate: (view: "knowledge" | "agent-new" | "agents") => void;
+  recentAgentId?: string;
+  onOpenAgent: (agentId: string, tab: "ai" | "playground") => void;
+}) {
   const [open, setOpen] = useState(
     () => typeof window !== "undefined" && window.localStorage.getItem("cortex:onboarding:dismissed") !== "1",
   );
@@ -80,10 +88,10 @@ function DashboardOnboarding({ onNavigate }: { onNavigate: (view: "knowledge" | 
 
   if (!open) return null;
 
-  const steps: Array<{ number: string; title: string; description: string; view: "knowledge" | "agent-new" | "agents" }> = [
-    { number: "۱", title: "اولین دانش را آپلود کن", description: "PDF، متن یا URL شرکت را اضافه کن.", view: "knowledge" },
-    { number: "۲", title: "اولین Agent را بساز", description: "لحن و قوانین پاسخ‌گویی را تنظیم کن.", view: "agent-new" },
-    { number: "۳", title: "در Playground تست کن", description: "قبل از اتصال به مشتری، پاسخ واقعی بگیر.", view: "agents" },
+  const steps = [
+    { number: "۱", title: "اولین Agent را بساز", description: "نام، لحن و قوانین پاسخ‌گویی را تعیین کن.", action: "create" as const },
+    { number: "۲", title: "مدل را برای Agent تنظیم کن", description: "اتصال مدل و API را از تب «هوش مصنوعی» همان Agent انجام بده.", action: "ai" as const },
+    { number: "۳", title: "در Playground تست کن", description: "قبل از انتشار، پاسخ واقعی همان Agent را بررسی کن.", action: "playground" as const },
   ];
 
   return (
@@ -106,7 +114,18 @@ function DashboardOnboarding({ onNavigate }: { onNavigate: (view: "knowledge" | 
           <button
             key={step.number}
             type="button"
-            onClick={() => { dismiss(); onNavigate(step.view); }}
+            onClick={() => {
+              dismiss();
+              if (step.action === "create") {
+                onNavigate("agent-new");
+                return;
+              }
+              if (recentAgentId) {
+                onOpenAgent(recentAgentId, step.action);
+                return;
+              }
+              onNavigate("agent-new");
+            }}
             className="cortex-action min-h-[142px] rounded-2xl border border-border/60 bg-background/45 p-4 text-right"
           >
             <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">{step.number}</span>
@@ -232,6 +251,7 @@ export function DashboardView() {
   };
 
   const { stats, recentAgents, recentConversations, activity = [] } = dashboardData;
+  const recentAgentId = recentAgents[0]?.id;
   const providers = providersQuery.data;
   const settingEnabled = (key: string, fallback = true) => siteConfigQuery.data?.settings[key] === undefined ? fallback : siteConfigQuery.data.settings[key] !== "false";
   const hasAgents = stats.agents > 0;
@@ -242,7 +262,7 @@ export function DashboardView() {
 
   return (
     <div className="space-y-7">
-      {!hasAgents && <DashboardOnboarding onNavigate={setView} />}
+      {!hasAgents && <DashboardOnboarding onNavigate={setView} recentAgentId={recentAgentId} onOpenAgent={openAgent} />}
 
       {settingEnabled("feature.dashboardHero") && (
       <section className="cortex-hero relative overflow-hidden rounded-[30px] border border-white/[.08]">
@@ -296,10 +316,16 @@ export function DashboardView() {
             </span>
             <div className="min-w-0">
               <p className="text-sm font-bold">مدل زبانی هنوز پیکربندی نشده است</p>
-              <p className="mt-1 text-xs leading-6 text-muted-foreground">قبل از تست ایجنت، سرویس مدل و کلید API را در تنظیمات متصل کنید.</p>
+              <p className="mt-1 text-xs leading-6 text-muted-foreground">اتصال مدل و کلید API را از تب «هوش مصنوعی» داخل همان Agent مدیریت کنید.</p>
             </div>
           </div>
-          <Button variant="outline" className="shrink-0 border-amber-400/20 bg-background/30" onClick={() => setView("settings")}>پیکربندی مدل</Button>
+          <Button
+            variant="outline"
+            className="shrink-0 border-amber-400/20 bg-background/30"
+            onClick={() => (recentAgentId ? openAgent(recentAgentId, "ai") : setView("agent-new"))}
+          >
+            {recentAgentId ? "پیکربندی مدل Agent" : "ساخت اولین Agent"}
+          </Button>
         </motion.section>
       )}
 
@@ -391,18 +417,29 @@ export function DashboardView() {
               </div>
               <p className="mt-4 text-lg font-black">اولین ایجنتت را در ۳ قدم بساز</p>
               <p className="mt-2 text-xs leading-6 text-muted-foreground">از دانش سازمان تا اولین پاسخ، مسیر را همین‌جا شروع کن.</p>
-              <Button className="mt-4" onClick={() => setView("knowledge")}><Plus />شروع از دانش</Button>
+              <Button className="mt-4" onClick={() => setView("agent-new")}><Plus />ساخت اولین Agent</Button>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               {[
-                ["۱", "آپلود دانش", "PDF، متن یا URL را اضافه کن.", "knowledge"],
-                ["۲", "ساخت ایجنت", "لحن و قوانین پاسخ‌گویی را تعیین کن.", "agent-new"],
-                ["۳", "تست در پلی‌گراند", "قبل از انتشار با ایجنت گفتگو کن.", "agents"],
+                ["۱", "ساخت Agent", "نام، لحن و قوانین پاسخ‌گویی را تعیین کن.", "agent-new"],
+                ["۲", "پیکربندی مدل", "از تب «هوش مصنوعی» همان Agent اتصال مدل را تنظیم کن.", "agent-new"],
+                ["۳", "تست در Playground", "بعد از ساخت Agent، وارد Playground شو.", "agents"],
               ].map(([number, title, description, target]) => (
                 <button
                   key={number}
                   type="button"
-                  onClick={() => setView(target as "knowledge" | "agent-new" | "agents")}
+                  onClick={() => {
+                    if (number === "۱") {
+                      setView("agent-new");
+                      return;
+                    }
+                    const targetAgentId = recentAgentId;
+                    if (targetAgentId) {
+                      openAgent(targetAgentId, number === "۲" ? "ai" : "playground");
+                      return;
+                    }
+                    setView("agent-new");
+                  }}
                   className="cortex-action min-h-[150px] rounded-2xl border border-white/[.07] bg-white/[.02] p-4 text-right"
                 >
                   <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">{number}</span>
