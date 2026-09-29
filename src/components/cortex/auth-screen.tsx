@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { FileSearch, GraduationCap, Loader2, MessagesSquare, TriangleAlert } from "lucide-react";
+import { FileSearch, GraduationCap, Loader2, LockKeyhole, MailCheck, MessagesSquare, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -21,6 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const loginSchema = z.object({
   email: z.email({ message: "یک ایمیل معتبر وارد کنید." }),
@@ -58,10 +65,93 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs leading-relaxed text-destructive">{message}</p>;
 }
 
+function ForgotPasswordDialog({ open, onOpenChange, defaultEmail }: { open: boolean; onOpenChange: (open: boolean) => void; defaultEmail: string }) {
+  const [email, setEmail] = useState(defaultEmail);
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [devResetUrl, setDevResetUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setEmail(defaultEmail);
+      setSent(false);
+      setDevResetUrl(null);
+    }
+  }, [open, defaultEmail]);
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    const normalized = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalized)) {
+      toast.error("یک ایمیل معتبر وارد کنید.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await api.requestPasswordReset(normalized);
+      setSent(true);
+      setDevResetUrl(result.devResetUrl ?? null);
+      toast.success("اگر این ایمیل در Cortex ثبت شده باشد، لینک بازنشانی برایت ارسال می‌شود.");
+    } catch (error) {
+      toast.error(error instanceof ApiError || error instanceof Error ? error.message : "ارسال لینک بازنشانی ناموفق بود.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent dir="rtl" className="w-[calc(100%-24px)] max-w-md rounded-[26px] border-border/70 bg-card/95 p-5 shadow-2xl backdrop-blur-2xl sm:p-7">
+        <DialogHeader className="text-right">
+          <div className="mb-3 grid size-12 place-items-center rounded-2xl border border-primary/15 bg-primary/10 text-primary"><LockKeyhole className="size-5" /></div>
+          <DialogTitle className="text-xl font-black">فراموشی رمز عبور</DialogTitle>
+          <DialogDescription className="text-xs leading-6">
+            ایمیلت را وارد کن تا لینک امن بازنشانی رمز عبور برایت ارسال شود.
+          </DialogDescription>
+        </DialogHeader>
+
+        {sent ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-emerald-400/15 bg-emerald-400/[.045] p-4">
+              <div className="flex items-start gap-3">
+                <MailCheck className="mt-0.5 size-5 shrink-0 text-emerald-400" />
+                <div>
+                  <p className="text-sm font-bold">درخواست ثبت شد</p>
+                  <p className="mt-1 text-xs leading-6 text-muted-foreground">صندوق ورودی و پوشه Spam را بررسی کن. لینک بازنشانی تا ۳۰ دقیقه معتبر است.</p>
+                </div>
+              </div>
+            </div>
+            {devResetUrl && (
+              <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[.045] p-3">
+                <p className="text-[10px] font-bold text-amber-300">لینک تست محیط توسعه</p>
+                <a href={devResetUrl} className="mt-1 block break-all text-[10px] leading-5 text-muted-foreground underline">{devResetUrl}</a>
+              </div>
+            )}
+            <Button className="w-full" variant="outline" onClick={() => onOpenChange(false)}>بستن</Button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="mt-3 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-password-email">ایمیل حساب</Label>
+              <Input id="forgot-password-email" type="email" dir="ltr" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" className="text-left" autoComplete="email" />
+            </div>
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting && <Loader2 className="animate-spin" />}
+              {submitting ? "در حال ارسال لینک…" : "ارسال لینک بازنشانی"}
+            </Button>
+            <p className="text-center text-[10px] leading-5 text-muted-foreground">برای حفظ امنیت، حتی اگر ایمیل ثبت نشده باشد پیام مشابه نمایش داده می‌شود.</p>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function LoginForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
   const hydrate = useCortexStore((s) => s.hydrate);
   const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -113,10 +203,20 @@ function LoginForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
         />
         <FieldError message={form.formState.errors.password?.message} />
       </div>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setForgotOpen(true)}
+          className="text-xs font-semibold text-primary transition hover:text-primary/80"
+        >
+          فراموشی رمز عبور؟
+        </button>
+      </div>
       <Button type="submit" className="cortex-auth-submit w-full" disabled={submitting}>
         {submitting && <Loader2 aria-hidden="true" className="animate-spin" />}
         {submitting ? "در حال ورود..." : "ورود به حساب"}
       </Button>
+      <ForgotPasswordDialog open={forgotOpen} onOpenChange={setForgotOpen} defaultEmail={form.getValues("email")} />
     </form>
   );
 }
