@@ -44,8 +44,8 @@ export function BillingView(){
   const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null);
   const planPurchase=useMutation({
     mutationFn:(planKey:string)=>api.startBillingPlanPayment(planKey,workspaceId??undefined),
-    onSuccess:(result)=>{window.location.assign(result.redirectUrl);},
-    onError:(e:Error)=>toast.error(e.message),
+    onSuccess:(result)=>{setSelectedPlanKey(null);window.location.assign(result.redirectUrl);},
+    onError:(e:Error)=>{setSelectedPlanKey(null);toast.error(e.message);},
   });
 
   const enabledModels=useMemo(()=>data?.models.filter(m=>m.enabledForPlan)??[],[data]);
