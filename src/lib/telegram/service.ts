@@ -263,7 +263,7 @@ function formatUsdMicros(value: number) {
 
 async function sendAccessRequired(token: string, chatId: string | number, profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
   return requestContact(token, chatId).catch(async () =>
-    sendMessage(token, chatId, '<b>🔐 تأیید شماره موبایل</b>\\n\\n' + escapeTelegramHtml(profile.accessRequiredText), { parse_mode: 'HTML' }),
+    sendMessage(token, chatId, '<b>🔐 تأیید شماره موبایل</b>\n\n' + escapeTelegramHtml(profile.accessRequiredText), { parse_mode: 'HTML' }),
   );
 }
 
