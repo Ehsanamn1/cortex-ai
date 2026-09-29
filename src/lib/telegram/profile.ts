@@ -60,10 +60,14 @@ export function parseTelegramProfile(raw: any) {
   // phone number or explicitly said no phone was needed. Normalize those legacy
   // defaults at read time so existing bots follow the current onboarding flow
   // without requiring a data migration.
-  if (!raw.welcomeText || /بدون ثبت شماره موبایل/.test(String(raw.welcomeText))) {
+  const legacyWelcomeText =
+    "من دستیار هوشمند Cortex هستم و به دانش و ایجنت این ربات متصل‌ام.\n\nبدون ثبت شماره موبایل شروع کنید؛ فقط پیام‌تان را بفرستید. 🚀";
+  const legacyAccessText =
+    "🔐 برای استفاده از این دستیار، مدیر کسب‌وکار باید شماره شما را در پنل ثبت کند و لینک ورود را برایتان بفرستد.";
+  if (!raw.welcomeText || String(raw.welcomeText).trim() === legacyWelcomeText) {
     merged.welcomeText = TELEGRAM_PROFILE_DEFAULTS.welcomeText;
   }
-  if (!raw.accessRequiredText || /مدیر کسب‌وکار.*شماره.*ثبت/.test(String(raw.accessRequiredText))) {
+  if (!raw.accessRequiredText || String(raw.accessRequiredText).trim() === legacyAccessText) {
     merged.accessRequiredText = TELEGRAM_PROFILE_DEFAULTS.accessRequiredText;
   }
 
