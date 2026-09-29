@@ -10,6 +10,10 @@ function safeLimit(value: unknown, fallback = 100): number {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? Math.min(200, Math.floor(n)) : fallback;
 }
+function safeLimitValue(value: unknown): number | undefined {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.min(10_000_000, Math.floor(n)) : undefined;
+}
 function safeOffset(value: unknown): number {
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 ? Math.min(100_000, Math.floor(n)) : 0;
@@ -61,7 +65,7 @@ async function serializeUsers(botId: string, search = "", limit = 100, offset = 
     db.telegramUser.count({ where }),
   ]);
   const ids = users.map((u) => u.id);
-  if (ids.length === 0) return [];
+  if (ids.length === 0) return { users: [], totalCount, hasMore: false };
 
   const [total, daily, monthly] = await Promise.all([
     db.usageEvent.groupBy({
@@ -158,7 +162,7 @@ export async function PATCH(req: Request, { params }: Params) {
       data.status = body.status;
     }
     for (const key of ["dailyMessageLimit", "monthlyMessageLimit", "dailyTokenLimit", "monthlyTokenLimit"]) {
-      const value = safeLimit(body[key]);
+      const value = safeLimitValue(body[key]);
       if (value !== undefined) data[key] = value;
     }
     if (Object.keys(data).length === 0) {
