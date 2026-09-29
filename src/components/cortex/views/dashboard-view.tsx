@@ -294,7 +294,7 @@ export function DashboardView() {
           className={cn("relative overflow-hidden rounded-[30px] border p-4 shadow-[0_30px_90px_rgba(15,23,42,.14)] sm:p-6 lg:p-7", lowBalance ? "border-amber-400/25 bg-amber-400/[.045]" : "border-primary/20 bg-primary/[.045]")}
         >
           <div className="absolute -end-20 -top-24 size-72 rounded-full bg-primary/10 blur-3xl animate-pulse" />
-          <div className="absolute -start-24 -bottom-28 size-64 rounded-full bg-violet-500/10 blur-3xl" />
+          <div className="absolute -start-24 -bottom-28 size-64 rounded-full bg-primary/5 blur-3xl" />
           <div className="relative grid gap-6 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -312,7 +312,7 @@ export function DashboardView() {
               </div>
               <div className="mt-4">
                 <div className="flex items-center justify-between text-[10px] text-muted-foreground"><span>{lowBalance ? "اعتبار رو به اتمام است" : "اعتبار قابل استفاده"}</span><span>{faNum(balance)} از {faNum(monthlyCredits)} اعتبار</span></div>
-                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted"><motion.div initial={{ width: 0 }} animate={{ width: String(remainingPct || (monthlyCredits === 0 ? 0 : 1)) + "%" }} transition={{ duration: .9, ease: "easeOut" }} className={cn("h-full rounded-full", lowBalance ? "bg-amber-400" : "bg-gradient-to-r from-primary via-violet-400 to-primary")} /></div>
+                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted"><motion.div initial={{ width: 0 }} animate={{ width: String(remainingPct || (monthlyCredits === 0 ? 0 : 1)) + "%" }} transition={{ duration: .9, ease: "easeOut" }} className={cn("h-full rounded-full", lowBalance ? "bg-amber-400" : "bg-gradient-to-r from-primary via-primary to-primary")} /></div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button onClick={() => setView("billing")}><WalletCards />مدیریت پلن و اعتبار</Button>
@@ -327,7 +327,7 @@ export function DashboardView() {
 
       <section aria-label="آمار کلی" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard icon={Bot} label="ایجنت‌ها" value={faNum(stats.activeAgents)} caption={faNum(stats.agents) + " ایجنت ثبت شده"} tint="border-primary/25 bg-primary/10 text-primary" />
-        <StatCard icon={Library} label="منابع دانش" value={faNum(stats.knowledgeReady)} caption={faNum(stats.knowledgeSources) + " منبع در مجموع"} tint="border-violet-400/25 bg-violet-400/10 text-violet-300" />
+        <StatCard icon={Library} label="منابع دانش" value={faNum(stats.knowledgeReady)} caption={faNum(stats.knowledgeSources) + " منبع در مجموع"} tint="border-primary/20 bg-primary/5 text-primary" />
         <StatCard icon={MessagesSquare} label="گفتگوها" value={faNum(stats.conversations)} caption={faNum(stats.messages) + " پیام در مجموع"} tint="border-emerald-400/25 bg-emerald-400/10 text-emerald-300" />
         <StatCard icon={Activity} label="امروز" value={faNum(stats.todayMessages ?? 0)} caption={faNum(stats.todayTokens ?? 0) + " توکن امروز"} tint="border-amber-400/25 bg-amber-400/10 text-amber-300" />
       </section>
