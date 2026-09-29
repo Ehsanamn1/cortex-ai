@@ -20,7 +20,7 @@ export function AuthRoute({ defaultTab }: { defaultTab: "login" | "signup" }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthScreen defaultTab={defaultTab} onAuthenticated={() => router.replace("/")} />
+      <AuthScreen defaultTab={defaultTab} onAuthenticated={() => router.replace("/app")} />
     </QueryClientProvider>
   );
 }
