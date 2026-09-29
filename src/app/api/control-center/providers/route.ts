@@ -56,7 +56,7 @@ function publicProvider(row: any, testModelId: string | null = null) {
 export async function GET(req: Request) {
   try {
     requireAdmin(req);
-    const [providers, trialProvider, trialModel] = await Promise.all([
+    const [providers, trialProvider, trialModel, freePlan] = await Promise.all([
       db.systemProviderConfig.findMany({
         orderBy: [{ isTrialProvider: "desc" }, { enabled: "desc" }, { updatedAt: "desc" }],
         include: {
@@ -69,6 +69,7 @@ export async function GET(req: Request) {
         where: { active: true, trialDefault: true },
         include: { systemProvider: true },
       }),
+      db.plan.findUnique({ where: { key: "free" }, select: { id: true, name: true, monthlyCredits: true } }),
     ]);
     return applyCors(jsonOk({
       providers: providers.map((row) => publicProvider(row, row.models[0]?.modelId ?? null)),
@@ -86,6 +87,8 @@ export async function GET(req: Request) {
           systemProviderId: trialModel.systemProviderId,
           systemProviderName: trialModel.systemProvider?.displayName ?? null,
         } : null,
+        credits: freePlan?.monthlyCredits ?? 0,
+        planName: freePlan?.name ?? "آزمایشی",
         ready: Boolean(trialModel?.active && trialModel?.trialEnabled && trialModel?.systemProvider?.enabled &&
           (trialModel.systemProvider.authMode === "none" || trialModel.systemProvider.apiKeyEncrypted)),
       },
@@ -100,6 +103,87 @@ export async function POST(req: Request) {
     requireAdmin(req);
     const body = await readJson<Record<string, unknown>>(req);
     const action = textValue(body.action, 40) || "create";
+
+    if (action === "configure_trial") {
+      const providerId = textValue(body.providerId, 120);
+      const modelCatalogId = textValue(body.modelCatalogId, 120);
+      if (!providerId || !modelCatalogId) {
+        return applyCors(jsonError("Provider و مدل Trial را هر دو انتخاب کن.", 400), req.headers.get("origin"));
+      }
+
+      const [provider, model] = await Promise.all([
+        db.systemProviderConfig.findUnique({ where: { id: providerId } }),
+        db.modelCatalog.findUnique({ where: { id: modelCatalogId } }),
+      ]);
+      if (!provider) return applyCors(jsonError("Provider انتخاب‌شده پیدا نشد.", 404), req.headers.get("origin"));
+      if (!model) return applyCors(jsonError("مدل انتخاب‌شده پیدا نشد.", 404), req.headers.get("origin"));
+
+      const configured = Boolean(provider.apiKeyEncrypted) || provider.authMode === "none";
+      if (!provider.enabled || !configured) {
+        return applyCors(jsonError("Provider انتخاب‌شده هنوز آماده استفاده نیست. ابتدا آن را فعال و API Key/Base URL را بررسی کن.", 400), req.headers.get("origin"));
+      }
+      if (!model.active) return applyCors(jsonError("مدل انتخاب‌شده فعال نیست.", 400), req.headers.get("origin"));
+
+      const result = await db.$transaction(async (tx) => {
+        await tx.systemProviderConfig.updateMany({
+          where: { id: { not: providerId } },
+          data: { isTrialProvider: false },
+        });
+        await tx.systemProviderConfig.update({
+          where: { id: providerId },
+          data: { isTrialProvider: true },
+        });
+        await tx.modelCatalog.updateMany({
+          where: { trialDefault: true, id: { not: modelCatalogId } },
+          data: { trialDefault: false },
+        });
+        const trialModel = await tx.modelCatalog.update({
+          where: { id: modelCatalogId },
+          data: {
+            systemProviderId: providerId,
+            trialEnabled: true,
+            trialDefault: true,
+            active: true,
+          },
+          include: { systemProvider: true },
+        });
+        const free = await tx.plan.findUnique({ where: { key: "free" }, select: { id: true } });
+        if (free) {
+          await tx.planModelAccess.upsert({
+            where: { planId_modelCatalogId: { planId: free.id, modelCatalogId } },
+            update: { enabled: true },
+            create: { planId: free.id, modelCatalogId, enabled: true, creditMultiplierBps: 100 },
+          });
+        }
+        return trialModel;
+      });
+
+      const runtime = buildSystemProviderForModel(provider, result.modelId);
+      const health = await runtime.healthCheck();
+      await db.systemProviderConfig.update({
+        where: { id: providerId },
+        data: {
+          lastHealthStatus: health.ok ? "healthy" : "error",
+          lastHealthError: health.ok ? null : health.error,
+          lastHealthAt: new Date(),
+        },
+      });
+
+      return applyCors(jsonOk({
+        ready: health.ok,
+        provider: publicProvider({ ...provider, isTrialProvider: true }),
+        model: {
+          id: result.id,
+          routeKey: result.routeKey,
+          displayName: result.displayName,
+          modelId: result.modelId,
+          systemProviderId: result.systemProviderId,
+          trialEnabled: result.trialEnabled,
+          trialDefault: result.trialDefault,
+        },
+        health,
+      }), req.headers.get("origin"));
+    }
 
     if (action === "test") {
       const id = textValue(body.id, 120);
