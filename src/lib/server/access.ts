@@ -38,6 +38,7 @@ export function serializeAgent(agent: Agent, counts: { knowledgeSources: number;
     instructions: agent.instructions,
     persona: agent.persona,
     systemPrompt: agent.systemPrompt,
+    modelKey: agent.modelKey,
     temperature: agent.temperature,
     topP: agent.topP,
     maxTokens: agent.maxTokens,
