@@ -130,9 +130,16 @@ export async function POST(req: Request) {
     });
     if (!billing) return applyCors(jsonError("حساب اعتبار فضای کاری پیدا نشد.", 404), req.headers.get("origin"));
     const limits = getPlanFeatureLimits(billing.plan.key);
-    if (limits.maxAgents !== null) {
+    // Trial is intentionally limited to exactly one Agent. Keep this invariant
+    // explicit at the API boundary so legacy/cached plan policy data cannot
+    // accidentally turn the Trial workspace into a zero-Agent experience.
+    const maxAgents =
+      billing.plan.key === "free"
+        ? Math.max(1, limits.maxAgents ?? 1)
+        : limits.maxAgents;
+    if (maxAgents !== null) {
       const agentCount = await db.agent.count({ where: { workspaceId: membership.workspaceId } });
-      if (agentCount >= limits.maxAgents) throw planFeatureError("تعداد Agent");
+      if (agentCount >= maxAgents) throw planFeatureError("تعداد Agent");
     }
 
     if (!getManagedModelCatalog().some((model) => model.key === validated.data!.modelKey && model.planKeys.includes(billing.plan.key as any))) {
