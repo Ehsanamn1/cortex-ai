@@ -357,7 +357,7 @@ function SystemProvidersPanel() {
   const save = useMutation({
     mutationFn: async ({ mode, body }: { mode: "create" | "update" | "test"; body: Record<string, unknown> }) => {
       const id = typeof body.id === "string" ? body.id : "";
-      const response = await fetch("/api/control-center/providers" + (mode === "delete" ? "?id=" + encodeURIComponent(id) : ""), {
+      const response = await fetch("/api/control-center/providers", {
         method: mode === "update" || mode === "test" ? (mode === "test" ? "POST" : "PATCH") : "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
