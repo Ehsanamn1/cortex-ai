@@ -1,31 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/db", () => {
-  const providerFixture = {
-    id: "provider-1", key: "trial-primary", displayName: "Trial Primary", providerName: "OpenAI",
-    protocol: "openai-compatible", authMode: "bearer", baseUrl: "https://api.example.test/v1",
-    apiKeyEncrypted: "enc:SECRET", enabled: true, isTrialProvider: true,
-  };
-  const tx = {
-    systemProviderConfig: {
-      updateMany: vi.fn(),
-      create: vi.fn(async () => providerFixture),
-      update: vi.fn(async () => providerFixture),
-    },
-  };
-  const db = {
+const { txCreate } = vi.hoisted(() => ({ txCreate: vi.fn() }));
+
+vi.mock("@/lib/db", () => ({
+  db: {
     systemProviderConfig: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
-      create: vi.fn(async () => providerFixture),
-      update: vi.fn(async () => providerFixture),
+      create: vi.fn(),
+      update: vi.fn(),
       updateMany: vi.fn(),
       delete: vi.fn(),
     },
-    $transaction: vi.fn(async (callback: any) => callback(tx)),
-  };
-  return { db };
-});
+    $transaction: vi.fn(async (callback: any) => callback({
+      systemProviderConfig: {
+        updateMany: vi.fn(),
+        create: txCreate,
+        update: vi.fn(),
+      },
+    })),
+  },
+}));
 vi.mock("@/lib/server/admin-auth", () => ({ requireAdmin: vi.fn(() => "owner") }));
 vi.mock("@/lib/server/secrets", () => ({
   encryptSecret: vi.fn((value: string) => "enc:" + value),
@@ -45,11 +40,11 @@ import { POST, GET } from "@/app/api/control-center/providers/route";
 describe("Admin Provider Registry", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(db.systemProviderConfig.create).mockResolvedValue({
+    txCreate.mockResolvedValue({
       id: "provider-1", key: "trial-primary", displayName: "Trial Primary", providerName: "OpenAI",
       protocol: "openai-compatible", authMode: "bearer", baseUrl: "https://api.example.test/v1",
       apiKeyEncrypted: "enc:SECRET", enabled: true, isTrialProvider: true,
-    } as never);
+    });
   });
 
   it("stores an API key encrypted and never exposes it through GET", async () => {
@@ -71,7 +66,7 @@ describe("Admin Provider Registry", () => {
     expect(response.status).toBe(201);
     const body = await response.json() as any;
     expect(JSON.stringify(body)).not.toContain("SECRET");
-    expect(vi.mocked(db.systemProviderConfig.create)).toHaveBeenCalledWith(expect.objectContaining({
+    expect(txCreate).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ apiKeyEncrypted: "enc:SECRET", isTrialProvider: true }),
     }));
   });
