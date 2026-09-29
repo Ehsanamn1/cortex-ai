@@ -144,19 +144,15 @@ class ProviderManager {
 
   async resolveForAgent(agentId: string, workspaceId?: string): Promise<{ provider: LLMProvider | null; status: ProviderStatus }> {
     if (workspaceId && process.env.APP_ENV !== "test" && process.env.NODE_ENV !== "test") {
-      const agentForRouting = await db.agent.findUnique({ where: { id: agentId }, select: { modelKey: true } });
-      if (agentForRouting?.modelKey) {
-        try {
-          const managed = await resolveManagedModelForAgent(agentId, workspaceId);
-          const provider = new OpenRouterProvider({ model: managed.model.providerModelId });
-          if (provider.isConfigured()) {
-            return { provider: new ResilientProvider(provider, agentId, workspaceId), status: this.statusFor(provider, "environment") };
-          }
-        } catch (error) {
-          const status = typeof error === "object" && error && "status" in error ? Number((error as { status?: unknown }).status) : 503;
-          if (status !== 404) throw error;
-        }
+      const managed = await resolveManagedModelForAgent(agentId, workspaceId);
+      const provider = new OpenRouterProvider({ model: managed.model.providerModelId });
+      if (!provider.isConfigured()) {
+        throw Object.assign(new Error("سرویس هوش مصنوعی Cortex از سمت سرور آماده نیست."), { status: 503, code: "managed_provider_unavailable" });
       }
+      return {
+        provider: new ResilientProvider(provider, agentId, workspaceId),
+        status: this.statusFor(provider, "environment"),
+      };
     }
 
     const useConfigCache = process.env.APP_ENV !== "test" && process.env.NODE_ENV !== "test";
