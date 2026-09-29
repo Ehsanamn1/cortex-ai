@@ -173,13 +173,13 @@ function BillingPanel({ section }: { section: Section }) {
   </Card>)}</div></div>;
 
   if (section === "models") return <div className="space-y-4">
-    <ModelCreate onSave={(body) => create.mutate({ action: "create_model", body })}/>
+    <ModelCreate providers={q.data.systemProviders ?? []} onSave={(body) => create.mutate({ action: "create_model", body })}/>
     <div className="grid gap-3">{(q.data.models ?? []).map((model: any) => <Card key={model.id} className="border-border">
     <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
       <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{model.displayName}</p><p className="mt-1 text-[11px] text-muted-foreground">{model.provider} · <code>{model.modelId}</code></p></div>
       <div className="grid grid-cols-2 gap-2 text-[10px] sm:grid-cols-4 lg:w-[440px]"><span>Input <b>{"$" + model.inputUsdPer1M}</b></span><span>Output <b>{"$" + model.outputUsdPer1M}</b></span><span>Tier <b>{model.qualityTier}</b></span><span>Active <b>{model.active?"Yes":"No"}</b></span></div>
       <Button size="sm" variant="ghost" onClick={() => setEditingModel(editingModel === model.id ? null : model.id)}><Pencil className="size-4"/></Button>
-      {editingModel === model.id && <div className="w-full lg:basis-full"><ModelEditor model={model} onSave={(body) => patch.mutate({action:"update_model",id:model.id,body})}/></div>}
+      {editingModel === model.id && <div className="w-full lg:basis-full"><ModelEditor providers={q.data.systemProviders ?? []} model={model} onSave={(body) => patch.mutate({action:"update_model",id:model.id,body})}/></div>}
     </CardContent>
   </Card>)}</div>
     <ModelAccessMatrix plans={q.data.plans ?? []} models={q.data.models ?? []} onSave={(body) => patch.mutate({action:"set_access",id:"access",body})}/>
@@ -239,16 +239,66 @@ function PlanCreate({onSave}:{onSave:(body:any)=>void}) {
   </CardContent></Card>;
 }
 
-function ModelCreate({onSave}:{onSave:(body:any)=>void}) {
-  const [v,setV]=useState({provider:"",modelId:"",displayName:"",inputUsdPer1M:"0",outputUsdPer1M:"0"});
-  return <Card className="border-border"><CardHeader><CardTitle className="text-sm">ثبت مدل جدید</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-    <Input placeholder="Provider" value={v.provider} onChange={e=>setV({...v,provider:e.target.value})}/>
-    <Input placeholder="Model ID" value={v.modelId} onChange={e=>setV({...v,modelId:e.target.value})}/>
-    <Input placeholder="Display name" value={v.displayName} onChange={e=>setV({...v,displayName:e.target.value})}/>
-    <Input type="number" step="0.000001" placeholder="Input USD/1M" value={v.inputUsdPer1M} onChange={e=>setV({...v,inputUsdPer1M:e.target.value})}/>
-    <Input type="number" step="0.000001" placeholder="Output USD/1M" value={v.outputUsdPer1M} onChange={e=>setV({...v,outputUsdPer1M:e.target.value})}/>
-    <Button onClick={()=>onSave({provider:v.provider,modelId:v.modelId,displayName:v.displayName,inputUsdPer1M:Number(v.inputUsdPer1M),outputUsdPer1M:Number(v.outputUsdPer1M)})}><Save/>ثبت مدل</Button>
-  </CardContent></Card>;
+function ModelCreate({onSave,providers}:{onSave:(body:any)=>void;providers:any[]}) {
+  const [v,setV]=useState({
+    systemProviderId: providers[0]?.id ?? "",
+    provider: providers[0]?.providerName ?? "",
+    modelId:"",
+    displayName:"",
+    inputUsdPer1M:"0",
+    outputUsdPer1M:"0",
+    qualityTier:"economy",
+    speedTier:"fast",
+    isTrialDefault:false,
+  });
+  function pickProvider(id:string) {
+    const p=providers.find((item:any)=>item.id===id);
+    setV({...v,systemProviderId:id,provider:p?.providerName ?? ""});
+  }
+  return <Card className="border-[#d9dfd4] bg-[#fbfcf9]">
+    <CardHeader><CardTitle className="text-sm">ثبت مدل متصل به زیرساخت</CardTitle><p className="text-[10px] text-muted-foreground">مدل باید به یک Provider سیستم وصل شود تا در runtime واقعی قابل مصرف باشد.</p></CardHeader>
+    <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <select value={v.systemProviderId} onChange={e=>pickProvider(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-xs">
+        <option value="">Provider را انتخاب کن</option>
+        {providers.map((p:any)=><option key={p.id} value={p.id}>{p.displayName} · {p.providerName}</option>)}
+      </select>
+      <Input placeholder="Model ID" value={v.modelId} onChange={e=>setV({...v,modelId:e.target.value})}/>
+      <Input placeholder="Display name" value={v.displayName} onChange={e=>setV({...v,displayName:e.target.value})}/>
+      <Input type="number" step="0.000001" placeholder="Input USD/1M" value={v.inputUsdPer1M} onChange={e=>setV({...v,inputUsdPer1M:e.target.value})}/>
+      <Input type="number" step="0.000001" placeholder="Output USD/1M" value={v.outputUsdPer1M} onChange={e=>setV({...v,outputUsdPer1M:e.target.value})}/>
+      <Button onClick={()=>onSave({provider:v.provider,systemProviderId:v.systemProviderId || undefined,modelId:v.modelId,displayName:v.displayName,inputUsdPer1M:Number(v.inputUsdPer1M),outputUsdPer1M:Number(v.outputUsdPer1M),qualityTier:v.qualityTier,speedTier:v.speedTier,isTrialDefault:v.isTrialDefault})}><Save/>ثبت مدل</Button>
+      <div className="flex items-center justify-between border border-border bg-background px-3 sm:col-span-2 xl:col-span-3">
+        <div><p className="text-xs font-semibold">مدل پیش‌فرض Trial</p><p className="text-[9px] text-muted-foreground">برای کاربران نسخه آزمایشی همین مدل اجرا می‌شود.</p></div>
+        <Switch checked={v.isTrialDefault} onCheckedChange={value=>setV({...v,isTrialDefault:value})}/>
+      </div>
+    </CardContent>
+  </Card>;
+}
+
+function PlanEditor({plan,onSave}:{plan:any;onSave:(body:any)=>void}) {
+  const [v,setV]=useState({...plan});
+  return <div className="grid gap-3 sm:grid-cols-2"><Input value={v.name} onChange={e=>setV({...v,name:e.target.value})} placeholder="نام"/><Input type="number" value={v.priceToman} onChange={e=>setV({...v,priceToman:e.target.value})} placeholder="قیمت"/><Input type="number" value={v.monthlyCredits} onChange={e=>setV({...v,monthlyCredits:e.target.value})} placeholder="اعتبار"/><Input type="number" value={v.overageCreditPriceToman} onChange={e=>setV({...v,overageCreditPriceToman:e.target.value})} placeholder="Overage"/><Button onClick={()=>onSave({name:v.name,priceToman:Number(v.priceToman),monthlyCredits:Number(v.monthlyCredits),overageCreditPriceToman:Number(v.overageCreditPriceToman)})}><Save/>ذخیره</Button></div>;
+}
+
+function ModelEditor({model,onSave,providers}:{model:any;onSave:(body:any)=>void;providers:any[]}) {
+  const [v,setV]=useState({...model,systemProviderId:model.systemProviderId ?? ""});
+  function pickProvider(id:string) {
+    const p=providers.find((item:any)=>item.id===id);
+    setV({...v,systemProviderId:id,provider:p?.providerName ?? v.provider});
+  }
+  return <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <Input value={v.displayName} onChange={e=>setV({...v,displayName:e.target.value})} placeholder="نمایش"/>
+    <select value={v.systemProviderId} onChange={e=>pickProvider(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-xs">
+      <option value="">Provider متصل نیست</option>
+      {providers.map((p:any)=><option key={p.id} value={p.id}>{p.displayName} · {p.providerName}</option>)}
+    </select>
+    <Input type="number" step="0.000001" value={v.inputUsdPer1M} onChange={e=>setV({...v,inputUsdPer1M:e.target.value})} placeholder="Input USD/1M"/>
+    <Input type="number" step="0.000001" value={v.outputUsdPer1M} onChange={e=>setV({...v,outputUsdPer1M:e.target.value})} placeholder="Output USD/1M"/>
+    <Input value={v.qualityTier} onChange={e=>setV({...v,qualityTier:e.target.value})} placeholder="Quality tier"/>
+    <Input value={v.speedTier} onChange={e=>setV({...v,speedTier:e.target.value})} placeholder="Speed tier"/>
+    <div className="flex items-center justify-between border bg-background px-3"><span className="text-xs font-semibold">Default Trial</span><Switch checked={Boolean(v.isTrialDefault)} onCheckedChange={value=>setV({...v,isTrialDefault:value})}/></div>
+    <Button onClick={()=>onSave({displayName:v.displayName,systemProviderId:v.systemProviderId || null,inputUsdPer1M:Number(v.inputUsdPer1M),outputUsdPer1M:Number(v.outputUsdPer1M),qualityTier:v.qualityTier,speedTier:v.speedTier,isTrialDefault:Boolean(v.isTrialDefault)})}><Save/>ذخیره مدل</Button>
+  </div>;
 }
 
 function PlanEditor({plan,onSave}:{plan:any;onSave:(body:any)=>void}) {
