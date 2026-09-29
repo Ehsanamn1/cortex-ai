@@ -23,6 +23,12 @@ describe("private system desk authentication", () => {
     expect(verifyAdminSession(token.slice(0, -1) + "x")).toBeNull();
   });
 
+  it("token access is independent from customer credentials", () => {
+    process.env.CORTEX_ADMIN_SESSION_SECRET = "ci-admin-secret-change-me-0123456789-abcdef";
+    process.env.CORTEX_ADMIN_ACCESS_TOKEN = "ci-owner-private-access-token-abcdefghijklmnopqrstuvwxyz";
+    expect(verifyAdminAccessToken("ci-owner-private-access-token-abcdefghijklmnopqrstuvwxyz")).toBe(true);
+  });
+
   it("accepts only the configured long-lived access token", () => {
     process.env.CORTEX_ADMIN_SESSION_SECRET = "ci-admin-secret-change-me-0123456789-abcdef";
     process.env.CORTEX_ADMIN_ACCESS_TOKEN = "ci-owner-private-access-token-abcdefghijklmnopqrstuvwxyz";
