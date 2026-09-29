@@ -58,7 +58,10 @@ export function catalogCostMicros(
 
 
 function envEnforcementDefault(): boolean {
-  return process.env.CORTEX_BILLING_ENFORCE?.trim().toLowerCase() === "true";
+  const configured = process.env.CORTEX_BILLING_ENFORCE?.trim().toLowerCase();
+  if (configured === "true") return true;
+  if (configured === "false") return false;
+  return process.env.NODE_ENV === "production" || process.env.APP_ENV === "production";
 }
 
 function isTestRuntime(): boolean {
