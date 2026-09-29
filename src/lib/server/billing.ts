@@ -139,16 +139,36 @@ async function ensureKnownModelCatalog() {
   modelCatalogPromise = (async () => {
     const known = getManagedModelCatalog();
     const plans = await db.plan.findMany({ where: { active: true }, select: { id: true, key: true } });
+
     for (const entry of known) {
       const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel("OpenRouter", entry.providerModelId);
+
       for (const plan of plans) {
-        const enabled = entry.planKeys.includes(plan.key as any) && Boolean(entry.commercialAvailable ?? true);
-        await db.planModelAccess.upsert({
+        const shouldEnableByDefault = entry.planKeys.includes(plan.key as any) && Boolean(entry.commercialAvailable ?? true);
+        const existing = await db.planModelAccess.findUnique({
           where: { planId_modelCatalogId: { planId: plan.id, modelCatalogId: catalog.id } },
-          update: { enabled, creditMultiplierBps: Math.max(1, fallbackMultiplier) },
-          create: { planId: plan.id, modelCatalogId: catalog.id, enabled, creditMultiplierBps: Math.max(1, fallbackMultiplier) },
+          select: { id: true },
         });
+        if (!existing) {
+          await db.planModelAccess.create({
+            data: {
+              planId: plan.id,
+              modelCatalogId: catalog.id,
+              enabled: shouldEnableByDefault,
+              creditMultiplierBps: Math.max(1, fallbackMultiplier),
+            },
+          });
+        }
       }
+    }
+
+    const currentDefault = await db.modelCatalog.findFirst({ where: { active: true, trialDefault: true }, select: { id: true } });
+    if (!currentDefault) {
+      const preferred = await db.modelCatalog.findFirst({
+        where: { routeKey: "launch-lite", active: true },
+        select: { id: true },
+      });
+      if (preferred) await db.modelCatalog.update({ where: { id: preferred.id }, data: { trialEnabled: true, trialDefault: true } });
     }
   })().then(() => { modelCatalogReadyAt = Date.now(); }).finally(() => { modelCatalogPromise = null; });
   return modelCatalogPromise;
@@ -168,6 +188,7 @@ async function ensureModel(provider: string, model: string) {
   const catalog = await db.modelCatalog.upsert({
     where: { provider_modelId: { provider: canonicalProvider, modelId: model } },
     update: {
+      routeKey: managed?.key ?? null,
       displayName: managed?.displayName ?? known?.displayName ?? model,
       inputUsdPer1M: rate.inputUsdPer1M,
       outputUsdPer1M: rate.outputUsdPer1M,
@@ -190,6 +211,8 @@ async function ensureModel(provider: string, model: string) {
       speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
       commercialAvailable: rate.known,
       active: true,
+      trialEnabled: Boolean(managed?.planKeys.includes("free")),
+      trialDefault: managed?.key === "launch-lite",
     },
   });
   return { catalog, defaultMultiplierBps: multiplierBps };
@@ -574,21 +597,31 @@ export async function reserveBillingCredits(params: {
 }): Promise<BillingReservationResult> {
   const account = await ensureWorkspaceBilling(params.workspaceId);
   const { catalog, defaultMultiplierBps: fallbackMultiplier } = await ensureModel(params.provider, params.model);
-  const existingAccess = await db.planModelAccess.findUnique({
+  let existingAccess = await db.planModelAccess.findUnique({
     where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
   });
   const managedForPlan = getManagedModelCatalog().find(
     (entry) => entry.providerModelId.toLowerCase() === params.model.toLowerCase(),
   );
 
-  if (!managedForPlan || !managedForPlan.planKeys.includes(account.plan.key as any) || !existingAccess?.enabled) {
+  if (!existingAccess && managedForPlan?.planKeys.includes(account.plan.key as any)) {
+    existingAccess = await db.planModelAccess.upsert({
+      where: { planId_modelCatalogId: { planId: account.planId, modelCatalogId: catalog.id } },
+      update: {},
+      create: {
+        planId: account.planId,
+        modelCatalogId: catalog.id,
+        enabled: Boolean(managedForPlan.commercialAvailable ?? true),
+        creditMultiplierBps: Math.max(1, fallbackMultiplier),
+      },
+    });
+  }
+
+  if (!existingAccess?.enabled || !catalog.active || !catalog.commercialAvailable) {
     throw new BillingModelUnavailableError(params.model);
   }
 
-  const access = existingAccess ?? {
-    enabled: true,
-    creditMultiplierBps: fallbackMultiplier,
-  };
+  const access = existingAccess;
 
   const inputTokens = Math.max(0, Math.floor(params.inputTokens));
   const maxOutputTokens = Math.max(0, Math.floor(params.maxOutputTokens));
