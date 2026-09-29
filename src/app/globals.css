@@ -297,18 +297,18 @@
 
 
 /* Mobile performance/responsiveness hardening. */
-.cortex-dashstack {
+.cortex-operating-surface {
   contain: layout paint;
 }
-.cortex-dashstack button,
-.cortex-dashstack [role="button"] {
+.cortex-operating-surface button,
+.cortex-operating-surface [role="button"] {
   touch-action: manipulation;
 }
 .cortex-scroll {
   scrollbar-gutter: stable;
 }
 @media (max-width: 1023px) {
-  .cortex-dashstack { contain: layout; }
+  .cortex-operating-surface { contain: layout; }
   .cortex-topbar { min-height: 56px; padding-top: env(safe-area-inset-top); }
   .cortex-mobile-nav {
     padding-bottom: max(env(safe-area-inset-bottom), 4px);
@@ -319,19 +319,19 @@
   }
 }
 @media (max-width: 640px) {
-  .cortex-dashstack .cortex-topbar > div { min-width: 0; }
-  .cortex-dashstack main > div {
+  .cortex-operating-surface .cortex-topbar > div { min-width: 0; }
+  .cortex-operating-surface main > div {
     padding-inline: 10px;
   }
-  .cortex-dashstack [data-slot="dialog-content"] {
+  .cortex-operating-surface [data-slot="dialog-content"] {
     border-radius: 20px;
   }
-  .cortex-dashstack [data-slot="dialog-content"] [data-slot="dialog-header"] {
+  .cortex-operating-surface [data-slot="dialog-content"] [data-slot="dialog-header"] {
     padding-top: 2px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cortex-dashstack * {
+  .cortex-operating-surface * {
     scroll-behavior: auto !important;
   }
 }
@@ -352,77 +352,77 @@
 }
 
 
-/* DashStack-inspired admin workspace: clean light canvas, white cards, compact sidebar, blue active state. */
-.cortex-dashstack,
+/* Cortex operating surface: editorial rules, graphite surfaces and restrained lime signals. */
+.cortex-operating-surface,
 .cortex-control-center {
   background: #f6f7fb !important;
   color: #1f2937 !important;
 }
-.cortex-dashstack .cortex-sidebar {
+.cortex-operating-surface .cortex-sidebar {
   background: #ffffff !important;
   border-color: #e6e9ef !important;
   box-shadow: 4px 0 24px rgba(15, 23, 42, 0.035);
 }
-.cortex-dashstack .cortex-sidebar nav button {
+.cortex-operating-surface .cortex-sidebar nav button {
   border-radius: 8px;
 }
-.cortex-dashstack .cortex-sidebar nav button[aria-current="page"] {
+.cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] {
   background: #eef3ff !important;
   color: #3f6fe5 !important;
 }
-.cortex-dashstack .cortex-sidebar nav button[aria-current="page"] > span:first-child {
+.cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] > span:first-child {
   background: #4880ff !important;
 }
-.cortex-dashstack .cortex-topbar {
+.cortex-operating-surface .cortex-topbar {
   background: rgba(255,255,255,.96) !important;
   border-color: #e6e9ef !important;
   box-shadow: 0 1px 0 rgba(15,23,42,.025), 0 8px 24px rgba(15,23,42,.035) !important;
 }
-.cortex-dashstack .cortex-status-line {
+.cortex-operating-surface .cortex-status-line {
   background: linear-gradient(90deg, transparent, rgba(72,128,255,.24), transparent);
 }
-.cortex-dashstack .cortex-panel,
-.cortex-dashstack [data-slot="card"],
+.cortex-operating-surface .cortex-panel,
+.cortex-operating-surface [data-slot="card"],
 .cortex-control-center [data-slot="card"] {
   background: #ffffff !important;
   border-color: #e6e9ef !important;
   box-shadow: 0 4px 18px rgba(15,23,42,.035);
 }
-.cortex-dashstack .cortex-action {
+.cortex-operating-surface .cortex-action {
   background: #ffffff !important;
   border-color: #e6e9ef !important;
 }
-.cortex-dashstack .cortex-action:hover {
+.cortex-operating-surface .cortex-action:hover {
   background: #fafbfe !important;
   border-color: #cbd8f6 !important;
 }
-.cortex-dashstack .cortex-hero {
+.cortex-operating-surface .cortex-hero {
   background: #ffffff !important;
   border: 1px solid #e6e9ef !important;
   box-shadow: 0 8px 28px rgba(15,23,42,.045) !important;
 }
-.cortex-dashstack .cortex-hero > div:first-child {
+.cortex-operating-surface .cortex-hero > div:first-child {
   display: none;
 }
-.cortex-dashstack .cortex-hero h2,
-.cortex-dashstack .cortex-hero p,
-.cortex-dashstack .cortex-hero span,
-.cortex-dashstack .cortex-hero .text-white,
-.cortex-dashstack .cortex-hero .text-slate-300,
-.cortex-dashstack .cortex-hero .text-slate-400 {
+.cortex-operating-surface .cortex-hero h2,
+.cortex-operating-surface .cortex-hero p,
+.cortex-operating-surface .cortex-hero span,
+.cortex-operating-surface .cortex-hero .text-white,
+.cortex-operating-surface .cortex-hero .text-slate-300,
+.cortex-operating-surface .cortex-hero .text-slate-400 {
   color: #1f2937 !important;
 }
-.cortex-dashstack .cortex-hero [class*="bg-black/25"],
-.cortex-dashstack .cortex-hero [class*="bg-white/[.035]"] {
+.cortex-operating-surface .cortex-hero [class*="bg-black/25"],
+.cortex-operating-surface .cortex-hero [class*="bg-white/[.035]"] {
   background: #f8fafc !important;
   border-color: #e6e9ef !important;
 }
-.cortex-dashstack .cortex-core-sphere {
+.cortex-operating-surface .cortex-core-sphere {
   filter: drop-shadow(0 18px 40px rgba(72,128,255,.15));
 }
-.cortex-dashstack .cortex-topbar .border,
-.cortex-dashstack .cortex-sidebar .border,
-.cortex-dashstack .cortex-panel .border {
+.cortex-operating-surface .cortex-topbar .border,
+.cortex-operating-surface .cortex-sidebar .border,
+.cortex-operating-surface .cortex-panel .border {
   border-color: #e6e9ef !important;
 }
 .cortex-control-center header {
@@ -456,11 +456,11 @@
   color: #4880ff !important;
   border-color: #dbe5ff !important;
 }
-.cortex-dashstack button,
+.cortex-operating-surface button,
 .cortex-control-center button {
   transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
 }
-.cortex-dashstack [data-slot="select-trigger"],
+.cortex-operating-surface [data-slot="select-trigger"],
 .cortex-control-center [data-slot="select-trigger"],
 .cortex-control-center input,
 .cortex-control-center textarea {
@@ -516,43 +516,43 @@ html.dark body {
     radial-gradient(circle at 8% 92%, rgba(139,92,246,.09), transparent 24%) !important;
   color: var(--foreground) !important;
 }
-html.dark .cortex-dashstack {
+html.dark .cortex-operating-surface {
   background: #070a0f !important;
   color: #eef2ff !important;
 }
-html.dark .cortex-dashstack .cortex-sidebar {
+html.dark .cortex-operating-surface .cortex-sidebar {
   background:
     radial-gradient(circle at 18% 4%, rgba(91,140,255,.10), transparent 23%),
     linear-gradient(180deg, rgba(9,13,19,.98), rgba(6,9,13,.97)) !important;
   border-color: #1b2634 !important;
   box-shadow: 10px 0 40px rgba(0,0,0,.22) !important;
 }
-html.dark .cortex-dashstack .cortex-topbar {
+html.dark .cortex-operating-surface .cortex-topbar {
   background: rgba(7,10,15,.78) !important;
   border-color: #1a2532 !important;
   box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 12px 40px rgba(0,0,0,.16) !important;
 }
-html.dark .cortex-dashstack .cortex-panel,
-html.dark .cortex-dashstack [data-slot="card"] {
+html.dark .cortex-operating-surface .cortex-panel,
+html.dark .cortex-operating-surface [data-slot="card"] {
   background: linear-gradient(145deg, rgba(15,21,29,.95), rgba(9,13,18,.94)) !important;
   color: var(--card-foreground) !important;
   border-color: rgba(148,163,184,.11) !important;
   box-shadow: 0 20px 65px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.025) !important;
 }
-html.dark .cortex-dashstack .cortex-action {
+html.dark .cortex-operating-surface .cortex-action {
   background: rgba(13,18,25,.76) !important;
   border-color: rgba(148,163,184,.10) !important;
 }
-html.dark .cortex-dashstack .cortex-action:hover {
+html.dark .cortex-operating-surface .cortex-action:hover {
   background: rgba(22,31,43,.9) !important;
   border-color: rgba(91,140,255,.34) !important;
   box-shadow: 0 14px 36px rgba(0,0,0,.16) !important;
 }
-html.dark .cortex-dashstack .cortex-search-trigger {
+html.dark .cortex-operating-surface .cortex-search-trigger {
   background: rgba(16,22,30,.78) !important;
   border-color: rgba(148,163,184,.12) !important;
 }
-html.dark .cortex-dashstack .cortex-search-trigger:hover {
+html.dark .cortex-operating-surface .cortex-search-trigger:hover {
   border-color: rgba(91,140,255,.36) !important;
   box-shadow: 0 0 0 1px rgba(91,140,255,.08), 0 10px 24px rgba(0,0,0,.15) !important;
 }
@@ -717,26 +717,26 @@ html.dark .cortex-dashstack .cortex-search-trigger:hover {
   .cortex-wallet-orb { width: 118px; height: 118px; }
 }
 
-html.dark .cortex-dashstack .cortex-hero {
+html.dark .cortex-operating-surface .cortex-hero {
   background:
     radial-gradient(circle at 80% 12%, rgba(91,140,255,.16), transparent 30%),
     radial-gradient(circle at 12% 82%, rgba(139,92,246,.12), transparent 26%),
     linear-gradient(145deg,#101722,#080c12) !important;
   border-color: rgba(148,163,184,.12) !important;
 }
-html.dark .cortex-dashstack .cortex-hero > div:first-child { display: block !important; }
-html.dark .cortex-dashstack .cortex-hero h2,
-html.dark .cortex-dashstack .cortex-hero p,
-html.dark .cortex-dashstack .cortex-hero span,
-html.dark .cortex-dashstack .cortex-hero .text-white,
-html.dark .cortex-dashstack .cortex-hero .text-slate-300,
-html.dark .cortex-dashstack .cortex-hero .text-slate-400 { color: #eef2ff !important; }
-html.dark .cortex-dashstack .cortex-hero .text-slate-300 { color: #aab7c9 !important; }
-html.dark .cortex-dashstack .cortex-sidebar nav button[aria-current="page"] {
+html.dark .cortex-operating-surface .cortex-hero > div:first-child { display: block !important; }
+html.dark .cortex-operating-surface .cortex-hero h2,
+html.dark .cortex-operating-surface .cortex-hero p,
+html.dark .cortex-operating-surface .cortex-hero span,
+html.dark .cortex-operating-surface .cortex-hero .text-white,
+html.dark .cortex-operating-surface .cortex-hero .text-slate-300,
+html.dark .cortex-operating-surface .cortex-hero .text-slate-400 { color: #eef2ff !important; }
+html.dark .cortex-operating-surface .cortex-hero .text-slate-300 { color: #aab7c9 !important; }
+html.dark .cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] {
   background: rgba(91,140,255,.10) !important;
   color: #86adff !important;
 }
-html.dark .cortex-dashstack .cortex-sidebar nav button[aria-current="page"] > span:first-child {
+html.dark .cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] > span:first-child {
   background: #5b8cff !important;
 }
 .cortex-mobile-nav {
@@ -797,28 +797,28 @@ html:not(.dark) .cortex-wallet-quick-btn { color:#3f6fe5; background:rgba(63,111
 html:not(.dark) .cortex-wallet-mini { background: linear-gradient(135deg,#ffffff,#f6f8ff) !important; border-color:#dfe5f0 !important; }
 
 /* Dark/light contract normalization for legacy utility classes */
-html.dark .cortex-dashstack [class*="bg-white/"] {
+html.dark .cortex-operating-surface [class*="bg-white/"] {
   background-color: rgba(255,255,255,.025) !important;
 }
-html.dark .cortex-dashstack [class*="border-white/"] {
+html.dark .cortex-operating-surface [class*="border-white/"] {
   border-color: rgba(148,163,184,.11) !important;
 }
-html.dark .cortex-dashstack [class*="text-slate-"] {
+html.dark .cortex-operating-surface [class*="text-slate-"] {
   color: #9aa8bb !important;
 }
-html.dark .cortex-dashstack .text-white {
+html.dark .cortex-operating-surface .text-white {
   color: #f1f5fb !important;
 }
-html:not(.dark) .cortex-dashstack [class*="bg-white/"] {
+html:not(.dark) .cortex-operating-surface [class*="bg-white/"] {
   background-color: rgba(255,255,255,.82) !important;
 }
-html:not(.dark) .cortex-dashstack [class*="border-white/"] {
+html:not(.dark) .cortex-operating-surface [class*="border-white/"] {
   border-color: rgba(15,23,42,.10) !important;
 }
-html:not(.dark) .cortex-dashstack [class*="text-slate-"] {
+html:not(.dark) .cortex-operating-surface [class*="text-slate-"] {
   color: #5f6b7a !important;
 }
-html:not(.dark) .cortex-dashstack .text-white {
+html:not(.dark) .cortex-operating-surface .text-white {
   color: #121826 !important;
 }
 
@@ -898,64 +898,64 @@ html:not(.dark) .cortex-core-stage .text-slate-400 { color:#5f6d80 !important; }
 
 
 /* ===== Final theme contract: eliminate legacy light utility leakage in dark mode ===== */
-html.dark .cortex-dashstack,
-html.dark .cortex-dashstack main,
-html.dark .cortex-dashstack header,
-html.dark .cortex-dashstack aside,
-html.dark .cortex-dashstack [data-slot="card"],
-html.dark .cortex-dashstack [data-slot="sheet-content"],
-html.dark .cortex-dashstack [data-slot="popover-content"] {
+html.dark .cortex-operating-surface,
+html.dark .cortex-operating-surface main,
+html.dark .cortex-operating-surface header,
+html.dark .cortex-operating-surface aside,
+html.dark .cortex-operating-surface [data-slot="card"],
+html.dark .cortex-operating-surface [data-slot="sheet-content"],
+html.dark .cortex-operating-surface [data-slot="popover-content"] {
   color-scheme: dark;
 }
-html.dark .cortex-dashstack [class*="bg-white"],
-html.dark .cortex-dashstack [class*="bg-slate-50"],
-html.dark .cortex-dashstack [class*="bg-slate-100"],
-html.dark .cortex-dashstack [class*="bg-gray-50"],
-html.dark .cortex-dashstack [class*="bg-gray-100"] {
+html.dark .cortex-operating-surface [class*="bg-white"],
+html.dark .cortex-operating-surface [class*="bg-slate-50"],
+html.dark .cortex-operating-surface [class*="bg-slate-100"],
+html.dark .cortex-operating-surface [class*="bg-gray-50"],
+html.dark .cortex-operating-surface [class*="bg-gray-100"] {
   background-color: #0d121a !important;
   background-image: none !important;
 }
-html.dark .cortex-dashstack [class*="bg-gray-200"],
-html.dark .cortex-dashstack [class*="bg-slate-200"] {
+html.dark .cortex-operating-surface [class*="bg-gray-200"],
+html.dark .cortex-operating-surface [class*="bg-slate-200"] {
   background-color: #141b25 !important;
 }
-html.dark .cortex-dashstack [class*="border-white"],
-html.dark .cortex-dashstack [class*="border-gray-"],
-html.dark .cortex-dashstack [class*="border-slate-"] {
+html.dark .cortex-operating-surface [class*="border-white"],
+html.dark .cortex-operating-surface [class*="border-gray-"],
+html.dark .cortex-operating-surface [class*="border-slate-"] {
   border-color: #202a38 !important;
 }
-html.dark .cortex-dashstack [class*="text-gray-"],
-html.dark .cortex-dashstack [class*="text-slate-"] {
+html.dark .cortex-operating-surface [class*="text-gray-"],
+html.dark .cortex-operating-surface [class*="text-slate-"] {
   color: #9aa8bb !important;
 }
-html.dark .cortex-dashstack [class*="text-black"] {
+html.dark .cortex-operating-surface [class*="text-black"] {
   color: #eef2ff !important;
 }
-html.dark .cortex-dashstack input,
-html.dark .cortex-dashstack textarea,
-html.dark .cortex-dashstack select,
-html.dark .cortex-dashstack [data-slot="select-trigger"] {
+html.dark .cortex-operating-surface input,
+html.dark .cortex-operating-surface textarea,
+html.dark .cortex-operating-surface select,
+html.dark .cortex-operating-surface [data-slot="select-trigger"] {
   color: #eef2ff !important;
   background-color: #0d121a !important;
   border-color: #263244 !important;
 }
-html.dark .cortex-dashstack input::placeholder,
-html.dark .cortex-dashstack textarea::placeholder {
+html.dark .cortex-operating-surface input::placeholder,
+html.dark .cortex-operating-surface textarea::placeholder {
   color: #738095 !important;
 }
-html.dark .cortex-dashstack [data-slot="dialog-content"],
-html.dark .cortex-dashstack [data-slot="popover-content"],
-html.dark .cortex-dashstack [data-slot="select-content"],
-html.dark .cortex-dashstack [data-slot="sheet-content"] {
+html.dark .cortex-operating-surface [data-slot="dialog-content"],
+html.dark .cortex-operating-surface [data-slot="popover-content"],
+html.dark .cortex-operating-surface [data-slot="select-content"],
+html.dark .cortex-operating-surface [data-slot="sheet-content"] {
   background: #0b1017 !important;
   color: #eef2ff !important;
   border-color: #202a38 !important;
 }
-html:not(.dark) .cortex-dashstack [class*="bg-slate-950"],
-html:not(.dark) .cortex-dashstack [class*="bg-gray-950"] {
+html:not(.dark) .cortex-operating-surface [class*="bg-slate-950"],
+html:not(.dark) .cortex-operating-surface [class*="bg-gray-950"] {
   background-color: #ffffff !important;
 }
-html:not(.dark) .cortex-dashstack [class*="text-white"] {
+html:not(.dark) .cortex-operating-surface [class*="text-white"] {
   color: #111827 !important;
 }
 
@@ -1112,19 +1112,19 @@ html.dark .cortex-estimator select option { background: #0d121a; color: #eef2ff;
 html:not(.dark) .cortex-estimator select option { background: #ffffff; color: #111827; }
 
 /* Hero itself owns its palette; do not let old utility colors leak across themes. */
-html:not(.dark) .cortex-dashstack .cortex-hero {
+html:not(.dark) .cortex-operating-surface .cortex-hero {
   background: linear-gradient(145deg,#ffffff,#f4f7fb) !important;
   border-color: #dfe6ef !important;
 }
-html:not(.dark) .cortex-dashstack .cortex-hero > div:first-child {
+html:not(.dark) .cortex-operating-surface .cortex-hero > div:first-child {
   background:
     radial-gradient(circle at 78% 14%, rgba(91,140,255,.12), transparent 28%),
     radial-gradient(circle at 18% 82%, rgba(139,92,246,.08), transparent 26%),
     linear-gradient(145deg,#ffffff,#f3f6fb) !important;
 }
-html:not(.dark) .cortex-dashstack .cortex-hero .text-white { color: #111827 !important; }
-html:not(.dark) .cortex-dashstack .cortex-hero .text-slate-300 { color: #5f6d80 !important; }
-html:not(.dark) .cortex-dashstack .cortex-hero .text-slate-500 { color: #7b8796 !important; }
+html:not(.dark) .cortex-operating-surface .cortex-hero .text-white { color: #111827 !important; }
+html:not(.dark) .cortex-operating-surface .cortex-hero .text-slate-300 { color: #5f6d80 !important; }
+html:not(.dark) .cortex-operating-surface .cortex-hero .text-slate-500 { color: #7b8796 !important; }
 
 /* ===== Final Cortex theme + lightweight 3D core contract ===== */
 :root {
@@ -1145,27 +1145,27 @@ html.dark body {
 }
 
 /* The customer shell owns all legacy utility colors in dark mode. */
-html.dark .cortex-dashstack .bg-white,
-html.dark .cortex-dashstack [class*="bg-white/"],
-html.dark .cortex-dashstack [class*="bg-slate-"],
-html.dark .cortex-dashstack [class*="bg-gray-"] {
+html.dark .cortex-operating-surface .bg-white,
+html.dark .cortex-operating-surface [class*="bg-white/"],
+html.dark .cortex-operating-surface [class*="bg-slate-"],
+html.dark .cortex-operating-surface [class*="bg-gray-"] {
   background-color: #0d121a !important;
 }
-html.dark .cortex-dashstack [class*="border-white/"],
-html.dark .cortex-dashstack [class*="border-slate-"],
-html.dark .cortex-dashstack [class*="border-gray-"] {
+html.dark .cortex-operating-surface [class*="border-white/"],
+html.dark .cortex-operating-surface [class*="border-slate-"],
+html.dark .cortex-operating-surface [class*="border-gray-"] {
   border-color: #202a38 !important;
 }
-html.dark .cortex-dashstack [class*="text-white"],
-html.dark .cortex-dashstack [class*="text-slate-"],
-html.dark .cortex-dashstack [class*="text-gray-"] {
+html.dark .cortex-operating-surface [class*="text-white"],
+html.dark .cortex-operating-surface [class*="text-slate-"],
+html.dark .cortex-operating-surface [class*="text-gray-"] {
   color: #dce5f2 !important;
 }
-html:not(.dark) .cortex-dashstack [class*="bg-slate-950"],
-html:not(.dark) .cortex-dashstack [class*="bg-gray-950"] {
+html:not(.dark) .cortex-operating-surface [class*="bg-slate-950"],
+html:not(.dark) .cortex-operating-surface [class*="bg-gray-950"] {
   background-color: #ffffff !important;
 }
-html:not(.dark) .cortex-dashstack [class*="text-white"] {
+html:not(.dark) .cortex-operating-surface [class*="text-white"] {
   color: #111827 !important;
 }
 
@@ -1334,23 +1334,23 @@ html:not(.dark) body {
 }
 
 /* Light-mode cleanup for intentionally dark utility accents used by legacy dashboard cards. */
-html:not(.dark) .cortex-dashstack [class*="bg-black/"] {
+html:not(.dark) .cortex-operating-surface [class*="bg-black/"] {
   background-color: rgba(15,23,42,.045) !important;
 }
-html:not(.dark) .cortex-dashstack [class*="border-white/"] {
+html:not(.dark) .cortex-operating-surface [class*="border-white/"] {
   border-color: rgba(15,23,42,.10) !important;
 }
-html:not(.dark) .cortex-dashstack [class*="hover:bg-white"]:hover {
+html:not(.dark) .cortex-operating-surface [class*="hover:bg-white"]:hover {
   background-color: rgba(15,23,42,.035) !important;
 }
-html.dark .cortex-dashstack [class*="hover:bg-white"]:hover {
+html.dark .cortex-operating-surface [class*="hover:bg-white"]:hover {
   background-color: rgba(255,255,255,.035) !important;
 }
 /* Keep cards readable while the page switches themes; never inherit a stale hard-coded surface. */
-html.dark .cortex-dashstack .cortex-panel,
-html.dark .cortex-dashstack [data-slot="card"] { color: var(--card-foreground) !important; }
-html:not(.dark) .cortex-dashstack .cortex-panel,
-html:not(.dark) .cortex-dashstack [data-slot="card"] { color: var(--card-foreground) !important; }
+html.dark .cortex-operating-surface .cortex-panel,
+html.dark .cortex-operating-surface [data-slot="card"] { color: var(--card-foreground) !important; }
+html:not(.dark) .cortex-operating-surface .cortex-panel,
+html:not(.dark) .cortex-operating-surface [data-slot="card"] { color: var(--card-foreground) !important; }
 
 
 /* ===== Mobile customer navigation ===== */
@@ -1363,21 +1363,21 @@ html:not(.dark) .cortex-dashstack [data-slot="card"] { color: var(--card-foregro
   -webkit-tap-highlight-color: transparent;
 }
 @media (max-width: 1023px) {
-  .cortex-dashstack main {
+  .cortex-operating-surface main {
     overscroll-behavior-y: contain;
   }
-  .cortex-dashstack .cortex-scroll {
+  .cortex-operating-surface .cortex-scroll {
     scroll-padding-bottom: 96px;
   }
-  .cortex-dashstack .cortex-mobile-nav {
+  .cortex-operating-surface .cortex-mobile-nav {
     box-shadow: 0 -18px 45px rgba(2, 6, 23, .18);
   }
-  html.dark .cortex-dashstack .cortex-mobile-nav {
+  html.dark .cortex-operating-surface .cortex-mobile-nav {
     background: rgba(7, 10, 15, .90);
     border-top-color: rgba(148,163,184,.14);
     box-shadow: 0 -18px 45px rgba(0,0,0,.28);
   }
-  html:not(.dark) .cortex-dashstack .cortex-mobile-nav {
+  html:not(.dark) .cortex-operating-surface .cortex-mobile-nav {
     background: rgba(255,255,255,.92);
     border-top-color: rgba(15,23,42,.10);
   }
@@ -1442,37 +1442,37 @@ body {
   background-image: none !important;
 }
 
-.cortex-dashstack {
+.cortex-operating-surface {
   background: #efece2 !important;
 }
 
-.cortex-dashstack .cortex-panel,
-.cortex-dashstack [data-slot="card"] {
+.cortex-operating-surface .cortex-panel,
+.cortex-operating-surface [data-slot="card"] {
   border-radius: 14px !important;
   border-color: #d5d1c4 !important;
   background: #f9f7f0 !important;
   box-shadow: 0 1px 0 rgba(23,27,23,.035), 0 10px 28px rgba(23,27,23,.045) !important;
 }
 
-.cortex-dashstack .cortex-hero {
+.cortex-operating-surface .cortex-hero {
   border-radius: 18px !important;
   border: 1px solid #cec9ba !important;
   background: #fbfaf5 !important;
   box-shadow: 0 1px 0 rgba(23,27,23,.04), 0 18px 48px rgba(23,27,23,.06) !important;
 }
 
-.cortex-dashstack .cortex-action {
+.cortex-operating-surface .cortex-action {
   border-radius: 12px !important;
   background: #f9f7f0 !important;
   border-color: #d2cec2 !important;
   box-shadow: none !important;
 }
 
-.cortex-dashstack .cortex-action::after {
+.cortex-operating-surface .cortex-action::after {
   display: none !important;
 }
 
-.cortex-dashstack .cortex-icon-box {
+.cortex-operating-surface .cortex-icon-box {
   width: 42px;
   height: 42px;
   border-radius: 10px !important;
@@ -1482,35 +1482,35 @@ body {
   box-shadow: none !important;
 }
 
-.cortex-dashstack .cortex-kicker {
+.cortex-operating-surface .cortex-kicker {
   color: #5e6e49 !important;
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace !important;
   letter-spacing: .16em !important;
 }
 
-.cortex-dashstack .cortex-status-line {
+.cortex-operating-surface .cortex-status-line {
   background: #b9c49f !important;
   height: 1px !important;
 }
 
-.cortex-dashstack .rounded-2xl,
-.cortex-dashstack .rounded-[30px],
-.cortex-dashstack .rounded-[28px] {
+.cortex-operating-surface .rounded-2xl,
+.cortex-operating-surface .rounded-[30px],
+.cortex-operating-surface .rounded-[28px] {
   border-radius: 14px !important;
 }
 
-.cortex-dashstack button {
+.cortex-operating-surface button {
   border-radius: 10px !important;
 }
 
-.cortex-dashstack input,
-.cortex-dashstack textarea,
-.cortex-dashstack select {
+.cortex-operating-surface input,
+.cortex-operating-surface textarea,
+.cortex-operating-surface select {
   border-radius: 9px !important;
   background: #fbfaf5 !important;
 }
 
-.cortex-dashstack section {
+.cortex-operating-surface section {
   content-visibility: auto;
   contain-intrinsic-size: 0 260px;
 }
@@ -1543,14 +1543,14 @@ body {
 }
 
 @media (max-width: 640px) {
-  .cortex-dashstack .cortex-panel,
-  .cortex-dashstack [data-slot="card"] {
+  .cortex-operating-surface .cortex-panel,
+  .cortex-operating-surface [data-slot="card"] {
     border-radius: 12px !important;
   }
-  .cortex-dashstack .cortex-hero {
+  .cortex-operating-surface .cortex-hero {
     border-radius: 14px !important;
   }
-  .cortex-dashstack section {
+  .cortex-operating-surface section {
     contain-intrinsic-size: 0 220px;
   }
 }
@@ -1589,28 +1589,168 @@ body {
   background-image: none !important;
 }
 
-.dark .cortex-dashstack {
+.dark .cortex-operating-surface {
   background: #11140f !important;
   color: #ecefe6 !important;
 }
 
-.dark .cortex-dashstack .cortex-panel,
-.dark .cortex-dashstack [data-slot="card"] {
+.dark .cortex-operating-surface .cortex-panel,
+.dark .cortex-operating-surface [data-slot="card"] {
   border-color: #343b2f !important;
   background: #171b14 !important;
   color: #ecefe6 !important;
   box-shadow: 0 1px 0 rgba(255,255,255,.025), 0 12px 32px rgba(0,0,0,.20) !important;
 }
 
-.dark .cortex-dashstack .cortex-hero {
+.dark .cortex-operating-surface .cortex-hero {
   border-color: #3a4333 !important;
   background: #1a1f17 !important;
 }
 
-.dark .cortex-dashstack input,
-.dark .cortex-dashstack textarea,
-.dark .cortex-dashstack select {
+.dark .cortex-operating-surface input,
+.dark .cortex-operating-surface textarea,
+.dark .cortex-operating-surface select {
   background: #131711 !important;
   border-color: #3a4333 !important;
   color: #ecefe6 !important;
 }
+
+/* Cortex identity layer — product-specific surfaces instead of stock AI dashboard patterns. */
+:root {
+  --cortex-lime: #b8d75b;
+  --cortex-olive: #48522f;
+  --cortex-paper: #f2f2e9;
+  --cortex-graphite: #151812;
+}
+.cortex-operating-surface {
+  background: var(--cortex-paper) !important;
+  color: #171a13 !important;
+}
+html.dark .cortex-operating-surface {
+  background: #0f120e !important;
+  color: #eceee3 !important;
+}
+.cortex-operating-surface .cortex-sidebar {
+  background: #f7f7ef !important;
+  border-color: #d9dacd !important;
+  box-shadow: none !important;
+}
+html.dark .cortex-operating-surface .cortex-sidebar {
+  background: #131710 !important;
+  border-color: #252a20 !important;
+}
+.cortex-operating-surface .cortex-topbar {
+  background: rgba(242,242,233,.96) !important;
+  border-color: #d9dacd !important;
+  box-shadow: none !important;
+}
+html.dark .cortex-operating-surface .cortex-topbar {
+  background: rgba(15,18,14,.96) !important;
+  border-color: #252a20 !important;
+}
+.cortex-operating-surface [data-slot="card"],
+.cortex-operating-surface .cortex-panel,
+.cortex-operating-surface .cortex-action,
+.cortex-operating-surface .cortex-hero {
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.cortex-operating-surface .cortex-panel,
+.cortex-operating-surface [data-slot="card"] {
+  background: #f8f8f1 !important;
+  border-color: #dfe0d4 !important;
+}
+html.dark .cortex-operating-surface .cortex-panel,
+html.dark .cortex-operating-surface [data-slot="card"] {
+  background: #141810 !important;
+  border-color: #2a3023 !important;
+}
+.cortex-operating-surface .cortex-hero {
+  background: #f7f7ef !important;
+  border-color: #d2d4c8 !important;
+}
+html.dark .cortex-operating-surface .cortex-hero {
+  background: #141810 !important;
+  border-color: #2b3124 !important;
+}
+.cortex-operating-surface .cortex-icon-box {
+  border-radius: 9px !important;
+  background: transparent !important;
+  border-color: #c9ccb9 !important;
+  box-shadow: none !important;
+  color: #657c2e !important;
+}
+html.dark .cortex-operating-surface .cortex-icon-box {
+  border-color: #38412f !important;
+  color: #b8d75b !important;
+}
+.cortex-operating-surface .cortex-kicker {
+  color: #687157 !important;
+  letter-spacing: .12em !important;
+}
+html.dark .cortex-operating-surface .cortex-kicker {
+  color: #9ba78b !important;
+}
+.cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] {
+  background: #e8efd3 !important;
+  color: #415026 !important;
+}
+html.dark .cortex-operating-surface .cortex-sidebar nav button[aria-current="page"] {
+  background: #252d1d !important;
+  color: #b8d75b !important;
+}
+.cortex-operating-surface button { border-radius: 10px; }
+.cortex-operating-surface input,
+.cortex-operating-surface textarea,
+.cortex-operating-surface select { border-radius: 9px; }
+.cortex-operating-surface .cortex-mobile-nav {
+  background: rgba(242,242,233,.98) !important;
+  border-color: #d4d7c8 !important;
+  box-shadow: 0 -8px 22px rgba(32,36,24,.08) !important;
+}
+html.dark .cortex-operating-surface .cortex-mobile-nav {
+  background: rgba(15,18,14,.98) !important;
+  border-color: #252a20 !important;
+}
+.cortex-operating-surface .cortex-mobile-nav [aria-current="page"] { color: #657c2e !important; }
+html.dark .cortex-operating-surface .cortex-mobile-nav [aria-current="page"] { color: #b8d75b !important; }
+
+/* Private System Desk — intentionally unlike the customer workspace. */
+.cortex-control-center {
+  background: #0d100e !important;
+  color: #edf0e5 !important;
+}
+.cortex-control-center aside,
+.cortex-control-center header,
+.cortex-control-center [data-slot="card"] {
+  background: #121610 !important;
+  border-color: #30372b !important;
+  color: #edf0e5 !important;
+  box-shadow: none !important;
+}
+.cortex-control-center .bg-white,
+.cortex-control-center .bg-slate-50,
+.cortex-control-center [class*="bg-white/"] {
+  background: #121610 !important;
+}
+.cortex-control-center [class*="text-slate-900"],
+.cortex-control-center [class*="text-slate-800"],
+.cortex-control-center [class*="text-slate-700"],
+.cortex-control-center [class*="text-slate-600"] {
+  color: #d8ddcf !important;
+}
+.cortex-control-center [class*="text-slate-400"] { color: #89927f !important; }
+.cortex-control-center button[aria-current="page"] {
+  background: #252d1d !important;
+  color: #b8d75b !important;
+}
+.cortex-control-center button { border-radius: 9px; }
+.cortex-control-center input,
+.cortex-control-center textarea,
+.cortex-control-center select {
+  background: #0f120e !important;
+  border-color: #30372b !important;
+  color: #edf0e5 !important;
+}
+.cortex-control-center .border-b,
+.cortex-control-center .border-t { border-color: #30372b !important; }
