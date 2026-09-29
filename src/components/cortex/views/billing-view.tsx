@@ -54,6 +54,8 @@ export function BillingView(){
   const plan=data.account.plan;
   const balancePct=plan.monthlyCredits?Math.min(100,Math.round((Math.max(0,data.account.balanceCredits)/plan.monthlyCredits)*100)):0;
   const pending=data.topUpRequests.filter(x=>x.status==="pending").length;
+  const needsPlan = plan.key === "free" || (plan.monthlyCredits > 0 && data.account.balanceCredits <= 0);
+  const lowBalance = !needsPlan && plan.monthlyCredits > 0 && balancePct <= 20;
 
   const modelUsage = data.usage30Days.byModel ?? [];
   const maxModelTokens = Math.max(...modelUsage.map((usageItem) => usageItem.tokens), 1);
@@ -63,6 +65,19 @@ export function BillingView(){
   }
 
   return <div className="space-y-4 sm:space-y-5">
+    {(needsPlan || lowBalance) && <section className={cn("rounded-2xl border p-4 sm:p-5", needsPlan ? "border-primary/25 bg-primary/[.055]" : "border-amber-400/25 bg-amber-400/[.045]")}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-black">{needsPlan ? "برای شروع، یک پلن انتخاب کن." : "اعتبارت رو به اتمام است."}</p>
+          <p className="mt-1 text-xs leading-6 text-muted-foreground">{needsPlan ? "پلن را انتخاب کن تا مدل‌های managed و اجرای Agentها فعال شوند." : "برای ادامه بدون وقفه، همین حالا یک بسته اعتبار تهیه کن."}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={()=>jumpTo("cortex-plans")} className="h-10 rounded-xl bg-primary px-4 text-xs font-black text-primary-foreground">{needsPlan ? "انتخاب پلن" : "مشاهده پلن‌ها"}</button>
+          {!needsPlan && <button type="button" onClick={()=>jumpTo("cortex-topup")} className="h-10 rounded-xl border border-border/70 px-4 text-xs font-bold">شارژ سریع</button>}
+        </div>
+      </div>
+    </section>}
+
     <motion.section
       initial={{ opacity: 0, y: 10, scale: .99 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
