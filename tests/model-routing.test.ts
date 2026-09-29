@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({
   db: {
+    agent: { findUnique: vi.fn() },
     modelCatalog: { findUnique: vi.fn(), findFirst: vi.fn() },
     workspaceBillingAccount: { findUnique: vi.fn() },
     planModelAccess: { findUnique: vi.fn() },
@@ -24,7 +25,10 @@ import { db } from "@/lib/db";
 import { resolveManagedModelForAgent } from "@/lib/server/model-router";
 
 describe("Central model routing", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(db.agent.findUnique).mockResolvedValue({ modelKey: null } as never);
+  });
 
   it("routes a Trial agent to the admin-selected default catalog model", async () => {
     vi.mocked(db.modelCatalog.findUnique).mockResolvedValue({
