@@ -96,13 +96,14 @@ export async function POST(req: Request) {
       const description = textValue(body.description, 500);
       const priceToman = intValue(body.priceToman, 0, 2_000_000_000);
       const monthlyCredits = intValue(body.monthlyCredits, 0, 10_000_000_000);
+      const monthlyTokenLimit = intValue(body.monthlyTokenLimit, 0, 100_000_000);
       const overageCreditPriceToman = intValue(body.overageCreditPriceToman, 0, 10_000_000);
       const sortOrder = intValue(body.sortOrder, 0, 10000);
-      if (!key || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(key) || !name || priceToman == null || monthlyCredits == null || overageCreditPriceToman == null || sortOrder == null) {
+      if (!key || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(key) || !name || priceToman == null || monthlyCredits == null || monthlyTokenLimit == null || overageCreditPriceToman == null || sortOrder == null) {
         return applyCors(jsonError("اطلاعات پلن معتبر نیست.", 400), req.headers.get("origin"));
       }
       const plan = await db.plan.create({
-        data: { key, name, description: description || null, priceToman, currency: "TOMAN", monthlyCredits, overageCreditPriceToman, sortOrder, active: body.active !== false },
+        data: { key, name, description: description || null, priceToman, currency: "TOMAN", monthlyCredits, monthlyTokenLimit, overageCreditPriceToman, sortOrder, active: body.active !== false },
       });
       return applyCors(jsonOk({ admin, plan }, 201), req.headers.get("origin"));
     }
@@ -174,7 +175,7 @@ export async function PATCH(req: Request) {
 
     if (action === "update_plan" && id) {
       const data: Record<string, unknown> = {};
-      for (const [key, min, max] of [["priceToman",0,2_000_000_000],["monthlyCredits",0,10_000_000_000],["overageCreditPriceToman",0,10_000_000],["sortOrder",0,10000]] as const) {
+      for (const [key, min, max] of [["priceToman",0,2_000_000_000],["monthlyCredits",0,10_000_000_000],["monthlyTokenLimit",0,100_000_000],["overageCreditPriceToman",0,10_000_000],["sortOrder",0,10000]] as const) {
         if (body[key] !== undefined) {
           const value = intValue(body[key], min, max);
           if (value == null) return applyCors(jsonError("مقدار عددی پلن نامعتبر است.", 400), req.headers.get("origin"));
