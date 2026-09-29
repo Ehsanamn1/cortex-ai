@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     }
 
     await db.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
-    const token = createPasswordResetToken();
+    const token = await createPasswordResetToken();
     await db.passwordResetToken.create({
       data: { userId: user.id, tokenHash: token.hash, expiresAt: token.expiresAt },
     });
