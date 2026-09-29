@@ -56,14 +56,40 @@ function publicProvider(row: any, testModelId: string | null = null) {
 export async function GET(req: Request) {
   try {
     requireAdmin(req);
-    const providers = await db.systemProviderConfig.findMany({
-      orderBy: [{ isTrialProvider: "desc" }, { enabled: "desc" }, { updatedAt: "desc" }],
-      include: {
-        _count: { select: { models: true } },
-        models: { where: { active: true }, orderBy: { updatedAt: "desc" }, take: 1, select: { modelId: true } },
+    const [providers, trialProvider, trialModel] = await Promise.all([
+      db.systemProviderConfig.findMany({
+        orderBy: [{ isTrialProvider: "desc" }, { enabled: "desc" }, { updatedAt: "desc" }],
+        include: {
+          _count: { select: { models: true } },
+          models: { where: { active: true }, orderBy: { updatedAt: "desc" }, take: 1, select: { modelId: true } },
+        },
+      }),
+      db.systemProviderConfig.findFirst({ where: { isTrialProvider: true } }),
+      db.modelCatalog.findFirst({
+        where: { active: true, trialDefault: true },
+        include: { systemProvider: true },
+      }),
+    ]);
+    return applyCors(jsonOk({
+      providers: providers.map((row) => publicProvider(row, row.models[0]?.modelId ?? null)),
+      trial: {
+        provider: trialProvider ? publicProvider(trialProvider) : null,
+        model: trialModel ? {
+          id: trialModel.id,
+          routeKey: trialModel.routeKey,
+          displayName: trialModel.displayName,
+          provider: trialModel.provider,
+          modelId: trialModel.modelId,
+          active: trialModel.active,
+          trialEnabled: trialModel.trialEnabled,
+          trialDefault: trialModel.trialDefault,
+          systemProviderId: trialModel.systemProviderId,
+          systemProviderName: trialModel.systemProvider?.displayName ?? null,
+        } : null,
+        ready: Boolean(trialModel?.active && trialModel?.trialEnabled && trialModel?.systemProvider?.enabled &&
+          (trialModel.systemProvider.authMode === "none" || trialModel.systemProvider.apiKeyEncrypted)),
       },
-    });
-    return applyCors(jsonOk({ providers: providers.map((row) => publicProvider(row, row.models[0]?.modelId ?? null)) }), req.headers.get("origin"));
+    }), req.headers.get("origin"));
   } catch (error) {
     return toErrorResponse(error);
   }
@@ -89,6 +115,78 @@ export async function POST(req: Request) {
         data: { lastHealthStatus: health.ok ? "healthy" : "error", lastHealthError: health.ok ? null : health.error, lastHealthAt: new Date() },
       });
       return applyCors(jsonOk({ providerId: id, modelId, health }), req.headers.get("origin"));
+    }
+
+    if (action === "configure_trial") {
+      const providerId = textValue(body.providerId, 120);
+      const modelCatalogId = textValue(body.modelCatalogId, 120);
+      if (!providerId || !modelCatalogId) {
+        return applyCors(jsonError("برای مسیر Trial باید Provider و Model را انتخاب کنی.", 400), req.headers.get("origin"));
+      }
+      const [provider, model] = await Promise.all([
+        db.systemProviderConfig.findUnique({ where: { id: providerId } }),
+        db.modelCatalog.findUnique({ where: { id: modelCatalogId } }),
+      ]);
+      if (!provider) return applyCors(jsonError("Provider Trial پیدا نشد.", 404), req.headers.get("origin"));
+      if (!model) return applyCors(jsonError("مدل Trial پیدا نشد.", 404), req.headers.get("origin"));
+      const configured = Boolean(provider.apiKeyEncrypted) || provider.authMode === "none";
+      if (!provider.enabled || !configured) {
+        return applyCors(jsonError("Provider انتخاب‌شده فعال یا پیکربندی‌شده نیست. ابتدا Base URL و API Key را بررسی کن.", 400), req.headers.get("origin"));
+      }
+      if (!model.active) return applyCors(jsonError("مدل انتخاب‌شده فعال نیست.", 400), req.headers.get("origin"));
+
+      const result = await db.$transaction(async (tx) => {
+        await tx.systemProviderConfig.updateMany({ where: { id: { not: providerId } }, data: { isTrialProvider: false } });
+        await tx.systemProviderConfig.update({ where: { id: providerId }, data: { isTrialProvider: true } });
+        await tx.modelCatalog.updateMany({ where: { trialDefault: true, id: { not: modelCatalogId } }, data: { trialDefault: false } });
+        const trial = await tx.modelCatalog.update({
+          where: { id: modelCatalogId },
+          data: {
+            systemProviderId: providerId,
+            trialEnabled: true,
+            trialDefault: true,
+            active: true,
+          },
+          include: { systemProvider: true },
+        });
+        const free = await tx.plan.findUnique({ where: { key: "free" }, select: { id: true } });
+        if (free) {
+          await tx.planModelAccess.upsert({
+            where: { planId_modelCatalogId: { planId: free.id, modelCatalogId: modelCatalogId } },
+            update: { enabled: true, creditMultiplierBps: 100 },
+            create: { planId: free.id, modelCatalogId: modelCatalogId, enabled: true, creditMultiplierBps: 100 },
+          });
+        }
+        return trial;
+      });
+
+      const runtime = buildSystemProviderForModel(provider, result.modelId);
+      const health = await runtime.healthCheck();
+      const healthy = health.ok;
+      await db.systemProviderConfig.update({
+        where: { id: providerId },
+        data: {
+          lastHealthStatus: healthy ? "healthy" : "error",
+          lastHealthError: healthy ? null : health.error,
+          lastHealthAt: new Date(),
+        },
+      });
+      if (!healthy) {
+        return applyCors(jsonOk({
+          configured: true,
+          ready: false,
+          model: { id: result.id, displayName: result.displayName, modelId: result.modelId },
+          provider: publicProvider(provider),
+          health,
+        }), req.headers.get("origin"));
+      }
+      return applyCors(jsonOk({
+        configured: true,
+        ready: true,
+        model: { id: result.id, displayName: result.displayName, modelId: result.modelId },
+        provider: publicProvider({ ...provider, isTrialProvider: true }),
+        health,
+      }), req.headers.get("origin"));
     }
 
     if (action === "create") {
