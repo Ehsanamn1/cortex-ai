@@ -155,39 +155,33 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
   });
   if (!account) throw Object.assign(new Error("حساب اعتبار فضای کاری پیدا نشد."), { status: 404 });
 
-  const agent = await db.agent.findUnique({
-    where: { id: agentId },
-    select: { modelKey: true },
+  const agent = await db.agent.findUnique({ where: { id: agentId }, select: { modelKey: true } });
+
+  const accessRows = await db.planModelAccess.findMany({
+    where: { planId: account.planId, enabled: true, modelCatalog: { active: true, commercialAvailable: true } },
+    include: { modelCatalog: { include: { systemProvider: true } } },
   });
 
-  const catalogModels = await db.modelCatalog.findMany({
-    where: {
-      active: true,
-      commercialAvailable: true,
-      planAccess: { some: { planId: account.planId, enabled: true } },
-    },
-    include: { systemProvider: true, planAccess: { where: { planId: account.planId, enabled: true } } },
-    orderBy: [{ isTrialDefault: "desc" }, { updatedAt: "desc" }],
-  });
+  const models = accessRows.map((row) => row.modelCatalog);
+  let selected = null as (typeof models)[number] | null;
 
-  const staticKey = findManagedModel(agent?.modelKey);
-  const requested = agent?.modelKey
-    ? catalogModels.find((item) => item.id === agent.modelKey)
-      ?? (staticKey
-        ? catalogModels.find((item) => item.provider === staticKey.provider && item.modelId === staticKey.providerModelId)
-        : undefined)
-    : undefined;
-
-  let selected = requested;
-
-  if (!selected) {
-    selected = catalogModels.find((item) => item.isTrialDefault && item.systemProvider?.enabled && item.systemProvider?.isTrialProvider)
-      ?? catalogModels.find((item) => item.systemProvider?.enabled && item.systemProvider?.isTrialProvider);
+  if (account.plan.key === "free") {
+    selected =
+      models.find((item) => item.isTrialDefault && item.systemProvider?.enabled && item.systemProvider.isTrialProvider) ??
+      models.find((item) => item.systemProvider?.enabled && item.systemProvider.isTrialProvider);
+  } else if (agent?.modelKey) {
+    const staticKey = findManagedModel(agent.modelKey);
+    selected =
+      models.find((item) => item.id === agent.modelKey) ??
+      (staticKey ? models.find((item) => item.provider === staticKey.provider && item.modelId === staticKey.providerModelId) : undefined) ??
+      null;
   }
 
   if (!selected) {
     throw Object.assign(
-      new Error("هیچ مدل فعالی برای پلن فعلی از سمت پیشخوان مدیر متصل نشده است."),
+      new Error(account.plan.key === "free"
+        ? "مدل پیش‌فرض نسخه آزمایشی در پیشخوان مدیر تنظیم نشده است."
+        : "مدل انتخابی Agent برای پلن فعلی فعال یا متصل نشده است."),
       { status: 503, code: "managed_model_unavailable" },
     );
   }
@@ -220,19 +214,11 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
       ...selected,
       catalogId: selected.id,
       systemProviderId: selected.systemProviderId,
-      provider: selected.provider,
-      modelId: selected.modelId,
-      displayName: selected.displayName,
       description: staticModel?.description ?? "مدل مدیریت‌شده توسط پیشخوان Cortex",
       tier: (selected.qualityTier as ManagedModelTier) || "balanced",
       creditRatePer1K: staticModel?.creditRatePer1K ?? 1,
       planKeys: ["free", "launch", "growth", "scale", "enterprise"],
       providerModelId: selected.modelId,
-      speedTier: selected.speedTier,
-      qualityTier: selected.qualityTier,
-      tools: selected.tools,
-      reasoning: selected.reasoning,
-      vision: selected.vision,
     } as ManagedModelDefinition & { catalogId: string; systemProviderId: string | null },
     provider,
     planKey: account.plan.key,
@@ -245,4 +231,3 @@ function findManagedModelByProvider(provider: string, modelId: string): ManagedM
   ) ?? null;
 }
 
-import { buildSystemProviderForModel as requireSystemProviderForModel } from "@/lib/server/system-provider";
