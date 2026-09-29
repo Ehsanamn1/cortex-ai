@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { faNum } from "@/components/cortex/format";
 
+type BotSection = "connection" | "access" | "customizer";
+
 function statusMeta(status: string) {
   if (status === "connected") return { label: "متصل", className: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300", icon: CheckCircle2 };
   if (status === "error") return { label: "خطا", className: "border-destructive/20 bg-destructive/10 text-destructive", icon: XCircle };
@@ -30,6 +32,7 @@ export function TelegramView() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<TelegramBotDto | null>(null);
+  const [selectedSection, setSelectedSection] = useState<BotSection>("connection");
 
   const botsQ = useQuery({
     queryKey: ["telegram-bots", workspaceId],
@@ -44,6 +47,11 @@ export function TelegramView() {
     staleTime: 60_000,
   });
 
+  function openBot(bot: TelegramBotDto, section: BotSection = "connection") {
+    setSelectedSection(section);
+    setSelected(bot);
+  }
+
   const bots = botsQ.data?.bots ?? [];
   const agents = agentsQ.data?.agents ?? [];
 
@@ -55,7 +63,7 @@ export function TelegramView() {
         toast.success("ربات با موفقیت متصل شد.");
       } else {
         toast.warning("ربات ساخته شد، اما اتصال Webhook کامل نشد. جزئیات را باز کن و «تست و اتصال مجدد» را بزن.");
-        setSelected(bot);
+        openBot(bot, "connection");
       }
       setOpen(false);
     },
@@ -115,9 +123,9 @@ export function TelegramView() {
                   <div className="mt-auto pt-5">
                     <p className="text-[10px] font-semibold text-muted-foreground">مدیریت این ربات</p>
                     <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                      <Button size="sm" onClick={() => setSelected(bot)}><Pencil />مدیریت Bot</Button>
-                      <Button size="sm" variant="outline" onClick={() => setSelected(bot)}><Users />شماره‌ها و دسترسی</Button>
-                      <Button size="sm" variant="outline" onClick={() => setSelected(bot)}><Pencil />شخصی‌سازی Bot</Button>
+                      <Button size="sm" onClick={() => openBot(bot, "connection")}><Pencil />مدیریت Bot</Button>
+                      <Button size="sm" variant="outline" onClick={() => openBot(bot, "access")}><Users />شماره‌ها و دسترسی</Button>
+                      <Button size="sm" variant="outline" onClick={() => openBot(bot, "customizer")}><Pencil />شخصی‌سازی Bot</Button>
                     </div>
                     <p className="mt-2 text-[10px] leading-5 text-muted-foreground">با انتخاب هرکدام، پنجره مدیریت همین Bot باز می‌شود و بخش مربوطه در بالای پنجره کاملاً مشخص است.</p>
                   </div>
@@ -135,7 +143,7 @@ export function TelegramView() {
         </DialogContent>
       </Dialog>
 
-      {selected && <BotDetail bot={selected} agents={agents} onClose={() => setSelected(null)} onUpdated={(bot) => setSelected(bot)} onDelete={() => { del.mutate(selected.id); setSelected(null); }} />}
+      {selected && <BotDetail bot={selected} agents={agents} initialSection={selectedSection} onClose={() => setSelected(null)} onUpdated={(bot) => setSelected(bot)} onDelete={() => { del.mutate(selected.id); setSelected(null); }} />}
     </div>
   );
 }
@@ -143,6 +151,7 @@ export function TelegramView() {
 function CreateBotForm({ agents, workspaceId, pending, onSubmit }: { agents: AgentDto[]; workspaceId?: string; pending: boolean; onSubmit: (value: { workspaceId?: string; agentId: string; name: string; token: string }) => void }) {
   const [name, setName] = useState("ربات Cortex");
   const [token, setToken] = useState("");
+  const [section, setSection] = useState<BotSection>(initialSection);
   const [agentId, setAgentId] = useState("");
   const resolvedAgentId = agentId || agents[0]?.id || "";
 
@@ -157,7 +166,7 @@ function CreateBotForm({ agents, workspaceId, pending, onSubmit }: { agents: Age
   );
 }
 
-function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: TelegramBotDto; agents: AgentDto[]; onClose: () => void; onUpdated: (bot: TelegramBotDto) => void; onDelete: () => void }) {
+function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }: { bot: TelegramBotDto; agents: AgentDto[]; initialSection: BotSection; onClose: () => void; onUpdated: (bot: TelegramBotDto) => void; onDelete: () => void }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(bot.name);
   const [agentId, setAgentId] = useState(bot.agentId);
@@ -175,7 +184,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
   const usersQuery = useQuery({
     queryKey: ["telegram-bot-users", bot.id],
     queryFn: () => api.getTelegramBotUsers(bot.id),
-    enabled: !!bot.id,
+    enabled: !!bot.id && section === "access",
     staleTime: 10_000,
     refetchInterval: 20_000,
   });
@@ -202,7 +211,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
 
   return (
     <Dialog open onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="w-[calc(100vw-0.75rem)] max-h-[92dvh] overflow-y-auto rounded-[22px] p-3 sm:p-6 max-w-2xl">
+      <DialogContent className="w-[calc(100vw-0.5rem)] max-h-[94dvh] overflow-y-auto overscroll-contain rounded-[24px] p-3 sm:p-6 max-w-5xl">
         <DialogHeader>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0"><DialogTitle className="truncate">{bot.name}</DialogTitle><DialogDescription className="mt-1">اتصال، ایجنت، شماره‌های مجاز، سقف مصرف و شخصی‌سازی کامل ربات از همین پنجره.</DialogDescription></div>
@@ -210,14 +219,35 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
           </div>
         </DialogHeader>
 
-        <div className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-2 rounded-xl border border-white/[.06] bg-background/95 p-2 backdrop-blur">
-          <Button size="sm" variant="outline" onClick={() => document.getElementById(`telegram-bot-connection-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>۱ · اتصال Bot</Button>
-          <Button size="sm" variant="outline" onClick={() => document.getElementById(`telegram-bot-access-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>۲ · افزودن شماره / دسترسی</Button>
-          <Button size="sm" variant="outline" onClick={() => document.getElementById(`telegram-bot-customizer-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>۳ · شخصی‌سازی Bot</Button>
+        <div className="sticky top-0 z-20 -mx-1 flex gap-2 overflow-x-auto rounded-xl border border-border/60 bg-background/95 p-2 backdrop-blur-xl">
+          {([
+            ["connection", "۱ · اتصال Bot"],
+            ["access", "۲ · دسترسی و کاربران"],
+            ["customizer", "۳ · شخصی‌سازی Bot"],
+          ] as const).map(([key, label]) => (
+            <Button
+              key={key}
+              size="sm"
+              variant={section === key ? "default" : "outline"}
+              className="shrink-0"
+              onClick={() => {
+                setSection(key);
+                requestAnimationFrame(() => document.getElementById(
+                  key === "connection"
+                    ? `telegram-bot-connection-${bot.id}`
+                    : key === "access"
+                      ? `telegram-bot-access-${bot.id}`
+                      : `telegram-bot-customizer-${bot.id}`
+                )?.scrollIntoView({ behavior: "smooth", block: "start" }));
+              }}
+            >
+              {label}
+            </Button>
+          ))}
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
-          <Card id={`telegram-bot-connection-${bot.id}`} className="border-white/[.06] bg-white/[.02]">
+          <Card id={`telegram-bot-connection-${bot.id}`} className={cn("border-white/[.06] bg-white/[.02]", section === "connection" ? "block" : "hidden")}>
             <CardHeader><CardTitle className="text-sm">تنظیمات ربات</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label>نام نمایشی</Label><Input value={name} onChange={(event) => setName(event.target.value)} /></div>
@@ -235,7 +265,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
             </CardContent>
           </Card>
 
-          <Card className="border-white/[.06] bg-white/[.02]">
+          <Card className={cn("border-white/[.06] bg-white/[.02]", section === "access" ? "block" : "hidden")}>
             <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />دسترسی و کاربران</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-xl border border-emerald-400/15 bg-emerald-400/[.06] p-4">
@@ -268,8 +298,12 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
           </Card>
         </div>
 
-        <TelegramAccessManager botId={bot.id} />
-        <TelegramCustomizer botId={bot.id} />
+        <div className={cn(section === "access" ? "block" : "hidden")}>
+          <TelegramAccessManager botId={bot.id} enabled={section === "access"} />
+        </div>
+        <div className={cn(section === "customizer" ? "block" : "hidden")}>
+          <TelegramCustomizer botId={bot.id} enabled={section === "customizer"} />
+        </div>
 
         {bot.lastError && <div className="rounded-xl border border-destructive/20 bg-destructive/[.05] p-4"><p className="text-xs font-semibold text-destructive">آخرین خطا</p><p className="mt-1 text-xs leading-6 text-destructive/90">{bot.lastError}</p></div>}
         <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
