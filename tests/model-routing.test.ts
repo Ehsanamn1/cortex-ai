@@ -60,6 +60,38 @@ describe("Central model routing", () => {
     }));
   });
 
+  it("uses the central Trial Provider if the default model points to another provider", async () => {
+    vi.mocked(db.modelCatalog.findFirst).mockResolvedValue({
+      id: "catalog-trial", routeKey: "trial-default", provider: "TrialProvider", modelId: "trial-model",
+      displayName: "Trial", qualityTier: "economy", speedTier: "fast", contextWindow: null,
+      vision: false, tools: true, structuredOutput: false, reasoning: false,
+      commercialAvailable: true, trialEnabled: true, trialDefault: true,
+      systemProvider: {
+        id: "provider-wrong", key: "wrong", displayName: "Wrong", providerName: "WrongProvider",
+        protocol: "openai-compatible", authMode: "bearer", baseUrl: "https://wrong.example/v1",
+        apiKeyEncrypted: "enc:key", enabled: true, isTrialProvider: false,
+      },
+    } as never);
+    vi.mocked(db.workspaceBillingAccount.findUnique).mockResolvedValue({
+      planId: "plan-free", plan: { key: "free" },
+    } as never);
+    vi.mocked(db.planModelAccess.findUnique).mockResolvedValue({ enabled: true, creditMultiplierBps: 100 } as never);
+    vi.mocked(db.systemProviderConfig.findFirst).mockResolvedValue({
+      id: "provider-central", key: "central", displayName: "Central Trial", providerName: "CentralProvider",
+      protocol: "openai-compatible", authMode: "bearer", baseUrl: "https://central.example/v1",
+      apiKeyEncrypted: "enc:key", enabled: true, isTrialProvider: true,
+    } as never);
+
+    const { buildSystemProviderForModel } = await import("@/lib/server/system-provider");
+    const result = await resolveManagedModelForAgent("agent-1", "workspace-1");
+
+    expect(result.provider.isConfigured()).toBe(true);
+    expect(vi.mocked(buildSystemProviderForModel)).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "provider-central", isTrialProvider: true }),
+      "trial-model",
+    );
+  });
+
   it("routes a Trial agent to the admin-selected default catalog model", async () => {
     vi.mocked(db.modelCatalog.findFirst).mockResolvedValue({
       id: "catalog-trial", routeKey: "trial-default", provider: "TrialProvider", modelId: "trial-model",
