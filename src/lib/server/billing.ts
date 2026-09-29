@@ -102,7 +102,27 @@ async function ensurePlanCatalog() {
   if (catalogPromise) return catalogPromise;
   catalogPromise = (async () => {
     for (const plan of DEFAULT_BILLING_PLANS) {
-      const existing = await db.plan.findUnique({ where: { key: plan.key }, select: { id: true } });
+      const existing = await db.plan.findUnique({
+        where: { key: plan.key },
+        select: { id: true, systemManaged: true },
+      });
+      if (existing && existing.systemManaged) {
+        await db.plan.update({
+          where: { id: existing.id },
+          data: {
+            name: plan.name,
+            description: plan.description,
+            priceToman: plan.priceToman,
+            currency: "TOMAN",
+            monthlyCredits: plan.monthlyCredits,
+            monthlyTokenLimit: plan.monthlyTokenLimit,
+            overageCreditPriceToman: plan.overageCreditPriceToman,
+            overageEnabled: plan.overageEnabled,
+            active: true,
+            sortOrder: plan.sortOrder,
+          },
+        });
+      }
       if (!existing) {
         await db.plan.create({
           data: {
@@ -117,6 +137,7 @@ async function ensurePlanCatalog() {
             overageEnabled: plan.overageEnabled,
             sortOrder: plan.sortOrder,
             active: true,
+            systemManaged: true,
           },
         });
       }
