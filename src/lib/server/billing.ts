@@ -232,6 +232,20 @@ async function ensureWorkspaceBilling(workspaceId: string) {
       });
     }
 
+    const legacyPlanMap: Record<string, string> = { starter: "launch", business: "growth", pro: "scale" };
+    const migratedPlanKey = legacyPlanMap[account.plan.key];
+    if (migratedPlanKey) {
+      const targetPlan = await tx.plan.findUnique({ where: { key: migratedPlanKey } });
+      if (targetPlan) {
+        await tx.workspaceBillingAccount.update({ where: { id: account.id }, data: { planId: targetPlan.id } });
+        await tx.subscription.updateMany({
+          where: { billingAccountId: account.id, status: "active" },
+          data: { planId: targetPlan.id },
+        });
+        account = await tx.workspaceBillingAccount.findUniqueOrThrow({ where: { id: account.id }, include: { plan: true } });
+      }
+    }
+
     if (envEnforcementDefault() && !account.enforcementEnabled) {
       await tx.workspaceBillingAccount.update({ where: { id: account.id }, data: { enforcementEnabled: true } });
       account = await tx.workspaceBillingAccount.findUniqueOrThrow({ where: { id: account.id }, include: { plan: true } });
