@@ -26,7 +26,7 @@ export const CORTEX_UI_CONFIG = {
     { view: "workflows" as CortexView, label: "گردش‌کارها", mobile: false },
   ],
   copy: {
-    welcomeTitle: "هوش کسب‌وکار را از یک داشبورد کنترل کن.",
+    welcomeTitle: "هوش کسب‌وکار را به جریان عملیات تبدیل کن.",
     authTitle: "به Cortex AI خوش آمدید",
     authDescription: "برای ادامه، وارد حساب خود شوید یا یک فضای کاری جدید بسازید.",
   },
