@@ -20,6 +20,16 @@ function appBaseUrl(): string {
   return (trimEnv("APP_PUBLIC_URL") || trimEnv("CORTEX_CUSTOMER_APP_URL") || "http://localhost:3000").replace(/\/$/, "");
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>\\"\x27]/g, (char) => {
+    if (char === "&") return "&amp;";
+    if (char === "<") return "&lt;";
+    if (char === ">") return "&gt;";
+    if (char === "\\\"") return "&quot;";
+    return "&#39;";
+  });
+}
+
 function emailFrom(): string {
   return trimEnv("CORTEX_EMAIL_FROM") || "Cortex AI <no-reply@cortex-ai.local>";
 }
@@ -35,7 +45,7 @@ export async function sendPasswordResetEmail(input: { email: string; name?: stri
     return { delivered: false, resetUrl };
   }
 
-  const greeting = input.name?.trim() ? "سلام " + input.name.trim() + " عزیز،" : "سلام،";
+  const greeting = input.name?.trim() ? "سلام " + escapeHtml(input.name.trim()) + " عزیز،" : "سلام،";
   const html = [
     '<!doctype html><html lang="fa" dir="rtl"><body style="margin:0;background:#f5f7fb;font-family:Tahoma,Arial,sans-serif;color:#172033">',
     '<div style="max-width:620px;margin:32px auto;padding:0 16px">',
