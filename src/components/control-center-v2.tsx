@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity, Bot, Boxes, CheckCircle2, CircleX, Clock3, CreditCard, Database, FileText, Gauge, History, LayoutDashboard,
-  LogOut, MessageSquare, Pencil, Plug, Power, RefreshCw, Save, Search, Send, Settings2,
+  LogOut, MessageSquare, Pencil, Power, RefreshCw, Save, Search, Send, Settings2,
   Users, WalletCards, Workflow
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ProviderRegistryPanel } from "@/components/cortex/provider-registry-panel";
 
 type Section =
   | "overview" | "users" | "workspaces" | "agents" | "knowledge" | "conversations"
@@ -278,23 +279,23 @@ export function ControlCenterV2() {
 function ControlCenterRuntime() {
   const [section,setSection]=useState<Section>("overview"); const [search,setSearch]=useState("");
   const qc=useQueryClient();
-  const session=useQuery<{username:string}>({queryKey:["cc-auth"],queryFn:()=>jsonFetch("/api/admin/auth/me"),retry:false});
+  const session=useQuery<{principal:string}>({queryKey:["cc-auth"],queryFn:()=>jsonFetch("/api/admin/auth/me"),retry:false});
   const summary=useQuery<any>({queryKey:["cc-summary"],queryFn:()=>jsonFetch("/api/control-center"),enabled:session.isSuccess,staleTime:10_000});
   const logout=useMutation({mutationFn:()=>fetch("/api/admin/auth/logout",{method:"POST"}),onSuccess:()=>{qc.clear();window.location.reload();}});
   if(session.isPending) return <div className="min-h-screen bg-[#f6f7fb] p-8"><div className="mx-auto max-w-7xl rounded-xl bg-white p-12 text-center">در حال بارگذاری مرکز مدیریت…</div></div>;
-  if(session.isError) return <AdminLogin onDone={()=>void session.refetch()}/>;
+  if(session.isError) return <AdminEntryRequired />;
   const groups=[...new Set(SECTIONS.map(x=>x.group))]; const m=summary.data?.metrics??{}; const activeSection=SECTIONS.find(x=>x.id===section)!;
-  return <div className="cortex-control-center min-h-screen bg-[#f6f7fb] text-foreground" dir="rtl"><div className="flex min-h-screen">
-    <aside className="hidden w-[250px] shrink-0 border-l border-border bg-white lg:flex lg:flex-col">
-      <div className="border-b border-border p-5"><div className="text-lg font-extrabold tracking-tight text-slate-900">Cortex <span className="text-primary">Admin</span></div><p className="mt-1 text-[10px] text-muted-foreground">Operational Control Center</p></div>
-      <nav className="flex-1 overflow-y-auto p-3">{groups.map(group=><div key={group} className="mb-5"><p className="px-3 pb-2 text-[9px] font-bold tracking-[.18em] text-slate-400">{group.toUpperCase()}</p><div className="space-y-1">{SECTIONS.filter(s=>s.group===group).map(s=><button key={s.id} type="button" onClick={()=>{setSection(s.id);setSearch("");}} className={cn("flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium",section===s.id?"bg-[#eef3ff] text-[#3f6fe5]":"text-slate-600 hover:bg-slate-50")}><s.icon className="size-4 shrink-0"/><span>{s.label}</span></button>)}</div></div>)}</nav>
-      <div className="border-t border-border p-4"><div className="flex items-center gap-2 rounded-lg bg-slate-50 p-2.5"><span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-[10px] font-bold text-primary">{session.data?.username?.slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{session.data?.username}</p><p className="text-[9px] text-muted-foreground">Administrator</p></div><Button variant="ghost" size="icon" onClick={()=>logout.mutate()}><LogOut className="size-4"/></Button></div></div>
+  return <div className="cortex-control-center min-h-screen bg-[#0b0f0b] text-[#e9ece6]" dir="rtl"><div className="flex min-h-screen">
+    <aside className="hidden w-[270px] shrink-0 border-l border-[#263024] bg-[#0e130e] lg:flex lg:flex-col">
+      <div className="border-b border-[#263024] p-5"><div className="text-lg font-black tracking-tight text-[#f2f4ed]">CORTEX <span className="text-[#b5d84b]">SYSTEM DESK</span></div><p className="mt-1 text-[10px] text-[#697464]">مالکیت، مدل، Provider، Billing</p></div>
+      <nav className="flex-1 overflow-y-auto p-3">{groups.map(group=><div key={group} className="mb-5"><p className="px-3 pb-2 text-[9px] font-bold tracking-[.18em] text-slate-400">{group.toUpperCase()}</p><div className="space-y-1">{SECTIONS.filter(s=>s.group===group).map(s=><button key={s.id} type="button" onClick={()=>{setSection(s.id);setSearch("");}} className={cn("flex w-full items-center gap-2 border-s border-transparent px-3 py-2.5 text-xs font-medium transition",section===s.id?"border-s-[#b5d84b] bg-[#182018] text-[#d7eb9a]":"text-[#97a08f] hover:bg-[#141a14] hover:text-[#eef1e9]")}><s.icon className="size-4 shrink-0"/><span>{s.label}</span></button>)}</div></div>)}</nav>
+      <div className="border-t border-[#263024] p-4"><div className="flex items-center gap-2 border border-[#2c3729] bg-[#111711] p-2.5"><span className="flex size-8 items-center justify-center border border-[#b5d84b]/25 bg-[#b5d84b]/10 text-[9px] font-black text-[#b5d84b]">SO</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-[#f2f4ed]">SYSTEM OWNER</p><p className="text-[9px] text-[#6e7868]">Private console</p></div><Button variant="ghost" size="icon" onClick={()=>logout.mutate()}><LogOut className="size-4"/></Button></div></div>
     </aside>
-    <div className="min-w-0 flex-1"><header className="sticky top-0 z-30 border-b border-border bg-white/95 backdrop-blur"><div className="flex items-center gap-3 px-4 py-3 lg:px-7"><div className="min-w-0 flex-1"><p className="text-[9px] font-bold tracking-[.18em] text-primary">CORTEX CONTROL CENTER</p><h1 className="truncate text-lg font-bold">{activeSection.label}</h1></div><div className="hidden w-[260px] items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 md:flex"><Search className="size-4 text-muted-foreground"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-0" placeholder="جستجو…"/></div><Button variant="outline" size="icon" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button></div></header>
-      <div className="flex gap-1 overflow-x-auto border-b bg-white px-3 py-2 lg:hidden">
-        {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap rounded-md px-3 py-2 text-[10px] font-medium",section===s.id?"bg-[#eef3ff] text-[#3f6fe5]":"text-slate-600")}>{s.label}</button>)}
+    <div className="min-w-0 flex-1"><header className="sticky top-0 z-30 border-b border-[#263024] bg-[#0d120d]/95 backdrop-blur"><div className="flex items-center gap-3 px-4 py-3 lg:px-7"><div className="min-w-0 flex-1"><p className="text-[9px] font-bold tracking-[.18em] text-[#b5d84b]">SYSTEM DESK / PRIVATE</p><h1 className="truncate text-lg font-black text-[#f2f4ed]">{activeSection.label}</h1></div><div className="hidden w-[260px] items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 md:flex"><Search className="size-4 text-muted-foreground"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-0" placeholder="جستجو…"/></div><Button variant="outline" size="icon" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button></div></header>
+      <div className="flex gap-1 overflow-x-auto border-b border-[#263024] bg-[#0e130e] px-3 py-2 lg:hidden">
+        {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap border border-transparent px-3 py-2 text-[10px] font-semibold",section===s.id?"border-[#b5d84b]/25 bg-[#182018] text-[#d7eb9a]":"text-[#879181]")}>{s.label}</button>)}
       </div>
-      <main className="mx-auto max-w-[1400px] space-y-5 p-4 lg:p-7">
+      <main className="mx-auto max-w-[1480px] space-y-5 p-4 lg:p-7">
         {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>}
       </main>
     </div>
@@ -341,8 +342,19 @@ function SettingsPanel() {
   return <Card className="border-border"><CardHeader><CardTitle className="text-sm">تنظیمات محصول و رابط کاربری</CardTitle><p className="text-[10px] text-muted-foreground">همان SiteSetting فعلی؛ بدون hard-code کردن مقدارهای عملیاتی.</p></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">{fields.map(([k,l])=><div key={k}><label className="text-xs font-medium">{l}</label><Input className="mt-2" dir={k.includes("Color")||k.includes("Email")?"ltr":"rtl"} value={s[k]??""} onChange={e=>setDraft({...draft,[k]:e.target.value})}/></div>)}<div className="md:col-span-2 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save/>ذخیره تنظیمات</Button></div></CardContent></Card>;
 }
 
-function AdminLogin({onDone}:{onDone:()=>void}) {
-  const [username,setUsername]=useState(""); const [password,setPassword]=useState("");
-  const login=useMutation({mutationFn:()=>jsonFetch("/api/admin/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})}),onSuccess:()=>{toast.success("ورود موفق بود");onDone();},onError:(e:Error)=>toast.error(e.message)});
-  return <div className="grid min-h-screen place-items-center bg-[#f6f7fb] p-4"><Card className="w-full max-w-md border-border shadow-xl"><CardHeader><CardTitle className="text-xl">ورود مدیر Cortex</CardTitle><p className="text-xs text-muted-foreground">Control Center</p></CardHeader><CardContent className="space-y-4"><Input dir="ltr" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username"/><Input dir="ltr" type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login.mutate()} placeholder="Password"/><Button className="w-full" disabled={!username||!password||login.isPending} onClick={()=>login.mutate()}>ورود</Button></CardContent></Card></div>;
+function AdminEntryRequired() {
+  return <div className="grid min-h-screen place-items-center bg-[#0a0e0a] p-4" dir="rtl">
+    <Card className="w-full max-w-lg rounded-none border-[#2c3729] bg-[#10150f] text-[#eef1e9]">
+      <CardContent className="p-7 sm:p-9">
+        <div className="flex items-start gap-4">
+          <span className="grid size-12 shrink-0 place-items-center border border-[#b5d84b]/25 bg-[#b5d84b]/10 text-[#b5d84b]"><Power className="size-5" /></span>
+          <div>
+            <p className="text-[9px] font-bold tracking-[.22em] text-[#b5d84b]">PRIVATE SYSTEM DESK</p>
+            <h2 className="mt-2 text-2xl font-black">این پیشخوان عمومی نیست.</h2>
+            <p className="mt-3 text-sm leading-7 text-[#9ba597]">دسترسی فقط از لینک خصوصی مالک سیستم انجام می‌شود. صفحه ورود نام کاربری و رمز عبور عمداً در محیط مدیریت نمایش داده نمی‌شود.</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </div>;
 }
