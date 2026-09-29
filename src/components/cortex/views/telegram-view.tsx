@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, BarChart3, Bot, CheckCircle2, Copy, FileSpreadsheet, Link2, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, Upload, Users, Wifi, XCircle, CopyPlus, Link, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { faNum } from "@/components/cortex/format";
 
+type BotSection = "connection" | "access" | "customizer";
+
 function statusMeta(status: string) {
   if (status === "connected") return { label: "متصل", className: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300", icon: CheckCircle2 };
   if (status === "error") return { label: "خطا", className: "border-destructive/20 bg-destructive/10 text-destructive", icon: XCircle };
@@ -30,6 +32,7 @@ export function TelegramView() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<TelegramBotDto | null>(null);
+  const [selectedSection, setSelectedSection] = useState<BotSection>("connection");
 
   const botsQ = useQuery({
     queryKey: ["telegram-bots", workspaceId],
@@ -44,6 +47,11 @@ export function TelegramView() {
     staleTime: 60_000,
   });
 
+  function openBot(bot: TelegramBotDto, section: BotSection = "connection") {
+    setSelectedSection(section);
+    setSelected(bot);
+  }
+
   const bots = botsQ.data?.bots ?? [];
   const agents = agentsQ.data?.agents ?? [];
 
@@ -55,7 +63,7 @@ export function TelegramView() {
         toast.success("ربات با موفقیت متصل شد.");
       } else {
         toast.warning("ربات ساخته شد، اما اتصال Webhook کامل نشد. جزئیات را باز کن و «تست و اتصال مجدد» را بزن.");
-        setSelected(bot);
+        openBot(bot, "connection");
       }
       setOpen(false);
     },
@@ -115,9 +123,9 @@ export function TelegramView() {
                   <div className="mt-auto pt-5">
                     <p className="text-[10px] font-semibold text-muted-foreground">مدیریت این ربات</p>
                     <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                      <Button size="sm" onClick={() => setSelected(bot)}><Pencil />مدیریت Bot</Button>
-                      <Button size="sm" variant="outline" onClick={() => setSelected(bot)}><Users />شماره‌ها و دسترسی</Button>
-                      <Button size="sm" variant="outline" onClick={() => setSelected(bot)}><Pencil />شخصی‌سازی Bot</Button>
+                      <Button size="sm" onClick={() => openBot(bot, "connection")}><Pencil />مدیریت Bot</Button>
+                      <Button size="sm" variant="outline" onClick={() => openBot(bot, "access")}><Users />شماره‌ها و دسترسی</Button>
+                      <Button size="sm" variant="outline" onClick={() => openBot(bot, "customizer")}><Pencil />شخصی‌سازی Bot</Button>
                     </div>
                     <p className="mt-2 text-[10px] leading-5 text-muted-foreground">با انتخاب هرکدام، پنجره مدیریت همین Bot باز می‌شود و بخش مربوطه در بالای پنجره کاملاً مشخص است.</p>
                   </div>
@@ -135,7 +143,7 @@ export function TelegramView() {
         </DialogContent>
       </Dialog>
 
-      {selected && <BotDetail bot={selected} agents={agents} onClose={() => setSelected(null)} onUpdated={(bot) => setSelected(bot)} onDelete={() => { del.mutate(selected.id); setSelected(null); }} />}
+      {selected && <BotDetail bot={selected} agents={agents} initialSection={selectedSection} onClose={() => setSelected(null)} onUpdated={(bot) => setSelected(bot)} onDelete={() => { del.mutate(selected.id); setSelected(null); }} />}
     </div>
   );
 }
@@ -157,11 +165,12 @@ function CreateBotForm({ agents, workspaceId, pending, onSubmit }: { agents: Age
   );
 }
 
-function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: TelegramBotDto; agents: AgentDto[]; onClose: () => void; onUpdated: (bot: TelegramBotDto) => void; onDelete: () => void }) {
+function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }: { bot: TelegramBotDto; agents: AgentDto[]; initialSection: BotSection; onClose: () => void; onUpdated: (bot: TelegramBotDto) => void; onDelete: () => void }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(bot.name);
   const [agentId, setAgentId] = useState(bot.agentId);
   const [token, setToken] = useState("");
+  const [section, setSection] = useState<BotSection>(initialSection);
   const reconnect = useMutation({
     mutationFn: () => api.reconnectTelegramBot(bot.id),
     onSuccess: ({ bot: updated }) => { onUpdated(updated); queryClient.invalidateQueries({ queryKey: ["telegram-bots"] }); toast.success("اتصال Telegram تست و تازه‌سازی شد."); },
@@ -172,22 +181,20 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
     onSuccess: ({ bot: updated }) => { onUpdated(updated); setToken(""); queryClient.invalidateQueries({ queryKey: ["telegram-bots"] }); toast.success(updated.status === "connected" ? "تنظیمات ربات و اتصال به‌روز شد." : "تنظیمات ذخیره شد؛ وضعیت اتصال را بررسی کن."); },
     onError: (error: Error) => toast.error(error.message),
   });
-  const usersQuery = useQuery({
-    queryKey: ["telegram-bot-users", bot.id],
-    queryFn: () => api.getTelegramBotUsers(bot.id),
-    enabled: !!bot.id,
-    staleTime: 10_000,
-    refetchInterval: 20_000,
-  });
-  const botUsers = (usersQuery.data?.users ?? []).filter((item) => item.botId === bot.id).sort((a, b) => (b.usage?.tokens ?? 0) - (a.usage?.tokens ?? 0));
   const [userSearch, setUserSearch] = useState("");
   const [showAllUsers, setShowAllUsers] = useState(false);
-  const filteredBotUsers = useMemo(() => {
-    const q = userSearch.trim().toLowerCase();
-    if (!q) return botUsers;
-    return botUsers.filter((user) => [user.phoneNumber, user.username, user.firstName, user.lastName, user.telegramUserId].filter(Boolean).join(" ").toLowerCase().includes(q));
-  }, [botUsers, userSearch]);
-  const visibleBotUsers = showAllUsers ? filteredBotUsers : filteredBotUsers.slice(0, 6);
+  const userPageSize = showAllUsers ? 100 : 30;
+  const usersQuery = useQuery({
+    queryKey: ["telegram-bot-users", bot.id, userSearch, userPageSize],
+    queryFn: () => api.getTelegramBotUsers(bot.id, { search: userSearch, limit: userPageSize }),
+    enabled: !!bot.id && section === "access",
+    staleTime: 20_000,
+    refetchInterval: 30_000,
+    placeholderData: (previous) => previous,
+  });
+  const botUsers = (usersQuery.data?.users ?? []).filter((item) => item.botId === bot.id).sort((a, b) => (b.usage?.tokens ?? 0) - (a.usage?.tokens ?? 0));
+  const visibleBotUsers = botUsers;
+  const hasMoreUsers = usersQuery.data?.hasMore ?? false;
   const dailyTokensTotal = botUsers.reduce((sum, user) => sum + (user.dailyUsage?.tokens ?? 0), 0);
   const dailyMessagesTotal = botUsers.reduce((sum, user) => sum + (user.dailyUsage?.events ?? 0), 0);
   const monthlyTokensTotal = botUsers.reduce((sum, user) => sum + (user.monthlyUsage?.tokens ?? 0), 0);
@@ -202,7 +209,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
 
   return (
     <Dialog open onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="w-[calc(100vw-0.75rem)] max-h-[92dvh] overflow-y-auto rounded-[22px] p-3 sm:p-6 max-w-2xl">
+      <DialogContent className="w-[calc(100vw-0.5rem)] max-h-[94dvh] overflow-y-auto overscroll-contain rounded-[24px] p-3 sm:p-6 max-w-5xl">
         <DialogHeader>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0"><DialogTitle className="truncate">{bot.name}</DialogTitle><DialogDescription className="mt-1">اتصال، ایجنت، شماره‌های مجاز، سقف مصرف و شخصی‌سازی کامل ربات از همین پنجره.</DialogDescription></div>
@@ -210,14 +217,35 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
           </div>
         </DialogHeader>
 
-        <div className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-2 rounded-xl border border-white/[.06] bg-background/95 p-2 backdrop-blur">
-          <Button size="sm" variant="outline" onClick={() => document.getElementById(`telegram-bot-connection-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>۱ · اتصال Bot</Button>
-          <Button size="sm" variant="outline" onClick={() => document.getElementById(`telegram-bot-access-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>۲ · افزودن شماره / دسترسی</Button>
-          <Button size="sm" variant="outline" onClick={() => document.getElementById(`telegram-bot-customizer-${bot.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>۳ · شخصی‌سازی Bot</Button>
+        <div className="sticky top-0 z-20 -mx-1 flex gap-2 overflow-x-auto rounded-xl border border-border/60 bg-background/95 p-2 backdrop-blur-xl">
+          {([
+            ["connection", "۱ · اتصال Bot"],
+            ["access", "۲ · دسترسی و کاربران"],
+            ["customizer", "۳ · شخصی‌سازی Bot"],
+          ] as const).map(([key, label]) => (
+            <Button
+              key={key}
+              size="sm"
+              variant={section === key ? "default" : "outline"}
+              className="shrink-0"
+              onClick={() => {
+                setSection(key);
+                requestAnimationFrame(() => document.getElementById(
+                  key === "connection"
+                    ? `telegram-bot-connection-${bot.id}`
+                    : key === "access"
+                      ? `telegram-bot-access-${bot.id}`
+                      : `telegram-bot-customizer-${bot.id}`
+                )?.scrollIntoView({ behavior: "smooth", block: "start" }));
+              }}
+            >
+              {label}
+            </Button>
+          ))}
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
-          <Card id={`telegram-bot-connection-${bot.id}`} className="border-white/[.06] bg-white/[.02]">
+          <Card id={`telegram-bot-connection-${bot.id}`} className={cn("border-white/[.06] bg-white/[.02]", section === "connection" ? "block" : "hidden")}>
             <CardHeader><CardTitle className="text-sm">تنظیمات ربات</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label>نام نمایشی</Label><Input value={name} onChange={(event) => setName(event.target.value)} /></div>
@@ -235,7 +263,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
             </CardContent>
           </Card>
 
-          <Card className="border-white/[.06] bg-white/[.02]">
+          <Card className={cn("border-white/[.06] bg-white/[.02]", section === "access" ? "block" : "hidden")}>
             <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />دسترسی و کاربران</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-xl border border-emerald-400/15 bg-emerald-400/[.06] p-4">
@@ -255,21 +283,25 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
                 </div>
                 <div className="mt-3 flex items-center gap-2">
                   <div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute start-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"/><Input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder="شماره، نام کاربر یا Telegram ID..." className="ps-9 text-xs" /></div>
-                  {botUsers.length > 6 && <Button size="sm" variant="outline" onClick={() => setShowAllUsers((value) => !value)}>{showAllUsers ? "جمع‌کردن" : "نمایش همه"}</Button>}
+                  {(hasMoreUsers || showAllUsers) && <Button size="sm" variant="outline" disabled={usersQuery.isFetching} onClick={() => setShowAllUsers((value) => !value)}>{showAllUsers ? "نمایش جمع‌وجور" : "بارگذاری کاربران بیشتر"}</Button>}
                 </div>
                 <div className="mt-3 space-y-2">
-                  {visibleBotUsers.map((user) => (
+                  {usersQuery.isLoading ? <p className="rounded-xl border border-dashed p-4 text-center text-[11px] text-muted-foreground">در حال بارگذاری کاربران…</p> : visibleBotUsers.map((user) => (
                     <TelegramUserMonitorCard key={user.id} botId={bot.id} user={user} onChanged={() => void usersQuery.refetch()} />
                   ))}
-                  {filteredBotUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">کاربری با این فیلتر پیدا نشد.</p>}
+                  {visibleBotUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">کاربری با این فیلتر پیدا نشد.</p>}
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <TelegramAccessManager botId={bot.id} />
-        <TelegramCustomizer botId={bot.id} />
+        <div className={cn(section === "access" ? "block" : "hidden")}>
+          <TelegramAccessManager botId={bot.id} enabled={section === "access"} />
+        </div>
+        <div className={cn(section === "customizer" ? "block" : "hidden")}>
+          <TelegramCustomizer botId={bot.id} enabled={section === "customizer"} />
+        </div>
 
         {bot.lastError && <div className="rounded-xl border border-destructive/20 bg-destructive/[.05] p-4"><p className="text-xs font-semibold text-destructive">آخرین خطا</p><p className="mt-1 text-xs leading-6 text-destructive/90">{bot.lastError}</p></div>}
         <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
@@ -282,7 +314,7 @@ function BotDetail({ bot, agents, onClose, onUpdated, onDelete }: { bot: Telegra
 }
 
 
-export function TelegramAccessManager({ botId }: { botId: string }) {
+export function TelegramAccessManager({ botId, enabled = true }: { botId: string; enabled?: boolean }) {
   const queryClient = useQueryClient();
   const [phones, setPhones] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -297,6 +329,7 @@ export function TelegramAccessManager({ botId }: { botId: string }) {
     queryKey: ["telegram-allowlist", botId],
     queryFn: () => api.getTelegramAllowlist(botId),
     staleTime: 10_000,
+    enabled: !!botId && enabled,
   });
 
   const update = useMutation({
@@ -450,11 +483,12 @@ function AccessEntryRow({
   );
 }
 
-export function TelegramCustomizer({ botId }: { botId: string }) {
+export function TelegramCustomizer({ botId, enabled = true }: { botId: string; enabled?: boolean }) {
   const q = useQuery({
     queryKey: ["telegram-profile", botId],
     queryFn: () => api.getTelegramBotProfile(botId),
-    staleTime: 15_000,
+    staleTime: 30_000,
+    enabled: !!botId && enabled,
   });
   const profile = q.data?.profile;
 
@@ -479,6 +513,9 @@ function TelegramCustomizerForm({
   const [welcomeTitle, setWelcomeTitle] = useState(profile.welcomeTitle);
   const [welcome, setWelcome] = useState(profile.welcomeText);
   const [help, setHelp] = useState(profile.helpText);
+  const [blocked, setBlocked] = useState(profile.blockedText);
+  const [errorText, setErrorText] = useState(profile.errorText);
+  const [accessRequired, setAccessRequired] = useState(profile.accessRequiredText);
   const [newChat, setNewChat] = useState(profile.newChatText);
   const [newChatButton, setNewChatButton] = useState(profile.newChatButtonText);
   const [helpButton, setHelpButton] = useState(profile.helpButtonText);
@@ -497,6 +534,9 @@ function TelegramCustomizerForm({
       welcomeTitle: welcomeTitle.trim(),
       welcomeText: welcome.trim(),
       helpText: help.trim(),
+      blockedText: blocked.trim(),
+      errorText: errorText.trim(),
+      accessRequiredText: accessRequired.trim(),
       newChatText: newChat.trim(),
       newChatButtonText: newChatButton.trim(),
       helpButtonText: helpButton.trim(),
@@ -510,9 +550,20 @@ function TelegramCustomizerForm({
         return { command: command.replace(/^\//, "").trim(), description: description.join("=").trim() };
       }).filter(item => item.command && item.description),
     }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["telegram-profile", botId] });
-      toast.success("شخصی‌سازی ربات ذخیره شد.");
+      if (result.sync.ok) toast.success("شخصی‌سازی ذخیره و با Telegram همگام شد.");
+      else toast.warning("شخصی‌سازی ذخیره شد، اما همگام‌سازی Telegram ناقص بود: " + result.sync.failures.map((item) => item.method).join(", "));
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const sync = useMutation({
+    mutationFn: () => api.syncTelegramBotProfile(botId),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["telegram-profile", botId] });
+      if (result.sync.ok) toast.success("پروفایل Telegram دوباره همگام شد.");
+      else toast.warning("همگام‌سازی ناقص بود: " + result.sync.failures.map((item) => item.method).join(", "));
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -530,6 +581,9 @@ function TelegramCustomizerForm({
         <div className="space-y-2"><Label>عنوان خوش‌آمد</Label><Input value={welcomeTitle} onChange={(e) => setWelcomeTitle(e.target.value)} /></div>
         <div className="space-y-2 md:col-span-2"><Label>متن خوش‌آمدگویی</Label><Textarea value={welcome} onChange={(e) => setWelcome(e.target.value)} rows={4} /></div>
         <div className="space-y-2"><Label>متن راهنما</Label><Textarea value={help} onChange={(e) => setHelp(e.target.value)} rows={4} /></div>
+        <div className="space-y-2"><Label>پیام مسدودی</Label><Textarea value={blocked} onChange={(e) => setBlocked(e.target.value)} rows={3} /></div>
+        <div className="space-y-2"><Label>پیام خطا</Label><Textarea value={errorText} onChange={(e) => setErrorText(e.target.value)} rows={3} /></div>
+        <div className="space-y-2"><Label>پیام نیاز به دسترسی</Label><Textarea value={accessRequired} onChange={(e) => setAccessRequired(e.target.value)} rows={3} /></div>
         <div className="space-y-2"><Label>متن New Chat</Label><Textarea value={newChat} onChange={(e) => setNewChat(e.target.value)} rows={4} /></div>
         <div className="space-y-2"><Label>دکمه گفتگوی جدید</Label><Input value={newChatButton} onChange={(e) => setNewChatButton(e.target.value)} /></div>
         <div className="space-y-2"><Label>دکمه راهنما</Label><Input value={helpButton} onChange={(e) => setHelpButton(e.target.value)} /></div>
@@ -539,7 +593,10 @@ function TelegramCustomizerForm({
         <div className="space-y-2 md:col-span-2"><Label>پیام‌های وضعیت کار (هر خط یک پیام)</Label><Textarea value={thinking} onChange={(e) => setThinking(e.target.value)} rows={3} /></div>
         <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش وضعیت فکر/کار</p><p className="mt-1 text-[10px] text-muted-foreground">پیام مرحله‌ای قبل از پاسخ نمایش داده شود.</p></div><Switch checked={showThinking} onCheckedChange={setShowThinking} /></div>
         <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش بنر خوش‌آمد</p><p className="mt-1 text-[10px] text-muted-foreground">در /start، بنر https ارسال شود.</p></div><Switch checked={showBanner} onCheckedChange={setShowBanner} /></div>
-        <div className="md:col-span-2"><Button disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "در حال ذخیره…" : "ذخیره شخصی‌سازی"}</Button></div>
+        <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row">
+          <Button className="sm:flex-1" disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "در حال ذخیره و همگام‌سازی…" : "ذخیره و همگام‌سازی"}</Button>
+          <Button className="sm:flex-1" variant="outline" disabled={sync.isPending} onClick={() => sync.mutate()}>{sync.isPending ? "در حال همگام‌سازی…" : "همگام‌سازی مجدد با Telegram"}</Button>
+        </div>
       </CardContent>
     </Card>
   );

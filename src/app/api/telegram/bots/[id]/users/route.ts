@@ -6,9 +6,17 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-function safeLimit(value: unknown): number | undefined {
+function safeLimit(value: unknown, fallback = 100): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.min(200, Math.floor(n)) : fallback;
+}
+function safeLimitValue(value: unknown): number | undefined {
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 ? Math.min(10_000_000, Math.floor(n)) : undefined;
+}
+function safeOffset(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.min(100_000, Math.floor(n)) : 0;
 }
 
 function startOfDay() {
@@ -33,13 +41,31 @@ async function loadBotForSession(req: Request, id: string) {
   return { session, bot, membership };
 }
 
-async function serializeUsers(botId: string) {
-  const users = await db.telegramUser.findMany({
-    where: { botId },
-    orderBy: [{ status: "asc" }, { lastSeenAt: "desc" }],
-  });
+async function serializeUsers(botId: string, search = "", limit = 100, offset = 0) {
+  const q = search.trim();
+  const where = {
+    botId,
+    ...(q ? {
+      OR: [
+        { phoneNumber: { contains: q, mode: "insensitive" as const } },
+        { username: { contains: q, mode: "insensitive" as const } },
+        { firstName: { contains: q, mode: "insensitive" as const } },
+        { lastName: { contains: q, mode: "insensitive" as const } },
+        { telegramUserId: { contains: q } },
+      ],
+    } : {}),
+  };
+  const [users, totalCount] = await Promise.all([
+    db.telegramUser.findMany({
+      where,
+      orderBy: [{ status: "asc" }, { lastSeenAt: "desc" }],
+      take: limit,
+      skip: offset,
+    }),
+    db.telegramUser.count({ where }),
+  ]);
   const ids = users.map((u) => u.id);
-  if (ids.length === 0) return [];
+  if (ids.length === 0) return { users: [], totalCount, hasMore: false };
 
   const [total, daily, monthly] = await Promise.all([
     db.usageEvent.groupBy({
@@ -83,7 +109,7 @@ async function serializeUsers(botId: string) {
     { events: x._count._all, tokens: x._sum.totalTokens ?? 0 },
   ]));
 
-  return users.map((user) => ({
+  const serializedUsers = users.map((user) => ({
     ...user,
     lastSeenAt: user.lastSeenAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
@@ -99,12 +125,17 @@ async function serializeUsers(botId: string) {
     dailyUsage: dailyMap.get(user.id) ?? { events: 0, tokens: 0 },
     monthlyUsage: monthlyMap.get(user.id) ?? { events: 0, tokens: 0 },
   }));
+  return { users: serializedUsers, totalCount, hasMore: offset + users.length < totalCount };
 }
 
 export async function GET(req: Request, { params }: Params) {
   try {
     const { bot } = await loadBotForSession(req, (await params).id);
-    return applyCors(jsonOk({ users: await serializeUsers(bot.id) }), req.headers.get("origin"));
+    const url = new URL(req.url);
+    const search = url.searchParams.get("search") ?? "";
+    const limit = safeLimit(url.searchParams.get("limit"), 100);
+    const offset = safeOffset(url.searchParams.get("offset"));
+    return applyCors(jsonOk(await serializeUsers(bot.id, search, limit, offset)), req.headers.get("origin"));
   } catch (e) {
     return toErrorResponse(e);
   }
@@ -131,7 +162,7 @@ export async function PATCH(req: Request, { params }: Params) {
       data.status = body.status;
     }
     for (const key of ["dailyMessageLimit", "monthlyMessageLimit", "dailyTokenLimit", "monthlyTokenLimit"]) {
-      const value = safeLimit(body[key]);
+      const value = safeLimitValue(body[key]);
       if (value !== undefined) data[key] = value;
     }
     if (Object.keys(data).length === 0) {

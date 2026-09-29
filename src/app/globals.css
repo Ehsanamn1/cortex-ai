@@ -296,6 +296,46 @@
 }
 
 
+/* Mobile performance/responsiveness hardening. */
+.cortex-dashstack {
+  contain: layout paint;
+}
+.cortex-dashstack button,
+.cortex-dashstack [role="button"] {
+  touch-action: manipulation;
+}
+.cortex-scroll {
+  scrollbar-gutter: stable;
+}
+@media (max-width: 1023px) {
+  .cortex-dashstack { contain: layout; }
+  .cortex-topbar { min-height: 56px; padding-top: env(safe-area-inset-top); }
+  .cortex-mobile-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 4px);
+  }
+  .cortex-scroll {
+    scroll-padding-top: 12px;
+    scroll-padding-bottom: 108px;
+  }
+}
+@media (max-width: 640px) {
+  .cortex-dashstack .cortex-topbar > div { min-width: 0; }
+  .cortex-dashstack main > div {
+    padding-inline: 10px;
+  }
+  .cortex-dashstack [data-slot="dialog-content"] {
+    border-radius: 20px;
+  }
+  .cortex-dashstack [data-slot="dialog-content"] [data-slot="dialog-header"] {
+    padding-top: 2px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cortex-dashstack * {
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Mobile app-shell hardening: prevent accidental horizontal page scroll and respect device safe areas. */
 @media (max-width: 1023px) {
   html, body { max-width: 100%; overflow-x: hidden; }

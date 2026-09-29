@@ -114,6 +114,25 @@ export function invalidateTelegramBotProfile(botId: string) {
   profileCache.delete(botId);
 }
 
+export type TelegramBotCommand = { command: string; description: string };
+
+export function normalizeTelegramCommands(input: unknown): TelegramBotCommand[] {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set<string>();
+  const commands: TelegramBotCommand[] = [];
+  for (const item of input) {
+    if (!item || typeof item !== "object") continue;
+    const rawCommand = typeof (item as any).command === "string" ? String((item as any).command).trim().replace(/^\//, "").toLowerCase() : "";
+    const description = typeof (item as any).description === "string" ? String((item as any).description).trim().slice(0, 256) : "";
+    if (!/^[a-z0-9_]{1,32}$/.test(rawCommand) || !description) continue;
+    if (seen.has(rawCommand)) continue;
+    seen.add(rawCommand);
+    commands.push({ command: rawCommand, description });
+    if (commands.length >= 12) break;
+  }
+  return commands;
+}
+
 export function profileUpdateData(input: Record<string, unknown>): Prisma.TelegramBotProfileUpdateInput {
   const data: Prisma.TelegramBotProfileUpdateInput = {};
   const textFields = [
@@ -136,12 +155,13 @@ export function profileUpdateData(input: Record<string, unknown>): Prisma.Telegr
     data.thinkingMessages = JSON.stringify(values.length ? values : TELEGRAM_PROFILE_DEFAULTS.thinkingMessages);
   }
   if (Array.isArray(input.commands)) {
-    const commands = input.commands
-      .filter((v): v is { command: string; description: string } =>
-        !!v && typeof v === "object" && typeof (v as any).command === "string" && typeof (v as any).description === "string")
-      .slice(0, 12)
-      .map((v) => ({ command: v.command.replace(/^\//, "").slice(0, 32), description: v.description.slice(0, 256) }));
-    data.commandsJson = JSON.stringify(commands);
+    const raw = input.commands;
+    const commands = normalizeTelegramCommands(raw);
+    const hadNonEmptyItems = raw.some((item) => item && typeof item === "object");
+    if (hadNonEmptyItems && commands.length === 0) {
+      throw Object.assign(new Error("فرمت Command نامعتبر است. فقط حروف انگلیسی کوچک، عدد و _ و حداکثر ۳۲ کاراکتر مجاز است."), { status: 400 });
+    }
+    data.commandsJson = JSON.stringify(commands.length ? commands : TELEGRAM_PROFILE_DEFAULTS.commands);
   }
   if (typeof input.welcomeBannerUrl === "string") {
     const value = input.welcomeBannerUrl.trim();

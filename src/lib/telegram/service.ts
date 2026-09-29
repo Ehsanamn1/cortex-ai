@@ -87,11 +87,16 @@ export async function getBotInfo(token: string) {
   return telegramCall(token, 'getMe', {});
 }
 
+export type TelegramProfileSyncResult = {
+  ok: boolean;
+  failures: Array<{ method: string; message: string }>;
+};
+
 export async function configureBotProfile(
   token: string,
   botName: string,
   profile?: { shortDescription?: string; description?: string; commands?: Array<{command:string;description:string}> },
-) {
+): Promise<TelegramProfileSyncResult> {
   const safeName = botName.trim().slice(0, 32);
   const commands = profile?.commands?.length
     ? profile.commands
@@ -102,15 +107,26 @@ export async function configureBotProfile(
         { command: 'usage', description: 'مصرف' },
       ];
 
-  await telegramCall(token, 'setMyName', { name: safeName }).catch(() => undefined);
-  await telegramCall(token, 'setMyShortDescription', {
-    short_description: (profile?.shortDescription || 'دستیار هوشمند Cortex برای پاسخ‌گویی و مدیریت دانش.').slice(0, 120),
-  }).catch(() => undefined);
-  await telegramCall(token, 'setMyDescription', {
-    description: (profile?.description || 'دستیار هوشمند Cortex؛ متصل به دانش و ایجنت اختصاصی شما.').slice(0, 512),
-  }).catch(() => undefined);
-  await telegramCall(token, 'setMyCommands', { commands }).catch(() => undefined);
-  await telegramCall(token, 'setChatMenuButton', { menu_button: { type: 'commands' } }).catch(() => undefined);
+  const operations: Array<[string, Promise<unknown>]> = [
+    ['setMyName', telegramCall(token, 'setMyName', { name: safeName })],
+    ['setMyShortDescription', telegramCall(token, 'setMyShortDescription', {
+      short_description: (profile?.shortDescription || 'دستیار هوشمند Cortex برای پاسخ‌گویی و مدیریت دانش.').slice(0, 120),
+    })],
+    ['setMyDescription', telegramCall(token, 'setMyDescription', {
+      description: (profile?.description || 'دستیار هوشمند Cortex؛ متصل به دانش و ایجنت اختصاصی شما.').slice(0, 512),
+    })],
+    ['setMyCommands', telegramCall(token, 'setMyCommands', { commands })],
+    ['setChatMenuButton', telegramCall(token, 'setChatMenuButton', { menu_button: { type: 'commands' } })],
+  ];
+
+  const settled = await Promise.allSettled(operations.map(([, promise]) => promise));
+  const failures = settled.flatMap((result, index) =>
+    result.status === 'rejected'
+      ? [{ method: operations[index][0], message: result.reason instanceof Error ? result.reason.message : String(result.reason) }]
+      : [],
+  );
+
+  return { ok: failures.length === 0, failures };
 }
 
 export async function setWebhook(token: string, url: string, secret: string) {

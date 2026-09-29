@@ -17,6 +17,20 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U ci -d ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
       APP_SECRET_KEY: ci-secret-change-me-012345678901234567890123456789
@@ -24,6 +38,7 @@ jobs:
       COOKIE_SECURE: false
       LLM_PROVIDER: none
       TELEGRAM_INTERNAL_SECRET: ci-telegram-secret
+      CORTEX_USD_TOMAN_RATE: 235175
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -32,6 +47,7 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx prisma generate
       - run: npx prisma validate
+      - run: npx prisma db push --accept-data-loss
       - run: npm run test:unit
       - run: npm run check:vinext
       - run: npm run typecheck
