@@ -237,7 +237,7 @@ async function resolveProviderFromCatalog(
   },
   preferTrialProvider = false,
 ) {
-  if (model.systemProvider?.enabled) {
+  if (model.systemProvider?.enabled && (!preferTrialProvider || model.systemProvider.isTrialProvider)) {
     return buildSystemProviderForModel(model.systemProvider, model.modelId);
   }
   const byProvider = await db.systemProviderConfig.findFirst({
