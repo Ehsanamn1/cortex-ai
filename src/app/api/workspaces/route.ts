@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireSession } from "@/lib/server/auth";
+import { activateFreePlan } from "@/lib/server/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,8 @@ export async function POST(req: Request) {
         members: { create: { userId: session.user.id, role: "owner" } },
       },
     });
+    await activateFreePlan(workspace.id);
+
     return applyCors(
       jsonOk(
         {
