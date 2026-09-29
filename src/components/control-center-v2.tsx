@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient
 import {
   Activity, Bot, Boxes, CheckCircle2, CircleX, Clock3, CreditCard, Database, FileText, Gauge, History, LayoutDashboard,
   LogOut, MessageSquare, Pencil, Plug, Power, RefreshCw, Save, Search, Send, Settings2,
-  Users, WalletCards, Workflow
+  Users, WalletCards, Workflow, Server, KeyRound
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import { toast } from "sonner";
 type Section =
   | "overview" | "users" | "workspaces" | "agents" | "knowledge" | "conversations"
   | "telegram" | "providers" | "workflows" | "executions" | "audit" | "plugins"
-  | "plans" | "models" | "accounts" | "charges" | "invoices" | "topups" | "settings";
+  | "plans" | "models" | "accounts" | "charges" | "invoices" | "topups" | "systemProviders" | "settings";
 
 const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof LayoutDashboard }> = [
   { id: "overview", label: "نمای کلی", group: "اصلی", icon: LayoutDashboard },
@@ -27,7 +27,8 @@ const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof 
   { id: "knowledge", label: "دانش", group: "AI", icon: Database },
   { id: "conversations", label: "گفتگوها", group: "AI", icon: MessageSquare },
   { id: "telegram", label: "بات‌های تلگرام", group: "اتصال‌ها", icon: Send },
-  { id: "providers", label: "Providerها", group: "اتصال‌ها", icon: Plug },
+  { id: "providers", label: "اتصال‌های قدیمی", group: "اتصال‌ها", icon: Plug },
+  { id: "systemProviders", label: "AI زیرساخت", group: "اتصال‌ها", icon: Server },
   { id: "workflows", label: "Workflowها", group: "عملیات", icon: Workflow },
   { id: "executions", label: "Executionها", group: "عملیات", icon: Activity },
   { id: "audit", label: "Audit Log", group: "امنیت", icon: History },
@@ -65,7 +66,7 @@ function DataTable({ section, search }: { section: Section; search: string }) {
   const query = useQuery({
     queryKey: ["cc-resource", section],
     queryFn: () => jsonFetch<{ items: any[] }>("/api/control-center/resources?resource=" + encodeURIComponent(section)),
-    enabled: section !== "overview" && !["plans","models","accounts","charges","invoices","settings"].includes(section),
+    enabled: section !== "overview" && !["plans","models","accounts","charges","invoices","settings","systemProviders"].includes(section),
     staleTime: 10_000,
   });
   const qc = useQueryClient();
@@ -282,7 +283,7 @@ function ControlCenterRuntime() {
   const summary=useQuery<any>({queryKey:["cc-summary"],queryFn:()=>jsonFetch("/api/control-center"),enabled:session.isSuccess,staleTime:10_000});
   const logout=useMutation({mutationFn:()=>fetch("/api/admin/auth/logout",{method:"POST"}),onSuccess:()=>{qc.clear();window.location.reload();}});
   if(session.isPending) return <div className="min-h-screen bg-[#f6f7fb] p-8"><div className="mx-auto max-w-7xl rounded-xl bg-white p-12 text-center">در حال بارگذاری مرکز مدیریت…</div></div>;
-  if(session.isError) return <AdminLogin onDone={()=>void session.refetch()}/>;
+  if(session.isError) return <AdminLogin />;
   const groups=[...new Set(SECTIONS.map(x=>x.group))]; const m=summary.data?.metrics??{}; const activeSection=SECTIONS.find(x=>x.id===section)!;
   return <div className="cortex-control-center min-h-screen bg-[#f6f7fb] text-foreground" dir="rtl"><div className="flex min-h-screen">
     <aside className="hidden w-[250px] shrink-0 border-l border-border bg-white lg:flex lg:flex-col">
@@ -341,8 +342,11 @@ function SettingsPanel() {
   return <Card className="border-border"><CardHeader><CardTitle className="text-sm">تنظیمات محصول و رابط کاربری</CardTitle><p className="text-[10px] text-muted-foreground">همان SiteSetting فعلی؛ بدون hard-code کردن مقدارهای عملیاتی.</p></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">{fields.map(([k,l])=><div key={k}><label className="text-xs font-medium">{l}</label><Input className="mt-2" dir={k.includes("Color")||k.includes("Email")?"ltr":"rtl"} value={s[k]??""} onChange={e=>setDraft({...draft,[k]:e.target.value})}/></div>)}<div className="md:col-span-2 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save/>ذخیره تنظیمات</Button></div></CardContent></Card>;
 }
 
-function AdminLogin({onDone}:{onDone:()=>void}) {
-  const [username,setUsername]=useState(""); const [password,setPassword]=useState("");
-  const login=useMutation({mutationFn:()=>jsonFetch("/api/admin/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})}),onSuccess:()=>{toast.success("ورود موفق بود");onDone();},onError:(e:Error)=>toast.error(e.message)});
-  return <div className="grid min-h-screen place-items-center bg-[#f6f7fb] p-4"><Card className="w-full max-w-md border-border shadow-xl"><CardHeader><CardTitle className="text-xl">ورود مدیر Cortex</CardTitle><p className="text-xs text-muted-foreground">Control Center</p></CardHeader><CardContent className="space-y-4"><Input dir="ltr" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username"/><Input dir="ltr" type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login.mutate()} placeholder="Password"/><Button className="w-full" disabled={!username||!password||login.isPending} onClick={()=>login.mutate()}>ورود</Button></CardContent></Card></div>;
+function AdminLogin() {
+  return <div className="grid min-h-screen place-items-center bg-[#10130f] p-4" dir="rtl">
+    <Card className="w-full max-w-lg border-[#35402f] bg-[#151914] text-[#ecebe3]">
+      <CardHeader><CardTitle className="text-xl">پیشخوان خصوصی Cortex</CardTitle><p className="text-xs leading-6 text-[#9fa896]">این محیط فقط از طریق لینک مدیریتی خصوصی قابل ورود است. فرم نام کاربری و رمز عبور عمداً در این پنل ارائه نمی‌شود.</p></CardHeader>
+      <CardContent className="space-y-3"><div className="flex items-center gap-3 rounded-xl border border-[#3a4633] bg-[#0f120e] p-4"><KeyRound className="size-5 text-[#b9db55]"/><p className="text-xs leading-6 text-[#a9b2a2]">از لینک خصوصی مدیر استفاده کن؛ پس از تأیید، یک نشست کوتاه‌مدت HttpOnly ساخته می‌شود.</p></div><p className="text-[10px] leading-5 text-[#737b70]">توکن لینک در رابط کاربری یا پاسخ‌های API نمایش داده نمی‌شود.</p></CardContent>
+    </Card>
+  </div>;
 }
