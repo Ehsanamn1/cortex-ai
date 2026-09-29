@@ -16,7 +16,6 @@ export type View =
   | "telegram"
   | "analytics"
   | "billing"
-  | "admin"
   | "learn";
 
 export type AgentTab = "overview" | "knowledge" | "ai" | "tools" | "telegram" | "playground" | "api" | "analytics" | "settings";
@@ -146,7 +145,7 @@ export const useCortexStore = create<CortexState>()((set) => ({
     const rawView = params.get("view");
     const validViews: View[] = [
       "dashboard", "workflows", "agents", "agent-new", "agent-detail", "agent-edit",
-      "knowledge", "conversations", "settings", "telegram", "analytics", "billing", "admin", "learn",
+      "knowledge", "conversations", "settings", "telegram", "analytics", "billing", "learn",
     ];
     if (!rawView || !validViews.includes(rawView as View)) return;
 
