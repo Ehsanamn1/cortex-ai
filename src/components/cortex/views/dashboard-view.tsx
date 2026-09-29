@@ -100,7 +100,7 @@ function DashboardOnboarding({
     {
       number: "۲",
       title: "مدل را داخل Agent تنظیم کن",
-      description: hasAgent ? "Provider، مدل و API Key را از تب «مدل و هوش مصنوعی» تنظیم کن." : "بعد از ساخت Agent، مدل اختصاصی آن را تنظیم کن.",
+      description: hasAgent ? "یکی از مدل‌های مدیریت‌شده Cortex را برای Agent انتخاب کن." : "بعد از ساخت Agent، مدل مناسب را از بین گزینه‌های Cortex انتخاب کن.",
       action: "ai" as const,
       disabled: !hasAgent,
     },
