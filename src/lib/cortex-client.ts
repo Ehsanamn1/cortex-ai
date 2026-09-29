@@ -214,6 +214,7 @@ export interface ProviderHealthOkDto {
 export interface ProviderConfigDto { id:string; providerName:string; baseUrl:string; model:string; protocol?:string; authMode:string; enabled:boolean; hasApiKey:boolean }
 export interface TelegramBotDto { id:string; name:string; agentId:string; agentName:string; username:string|null; status:string; mode:string; lastError:string|null; lastSeenAt:string|null; createdAt:string; updatedAt:string; allowlistCount:number; usersCount:number }
 export interface MemoryDto { id:string; scope:string; subjectKey:string|null; conversationId:string|null; type:string; key:string; value:string; importance:number; confidence:number; source:string; expiresAt:string|null; updatedAt:string; lastAccessedAt:string; }
+export interface TelegramProfileSyncDto { ok: boolean; failures: Array<{ method: string; message: string }> }
 export interface TelegramBotProfileDto {
   botId:string;
   displayName:string;
@@ -605,7 +606,8 @@ export const api = {
   updateAgentMemory(id:string,input:{id:string;key?:string;value?:string;type?:string;source?:string;scope?:string;subjectKey?:string|null;conversationId?:string|null;importance?:number;confidence?:number;expiresAt?:string|null}){ return jsonRequest<{memory:MemoryDto}>(`/api/agents/${encodeURIComponent(id)}/memory`,'PATCH',input); },
   forgetAgentMemory(id:string,input:{key?:string;subjectKey?:string;conversationId?:string}){ return jsonRequest<{deleted:number}>(`/api/agents/${encodeURIComponent(id)}/memory`,'DELETE',input); },
   getTelegramBotProfile(id:string){ return request<{profile:TelegramBotProfileDto}>(`/api/telegram/bots/${encodeURIComponent(id)}/profile`); },
-  updateTelegramBotProfile(id:string,input:Record<string,unknown>){ return jsonRequest<{profile:TelegramBotProfileDto}>(`/api/telegram/bots/${encodeURIComponent(id)}/profile`,'PATCH',input); },
+  updateTelegramBotProfile(id:string,input:Record<string,unknown>){ return jsonRequest<{profile:TelegramBotProfileDto;sync:TelegramProfileSyncDto}>(`/api/telegram/bots/${encodeURIComponent(id)}/profile`,'PATCH',input); },
+  syncTelegramBotProfile(id:string){ return jsonRequest<{profile:TelegramBotProfileDto;sync:TelegramProfileSyncDto}>(`/api/telegram/bots/${encodeURIComponent(id)}/profile`,'POST',{action:"sync"}); },
   deleteTelegramBot(id:string){ return jsonRequest<{ok:boolean}>(`/api/telegram/bots/${encodeURIComponent(id)}`,'DELETE'); },
   getTelegramAllowlist(botId:string){ return request<{entries:TelegramAllowlistDto[]}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`); },
   addTelegramAllowlistBulk(botId:string,input:{phoneNumbers:string[];displayName?:string;notes?:string;regenerate?:boolean;dailyMessageLimit?:number;monthlyMessageLimit?:number;dailyTokenLimit?:number;monthlyTokenLimit?:number}){ return jsonRequest<{entries:TelegramAllowlistDto[];count:number}>(`/api/telegram/bots/${encodeURIComponent(botId)}/allowlist`,"POST",input); },
