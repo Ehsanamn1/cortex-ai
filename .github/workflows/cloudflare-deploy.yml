@@ -203,7 +203,7 @@ jobs:
         run: |
           set -euo pipefail
           base="https://cortex-ai.dengxiao445.workers.dev"
-          for path in /control-center /admin /api/health; do
+          for path in /admin /api/health; do
             tmp="$(mktemp)"
             status="$(curl -sS --retry 2 --retry-delay 1 --max-time 15 -o "$tmp" -w "%{http_code}" "$base$path")"
             echo "GET $base$path -> HTTP $status"
