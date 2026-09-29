@@ -861,7 +861,7 @@ html:not(.dark) .cortex-auth .cortex-grid-bg { opacity:.28 !important; }
 html:not(.dark) .cortex-auth .text-foreground { color:#111827 !important; }
 html:not(.dark) .cortex-auth .text-muted-foreground { color:#657184 !important; }
 html:not(.dark) .cortex-auth-card { background:rgba(255,255,255,.80) !important; border-color:#dfe5ef !important; box-shadow:0 24px 70px rgba(15,23,42,.10) !important; }
-html:not(.dark) .cortex-auth .bg-white/\[\.025\] { background:rgba(255,255,255,.75) !important; }
+html:not(.dark) .cortex-auth .bg-white\/\[\.025\] { background:rgba(255,255,255,.75) !important; }
 
 /* Cortex command-core theme-safe rendering */
 .cortex-core-stage { contain: layout paint; }
@@ -1494,8 +1494,8 @@ body {
 }
 
 .cortex-dashstack .rounded-2xl,
-.cortex-dashstack .rounded-[30px],
-.cortex-dashstack .rounded-[28px] {
+.cortex-dashstack .rounded-\[30px\],
+.cortex-dashstack .rounded-\[28px\] {
   border-radius: 14px !important;
 }
 
