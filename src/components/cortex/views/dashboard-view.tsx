@@ -255,7 +255,7 @@ export function DashboardView() {
   const recentAgentId = recentAgents[0]?.id;
 
   return (
-    <div className="space-y-5 sm:space-y-7">
+    <div className="space-y-5 pb-2 sm:space-y-7">
       {billing && (
         <motion.section
           initial={{ opacity: 0, y: -8 }}
@@ -274,7 +274,7 @@ export function DashboardView() {
                   <h2 className="text-2xl font-black sm:text-3xl">{plan?.name ?? "پلن"}</h2>
                   <span className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[10px] text-primary">کنترل مصرف فعال</span>
                 </div>
-                <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">پلن، مدل‌های در دسترس و اعتبارت را از یک مسیر ساده مدیریت کن. Provider و API Key توسط Cortex مدیریت می‌شوند.</p>
+                <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">پلن، مدل‌های در دسترس و اعتبارت را از یک مسیر ساده مدیریت کن؛ اتصال زیرساخت را Cortex انجام می‌دهد.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => setView("billing")}><WalletCards />مدیریت پلن و اعتبار</Button>
