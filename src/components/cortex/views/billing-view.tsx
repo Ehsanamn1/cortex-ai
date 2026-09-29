@@ -243,7 +243,7 @@ export function BillingView(){
               )}
             </div>
             <p className="mt-2 min-h-4 text-center text-[9px] text-muted-foreground">{featured?"تعادل ایده‌آل بین قدرت و هزینه برای تیم‌های در حال رشد.":"\u00A0"}</p>
-          </article>;
+          </motion.article>;
         })}
       </div>
     </section>
