@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { applyCors, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireAdmin } from "@/lib/server/admin-auth";
-import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings";
+import { DEFAULT_SITE_SETTINGS, invalidatePublicSiteSettings } from "@/lib/site-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +36,7 @@ export async function PUT(req: Request) {
       });
     }
 
+    invalidatePublicSiteSettings();
     return applyCors(jsonOk({ ok: true }), req.headers.get("origin"));
   } catch (error) {
     return toErrorResponse(error);
