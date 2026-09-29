@@ -556,3 +556,24 @@ jobs:
       - name: Cleanup
         if: always()
         run: rm -f .cf-runtime-secrets
+
+  post-deploy-load:
+    name: Post-deploy load ${{ matrix.concurrency }}
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        concurrency: [10, 100, 1000]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Run post-deploy public load smoke
+        env:
+          CORTEX_BASE_URL: https://cortex-ai.dengxiao445.workers.dev
+          LOAD_CONCURRENCY: ${{ matrix.concurrency }}
+          LOAD_ROUNDS: 1
+        run: node scripts/load-smoke.mjs
