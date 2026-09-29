@@ -52,7 +52,7 @@ jobs:
           db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
           test -n "$db_url" || { echo "A Postgres connection is required before production deploy"; exit 1; }
           echo "Postgres deployment prerequisite is present."
-          echo "Admin/R2 credentials are verified directly against the existing Cloudflare Worker after schema preparation; GitHub does not need duplicate copies of those secrets."
+          echo "Production credentials are verified directly against the existing Cloudflare Worker after schema preparation."
 
       - name: Sync Worker runtime secrets
         env:
