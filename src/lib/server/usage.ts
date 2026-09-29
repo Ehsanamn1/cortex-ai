@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { TRIAL_MAX_OUTPUT_TOKENS } from "@/lib/server/plan-policy";
 import { estimateTokens } from "./audit";
 
 interface UsageScope {
@@ -58,7 +59,9 @@ export async function reserveUsageWithinLimits(
   maxOutputTokens = 0,
   telegramUserId?: string,
 ): Promise<string | null> {
-  const reservationTokens = Math.max(0, Math.floor(incomingTokens)) + Math.max(0, Math.floor(maxOutputTokens));
+  const requestedOutputTokens = Math.max(0, Math.floor(maxOutputTokens));
+  const reservationOutputCap = policyProbe?.monthlyTokenLimit && false ? requestedOutputTokens : requestedOutputTokens;
+  let reservationTokens = Math.max(0, Math.floor(incomingTokens)) + reservationOutputCap;
 
   const [policyProbe, telegramUserProbe] = await Promise.all([
     db.usagePolicy.findUnique({
@@ -72,6 +75,11 @@ export async function reserveUsageWithinLimits(
         })
       : null,
   ]);
+  const planManagedTrial = Boolean(policyProbe && (policyProbe as any).planManaged);
+  if (planManagedTrial) {
+    reservationTokens = Math.max(0, Math.floor(incomingTokens)) + Math.min(requestedOutputTokens, TRIAL_MAX_OUTPUT_TOKENS);
+  }
+
   const normalizeScope = (value: { dailyMessageLimit:number; monthlyMessageLimit:number; dailyTokenLimit:number; monthlyTokenLimit:number } | null | undefined): UsageScope | null =>
     value ? {
       dailyMessageLimit: Math.max(0, value.dailyMessageLimit),
