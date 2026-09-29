@@ -88,10 +88,29 @@ function DashboardOnboarding({
 
   if (!open) return null;
 
+  const hasAgent = Boolean(recentAgentId);
   const steps = [
-    { number: "۱", title: "اولین Agent را بساز", description: "نام، لحن و قوانین پاسخ‌گویی را تعیین کن.", action: "create" as const },
-    { number: "۲", title: "مدل را برای Agent تنظیم کن", description: "اتصال مدل و API را از تب «هوش مصنوعی» همان Agent انجام بده.", action: "ai" as const },
-    { number: "۳", title: "در Playground تست کن", description: "قبل از انتشار، پاسخ واقعی همان Agent را بررسی کن.", action: "playground" as const },
+    {
+      number: "۱",
+      title: hasAgent ? "ورود به اولین Agent" : "اولین Agent را بساز",
+      description: hasAgent ? "هویت، دانش و تنظیمات همین Agent را ادامه بده." : "نام، لحن و قوانین پاسخ‌گویی را تعیین کن.",
+      action: "create" as const,
+      disabled: false,
+    },
+    {
+      number: "۲",
+      title: "مدل را داخل Agent تنظیم کن",
+      description: hasAgent ? "Provider، مدل و API Key را از تب «مدل و هوش مصنوعی» تنظیم کن." : "بعد از ساخت Agent، مدل اختصاصی آن را تنظیم کن.",
+      action: "ai" as const,
+      disabled: !hasAgent,
+    },
+    {
+      number: "۳",
+      title: "در Playground تست کن",
+      description: hasAgent ? "قبل از انتشار، پاسخ واقعی همان Agent را بررسی کن." : "بعد از ساخت Agent، اولین پاسخ را تست کن.",
+      action: "playground" as const,
+      disabled: !hasAgent,
+    },
   ];
 
   return (
@@ -114,19 +133,22 @@ function DashboardOnboarding({
           <button
             key={step.number}
             type="button"
+            disabled={step.disabled}
             onClick={() => {
-              dismiss();
               if (step.action === "create") {
-                onNavigate("agent-new");
+                if (recentAgentId) {
+                  onOpenAgent(recentAgentId, "overview");
+                  dismiss();
+                } else {
+                  onNavigate("agent-new");
+                }
                 return;
               }
-              if (recentAgentId) {
-                onOpenAgent(recentAgentId, step.action);
-                return;
-              }
-              onNavigate("agent-new");
+              if (!recentAgentId) return;
+              onOpenAgent(recentAgentId, step.action);
+              dismiss();
             }}
-            className="cortex-action min-h-[142px] rounded-2xl border border-border/60 bg-background/45 p-4 text-right"
+            className="cortex-action min-h-[142px] rounded-2xl border border-border/60 bg-background/45 p-4 text-right disabled:cursor-not-allowed disabled:opacity-45"
           >
             <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">{step.number}</span>
             <p className="mt-5 text-sm font-bold">{step.title}</p>
@@ -262,7 +284,7 @@ export function DashboardView() {
 
   return (
     <div className="space-y-7">
-      {!hasAgents && <DashboardOnboarding onNavigate={setView} recentAgentId={recentAgentId} onOpenAgent={openAgent} />}
+      <DashboardOnboarding onNavigate={setView} recentAgentId={recentAgentId} onOpenAgent={openAgent} />
 
       {settingEnabled("feature.dashboardHero") && (
       <section className="cortex-hero relative overflow-hidden rounded-[30px] border border-white/[.08]">
