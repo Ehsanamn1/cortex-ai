@@ -25,7 +25,7 @@ function textValue(value: unknown, max = 200) {
 export async function GET(req: Request) {
   try {
     requireAdmin(req);
-    const [plans, models, accounts, invoices, recentCharges] = await Promise.all([
+    const [plans, models, systemProviders, accounts, invoices, recentCharges] = await Promise.all([
       db.plan.findMany({
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
         include: {
