@@ -237,8 +237,10 @@ async function resolveProviderFromCatalog(
   },
   preferTrialProvider = false,
 ) {
-  if (model.systemProvider?.enabled) {
-    return buildSystemProviderForModel(model.systemProvider, model.modelId);
+  if (model.systemProvider) {
+    return model.systemProvider.enabled
+      ? buildSystemProviderForModel(model.systemProvider, model.modelId)
+      : null;
   }
   const byProvider = await db.systemProviderConfig.findFirst({
     where: { providerName: model.provider, enabled: true },
