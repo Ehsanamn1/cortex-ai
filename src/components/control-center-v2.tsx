@@ -102,8 +102,6 @@ function DataTable({ section, search }: { section: Section; search: string }) {
     ? [["title","عنوان"],["agent.name","ایجنت"],["channel","کانال"],["_count.messages","پیام"],["updatedAt","بروزرسانی"]]
     : section === "telegram"
     ? [["name","بات"],["username","username"],["workspace.name","فضا"],["agent.name","ایجنت"],["status","وضعیت"],["_count.users","کاربر"]]
-    : section === "providers"
-    ? [["scope","سطح"],["providerName","Provider"],["model","مدل"],["workspace.name","فضا"],["configured","کلید"],["enabled","فعال"]]
     : section === "workflows"
     ? [["name","Workflow"],["workspace.name","فضا"],["status","وضعیت"],["_count.executions","اجرا"]]
     : section === "executions"
@@ -124,9 +122,8 @@ function DataTable({ section, search }: { section: Section; search: string }) {
               {typeof valueAt(row,k) === "boolean" ? (valueAt(row,k) ? "بله" : "خیر") : valueAt(row,k) instanceof Object ? JSON.stringify(valueAt(row,k)) : String(valueAt(row,k) ?? "—")}
             </td>)}
             <td className="px-4 py-3">
-              {["agents","providers","plugins"].includes(section) && <Button size="sm" variant="ghost" onClick={() => {
+              {["agents","plugins"].includes(section) && <Button size="sm" variant="ghost" onClick={() => {
                 if (section === "agents") toggle.mutate({ resource: "agents", id: row.id, status: row.status === "active" ? "paused" : "active" });
-                else if (section === "providers") toggle.mutate({ resource: "providers", id: row.id, enabled: !row.enabled, status: row.scope });
                 else toggle.mutate({ resource: "plugins", id: row.id, enabled: !row.enabled });
               }}><Power className="size-4" /></Button>}
             </td>
