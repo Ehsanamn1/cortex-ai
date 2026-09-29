@@ -14,6 +14,11 @@ const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
 
 export class OpenRouterProvider implements LLMProvider {
   readonly name = "openrouter";
+  private readonly configuredModel?: string;
+
+  constructor(config: { model?: string } = {}) {
+    this.configuredModel = config.model?.trim() || undefined;
+  }
 
   private apiKey(): string | undefined {
     const key = process.env.OPENROUTER_API_KEY?.trim();
@@ -25,7 +30,7 @@ export class OpenRouterProvider implements LLMProvider {
   }
 
   model(): string | null {
-    return process.env.LLM_MODEL?.trim() || process.env.OPENROUTER_MODEL?.trim() || "openai/gpt-4o-mini";
+    return this.configuredModel || process.env.LLM_MODEL?.trim() || process.env.OPENROUTER_MODEL?.trim() || "openai/gpt-4o-mini";
   }
 
   async generateResponse(options: GenerateOptions): Promise<GenerateResult> {
