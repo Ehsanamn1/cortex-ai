@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 const RESET_TTL_MS = 30 * 60 * 1000;
 
@@ -7,8 +7,8 @@ function trimEnv(name: string): string {
 }
 
 export function createPasswordResetToken(): { raw: string; hash: string; expiresAt: Date } {
-  const raw = crypto.randomBytes(32).toString("base64url");
-  const hash = crypto.createHash("sha256").update(raw).digest("hex");
+  const raw = randomBytes(32).toString("base64url");
+  const hash = createHash("sha256").update(raw).digest("hex");
   return { raw, hash, expiresAt: new Date(Date.now() + RESET_TTL_MS) };
 }
 
