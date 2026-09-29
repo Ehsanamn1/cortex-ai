@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -9,6 +10,8 @@ import {
   Check,
   FileSearch,
   MessageSquare,
+  Menu,
+  X,
   Network,
   Play,
   ShieldCheck,
@@ -42,18 +45,20 @@ const FEATURES = [
 ];
 
 const PLANS = [
-  { name: "Launch", price: "۱٬۷۹۰٬۰۰۰", credits: "۱۰٬۰۰۰ اعتبار", text: "برای شروع واقعی", featured: false },
-  { name: "Growth", price: "۸٬۹۰۰٬۰۰۰", credits: "۵۰٬۰۰۰ اعتبار", text: "برای تیم و مصرف حرفه‌ای", featured: true },
-  { name: "Scale", price: "۱۷٬۹۰۰٬۰۰۰", credits: "۱۰۰٬۰۰۰ اعتبار", text: "برای اتوماسیون سنگین", featured: false },
+  { name: "Launch", price: "۳٬۹۰۰٬۰۰۰", credits: "۱۵٬۰۰۰ اعتبار", text: "شروع هوشمندانه — برای راه‌اندازی سریع", detail: "مدل‌های سریع و اقتصادی", featured: false },
+  { name: "Growth", price: "۱۲٬۹۰۰٬۰۰۰", credits: "۸۰٬۰۰۰ اعتبار", text: "تعادل ایده‌آل بین قدرت و هزینه", detail: "مدل‌های با کیفیت بالاتر + تحلیل دقیق", featured: true },
+  { name: "Scale", price: "۲۴٬۹۰۰٬۰۰۰", credits: "۱۸۰٬۰۰۰ اعتبار", text: "قدرت واقعی اتوماسیون برای مصرف سنگین", detail: "مدل‌های قوی‌تر + اولویت پاسخ", featured: false },
 ];
 
 export function LandingPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   function go(path: "/login" | "/signup") {
     window.location.href = path;
   }
 
   return (
-    <main dir="rtl" className="min-h-screen overflow-x-hidden bg-background text-foreground">
+    <main id="top" dir="rtl" className="min-h-dvh overflow-x-hidden bg-background pb-20 text-foreground sm:pb-0">
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/75 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <a href="#top" className="shrink-0" aria-label="Cortex AI">
@@ -67,12 +72,37 @@ export function LandingPage() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <button onClick={() => go("/login")} className="hidden rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-accent hover:text-foreground sm:inline-flex">ورود</button>
-            <button onClick={() => go("/signup")} className="inline-flex items-center gap-2 rounded-xl bg-primary px-3.5 py-2.5 text-sm font-bold text-primary-foreground shadow-[0_10px_30px_rgba(59,130,255,.22)] transition hover:-translate-y-0.5">شروع کنید <ArrowUpLeft className="size-4" /></button>
+            <button onClick={() => go("/signup")} className="hidden items-center gap-2 rounded-xl bg-primary px-3.5 py-2.5 text-sm font-bold text-primary-foreground shadow-[0_10px_30px_rgba(59,130,255,.22)] transition hover:-translate-y-0.5 sm:inline-flex">شروع کنید <ArrowUpLeft className="size-4" /></button>
+            <button
+              type="button"
+              aria-label="باز کردن منوی سایت"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+              className="inline-flex size-10 items-center justify-center rounded-xl border border-border/70 bg-card/70 text-foreground sm:hidden"
+            >
+              {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
           </div>
         </div>
       </header>
 
-      <section id="top" className="relative overflow-hidden">
+      {menuOpen && (
+        <div className="fixed inset-x-0 top-16 z-40 border-b border-border/60 bg-background/95 px-4 py-3 shadow-2xl backdrop-blur-xl sm:hidden">
+          <nav className="mx-auto flex max-w-7xl flex-col gap-1">
+            {[
+              ["#features", "ویژگی‌ها"],
+              ["#how-it-works", "چطور کار می‌کند؟"],
+              ["#pricing", "قیمت‌گذاری"],
+            ].map(([href, label]) => (
+              <a key={href} href={href} onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-3 text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground">{label}</a>
+            ))}
+            <button onClick={() => go("/login")} className="mt-1 rounded-xl border border-border/70 px-3 py-3 text-right text-sm font-semibold">ورود</button>
+            <button onClick={() => go("/signup")} className="rounded-xl bg-primary px-3 py-3 text-right text-sm font-bold text-primary-foreground">شروع کنید</button>
+          </nav>
+        </div>
+      )}
+
+      <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(59,130,255,.15),transparent_25%),radial-gradient(circle_at_82%_22%,rgba(139,92,246,.12),transparent_24%)]" />
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-18 pt-14 sm:px-6 lg:grid-cols-[.94fr_1.06fr] lg:px-8 lg:pb-24 lg:pt-20">
           <motion.div initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .45 }} className="relative">
@@ -142,7 +172,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="features" className="border-y border-border/60 bg-card/25">
+      <section id="features" className="scroll-mt-20 border-y border-border/60 bg-card/25">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           <div className="max-w-2xl">
             <p className="cortex-kicker">CORE CAPABILITIES</p>
@@ -162,7 +192,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="how-it-works">
+      <section id="how-it-works" className="scroll-mt-20">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           <div className="grid gap-10 lg:grid-cols-[.8fr_1.2fr]">
             <div>
@@ -187,7 +217,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="pricing" className="border-y border-border/60 bg-card/25">
+      <section id="pricing" className="scroll-mt-20 border-y border-border/60 bg-card/25">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           <div className="mx-auto max-w-2xl text-center">
             <p className="cortex-kicker">PRICING</p>
@@ -200,17 +230,18 @@ export function LandingPage() {
                 {plan.featured && <span className="absolute end-4 top-4 rounded-full bg-primary px-2.5 py-1 text-[8px] font-bold text-primary-foreground">پیشنهاد تیمی</span>}
                 <h3 className="text-lg font-black">{plan.name}</h3>
                 <p className="mt-1 text-xs text-muted-foreground">{plan.text}</p>
+                <p className="mt-1 text-[10px] text-primary/80">{plan.detail}</p>
                 <p className="mt-6 text-3xl font-black">{plan.price}<span className="ms-1 text-[11px] font-semibold text-muted-foreground">تومان / ماه</span></p>
                 <p className="mt-2 text-xs text-primary">{plan.credits}</p>
                 <div className="mt-5 space-y-2 text-xs text-muted-foreground">
-                  {["Agent و Knowledge Base", "تحلیل مصرف و Wallet", "Telegram و کنترل دسترسی"].map((x) => <div key={x} className="flex items-center gap-2"><Check className="size-3.5 text-emerald-400" />{x}</div>)}
+                  {["Agent و Knowledge Base", "مدل‌های مدیریت‌شده Cortex", "Telegram و کنترل مصرف"].map((x) => <div key={x} className="flex items-center gap-2"><Check className="size-3.5 text-emerald-400" />{x}</div>)}
                 </div>
                 <button onClick={() => go("/signup")} className={plan.featured ? "mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground" : "mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border/70 bg-background/45 px-4 py-3 text-sm font-bold"}>شروع با {plan.name} <ArrowUpLeft className="size-4" /></button>
               </article>
             ))}
           </div>
           <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-background/40 p-4 text-center text-xs text-muted-foreground">
-            <strong className="text-foreground">Enterprise:</strong> برای مصرف بالا، مدل‌های خاص، چند Bot، SLA و تنظیمات اختصاصی با قیمت سفارشی.
+            <strong className="text-foreground">Enterprise:</strong> برای مصرف بالا، مدل‌های خاص، چند Bot، SLA و تنظیمات اختصاصی از ۳۵٬۰۰۰٬۰۰۰ تومان؛ جزئیات بر اساس قرارداد تعیین می‌شود.
           </div>
         </div>
       </section>
@@ -240,6 +271,11 @@ export function LandingPage() {
         </div>
       </section>
 
+      <div className="fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-border/70 bg-background/90 p-2 shadow-2xl backdrop-blur-xl sm:hidden">
+        <a href="#pricing" className="flex-1 rounded-xl border border-border/70 px-3 py-2.5 text-center text-xs font-bold">دیدن قیمت‌ها</a>
+        <button onClick={() => go("/signup")} className="flex-[1.2] rounded-xl bg-primary px-3 py-2.5 text-center text-xs font-black text-primary-foreground">شروع کنید</button>
+      </div>
+
       <footer className="border-t border-border/60">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div><CortexLogo markSize={30} /><p className="mt-2 text-[10px] text-muted-foreground">AI Workspace برای شرکت‌ها و کسب‌وکارها</p></div>
@@ -254,3 +290,4 @@ export function LandingPage() {
     </main>
   );
 }
+
