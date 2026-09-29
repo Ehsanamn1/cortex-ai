@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity, Bot, Boxes, CheckCircle2, CircleX, Clock3, CreditCard, Database, FileText, Gauge, History, LayoutDashboard,
-  LogOut, MessageSquare, Pencil, Power, RefreshCw, Save, Search, Send, Settings2,
+  LogOut, MessageSquare, Pencil, Plug, Power, RefreshCw, Save, Search, Send, Settings2,
   Users, WalletCards, Workflow
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
