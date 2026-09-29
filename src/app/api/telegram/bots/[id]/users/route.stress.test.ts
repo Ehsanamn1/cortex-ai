@@ -69,13 +69,18 @@ describeDb("Telegram 1000-user integration stress", () => {
       monthlyTokenLimit: 200000,
     }));
     await db.telegramUser.createMany({ data: users });
+    const seededUsers = await db.telegramUser.findMany({
+      where: { botId },
+      select: { id: true },
+      orderBy: { telegramUserId: "asc" },
+    });
 
     await db.usageEvent.createMany({
-      data: users.map((user, index) => ({
+      data: seededUsers.map((user, index) => ({
         workspaceId,
         agentId: agent.id,
         telegramBotId: botId,
-        telegramUserId: undefined,
+        telegramUserId: user.id,
         channel: "telegram",
         provider: "qa",
         model: "qa-model",
