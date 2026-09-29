@@ -742,6 +742,7 @@ model Plan {
   priceToman                 Int      @default(0)
   currency                   String   @default("TOMAN")
   monthlyCredits             Int      @default(0)
+  monthlyTokenLimit         Int      @default(0)
   overageCreditPriceToman    Int      @default(0)
   overageEnabled              Boolean  @default(false)
   active                     Boolean  @default(true)
