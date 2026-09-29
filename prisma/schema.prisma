@@ -758,7 +758,7 @@ model Plan {
 
 model ModelCatalog {
   id                    String   @id @default(cuid())
-  routeKey              String?  @unique
+  routeKey              String?
   provider              String
   modelId               String
   displayName           String
@@ -773,6 +773,7 @@ model ModelCatalog {
   speedTier             String   @default("balanced")
   commercialAvailable   Boolean  @default(true)
   active                Boolean  @default(true)
+  isTrialDefault        Boolean  @default(false)
   trialEnabled          Boolean  @default(false)
   trialDefault          Boolean  @default(false)
   systemProviderId      String?
