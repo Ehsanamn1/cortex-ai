@@ -123,8 +123,8 @@ export async function startTraining(params: {
   baseModel?: string;
   config?: Record<string, unknown>;
 }) {
-  if (!WORKER_URL || !WORKER_SECRET) {
-    throw Object.assign(new Error("Training Worker هنوز در تنظیمات زیرساخت فعال نشده است."), {
+  if (!WORKER_URL || !WORKER_SECRET || !CALLBACK_URL || !CALLBACK_SECRET) {
+    throw Object.assign(new Error("Training Worker و callback امن آن هنوز در تنظیمات زیرساخت کامل نشده‌اند."), {
       status: 503,
       code: "training_worker_unconfigured",
     });
