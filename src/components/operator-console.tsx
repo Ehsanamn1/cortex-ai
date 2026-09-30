@@ -38,7 +38,6 @@ const RESOURCE_OPTIONS = [
   ["executions", "Executionها", Activity],
   ["audit", "Audit Log", ShieldCheck],
   ["plugins", "افزونه‌ها", Settings2],
-  ["training", "آموزش و مدل‌های اختصاصی", Sparkles],
 ] as const;
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
