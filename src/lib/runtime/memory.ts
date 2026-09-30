@@ -36,17 +36,20 @@ export async function loadAgentMemory(
   limit = 16,
   conversationId?: string | null,
   subjectKey?: string | null,
+  workspaceId?: string | null,
 ) {
   const safeLimit = Math.min(50, Math.max(1, limit));
+  const tenant = workspaceId ? { workspaceId } : {};
   const globalAgentMemory = {
     agentId,
-    workspaceId: undefined,
+    ...tenant,
     conversationId: null,
     scope: "conversation",
   } as const;
   const where = conversationId
     ? {
         agentId,
+        ...tenant,
         OR: [
           { conversationId },
           { conversationId: null, scope: "conversation", subjectKey: null },
@@ -56,6 +59,7 @@ export async function loadAgentMemory(
     : subjectKey
       ? {
           agentId,
+          ...tenant,
           OR: [
             { conversationId: null, scope: "user", subjectKey },
             { conversationId: null, scope: "conversation", subjectKey: null },
