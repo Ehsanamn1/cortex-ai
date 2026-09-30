@@ -1,19 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
-  Activity, BarChart3, Blocks, Bot, Boxes, BrainCircuit, Check, ChevronLeft, CircleAlert,
-  CircleCheck, CloudCog, Database, FileText, Gauge, KeyRound, LayoutDashboard, LifeBuoy,
+  Activity, Blocks, Bot, Boxes, BrainCircuit, Check, ChevronLeft, CircleAlert,
+  CircleCheck, CloudCog, Database, FileText, Gauge, KeyRound, LayoutDashboard,
   Link2, ListFilter, LockKeyhole, LogOut, Menu, Moon, Pencil, Plus, RefreshCw, Search,
   ServerCog, Settings2, ShieldCheck, Sparkles, Sun, TrendingUp, Users, WalletCards, Workflow,
 } from "lucide-react";
 import {
-  Area, AreaChart, Bar, CartesianGrid, ComposedChart, Line, LineChart, ResponsiveContainer,
+  Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
 } from "recharts";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { OPERATOR_CONSOLE_PATH } from "@/config/operator";
 
 type Section = "overview" | "providers" | "models" | "billing" | "site" | "resources" | "telegram" | "security";
@@ -64,7 +63,7 @@ function shortDate(value: string) {
   try { return new Intl.DateTimeFormat("fa-IR", { month: "short", day: "numeric" }).format(new Date(value)); } catch { return "—"; }
 }
 
-function OpsCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function OpsCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <section className={"operator-card " + className}>{children}</section>;
 }
 
@@ -83,7 +82,7 @@ function MetricCard({ label, value, caption, icon: Icon, tone = "blue" }: {
   );
 }
 
-function SectionHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: React.ReactNode }) {
+function SectionHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
@@ -97,7 +96,7 @@ function SectionHeader({ eyebrow, title, description, action }: { eyebrow: strin
 }
 
 function PrimaryButton({ children, onClick, disabled, variant = "primary", type = "button" }: {
-  children: React.ReactNode; onClick?: () => void; disabled?: boolean; variant?: "primary" | "outline" | "ghost" | "danger"; type?: "button" | "submit";
+  children: ReactNode; onClick?: () => void; disabled?: boolean; variant?: "primary" | "outline" | "ghost" | "danger"; type?: "button" | "submit";
 }) {
   return <button type={type} onClick={onClick} disabled={disabled} className={"operator-button operator-button-" + variant + " disabled:cursor-not-allowed disabled:opacity-50"}>{children}</button>;
 }
@@ -444,7 +443,6 @@ function SecurityPanel({ onLogout }: { onLogout: () => void }) {
 }
 
 export function OperatorConsole() {
-  const router = useRouter();
   const auth = useQuery({ queryKey: ["operator-auth"], queryFn: () => fetchJson<{ username: string }>("/api/admin/auth/me"), retry: false, staleTime: 0 });
   useEffect(() => {
     if (auth.isError) window.location.replace(OPERATOR_CONSOLE_PATH);
