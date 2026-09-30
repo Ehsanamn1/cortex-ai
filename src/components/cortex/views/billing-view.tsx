@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Activity, ArrowUpLeft, BarChart3, CheckCircle2, ChevronDown, CircleDollarSign, Clock3, CreditCard, FileText, Gauge,
-  Info, Layers3, Plus, ShieldCheck, کیف اعتبارCards, Sparkles,
+  Info, Layers3, Plus, ShieldCheck, WalletCards, Sparkles,
 } from "lucide-react";
 import { api } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
@@ -124,7 +124,7 @@ export function BillingView(){
           </div>
           <div className="mt-5 max-w-xl"><div className="flex justify-between text-[10px] text-muted-foreground"><span>نسبت موجودی به اعتبار ماهانه</span><span>{faNum(balancePct)}٪</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60" style={{width:balancePct+"%"}}/></div></div>
         </div>
-        <div className="hidden place-items-center lg:grid"><div className="cortex-wallet-orb relative grid place-items-center"><div className="grid size-14 place-items-center rounded-2xl bg-black/20 text-white"><کیف اعتبارCards className="size-6"/></div></div></div>
+        <div className="hidden place-items-center lg:grid"><div className="cortex-wallet-orb relative grid place-items-center"><div className="grid size-14 place-items-center rounded-2xl bg-black/20 text-white"><WalletCards className="size-6"/></div></div></div>
       </div>
     </section>
 
@@ -145,7 +145,7 @@ export function BillingView(){
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         {data.topUpPackages.map((item,index)=><button key={item.key} type="button" disabled={topUp.isPending} onClick={()=>topUp.mutate(item.key)} className="cortex-wallet-package group rounded-2xl border border-white/[.07] bg-white/[.018] p-4 text-right disabled:opacity-60">
-          <div className="flex items-center justify-between"><span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">{index===0?<Plus className="size-4"/>:index===1?<Layers3 className="size-4"/>:<کیف اعتبارCards className="size-4"/>}</span><ArrowUpLeft className="size-4 text-muted-foreground"/></div>
+          <div className="flex items-center justify-between"><span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">{index===0?<Plus className="size-4"/>:index===1?<Layers3 className="size-4"/>:<WalletCards className="size-4"/>}</span><ArrowUpLeft className="size-4 text-muted-foreground"/></div>
           <p className="mt-3 text-sm font-bold">{item.label}</p>
           <p className="mt-1 text-xl font-black">{formatCountCompact(item.credits)}</p><p className="text-[10px] text-muted-foreground">اعتبار · {formatTomanCompact(item.amountToman)}</p>
           <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-primary/15 bg-primary/5 px-2 py-1 text-[9px] font-semibold text-primary transition group-hover:bg-primary/10"><CreditCard className="size-3"/>پرداخت و شارژ</span>
@@ -214,7 +214,7 @@ export function BillingView(){
               selectedPlanKey === item.key ? "ring-2 ring-primary/35 shadow-[0_25px_70px_rgba(59,130,255,.18)]" : ""
             )}>
             {featured&&<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary to-primary"/>}
-            <div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-black">{item.name}</h3>{featured&&<Badge className="bg-primary text-[8px]">پیشنهاد ویژه</Badge>}{isCurrent&&<Badge variant="outline" className="border-primary/20 bg-primary/5 text-[8px] text-primary">پلن فعلی</Badge>}</div><p className="mt-1 text-[10px] font-semibold text-primary/90">{meta.headline}</p></div><کیف اعتبارCards className="size-5 text-primary"/></div>
+            <div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-black">{item.name}</h3>{featured&&<Badge className="bg-primary text-[8px]">پیشنهاد ویژه</Badge>}{isCurrent&&<Badge variant="outline" className="border-primary/20 bg-primary/5 text-[8px] text-primary">پلن فعلی</Badge>}</div><p className="mt-1 text-[10px] font-semibold text-primary/90">{meta.headline}</p></div><WalletCards className="size-5 text-primary"/></div>
             <p className="mt-4 text-2xl font-black">{item.priceToman?formatTomanCompact(item.priceToman):"از ۳۵٬۰۰۰٬۰۰۰"}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.priceToman?"تومان / ماه":"تومان / ماه · توافقی"}</p>
             <p className="mt-3 text-sm font-black">{item.monthlyCredits?formatCountCompact(item.monthlyCredits)+" اعتبار ماهانه":"اعتبار توافقی"}</p>
             <div className="my-4 h-px bg-border/60"/><div className="space-y-2">{meta.features.map((feature)=><div key={feature} className="flex items-start gap-2 text-[10px] leading-5 text-muted-foreground"><CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-400"/>{feature}</div>)}</div>
