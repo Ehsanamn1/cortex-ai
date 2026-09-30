@@ -1,0 +1,12 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pydantic==2.11.7
+torch>=2.6,<3
+transformers>=5.0,<6
+datasets>=4.4,<5
+trl>=1.7,<2
+peft>=0.20,<1
+accelerate>=1.10,<2
+bitsandbytes>=0.46,<1
+safetensors>=0.6,<1
+httpx>=0.28,<1
