@@ -1,5 +1,2 @@
-import { ControlCenter } from "@/components/control-center";
-
-export default function AdminPage() {
-  return <ControlCenter />;
-}
+import { notFound } from "next/navigation";
+export default function LegacyAdminRoute() { notFound(); }
