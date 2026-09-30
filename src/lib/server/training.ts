@@ -39,13 +39,13 @@ function extractContext(metadata: string | null) {
 }
 
 export async function captureFeedbackExample(params: {
-  assertTrainingEnabled();
   workspaceId: string;
   agentId: string;
   userId: string;
   messageId: string;
   score: number;
 }) {
+  assertTrainingEnabled();
   const message = await db.message.findUnique({
     where: { id: params.messageId },
     include: { conversation: { include: { agent: true } } },
@@ -126,13 +126,13 @@ function datasetHash(samples: unknown[]) {
 }
 
 export async function startTraining(params: {
-  assertTrainingEnabled();
   workspaceId: string;
   agentId: string;
   method?: "qlora" | "lora" | "full";
   baseModel?: string;
   config?: Record<string, unknown>;
 }) {
+  assertTrainingEnabled();
   if (!WORKER_URL || !WORKER_SECRET || !CALLBACK_URL || !CALLBACK_SECRET) {
     throw Object.assign(new Error("Training Worker و callback امن آن هنوز در تنظیمات زیرساخت کامل نشده‌اند."), {
       status: 503,
