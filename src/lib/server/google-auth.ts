@@ -24,8 +24,17 @@ export function googleClientSecret(): string {
 
 export function googleRedirectUri(request: Request): string {
   const configured = process.env.GOOGLE_REDIRECT_URI?.trim();
-  if (configured) return configured;
+  if (configured) return configured.replace(/\/$/, "");
+
+  const publicUrl = process.env.APP_PUBLIC_URL?.trim();
+  if (publicUrl) {
+    return publicUrl.replace(/\/$/, "") + "/api/auth/google/callback";
+  }
+
   const url = new URL(request.url);
+  if (process.env.NODE_ENV === "production" || process.env.APP_ENV === "production") {
+    throw Object.assign(new Error("برای ورود با Google در محیط تولید، APP_PUBLIC_URL یا GOOGLE_REDIRECT_URI را تنظیم کنید."), { status: 503 });
+  }
   return url.origin + "/api/auth/google/callback";
 }
 
