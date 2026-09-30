@@ -48,8 +48,7 @@ export function AnalyticsView(){
 
   return <div className="space-y-7">
     <section className="cortex-panel relative overflow-hidden rounded-[28px] p-6 sm:p-8">
-      <div className="absolute -end-20 -top-28 size-72 rounded-full bg-primary/10 blur-3xl"/>
-      
+
       <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div><p className="cortex-kicker">هوش و بینش</p><h2 className="mt-3 text-3xl font-bold sm:text-4xl">آنچه واقعاً در سیستم اتفاق می‌افتد.</h2><p className="mt-3 max-w-2xl text-sm leading-8 text-muted-foreground">این صفحه از پیام‌ها، رویدادهای مصرف و داده‌های واقعی فضای کاری ساخته می‌شود؛ نه داده آزمایشی.</p></div>
         <div className="rounded-2xl border border-emerald-400/15 bg-emerald-400/10 px-4 py-3 text-xs text-emerald-300"><span className="font-semibold">زنده</span><span className="mx-2 text-emerald-300/40">•</span>محاسبه بر اساس داده‌های فعلی</div>
