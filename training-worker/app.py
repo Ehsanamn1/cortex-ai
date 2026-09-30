@@ -259,9 +259,18 @@ def start_train(req: TrainRequest, background_tasks: BackgroundTasks, authorizat
 def get_job(job_id: str, authorization: str | None = Header(default=None)):
     if not auth_ok(authorization):
         raise HTTPException(status_code=401, detail="unauthorized")
-    if job_id not in jobs:
-        raise HTTPException(status_code=404, detail="not found")
-    return jobs[job_id]
+    if job_id in jobs:
+        return jobs[job_id]
+
+    metadata_path = TRAINING_ROOT / job_id / "metadata.json"
+    if metadata_path.exists():
+        try:
+            metadata = json.loads(metadata_path.read_text())
+            return {"job_id": job_id, "status": "completed", **metadata}
+        except Exception:
+            pass
+
+    raise HTTPException(status_code=404, detail="not found")
 
 @app.post("/v1/chat/completions")
 def chat(req: ChatRequest, authorization: str | None = Header(default=None)):
