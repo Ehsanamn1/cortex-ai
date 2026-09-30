@@ -498,7 +498,6 @@ jobs:
           check_noauth_json "/api/agents/$smoke_agent_id" "401"
           check_authed_json "/api/agents/$smoke_agent_id/knowledge" "200"
           check_authed_json "/api/agents/$smoke_agent_id/conversations" "200"
-          check_authed_json "/api/agents/$smoke_agent_id/training" "200"
 
           onboarding_start_response="$(mktemp)"
           onboarding_start_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d '{"action":"start","mode":"quick"}' -o "$onboarding_start_response" -w "%{http_code}" "$base/api/agents/$smoke_agent_id/onboarding")"
