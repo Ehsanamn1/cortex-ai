@@ -37,38 +37,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Capabilities } from "@/components/cortex/capabilities";
 
-function CortexCore() {
-  const nodes = [
-    { x: "18%", y: "31%", delay: "0s" },
-    { x: "77%", y: "26%", delay: ".7s" },
-    { x: "83%", y: "58%", delay: "1.4s" },
-    { x: "24%", y: "74%", delay: "2.1s" },
-    { x: "51%", y: "13%", delay: "2.8s" },
-    { x: "48%", y: "88%", delay: "3.5s" },
-  ];
-
-  return (
-    <div className="cortex-core-v2" aria-label="هسته Cortex">
-      <div className="cortex-core-v2-haze" />
-      <div className="cortex-core-v2-ring cortex-core-v2-ring-1" />
-      <div className="cortex-core-v2-ring cortex-core-v2-ring-2" />
-      <div className="cortex-core-v2-ring cortex-core-v2-ring-3" />
-      {nodes.map((node, i) => (
-        <span key={i} className="cortex-core-v2-node" style={{ left: node.x, top: node.y, animationDelay: node.delay }} />
-      ))}
-      <div className="cortex-core-v2-orb">
-        <div className="cortex-core-v2-orb-shine" />
-        <div className="cortex-core-v2-orb-grid" />
-        <div className="cortex-core-v2-orb-dot" />
-      </div>
-      <div className="cortex-core-v2-caption">
-        <p>هسته Cortex</p>
-        <span>سیگنال‌های Runtime</span>
-      </div>
-    </div>
-  );
-}
-
 function DashboardOnboarding({
   onNavigate,
   recentAgentId,
