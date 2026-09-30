@@ -264,6 +264,60 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
   });
   if (!account) throw Object.assign(new Error("حساب اعتبار فضای کاری پیدا نشد."), { status: 404 });
 
+  const configuredAgentModel = agent?.modelKey?.trim() || "";
+  if (configuredAgentModel.startsWith("trained:")) {
+    const adapterId = configuredAgentModel.slice("trained:".length);
+    const adapter = await db.modelAdapter.findFirst({
+      where: { id: adapterId, agentId, workspaceId, active: true },
+      orderBy: { version: "desc" },
+    });
+    if (!adapter) {
+      throw Object.assign(
+        new Error("نسخهٔ آموزش‌دیدهٔ ایجنت دیگر فعال نیست یا پیدا نشد."),
+        { status: 503, code: "trained_model_unavailable" },
+      );
+    }
+
+    const trainingProvider = await db.systemProviderConfig.findUnique({
+      where: { key: "cortex-trained" },
+    });
+    if (!trainingProvider?.enabled || !trainingProvider.apiKeyEncrypted) {
+      throw Object.assign(
+        new Error("سرویس اجرای مدل آموزش‌دیده پیکربندی نشده است."),
+        { status: 503, code: "trained_provider_unavailable" },
+      );
+    }
+
+    const provider = buildSystemProviderForModel(trainingProvider, adapter.inferenceModelId);
+    if (!provider.isConfigured()) {
+      throw Object.assign(
+        new Error("Provider مدل آموزش‌دیده آماده نیست."),
+        { status: 503, code: "trained_provider_unavailable" },
+      );
+    }
+
+    const model: ManagedModelDefinition = {
+      key: configuredAgentModel,
+      provider: "Cortex Training",
+      providerModelId: adapter.inferenceModelId,
+      modelId: adapter.inferenceModelId,
+      displayName: "Cortex Trained v" + adapter.version,
+      description: "نسخهٔ آموزش‌دیدهٔ اختصاصی این ایجنت",
+      qualityTier: "balanced",
+      speedTier: "balanced",
+      tier: "balanced",
+      creditRatePer1K: 3,
+      planKeys: [account.plan.key as ManagedPlanKey],
+      contextWindow: undefined,
+      vision: false,
+      tools: true,
+      structuredOutput: true,
+      reasoning: true,
+      commercialAvailable: true,
+    };
+    return { model, provider, planKey: account.plan.key };
+  }
+
   let catalog =
     account.plan.key === "free"
       ? await db.modelCatalog.findFirst({
