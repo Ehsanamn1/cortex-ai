@@ -23,6 +23,7 @@ vi.mock("@/lib/runtime/memory", () => ({
   loadAgentMemory: vi.fn(async () => []),
   remember: vi.fn(async () => undefined),
   rememberExplicitUserFacts: vi.fn(async () => 0),
+  rememberConversationContext: vi.fn(async () => undefined),
 }));
 
 vi.mock("@/lib/rag/pipeline", () => ({
