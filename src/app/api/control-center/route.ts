@@ -34,6 +34,9 @@ export async function GET(req: Request) {
       db.$queryRawUnsafe<Array<{ day: Date; costMicros: bigint }>>("SELECT date_trunc('day', \"createdAt\") AS day, COALESCE(SUM(\"providerCostMicros\"), 0)::bigint AS \"costMicros\" FROM \"BillingCharge\" WHERE \"status\" IN ('captured', 'captured_debt') AND \"createdAt\" >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY 1 ASC"),
     ]);
 
+    const cashRevenueToman = dailyRevenueRows.reduce((sum, row) => sum + Number(row.revenue), 0);
+    const providerCostToman = Math.round((billedCredits30._sum.providerCostMicros ?? 0) / 1_000_000 * usdTomanRate.usdToman);
+    const grossMarginToman = cashRevenueToman - providerCostToman;
     return applyCors(jsonOk({
       admin,
       metrics: { users, workspaces, agents, knowledge, conversations, messages, bots, providers, events, logs },
@@ -64,8 +67,8 @@ export async function GET(req: Request) {
           providerCostMicros: billedCredits30._sum.providerCostMicros ?? 0,
           providerCostToman: Math.round((billedCredits30._sum.providerCostMicros ?? 0) / 1_000_000 * usdTomanRate.usdToman),
           bookedMonthlyPlanValueToman: bookedPlanValue,
-          cashRevenueToman: 0,
-          grossMarginToman: 0,
+          cashRevenueToman,
+          grossMarginToman,
         },
         daily: {
           revenue: dailyRevenueRows.map((row) => ({ day: row.day.toISOString(), revenueToman: Number(row.revenue) })),
