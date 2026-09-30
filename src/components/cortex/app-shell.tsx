@@ -493,7 +493,7 @@ export function AppShell() {
   }, [syncFromUrl]);
 
   return (
-    <div className="cortex-dashstack flex h-dvh overflow-hidden bg-background">
+    <div className="cortex-dashstack min-h-screen bg-background lg:flex lg:h-dvh lg:overflow-hidden">
       {/* Sidebar — first in DOM = right side in RTL */}
       <aside className="cortex-sidebar hidden w-[268px] shrink-0 flex-col gap-5 border-l p-4 lg:flex">
         <div className="px-1 pt-1">
@@ -550,7 +550,7 @@ export function AppShell() {
           <ProviderPill className="w-full max-w-none justify-between rounded-xl px-3 py-2" />
         </div>
 
-        <main className="cortex-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+        <main className="cortex-scroll min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:overscroll-y-contain">
           <div className="mx-auto w-full max-w-6xl px-3 pb-40 pt-4 sm:px-4 sm:pb-36 sm:pt-6 lg:px-8 lg:pb-10 lg:pt-8">
             <AnimatePresence mode="wait">
               <ViewErrorBoundary key={viewKey}>
