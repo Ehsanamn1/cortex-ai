@@ -52,10 +52,10 @@
   --card-foreground: #1f2937;
   --popover: #ffffff;
   --popover-foreground: #1f2937;
-  --primary: #4880ff;
+  --primary: #356dff;
   --primary-foreground: #ffffff;
-  --secondary: #eef2ff;
-  --secondary-foreground: #334155;
+  --secondary: #edf2f8;
+  --secondary-foreground: #33465c;
   --muted: #f3f4f6;
   --muted-foreground: #6b7280;
   --accent: #f4f6fa;
@@ -71,13 +71,13 @@
   --chart-5: #e05260;
   --sidebar: #ffffff;
   --sidebar-foreground: #1f2937;
-  --sidebar-primary: #4880ff;
+  --sidebar-primary: #356dff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef3ff;
-  --sidebar-accent-foreground: #2f62d6;
+  --sidebar-accent: #edf2ff;
+  --sidebar-accent-foreground: #244fae;
   --sidebar-border: #e6e9ef;
-  --sidebar-ring: #4880ff;
-  --surface-glow: rgba(72, 128, 255, 0.08);
+  --sidebar-ring: #356dff;
+  --surface-glow: rgba(53, 109, 255, 0.08);
   --surface-2: #f7f8fb;
 }
 
@@ -89,9 +89,9 @@
   --card-foreground: #eef2ff;
   --popover: #0b1017;
   --popover-foreground: #eef2ff;
-  --primary: #5b8cff;
+  --primary: #6d94ff;
   --primary-foreground: #ffffff;
-  --secondary: #151c28;
+  --secondary: #141c27;
   --secondary-foreground: #dce5f2;
   --muted: #111823;
   --muted-foreground: #93a0b2;
@@ -108,13 +108,13 @@
   --chart-5: #ef6573;
   --sidebar: #090d13;
   --sidebar-foreground: #eef2ff;
-  --sidebar-primary: #5b8cff;
+  --sidebar-primary: #6d94ff;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #151d29;
   --sidebar-accent-foreground: #dbeafe;
   --sidebar-border: #202a38;
-  --sidebar-ring: #5b8cff;
-  --surface-glow: rgba(91, 140, 255, 0.12);
+  --sidebar-ring: #6d94ff;
+  --surface-glow: rgba(109, 148, 255, 0.12);
   --surface-2: #0d121a;
 }
 
@@ -134,10 +134,7 @@
     font-family: var(--font-vazirmatn), "Vazir", "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    background-image:
-      radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
-      radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%);
-    background-attachment: scroll;
+    background-image: none;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: auto;
@@ -1616,55 +1613,49 @@ body {
 }
 
 
-/* Cortex product identity — anti-template visual layer.
-   The product uses editorial hierarchy, restrained surfaces, and asymmetric rhythm
-   instead of decorative gradients, oversized rounded cards, and dashboard wallpaper. */
+/* Cortex product identity — restrained, theme-aware, and intentionally product-first. */
 .cortex-dashstack {
-  background: #0b0d0f !important;
-  color: #e7e9e4 !important;
+  background: var(--background) !important;
+  color: var(--foreground) !important;
 }
 .cortex-dashstack .cortex-sidebar {
-  background: #0b0d0f !important;
-  border-color: #242925 !important;
+  background: var(--sidebar) !important;
+  border-color: var(--sidebar-border) !important;
   box-shadow: none !important;
 }
 .cortex-dashstack .cortex-topbar {
-  background: rgba(11,13,15,.96) !important;
-  border-color: #242925 !important;
+  background: color-mix(in srgb, var(--background) 94%, transparent) !important;
+  border-color: var(--border) !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
 }
-.cortex-dashstack .cortex-topbar [class*="bg-primary"],
-.cortex-dashstack .cortex-sidebar [class*="bg-primary"] {
-  background: transparent !important;
-}
 .cortex-dashstack .cortex-panel,
 .cortex-dashstack [data-slot="card"] {
-  background: #111416 !important;
-  border: 1px solid #292e2a !important;
+  background: var(--card) !important;
+  border-color: var(--border) !important;
   border-radius: 12px !important;
   box-shadow: none !important;
 }
 .cortex-dashstack .cortex-panel:hover,
 .cortex-dashstack [data-slot="card"]:hover {
-  border-color: #3a413b !important;
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border)) !important;
 }
 .cortex-dashstack .cortex-icon-box {
   width: 38px !important;
   height: 38px !important;
   border-radius: 9px !important;
-  background: #171b18 !important;
-  border-color: #303730 !important;
+  background: var(--secondary) !important;
+  border-color: var(--border) !important;
   box-shadow: none !important;
-  color: #c2d66a !important;
+  color: var(--primary) !important;
 }
 .cortex-dashstack .cortex-kicker {
-  color: #87907f !important;
+  color: var(--muted-foreground) !important;
   letter-spacing: .16em !important;
 }
 .cortex-dashstack .cortex-hero {
-  background: #111416 !important;
-  border: 1px solid #343b35 !important;
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 12px !important;
   box-shadow: none !important;
 }
@@ -1682,72 +1673,66 @@ body {
   border-radius: 9px !important;
 }
 .cortex-dashstack .cortex-action {
-  background: #101314 !important;
-  border-color: #2b302d !important;
+  background: var(--card) !important;
+  border-color: var(--border) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 .cortex-dashstack .cortex-action:hover {
-  background: #151917 !important;
-  border-color: #4a5548 !important;
+  background: var(--accent) !important;
+  border-color: color-mix(in srgb, var(--primary) 24%, var(--border)) !important;
   transform: translateX(-2px) !important;
-}
-.cortex-dashstack main {
-  background:
-    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(255,255,255,.018) 100%) !important;
 }
 .cortex-dashstack h1,
 .cortex-dashstack h2,
 .cortex-dashstack h3 {
   letter-spacing: -.025em;
 }
-.cortex-dashstack .cortex-core-orbit,
-.cortex-dashstack .cortex-core-sphere {
-  opacity: .28;
+
+/* Operator console: deliberately darker than the customer workspace, but never olive/gold. */
+.cortex-control-center {
+  background: #0b1016 !important;
+  color: #e8edf4 !important;
+}
+.cortex-control-center [data-slot="card"] {
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+.cortex-control-center .text-\[\#b9d95d\],
+.cortex-control-center .text-\[\#b8d85b\],
+.cortex-control-center .text-\[\#c7e86a\],
+.cortex-control-center .text-\[\#c5e46d\] {
+  color: #74a0ff !important;
+}
+.cortex-control-center .bg-\[\#b9d95d\],
+.cortex-control-center .bg-\[\#b8d85b\] {
+  background: #74a0ff !important;
+}
+.cortex-control-center .border-\[\#b9d95d\],
+.cortex-control-center .border-\[\#b8d85b\],
+.cortex-control-center .border-\[\#b7d65c\] {
+  border-color: rgba(116,160,255,.35) !important;
+}
+
+/* Landing: use the same Cortex palette in both themes. */
+.cortex-landing {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+.cortex-landing [class*="bg-[radial-gradient"] {
+  display: none !important;
+}
+.cortex-landing [class*="bg-gradient-to-l"],
+.cortex-landing [class*="bg-gradient-to-r"],
+.cortex-landing [class*="bg-gradient-to-br"] {
+  background-image: none !important;
+}
+.cortex-landing .cortex-kicker {
+  color: var(--muted-foreground) !important;
 }
 @media (max-width: 640px) {
   .cortex-dashstack .cortex-panel,
   .cortex-dashstack [data-slot="card"] {
     border-radius: 10px !important;
   }
-}
-
-/* Operator console is intentionally separate from the customer workspace. */
-.cortex-control-center {
-  background: #0b0d0f !important;
-  color: #e7e9e4 !important;
-}
-.cortex-control-center [data-slot="card"] {
-  border-radius: 10px !important;
-  box-shadow: none !important;
-}
-
-.cortex-landing {
-  background: #0b0d0f !important;
-}
-.cortex-landing .rounded-[30px],
-.cortex-landing .rounded-[26px],
-.cortex-landing .rounded-[24px],
-.cortex-landing .rounded-[22px],
-.cortex-landing .rounded-2xl,
-.cortex-landing .rounded-xl {
-  border-radius: 10px !important;
-}
-.cortex-landing .shadow-\[0_40px_100px_rgba\(0\,0\,0\,.35\)\],
-.cortex-landing [class*="shadow-[0_24px"],
-.cortex-landing [class*="shadow-[0_18px"] {
-  box-shadow: none !important;
-}
-.cortex-landing [class*="bg-[radial-gradient"] {
-  display: none !important;
-}
-.cortex-landing [class*="bg-gradient-to"] {
-  background-image: none !important;
-}
-.cortex-landing .cortex-kicker {
-  color: #9aa393 !important;
-}
-.cortex-landing article,
-.cortex-landing section > div[class*="border"] {
-  box-shadow: none;
 }
