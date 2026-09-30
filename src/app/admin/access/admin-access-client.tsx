@@ -21,8 +21,11 @@ export function AdminAccessClient({ token }: { token: string }) {
           const body = await response.json().catch(() => null) as { error?: string } | null;
           throw new Error(body?.error || "لینک مدیریتی معتبر نیست.");
         }
-        window.history.replaceState(null, "", "/admin");
-        window.location.replace("/admin");
+        const payload = await response.json().catch(() => ({})) as { data?: { dashboardPath?: string }; dashboardPath?: string };
+        const dashboardPath = payload.data?.dashboardPath ?? payload.dashboardPath;
+        if (!dashboardPath) throw new Error("مسیر خصوصی پنل تولید نشد.");
+        window.history.replaceState(null, "", dashboardPath);
+        window.location.replace(dashboardPath);
       })
       .catch((error) => {
         if (active) setMessage(error instanceof Error ? error.message : "دسترسی مدیر برقرار نشد.");
