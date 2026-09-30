@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireAdmin } from "@/lib/server/admin-auth";
-import { encryptSecret } from "@/lib/server/secrets";
+import { decryptSecret, encryptSecret } from "@/lib/server/secrets";
 import { buildSystemProviderForModel } from "@/lib/server/system-provider";
 import { validateProviderBaseUrl } from "@/lib/providers/llm/provider-url";
 
