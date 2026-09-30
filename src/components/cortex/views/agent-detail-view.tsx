@@ -914,9 +914,9 @@ export function AgentDetailView() {
 
       {/* Tabs */}
       <Tabs value={agentTab} onValueChange={(value) => setAgentTab(value as AgentTab)}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
+        <TabsList className="cortex-agent-tabbar flex w-full gap-1 overflow-x-auto rounded-2xl border border-border/70 bg-card/70 p-1.5" dir="rtl">
           {AGENT_TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
+            <TabsTrigger key={tab.value} value={tab.value} className="shrink-0 rounded-xl px-3 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
               {tab.label}
             </TabsTrigger>
           ))}
