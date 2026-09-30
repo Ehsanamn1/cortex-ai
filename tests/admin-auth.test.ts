@@ -1,16 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  adminCredentials,
   signAdminSession,
   verifyAdminSession,
 } from "@/lib/server/admin-auth";
 
-const originalUser = process.env.CORTEX_ADMIN_USERNAME;
-const originalPass = process.env.CORTEX_ADMIN_PASSWORD;
 
 afterEach(() => {
-  process.env.CORTEX_ADMIN_USERNAME = originalUser;
-  process.env.CORTEX_ADMIN_PASSWORD = originalPass;
 });
 
 describe("admin authentication", () => {
