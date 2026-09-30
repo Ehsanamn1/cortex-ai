@@ -1480,3 +1480,20 @@ html:not(.dark) .cortex-dashstack [data-slot="card"] { color: var(--card-foregro
 .operator-model-discovery{padding:14px;border:1px solid var(--op-border);border-radius:14px;background:var(--op-card-2)}
 @media(max-width:1023px){.operator-sidebar{transform:translateX(110%);transition:.18s}.operator-sidebar.is-open{transform:translateX(0)}[dir=rtl] .operator-sidebar{transform:translateX(-110%)}[dir=rtl] .operator-sidebar.is-open{transform:translateX(0)}.operator-main,[dir=rtl] .operator-main{margin:0}.operator-content{padding:18px}.operator-topbar{padding-inline:16px}}
 @media(max-width:640px){.operator-content{padding:14px}.operator-card{border-radius:15px}.operator-metric{padding:15px}.operator-card-head{padding:15px}.operator-topbar{min-height:60px}.operator-launch-card{padding:12px}}
+
+
+/* Final customer surface calibration: quieter, flatter, less generated-looking UI. */
+html.dark .cortex-dashstack,
+html.dark .cortex-dashstack .bg-background{background:#080c12!important}
+html.dark .cortex-dashstack .bg-card{background:#0f151d!important}
+html.dark .cortex-dashstack .bg-muted{background:#121923!important}
+html.dark .cortex-dashstack .border-border{border-color:#222d3b!important}
+html.dark .cortex-dashstack input,
+html.dark .cortex-dashstack textarea,
+html.dark .cortex-dashstack select{background:#0b1118!important;border-color:#263241!important}
+html.dark .cortex-auth-core,
+html.dark .cortex-grid-bg{opacity:.28!important}
+html.dark .cortex-auth-card,
+html:not(.dark) .cortex-auth-card{backdrop-filter:none!important;box-shadow:0 20px 50px rgba(15,23,42,.09)!important}
+html:not(.dark) .cortex-dashstack .bg-white,
+html:not(.dark) .cortex-dashstack [class*="bg-white/"]{background:#fff!important}
