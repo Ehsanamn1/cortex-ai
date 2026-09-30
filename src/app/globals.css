@@ -102,7 +102,7 @@
   --input: #263244;
   --ring: #5b8cff;
   --chart-1: #5b8cff;
-  --chart-2: #8b5cf6;
+  --chart-2: #60708A;
   --chart-3: #34d399;
   --chart-4: #fbbf24;
   --chart-5: #ef6573;
@@ -1584,21 +1584,6 @@ body {
 .cortex-control-center [data-slot="card"] {
   border-radius: 10px !important;
   box-shadow: none !important;
-}
-.cortex-control-center .text-\[\#b9d95d\],
-.cortex-control-center .text-\[\#b8d85b\],
-.cortex-control-center .text-\[\#c7e86a\],
-.cortex-control-center .text-\[\#c5e46d\] {
-  color: #74a0ff !important;
-}
-.cortex-control-center .bg-\[\#b9d95d\],
-.cortex-control-center .bg-\[\#b8d85b\] {
-  background: #74a0ff !important;
-}
-.cortex-control-center .border-\[\#b9d95d\],
-.cortex-control-center .border-\[\#b8d85b\],
-.cortex-control-center .border-\[\#b7d65c\] {
-  border-color: rgba(116,160,255,.35) !important;
 }
 
 /* Landing: use the same Cortex palette in both themes. */
