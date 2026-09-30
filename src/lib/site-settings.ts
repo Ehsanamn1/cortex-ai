@@ -20,7 +20,7 @@ export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
   "site.authDescription": CORTEX_UI_CONFIG.copy.authDescription,
   "site.navOrder": "dashboard,agents,knowledge,conversations,telegram,analytics,learn",
   "nav.dashboard.enabled": "true",
-  "nav.dashboard.label": "داشبورد",
+  "nav.dashboard.label": "نمای کلی",
   "nav.agents.enabled": "true",
   "nav.agents.label": "ایجنت‌ها",
   "nav.knowledge.enabled": "true",
