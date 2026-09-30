@@ -2,15 +2,15 @@ import { db } from "@/lib/db";
 import { CORTEX_UI_CONFIG } from "@/config/cortex-ui";
 
 export const DEFAULT_SITE_SETTINGS: Record<string, string> = {
-  "site.name": CORTEX_UI_CONFIG.brand.name,
+  "site.name": "Cortex AI",
   "site.description": "ساخت و مدیریت ایجنت‌های هوش مصنوعی با دانش واقعی کسب‌وکار.",
   "site.supportEmail": "",
   "site.maxUploadMb": String(CORTEX_UI_CONFIG.limits.maxKnowledgeUploadMb),
   "site.welcomeTitle": "محیط مدیریت دانش و ایجنت‌ها",
-  "site.heroTitle": "دانش کسب‌وکارت را به ایجنت‌های قابل‌اعتماد تبدیل کن.",
-  "site.heroSubtitle": "Cortex دانش، Agent، Telegram و کنترل هزینه را در یک محیط عملیاتی جمع می‌کند؛ برای پاسخ بهتر، تصمیم سریع‌تر و کار کمتر.",
-  "site.heroPrimaryCta": "ساخت اولین ایجنت",
-  "site.heroSecondaryCta": "مشاهده قابلیت‌ها",
+  "site.heroTitle": "هوش مصنوعی را دقیقاً با دانش و فرآیندهای کسب‌وکارت هماهنگ کن.",
+  "site.heroSubtitle": "دانش، ایجنت‌ها، اتصال‌های کاری و کنترل هزینه در یک محیط حرفه‌ای؛ برای تیمی که می‌خواهد سریع‌تر و دقیق‌تر کار کند.",
+  "site.heroPrimaryCta": "شروع ساخت ایجنت",
+  "site.heroSecondaryCta": "دیدن قابلیت‌ها",
   "site.proofLine": "بدون قفل شدن به یک Provider · کنترل متمرکز مدل و هزینه · آماده برای Telegram",
   "site.primaryColor": CORTEX_UI_CONFIG.theme.primary,
   "site.secondaryColor": CORTEX_UI_CONFIG.theme.secondary,
