@@ -2,7 +2,6 @@ import { db } from "@/lib/db";
 import { llmManager } from "@/lib/providers/llm/manager";
 import { getKnownModelCatalog, getModelRate, PRICING_VERIFIED_AT, PRICING_MODE } from "@/lib/server/pricing";
 import { getManagedModelCatalog } from "@/lib/server/model-router";
-import { getUsdTomanRate } from "@/lib/server/fx";
 
 export const DEFAULT_BILLING_PLANS = [
   { key: "free", name: "آزمایشی", description: "دسترسی محدود برای آشنایی با Cortex؛ فقط مدل‌های اقتصادی منتخب", priceToman: 0, monthlyCredits: 1_000, overageCreditPriceToman: 0, overageEnabled: false, sortOrder: 0 },
@@ -509,21 +508,18 @@ export async function getBillingSnapshot(workspaceId: string) {
   };
 }
 
-const LOWEST_CREDIT_VALUE_TOMAN = 24_900_000 / 180_000;
-
-function calculateManagedCredits(inputTokens: number, outputTokens: number, modelKey: string | null | undefined, providerCostMicros: number, usdToman: number): number | null {
-  const managed = getManagedModelCatalog().find((entry) => entry.key === modelKey || entry.providerModelId === modelKey);
-  if (!managed) return null;
-
-  const input = Math.max(0, Math.floor(inputTokens));
-  const output = Math.max(0, Math.floor(outputTokens));
-  const baseCredits = Math.ceil(
-    (output / 1000) * managed.creditRatePer1K +
-    (input / 1000) * (managed.creditRatePer1K * 0.25),
+function calculateManagedCredits(
+  modelKey: string | null | undefined,
+  providerCostMicros: number,
+  multiplierBps: number,
+): number | null {
+  const managed = getManagedModelCatalog().find(
+    (entry) => entry.key === modelKey || entry.providerModelId === modelKey,
   );
-  const providerCostToman = Math.max(0, providerCostMicros) / 1_000_000 * Math.max(0, usdToman);
-  const marginFloor = Math.ceil((providerCostToman * 2) / LOWEST_CREDIT_VALUE_TOMAN);
-  return Math.max(1, baseCredits, marginFloor);
+  if (!managed) return null;
+  // Billing price is controlled by the admin-managed Model Catalog + Plan Access.
+  // 100 BPS is provider-cost baseline; 200 BPS is 100% gross margin.
+  return creditsFromProviderCost(providerCostMicros, Math.max(1, multiplierBps));
 }
 
 export interface BillingReservationResult {
@@ -623,9 +619,8 @@ export async function reserveBillingCredits(params: {
   const providerCostMicros = catalogCostMicros(inputTokens, maxOutputTokens, catalog.inputUsdPer1M, catalog.outputUsdPer1M);
   const multiplierBps = Math.max(1, access.creditMultiplierBps || fallbackMultiplier);
   const managed = getManagedModelCatalog().find((entry) => entry.providerModelId.toLowerCase() === params.model.toLowerCase());
-  const usdToman = managed ? (await getUsdTomanRate()).usdToman : 0;
   const managedCredits = managed
-    ? calculateManagedCredits(inputTokens, maxOutputTokens, managed.key, providerCostMicros, usdToman)
+    ? calculateManagedCredits(managed.key, providerCostMicros, multiplierBps)
     : null;
   const estimatedCredits = managedCredits ?? creditsFromProviderCost(providerCostMicros, multiplierBps);
 
@@ -752,9 +747,8 @@ export async function recordUsageAndCharge(params: {
   });
   const multiplierBps = Math.max(1, access?.creditMultiplierBps || defaultMultiplierBps);
   const managed = getManagedModelCatalog().find((entry) => entry.providerModelId.toLowerCase() === model.toLowerCase());
-  const usdToman = managed ? (await getUsdTomanRate()).usdToman : 0;
   const managedCredits = managed
-    ? calculateManagedCredits(inputTokens, outputTokens, managed.key, providerCostMicros, usdToman)
+    ? calculateManagedCredits(managed.key, providerCostMicros, multiplierBps)
     : null;
   const chargedCredits = managedCredits ?? creditsFromProviderCost(providerCostMicros, multiplierBps);
   const totalTokens = params.usage.totalTokens ?? params.usage.inputTokens + params.usage.outputTokens;
