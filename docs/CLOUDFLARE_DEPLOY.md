@@ -11,7 +11,6 @@ R2 can be enabled later for large-file object storage. The application can deplo
 ```bash
 npx wrangler secret put DATABASE_URL
 npx wrangler secret put APP_SECRET_KEY
-npx wrangler secret put CORTEX_ADMIN_ACCESS_TOKEN
 ```
 
 Optional:
