@@ -5,10 +5,10 @@ export const PLAN_FEATURE_LIMITS: Record<CommercialPlanKey, {
   maxTelegramBots: number | null;
   maxKnowledgeSources: number | null;
 }> = {
-  free: { maxAgents: 1, maxTelegramBots: 0, maxKnowledgeSources: 3 },
-  launch: { maxAgents: 2, maxTelegramBots: 1, maxKnowledgeSources: 20 },
-  growth: { maxAgents: 10, maxTelegramBots: 3, maxKnowledgeSources: 100 },
-  scale: { maxAgents: 50, maxTelegramBots: 10, maxKnowledgeSources: 500 },
+  free: { maxAgents: 1, maxTelegramBots: null, maxKnowledgeSources: 3 },
+  launch: { maxAgents: 2, maxTelegramBots: null, maxKnowledgeSources: 20 },
+  growth: { maxAgents: 10, maxTelegramBots: null, maxKnowledgeSources: 100 },
+  scale: { maxAgents: 50, maxTelegramBots: null, maxKnowledgeSources: 500 },
   enterprise: { maxAgents: null, maxTelegramBots: null, maxKnowledgeSources: null },
 };
 
