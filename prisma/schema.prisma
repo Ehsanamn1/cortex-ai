@@ -974,3 +974,73 @@ model Invoice {
   @@index([billingAccountId, periodEnd])
   @@index([status, dueAt])
 }
+
+
+model TrainingExample {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  agentId         String
+  userId          String?
+  messageId       String?
+  sourceType      String   @default("feedback")
+  prompt          String
+  response        String
+  context         String?
+  qualityScore    Int      @default(0)
+  approved        Boolean  @default(false)
+  rejectionReason String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([workspaceId, agentId, approved, createdAt])
+  @@index([agentId, sourceType, createdAt])
+  @@index([messageId])
+}
+
+model TrainingJob {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  agentId        String
+  status         String   @default("queued")
+  method         String   @default("qlora")
+  baseModel      String
+  datasetHash    String
+  sampleCount    Int      @default(0)
+  trainConfig    String?
+  workerJobId    String?
+  artifactUrl    String?
+  artifactPath   String?
+  evalLoss       Float?
+  evalScore      Float?
+  promoted       Boolean  @default(false)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  error          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([workspaceId, agentId, createdAt])
+  @@index([agentId, status, createdAt])
+  @@index([datasetHash])
+}
+
+model ModelAdapter {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  agentId       String
+  trainingJobId String
+  baseModel     String
+  adapterType   String   @default("lora")
+  version       Int
+  artifactUrl   String
+  inferenceModelId String
+  evalLoss      Float?
+  evalScore     Float?
+  active        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([agentId, version])
+  @@index([workspaceId, agentId, active])
+  @@index([trainingJobId])
+}
