@@ -27,14 +27,14 @@ const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof 
   { id: "knowledge", label: "دانش", group: "AI", icon: Database },
   { id: "conversations", label: "گفتگوها", group: "AI", icon: MessageSquare },
   { id: "telegram", label: "بات‌های تلگرام", group: "اتصال‌ها", icon: Send },
-  { id: "systemProviders", label: "Provider Registry", group: "اتصال‌ها", icon: Server },
+  { id: "systemProviders", label: "منابع مدل", group: "زیرساخت", icon: Server },
   { id: "workflows", label: "Workflowها", group: "عملیات", icon: Workflow },
   { id: "executions", label: "Executionها", group: "عملیات", icon: Activity },
   { id: "audit", label: "Audit Log", group: "امنیت", icon: History },
   { id: "plugins", label: "افزونه‌ها", group: "سیستم", icon: Settings2 },
   { id: "plans", label: "پلن‌ها", group: "Billing", icon: CreditCard },
-  { id: "models", label: "کاتالوگ مدل‌ها", group: "Billing", icon: Gauge },
-  { id: "accounts", label: "حساب‌های اعتباری", group: "Billing", icon: WalletCards },
+  { id: "models", label: "مدل‌ها و مسیرها", group: "Billing", icon: Gauge },
+  { id: "accounts", label: "حساب‌های اعتبار", group: "Billing", icon: WalletCards },
   { id: "charges", label: "شارژهای مصرف", group: "Billing", icon: Activity },
   { id: "invoices", label: "فاکتورها", group: "Billing", icon: FileText },
   { id: "topups", label: "درخواست‌های شارژ", group: "Billing", icon: WalletCards },
@@ -292,15 +292,15 @@ function ControlCenterRuntime() {
   const session=useQuery<{username:string}>({queryKey:["cc-auth"],queryFn:()=>jsonFetch("/api/admin/auth/me"),retry:false});
   const summary=useQuery<any>({queryKey:["cc-summary"],queryFn:()=>jsonFetch("/api/control-center"),enabled:session.isSuccess,staleTime:10_000});
   const logout=useMutation({mutationFn:()=>fetch("/api/admin/auth/logout",{method:"POST"}),onSuccess:()=>{qc.clear();window.location.reload();}});
-  if(session.isPending) return <div className="min-h-screen bg-[#f6f7fb] p-8"><div className="mx-auto max-w-7xl rounded-xl bg-white p-12 text-center">در حال بارگذاری مرکز مدیریت…</div></div>;
+  if(session.isPending) return <div className="min-h-screen bg-[#f6f7fb] p-8"><div className="mx-auto max-w-7xl rounded-xl bg-white p-12 text-center">در حال آماده‌سازی پیشخوان…</div></div>;
   if(session.isError) return <AdminLogin />;
   const groups=[...new Set(SECTIONS.map(x=>x.group))]; const m=summary.data?.metrics??{}; const activeSection=SECTIONS.find(x=>x.id===section)!;
   return <div className="cortex-control-center min-h-screen bg-[#0d110d] text-[#e8eadf]" dir="rtl"><div className="flex min-h-screen">
     <aside className="hidden w-[258px] shrink-0 border-l border-[#263021] bg-[#111611] lg:flex lg:flex-col">
       <div className="border-b border-[#293324] px-5 py-6">
-        <p className="text-[9px] font-bold tracking-[.26em] text-[#b9d95d]">CORTEX / SYSTEM</p>
-        <div className="mt-2 text-xl font-black tracking-tight text-[#eff1e7]">پیشخوان زیرساخت</div>
-        <p className="mt-2 max-w-[190px] text-[10px] leading-6 text-[#7e8877]">محیط خصوصی مدیریت مدل، Provider، پلن، کاربران و مسیرهای اجرایی.</p>
+        <p className="text-[9px] font-bold tracking-[.26em] text-[#b9d95d]">CORTEX / OPERATOR</p>
+        <div className="mt-2 text-xl font-black tracking-tight text-[#eff1e7]">پیشخوان عملیات</div>
+        <p className="mt-2 max-w-[190px] text-[10px] leading-6 text-[#7e8877]">محیط خصوصی مالک سیستم برای کنترل مدل‌ها، منابع، پلن‌ها، اعتبار و عملیات.</p>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4">{groups.map(group=><div key={group} className="mb-6"><p className="px-2 pb-2 text-[8px] font-bold tracking-[.24em] text-[#606b5b]">{group.toUpperCase()}</p><div className="space-y-1">{SECTIONS.filter(s=>s.group===group).map(s=><button key={s.id} type="button" onClick={()=>{setSection(s.id);setSearch("");}} className={cn("group relative flex w-full items-center gap-2 border px-3 py-2.5 text-xs font-semibold transition",section===s.id?"border-[#b9d95d]/30 bg-[#b9d95d]/10 text-[#d5eb8f]":"border-transparent text-[#96a08f] hover:border-[#293324] hover:bg-[#171c16] hover:text-[#e5e8dd]")}><span className={cn("absolute start-0 top-1/2 h-5 w-[2px] -translate-y-1/2 transition",section===s.id?"bg-[#b9d95d]":"bg-transparent")}/><s.icon className="size-4 shrink-0"/><span>{s.label}</span></button>)}</div></div>)}</nav>
       <div className="border-t border-[#293324] p-4"><div className="flex items-center gap-2 border border-[#303a2c] bg-[#171c16] p-2.5"><span className="flex size-8 items-center justify-center bg-[#b9d95d] text-[10px] font-black text-[#1b210f]">CX</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-[#dfe4d7]">مالک سیستم</p><p className="text-[9px] text-[#687362]">Private operator</p></div><Button variant="ghost" size="icon" className="text-[#8e9a86] hover:bg-[#20271d] hover:text-white" onClick={()=>logout.mutate()}><LogOut className="size-4"/></Button></div></div>
@@ -308,7 +308,7 @@ function ControlCenterRuntime() {
     <div className="min-w-0 flex-1">
       <header className="sticky top-0 z-30 border-b border-[#263021] bg-[#0f130f]/95 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 py-4 lg:px-7">
-          <div className="min-w-0 flex-1"><p className="text-[8px] font-bold tracking-[.26em] text-[#839078]">SYSTEM WORKBENCH</p><h1 className="mt-1 truncate text-xl font-black text-[#eef0e6]">{activeSection.label}</h1></div>
+          <div className="min-w-0 flex-1"><p className="text-[8px] font-bold tracking-[.26em] text-[#839078]">OPERATOR CONSOLE</p><h1 className="mt-1 truncate text-xl font-black text-[#eef0e6]">{activeSection.label}</h1></div>
           <div className="hidden w-[280px] items-center gap-2 border border-[#2d3829] bg-[#141914] px-3 py-2 md:flex"><Search className="size-4 text-[#6f7a69]"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs text-[#e8eadf] shadow-none placeholder:text-[#66705f] focus-visible:ring-0" placeholder="جستجو در سیستم…"/></div>
           <Button variant="outline" size="icon" className="border-[#32402c] bg-[#151a15] text-[#aab3a3] hover:bg-[#20271d] hover:text-white" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button>
         </div>
