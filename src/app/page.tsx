@@ -2,8 +2,7 @@ import { LandingPage } from "@/components/cortex/landing-page";
 import { DEFAULT_SITE_SETTINGS, getPublicSiteSettings } from "@/lib/site-settings";
 import { withPrismaRequest } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 30;
 
 export default async function Home() {
   let settings = DEFAULT_SITE_SETTINGS;
