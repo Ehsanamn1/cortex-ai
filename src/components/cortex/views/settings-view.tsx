@@ -347,7 +347,7 @@ export function SettingsView() {
 
       <section aria-labelledby="settings-providers" className="space-y-4">
         <h3 id="settings-providers" className="text-base font-semibold text-foreground">
-          وضعیت زیرساخت هوش مصنوعی
+          وضعیت سرویس‌های هوش مصنوعی
         </h3>
         <ProvidersSection />
       </section>
