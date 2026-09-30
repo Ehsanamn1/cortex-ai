@@ -229,6 +229,7 @@ jobs:
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
           CORTEX_ADMIN_SESSION_SECRET: ${{ secrets.CORTEX_ADMIN_SESSION_SECRET || vars.CORTEX_ADMIN_SESSION_SECRET }}
+          CORTEX_ADMIN_ACCESS_TOKEN: ${{ secrets.CORTEX_ADMIN_ACCESS_TOKEN || vars.CORTEX_ADMIN_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           base="https://cortex-ai.dengxiao445.workers.dev"
