@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+process.env.CORTEX_TRAINING_ENABLED = "false";
 process.env.CORTEX_TRAINING_WORKER_URL = "https://trainer.example.test";
 process.env.CORTEX_TRAINING_WORKER_SECRET = "trainer-secret";
 process.env.CORTEX_TRAINING_CALLBACK_URL = "https://cortex.example.test/api/internal/training/callback";
@@ -7,88 +8,38 @@ process.env.CORTEX_TRAINING_CALLBACK_SECRET = "callback-secret";
 
 const { dbMock } = vi.hoisted(() => ({
   dbMock: {
-    trainingJob: { findUnique: vi.fn(), update: vi.fn() },
+    trainingJob: { findUnique: vi.fn() },
     modelAdapter: { findFirst: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
     systemProviderConfig: { upsert: vi.fn() },
     agent: { update: vi.fn() },
-    $transaction: vi.fn(async (fn: any) => fn({
-      trainingJob: {
-        update: vi.fn(async ({ data }: any) => ({ id: "job-1", ...data })),
-      },
-      modelAdapter: {
-        findFirst: vi.fn(async () => null),
-        create: vi.fn(async ({ data }: any) => ({ id: "adapter-1", ...data })),
-        updateMany: vi.fn(),
-      },
-      systemProviderConfig: { upsert: vi.fn() },
-      agent: { update: vi.fn() },
-    })),
+    $transaction: vi.fn(),
   },
 }));
 
 vi.mock("@/lib/db", () => ({ db: dbMock }));
-vi.mock("@/lib/server/secrets", () => ({ encryptSecret: vi.fn((v: string) => "enc:" + v) }));
 
 import { handleTrainingCallback, trainingConfig } from "@/lib/server/training";
 
-describe("Cortex real training orchestration", () => {
+describe("Cortex training feature gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("requires a real worker configuration", () => {
+  it("keeps training disabled for the current release", () => {
+    expect(trainingConfig.enabled).toBe(false);
     expect(trainingConfig.defaultBaseModel).toBe("Qwen/Qwen3-0.6B");
     expect(trainingConfig.minExamples).toBe(8);
     expect(trainingConfig.maxEvalLoss).toBe(2.8);
   });
 
-  it("rejects an underperforming model before promotion", async () => {
-    dbMock.trainingJob.findUnique.mockResolvedValue({
-      id: "job-1",
-      agentId: "agent-1",
-      workspaceId: "ws-1",
-      method: "qlora",
-      baseModel: "Qwen/Qwen3-0.6B",
-      sampleCount: 32,
-      promoted: false,
-    });
-
-    const result = await handleTrainingCallback({
-      jobId: "job-1",
-      eval_loss: 4.1,
-      samples: 32,
-      artifact_path: "/models/job-1/adapter",
-    });
-
-    expect(result.status).toBe("rejected");
-    expect(result.promoted).toBe(false);
-  });
-
-  it("promotes a passed adapter and switches the agent runtime to it", async () => {
-    dbMock.trainingJob.findUnique.mockResolvedValue({
-      id: "job-1",
-      agentId: "agent-1",
-      workspaceId: "ws-1",
-      method: "qlora",
-      baseModel: "Qwen/Qwen3-0.6B",
-      sampleCount: 64,
-      promoted: false,
-    });
-
-    const result = await handleTrainingCallback({
+  it("rejects training callbacks while training is disabled", async () => {
+    await expect(handleTrainingCallback({
       jobId: "job-1",
       eval_loss: 1.2,
       samples: 64,
-      job_id: "job-1",
       artifact_path: "/models/job-1/adapter",
-    });
+    })).rejects.toMatchObject({ status: 503, code: "training_disabled" });
 
-    expect(result.status).toBe("completed");
-    expect(dbMock.agent.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "agent-1" },
-        data: { modelKey: "trained:adapter-1" },
-      }),
-    );
+    expect(dbMock.trainingJob.findUnique).not.toHaveBeenCalled();
   });
 });
