@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -21,7 +20,6 @@ import {
 } from "lucide-react";
 import { CortexLogo, CortexMark } from "@/components/cortex/logo";
 import { ThemeToggle } from "@/components/cortex/theme-toggle";
-import { api } from "@/lib/cortex-client";
 
 const FEATURES = [
   {
@@ -54,8 +52,7 @@ const PLANS = [
 
 export function LandingPage({ settings = {} }: { settings?: Record<string, string> }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const siteConfig = useQuery({ queryKey: ["landing-site-settings"], queryFn: api.getSiteConfig, initialData: { settings }, staleTime: 60_000, retry: 1 });
-  const site = siteConfig.data?.settings ?? settings;
+  const site = settings;
 
   function go(path: "/login" | "/signup") {
     window.location.href = path;
