@@ -11,13 +11,12 @@ R2 can be enabled later for large-file object storage. The application can deplo
 ```bash
 npx wrangler secret put DATABASE_URL
 npx wrangler secret put APP_SECRET_KEY
-npx wrangler secret put CORTEX_ADMIN_PASSWORD
+npx wrangler secret put CORTEX_ADMIN_ACCESS_TOKEN
 ```
 
 Optional:
 
 ```bash
-npx wrangler secret put CORTEX_ADMIN_USERNAME
 npx wrangler secret put CORTEX_ADMIN_SESSION_SECRET
 npx wrangler secret put OPENAI_API_KEY
 npx wrangler secret put TELEGRAM_INTERNAL_SECRET
