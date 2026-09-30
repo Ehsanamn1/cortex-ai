@@ -63,8 +63,8 @@
   --destructive: #e05260;
   --border: #e6e9ef;
   --input: #e1e5ec;
-  --ring: #4880ff;
-  --chart-1: #4880ff;
+  --ring: #356dff;
+  --chart-1: #356dff;
   --chart-2: #6f5ce7;
   --chart-3: #22a06b;
   --chart-4: #e6a23c;
@@ -100,8 +100,8 @@
   --destructive: #ef6573;
   --border: #202a38;
   --input: #263244;
-  --ring: #5b8cff;
-  --chart-1: #5b8cff;
+  --ring: #6d94ff;
+  --chart-1: #6d94ff;
   --chart-2: #60708A;
   --chart-3: #34d399;
   --chart-4: #fbbf24;
@@ -506,54 +506,6 @@ body {
   --surface-2: #0f151d;
 }
 html.dark { color-scheme: dark; }
-html.dark body {
-  background: #070a0f !important;
-  background-image:
-    radial-gradient(circle at 90% -10%, rgba(59,130,246,.11), transparent 28%),
-    radial-gradient(circle at 8% 92%, rgba(139,92,246,.09), transparent 24%) !important;
-  color: var(--foreground) !important;
-}
-html.dark .cortex-dashstack {
-  background: #070a0f !important;
-  color: #eef2ff !important;
-}
-html.dark .cortex-dashstack .cortex-sidebar {
-  background:
-    radial-gradient(circle at 18% 4%, rgba(91,140,255,.10), transparent 23%),
-    linear-gradient(180deg, rgba(9,13,19,.98), rgba(6,9,13,.97)) !important;
-  border-color: #1b2634 !important;
-  box-shadow: 10px 0 40px rgba(0,0,0,.22) !important;
-}
-html.dark .cortex-dashstack .cortex-topbar {
-  background: rgba(7,10,15,.78) !important;
-  border-color: #1a2532 !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 12px 40px rgba(0,0,0,.16) !important;
-}
-html.dark .cortex-dashstack .cortex-panel,
-html.dark .cortex-dashstack [data-slot="card"] {
-  background: linear-gradient(145deg, rgba(15,21,29,.95), rgba(9,13,18,.94)) !important;
-  color: var(--card-foreground) !important;
-  border-color: rgba(148,163,184,.11) !important;
-  box-shadow: 0 20px 65px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.025) !important;
-}
-html.dark .cortex-dashstack .cortex-action {
-  background: rgba(13,18,25,.76) !important;
-  border-color: rgba(148,163,184,.10) !important;
-}
-html.dark .cortex-dashstack .cortex-action:hover {
-  background: rgba(22,31,43,.9) !important;
-  border-color: rgba(91,140,255,.34) !important;
-  box-shadow: 0 14px 36px rgba(0,0,0,.16) !important;
-}
-html.dark .cortex-dashstack .cortex-search-trigger {
-  background: rgba(16,22,30,.78) !important;
-  border-color: rgba(148,163,184,.12) !important;
-}
-html.dark .cortex-dashstack .cortex-search-trigger:hover {
-  border-color: rgba(91,140,255,.36) !important;
-  box-shadow: 0 0 0 1px rgba(91,140,255,.08), 0 10px 24px rgba(0,0,0,.15) !important;
-}
-
 /* Animated 3D theme toggle */
 .cortex-theme-toggle {
   position: relative;
@@ -1189,18 +1141,6 @@ html:not(.dark) .cortex-auth aside {
 }
 
 /* One lightweight 3D Cortex core. CSS-only motion keeps CPU/GPU cost low. */
-html.dark body {
-  background-color: #070a0f !important;
-  background-image:
-    radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
-    radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%) !important;
-  color: #eef2ff !important;
-}
-html:not(.dark) body {
-  background-color: #f6f7fb !important;
-  background-image: none !important;
-  color: #1f2937 !important;
-}
 .cortex-auth-submit {
   transform: translate3d(0,0,0);
   box-shadow: 0 12px 0 rgba(31,64,145,.28), 0 18px 34px rgba(59,130,246,.18), inset 0 1px 0 rgba(255,255,255,.22);
