@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileSearch, GraduationCap, Loader2, LockKeyhole, MailCheck, MessagesSquare, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import { z } from "zod";
 
 import { api, ApiError } from "@/lib/cortex-client";
