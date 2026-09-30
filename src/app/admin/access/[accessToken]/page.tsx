@@ -1,9 +1,8 @@
-import { AdminAccessClient } from "../admin-access-client";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function PrivateAdminAccessPage({ params }: { params: Promise<{ accessToken: string }> }) {
-  const { accessToken } = await params;
-  return <AdminAccessClient token={accessToken} />;
+export default function LegacyPrivateAdminAccessPage() {
+  redirect("/admin/login");
 }
