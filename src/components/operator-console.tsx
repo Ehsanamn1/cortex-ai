@@ -199,12 +199,12 @@ function Overview({ onNavigate }: { onNavigate: (section: Section) => void }) {
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          ["Provider Registry", "Base URL، API Key، Health و کشف مدل", "providers", CloudCog],
-          ["مدل‌ها و مسیرها", "Route Key، قیمت تأمین، پلن و حاشیه", "models", BrainCircuit],
-          ["محتوا و ظاهر", "متن‌ها، منوها، CTA و ظاهر محصول", "site", Blocks],
-          ["منابع سیستم", "کاربران، Agent، دانش، Telegram و Log", "resources", Database],
-        ].map(([title, desc, target, Icon]) => <button key={String(target)} onClick={() => onNavigate(target as Section)} className="operator-launch-card"><span className="operator-launch-icon"><Icon className="size-5" /></span><span className="min-w-0 flex-1 text-right"><b>{title}</b><small>{desc}</small></span><ChevronLeft className="size-4 shrink-0 text-[var(--op-muted)]" /></button>)}
+        {([
+          { title: "Provider Registry", desc: "Base URL، API Key، Health و کشف مدل", target: "providers", Icon: CloudCog },
+          { title: "مدل‌ها و مسیرها", desc: "Route Key، قیمت تأمین، پلن و حاشیه", target: "models", Icon: BrainCircuit },
+          { title: "محتوا و ظاهر", desc: "متن‌ها، منوها، CTA و ظاهر محصول", target: "site", Icon: Blocks },
+          { title: "منابع سیستم", desc: "کاربران، Agent، دانش، Telegram و Log", target: "resources", Icon: Database },
+        ] satisfies Array<{ title: string; desc: string; target: Section; Icon: typeof CloudCog }>).map(({ title, desc, target, Icon }) => <button key={target} onClick={() => onNavigate(target)} className="operator-launch-card"><span className="operator-launch-icon"><Icon className="size-5" /></span><span className="min-w-0 flex-1 text-right"><b>{title}</b><small>{desc}</small></span><ChevronLeft className="size-4 shrink-0 text-[var(--op-muted)]" /></button>)}
       </div>
     </div>
   );
