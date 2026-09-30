@@ -6,6 +6,7 @@ vi.mock("@/lib/db", () => ({
       findMany: vi.fn(),
       updateMany: vi.fn(),
       upsert: vi.fn(),
+      deleteMany: vi.fn(),
     },
   },
 }));
@@ -21,6 +22,7 @@ describe("Cortex durable memory", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(db.memoryEntry.updateMany).mockResolvedValue({ count: 0 } as never);
+    vi.mocked(db.memoryEntry.deleteMany).mockResolvedValue({ count: 0 } as never);
     vi.mocked(db.memoryEntry.upsert).mockResolvedValue({ id: "memory-1" } as never);
   });
 
@@ -96,10 +98,10 @@ describe("Cortex durable memory", () => {
     );
 
     expect(memories).toEqual(expect.arrayContaining([
-      { key: "profile.name", value: "سارا است", type: "profile" },
-      { key: "profile.company", value: "آریا است", type: "profile" },
+      { key: "profile.name", value: "سارا", type: "profile" },
+      { key: "profile.company", value: "آریا", type: "profile" },
       { key: "preference.topic", value: "فروش B2B", type: "preference" },
-      { key: "preference.response_style", value: "کوتاه و مستقیم باشند", type: "preference" },
+      { key: "preference.response_style", value: "پاسخ‌ها کوتاه و مستقیم باشند", type: "preference" },
     ]));
   });
 
