@@ -178,15 +178,29 @@ export async function forgetMemory(params: {
   if (!hasSelector) {
     throw Object.assign(new Error("برای حذف حافظه حداقل یک محدوده یا کلید مشخص کنید."), { status: 400 });
   }
-  return db.memoryEntry.deleteMany({
-    where: {
-      workspaceId: params.workspaceId,
-      agentId: params.agentId,
-      ...(params.key ? { key: params.key } : {}),
-      ...(params.subjectKey ? { subjectKey: params.subjectKey } : {}),
-      ...(params.conversationId ? { conversationId: params.conversationId } : {}),
-    },
-  });
+  const where: Record<string, unknown> = {
+    workspaceId: params.workspaceId,
+    agentId: params.agentId,
+  };
+
+  if (params.conversationId) {
+    where.conversationId = params.conversationId;
+    if (params.key) where.key = params.key;
+  } else if (params.subjectKey) {
+    where.conversationId = null;
+    where.scope = "user";
+    where.subjectKey = params.subjectKey;
+    if (params.key) where.key = params.key;
+  } else if (params.key) {
+    // A bare key is restricted to global agent memory only. It must never
+    // match another user's subject-scoped memory.
+    where.conversationId = null;
+    where.scope = "conversation";
+    where.subjectKey = null;
+    where.key = params.key;
+  }
+
+  return db.memoryEntry.deleteMany({ where: where as any });
 }
 
 export async function buildConversationSummary(conversationId: string, maxChars = 4000) {
