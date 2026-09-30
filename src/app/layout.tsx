@@ -12,15 +12,15 @@ const vazirmatn = Vazirmatn({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#070a0f",
-  colorScheme: "dark",
+  themeColor: "#0b0f14",
+  colorScheme: "light dark",
 };
 
 export const metadata: Metadata = {
   title: "Cortex AI",
   description: "ساخت و مدیریت ایجنت‌های هوش مصنوعی با دانش واقعی کسب‌وکار.",
   icons: {
-    icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 4.5 40.45 13.9v19.2L24 42.5 7.55 33.1V13.9Z' fill='none' stroke='%233B82FF' stroke-width='3.5' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='23.5' r='5.5' fill='%238B5CF6'/%3E%3C/svg%3E",
+    icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 4.5 40.45 13.9v19.2L24 42.5 7.55 33.1V13.9Z' fill='none' stroke='%23356DFF' stroke-width='3.5' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='23.5' r='5.5' fill='%2360708A'/%3E%3C/svg%3E",
   },
 };
 
@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fa" dir="rtl" suppressHydrationWarning className="dark">
+    <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
