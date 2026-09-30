@@ -22,7 +22,6 @@ import {
   Server,
   Sparkles,
   TriangleAlert,
-  Workflow,
   X,
   WalletCards,
 } from "lucide-react";
@@ -55,7 +54,7 @@ function DashboardOnboarding({
   ];
 
   return (
-    <motion.section initial={{ opacity: 0, y: -8, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-card/70 p-5 shadow-[0_24px_70px_rgba(101,124,46,.08)] sm:p-6">
+    <motion.section initial={{ opacity: 0, y: -8, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-card/70 p-5 shadow-none sm:p-6">
       <div className="absolute -start-20 -top-24 size-56 rounded-full bg-primary/10 blur-3xl" />
       <div className="relative">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -88,21 +87,6 @@ function DashboardOnboarding({
   );
 }
 
-function DashboardEmptyIllustration() {
-  return (
-    <svg width="180" height="120" viewBox="0 0 180 120" fill="none" aria-hidden="true">
-      <path d="M90 18 122 36.5v37L90 92 58 73.5v-37L90 18Z" stroke="rgba(148,163,184,0.25)" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M90 38 106.5 47.5v19L90 76 73.5 66.5v-19L90 38Z" stroke="rgba(101,124,46,0.45)" strokeWidth="2" strokeLinejoin="round" />
-      <circle cx="90" cy="57" r="6" fill="#8cab3e" fillOpacity="0.9" />
-      <circle cx="90" cy="57" r="11" stroke="rgba(101,124,46,0.3)" strokeWidth="2" />
-      <circle cx="58" cy="36.5" r="3" fill="#657c2e" fillOpacity="0.8" />
-      <circle cx="122" cy="36.5" r="3" fill="#657c2e" fillOpacity="0.8" />
-      <circle cx="58" cy="73.5" r="3" fill="rgba(148,163,184,0.5)" />
-      <circle cx="122" cy="73.5" r="3" fill="rgba(148,163,184,0.5)" />
-    </svg>
-  );
-}
-
 function StatCard({ icon: Icon, value, caption, tint, label }: { icon: typeof Bot; value: string; caption: string; tint: string; label: string }) {
   return (
     <motion.div whileHover={{ y: -3 }} transition={{ duration: 0.15 }} className="h-full">
@@ -124,7 +108,7 @@ function StatCard({ icon: Icon, value, caption, tint, label }: { icon: typeof Bo
 
 function HealthPill({ ready, label, detail }: { ready: boolean; label: string; detail: string }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-full border border-white/[.07] bg-white/[.025] px-3 py-2">
+    <div className="flex min-w-0 items-center gap-2 rounded-full border border-border/70 bg-muted/30 px-3 py-2">
       {ready ? <CircleCheck className="size-4 shrink-0 text-emerald-400" /> : <CircleDashed className="size-4 shrink-0 text-amber-400" />}
       <div className="min-w-0">
         <p className="truncate text-xs font-medium text-foreground">{label}</p>
@@ -139,16 +123,15 @@ function DashboardLaunchpad({
   recentAgentId,
   onOpenAgent,
 }: {
-  onNavigate: (view: "agents" | "knowledge" | "telegram" | "analytics" | "workflows") => void;
+  onNavigate: (view: "agents" | "knowledge" | "telegram" | "analytics") => void;
   recentAgentId?: string;
   onOpenAgent: (agentId: string, tab: "overview" | "ai" | "playground") => void;
 }) {
   const items = [
-    { title: "ساخت Agent", desc: "ایجاد دستیار جدید", icon: Bot, action: () => onNavigate("agents") },
+    { title: "ساخت Agent", desc: "ایجاد ایجنت جدید", icon: Bot, action: () => onNavigate("agents") },
     { title: "افزودن دانش", desc: "PDF، DOCX و URL", icon: BookPlus, action: () => onNavigate("knowledge") },
     { title: "انتشار روی Telegram", desc: "اتصال کانال", icon: Send, action: () => onNavigate("telegram") },
     { title: "تحلیل عملکرد", desc: "مصرف و رفتار", icon: BarChart3, action: () => onNavigate("analytics") },
-    { title: "گردش‌کارها", desc: "اتوماسیون مرحله‌ای", icon: Workflow, action: () => onNavigate("workflows") },
     { title: "Playground", desc: "تست پاسخ واقعی", icon: MessageSquare, action: () => recentAgentId && onOpenAgent(recentAgentId, "playground") },
   ];
   return (
@@ -259,7 +242,7 @@ export function DashboardView() {
           initial={{ opacity: 0, y: -10, scale: .985 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: .42, ease: "easeOut" }}
-          className={cn("relative overflow-hidden rounded-[30px] border p-4 shadow-[0_30px_90px_rgba(15,23,42,.14)] sm:p-6 lg:p-7", lowBalance ? "border-amber-400/25 bg-amber-400/[.045]" : "border-primary/20 bg-primary/[.045]")}
+          className={cn("relative overflow-hidden rounded-[30px] border p-4 shadow-none sm:p-6 lg:p-7", lowBalance ? "border-amber-400/25 bg-amber-400/[.045]" : "border-primary/20 bg-primary/[.045]")}
         >
           <div className="absolute -end-20 -top-24 size-72 rounded-full bg-primary/10 blur-3xl animate-pulse" />
           <div className="absolute -start-24 -bottom-28 size-64 rounded-full bg-primary/5 blur-3xl" />
@@ -270,7 +253,7 @@ export function DashboardView() {
                 <motion.span animate={{ y: [0, -2, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }} className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-black text-primary">{plan?.name ?? "پلن"}</motion.span>
                 <span className="rounded-full border border-border/70 bg-background/45 px-2.5 py-1 text-[9px] text-muted-foreground">اعتبار امن و کنترل‌شده</span>
               </div>
-              <h2 className="mt-3 text-2xl font-black sm:text-3xl">وضعیت حساب و مصرف</h2>
+              <h2 className="mt-3 text-2xl font-black sm:text-3xl">وضعیت حساب و مصرف من</h2>
               <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">اعتبار، مصرف و دسترسی مدل‌ها را از همین صفحه پیگیری کن.</p>
               <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div className="rounded-2xl border border-border/60 bg-background/35 p-3"><p className="text-[9px] text-muted-foreground">اعتبار فعلی</p><p className="mt-1 text-lg font-black">{faNum(balance)}</p></div>
@@ -280,7 +263,7 @@ export function DashboardView() {
               </div>
               <div className="mt-4">
                 <div className="flex items-center justify-between text-[10px] text-muted-foreground"><span>{lowBalance ? "اعتبار رو به اتمام است" : "اعتبار قابل استفاده"}</span><span>{faNum(balance)} از {faNum(monthlyCredits)} اعتبار</span></div>
-                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted"><motion.div initial={{ width: 0 }} animate={{ width: String(remainingPct || (monthlyCredits === 0 ? 0 : 1)) + "%" }} transition={{ duration: .9, ease: "easeOut" }} className={cn("h-full rounded-full", lowBalance ? "bg-amber-400" : "bg-gradient-to-r from-primary via-primary to-primary")} /></div>
+                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted"><motion.div initial={{ width: 0 }} animate={{ width: String(remainingPct || (monthlyCredits === 0 ? 0 : 1)) + "%" }} transition={{ duration: .9, ease: "easeOut" }} className={cn("h-full rounded-full", lowBalance ? "bg-amber-400" : "bg-primary")} /></div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button onClick={() => setView("billing")}><WalletCards />مدیریت پلن و اعتبار</Button>
@@ -328,13 +311,13 @@ export function DashboardView() {
 
       <section className="grid items-start gap-4 lg:grid-cols-2">
         <Card className="cortex-panel rounded-2xl">
-          <CardHeader className="flex-row items-center justify-between border-b border-white/[.06]">
+          <CardHeader className="flex-row items-center justify-between border-b border-border/60">
             <div><p className="cortex-kicker">AGENTS</p><CardTitle className="mt-2 text-base">ایجنت‌های اخیر</CardTitle></div>
             <Button variant="ghost" size="sm" onClick={() => setView("agents")}>همه</Button>
           </CardHeader>
           <CardContent className="space-y-2 p-4">
             {recentAgents.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">هنوز ایجنتی نساخته‌ای.</p> : recentAgents.slice(0, 5).map((agent) => (
-              <button key={agent.id} type="button" onClick={() => openAgent(agent.id)} className="flex w-full items-center gap-3 rounded-xl border border-white/[.06] p-3 text-start transition hover:border-primary/25 hover:bg-primary/[.03]">
+              <button key={agent.id} type="button" onClick={() => openAgent(agent.id)} className="flex w-full items-center gap-3 rounded-xl border border-border/60 p-3 text-start transition hover:border-primary/25 hover:bg-primary/[.03]">
                 <span className="cortex-icon-box size-10 shrink-0"><Bot className="size-4" /></span>
                 <span className="min-w-0 flex-1"><span className="block truncate text-xs font-bold">{agent.name}</span><span className="mt-1 block text-[10px] text-muted-foreground">ویرایش {timeAgoFa(agent.updatedAt)}</span></span>
                 <ArrowUpLeft className="size-3.5 text-muted-foreground" />
@@ -350,7 +333,7 @@ export function DashboardView() {
           </CardHeader>
           <CardContent className="space-y-2 p-4">
             {recentConversations.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">هنوز گفتگویی ثبت نشده.</p> : recentConversations.slice(0, 5).map((conversation) => (
-              <button key={conversation.id} type="button" onClick={() => openConversation(conversation.agentId, conversation.id)} className="flex w-full items-center gap-3 rounded-xl border border-white/[.06] p-3 text-start transition hover:border-primary/25 hover:bg-primary/[.03]">
+              <button key={conversation.id} type="button" onClick={() => openConversation(conversation.agentId, conversation.id)} className="flex w-full items-center gap-3 rounded-xl border border-border/60 p-3 text-start transition hover:border-primary/25 hover:bg-primary/[.03]">
                 <span className="cortex-icon-box size-10 shrink-0"><MessageSquare className="size-4" /></span>
                 <span className="min-w-0 flex-1"><span className="block truncate text-xs font-bold">{conversation.title}</span><span className="mt-1 block truncate text-[10px] text-muted-foreground">{conversation.agentName} · {timeAgoFa(conversation.updatedAt)}</span></span>
                 <ArrowUpLeft className="size-3.5 text-muted-foreground" />
