@@ -17,7 +17,7 @@ export async function GET(req: Request, { params }: Params) {
     const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") ?? "24") || 24));
     const conversationId = url.searchParams.get("conversationId");
     const subjectKey = url.searchParams.get("subjectKey");
-    const entries = await loadAgentMemory(agent.id, limit, conversationId, subjectKey);
+    const entries = await loadAgentMemory(agent.id, limit, conversationId, subjectKey, agent.workspaceId);
     return applyCors(jsonOk({
       memories: entries.map((m) => ({
         id: m.id,
