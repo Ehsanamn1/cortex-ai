@@ -320,7 +320,20 @@ export function DashboardView() {
                 {lowBalance && <Button size="sm" variant="outline" onClick={() => setView("billing")}>شارژ سریع</Button>}
               </div>
             </div>
-            <div className="relative min-h-[210px] sm:min-h-[250px]"><CortexCore /></div>
+            <div className="relative min-h-[210px] sm:min-h-[250px]">
+              <div className="h-full border-s border-border/70 ps-6">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <span className="cortex-kicker">ACCOUNT RECORD</span>
+                  <span className={cn("text-[9px] font-bold", lowBalance ? "text-amber-400" : "text-emerald-400")}>{lowBalance ? "LOW BALANCE" : "ACTIVE"}</span>
+                </div>
+                <div className="divide-y divide-border/50">
+                  <div className="flex items-baseline justify-between gap-4 py-4"><span className="text-xs text-muted-foreground">موجودی</span><strong className="text-3xl tracking-tight">{faNum(balance)}</strong></div>
+                  <div className="flex items-center justify-between gap-4 py-3"><span className="text-xs text-muted-foreground">مدل قابل استفاده</span><span className="text-xs font-bold">{recentAgentId ? "بر اساس پلن" : "پس از ساخت Agent"}</span></div>
+                  <div className="flex items-center justify-between gap-4 py-3"><span className="text-xs text-muted-foreground">مصرف امروز</span><span className="text-xs font-bold">{faNum(stats.todayTokens ?? 0)} توکن</span></div>
+                  <div className="flex items-center justify-between gap-4 py-3"><span className="text-xs text-muted-foreground">دوره اعتبار</span><span className="text-xs font-bold">{faNum(monthlyCredits)} اعتبار</span></div>
+                </div>
+              </div>
+            </div>
           </div>
         </motion.section>
       )}
