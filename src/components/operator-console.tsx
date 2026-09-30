@@ -159,7 +159,7 @@ function Overview({ onNavigate }: { onNavigate: (section: Section) => void }) {
         <MetricCard label="فروش ثبت‌شده ۳۰ روز" value={toman(revenue)} caption="پرداخت‌های واقعی ثبت‌شده" icon={TrendingUp} tone="green" />
         <MetricCard label="هزینه تأمین AI" value={toman(cost)} caption="بر اساس توکن و نرخ Provider" icon={ServerCog} tone="amber" />
         <MetricCard label="حاشیه عملیاتی" value={toman(margin)} caption={margin >= 0 ? "مثبت" : "نیازمند بررسی"} icon={Gauge} tone={margin >= 0 ? "blue" : "amber"} />
-        <MetricCard label="ارزش پلن‌های فعال" value={toman(booked)} caption={num(data.financial?.activeSubscriptions)} + " اشتراک فعال" icon={WalletCards} tone="violet" />
+        <MetricCard label="ارزش پلن‌های فعال" value={toman(booked)} caption={num(data.financial?.activeSubscriptions) + " اشتراک فعال"} icon={WalletCards} tone="violet" />
       </div>
       <div className="grid gap-4 xl:grid-cols-[1.35fr_.65fr]">
         <OpsCard className="min-h-[390px]">
@@ -217,12 +217,12 @@ function ProviderRegistry() {
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState({ displayName: "", key: "", providerName: "", protocol: "openai-compatible", authMode: "bearer", baseUrl: "", apiKey: "", enabled: true, isTrialProvider: false });
   const [discovered, setDiscovered] = useState<string[]>([]);
-  const [modelDraft, setModelDraft] = useState({ modelId: "", displayName: "", inputUsdPer1M: "0", outputUsdPer1M: "0" });
+  const [modelDraft, setModelDraft] = useState({ modelId: "", displayName: "", inputTomanPer1M: "0", outputTomanPer1M: "0" });
 
   function reset(provider?: any) {
     setEditing(provider ?? null);
     setDiscovered([]);
-    setModelDraft({ modelId: "", displayName: "", inputUsdPer1M: "0", outputUsdPer1M: "0" });
+    setModelDraft({ modelId: "", displayName: "", inputTomanPer1M: "0", outputTomanPer1M: "0" });
     setForm(provider ? {
       displayName: provider.displayName, key: provider.key, providerName: provider.providerName,
       protocol: provider.protocol, authMode: provider.authMode, baseUrl: provider.baseUrl,
@@ -264,8 +264,8 @@ function ProviderRegistry() {
         provider: editing.providerName,
         modelId: modelDraft.modelId.trim(),
         displayName: modelDraft.displayName.trim() || modelDraft.modelId.trim(),
-        inputUsdPer1M: Number(modelDraft.inputUsdPer1M) || 0,
-        outputUsdPer1M: Number(modelDraft.outputUsdPer1M) || 0,
+        inputTomanPer1M: Number(modelDraft.inputTomanPer1M) || 0,
+        outputTomanPer1M: Number(modelDraft.outputTomanPer1M) || 0,
         systemProviderId: editing.id,
         active: true,
         commercialAvailable: true,
@@ -310,7 +310,7 @@ function ProviderRegistry() {
               </div>
               <div className="operator-callout"><KeyRound className="size-4" /><div><b>کلید در DB به‌صورت رمزنگاری‌شده ذخیره می‌شود.</b><small>در UI هیچ‌وقت مقدار کلید ذخیره‌شده نمایش داده نمی‌شود. Worker فقط هنگام اجرای Provider آن را decrypt می‌کند.</small></div></div>
               <div className="flex flex-wrap gap-2"><PrimaryButton onClick={save}><Check className="size-4" /> ذخیره Provider</PrimaryButton>{editing ? <><PrimaryButton variant="outline" onClick={test}><Activity className="size-4" /> تست اتصال</PrimaryButton><PrimaryButton variant="outline" onClick={discover}><ListFilter className="size-4" /> کشف مدل‌ها</PrimaryButton></> : null}</div>
-              {editing && <div className="operator-model-discovery"><div className="flex items-center justify-between gap-3"><div><p className="operator-eyebrow">MODEL DISCOVERY</p><h3 className="text-sm font-black text-[var(--op-fg)]">مدل‌های قابل دریافت</h3></div><span className="text-[10px] text-[var(--op-muted)]">{num(discovered.length)} مدل</span></div><div className="mt-3 max-h-52 space-y-1 overflow-auto pr-1">{discovered.map((model) => <button key={model} type="button" onClick={() => setModelDraft({ ...modelDraft, modelId: model, displayName: model })} className="flex w-full items-center gap-2 rounded-lg border border-[var(--op-border)] px-3 py-2 text-right hover:border-[var(--op-primary)]/35"><BrainCircuit className="size-3.5 text-[var(--op-primary)]" /><span dir="ltr" className="min-w-0 flex-1 truncate text-left text-xs font-mono text-[var(--op-fg)]">{model}</span><ChevronLeft className="size-3 text-[var(--op-muted)]" /></button>)}</div><div className="mt-4 grid gap-2 md:grid-cols-4"><Field label="Model ID" value={modelDraft.modelId} onChange={(v) => setModelDraft({ ...modelDraft, modelId: v })} dir="ltr" /><Field label="نام نمایشی" value={modelDraft.displayName} onChange={(v) => setModelDraft({ ...modelDraft, displayName: v })} /><Field label="Input $ / 1M" value={modelDraft.inputUsdPer1M} onChange={(v) => setModelDraft({ ...modelDraft, inputUsdPer1M: v })} type="number" dir="ltr" /><Field label="Output $ / 1M" value={modelDraft.outputUsdPer1M} onChange={(v) => setModelDraft({ ...modelDraft, outputUsdPer1M: v })} type="number" dir="ltr" /></div><div className="mt-3 flex justify-end"><PrimaryButton onClick={addModel} disabled={!modelDraft.modelId.trim()}><Plus className="size-4" /> افزودن به کاتالوگ</PrimaryButton></div></div>}
+              {editing && <div className="operator-model-discovery"><div className="flex items-center justify-between gap-3"><div><p className="operator-eyebrow">MODEL DISCOVERY</p><h3 className="text-sm font-black text-[var(--op-fg)]">مدل‌های قابل دریافت</h3></div><span className="text-[10px] text-[var(--op-muted)]">{num(discovered.length)} مدل</span></div><div className="mt-3 max-h-52 space-y-1 overflow-auto pr-1">{discovered.map((model) => <button key={model} type="button" onClick={() => setModelDraft({ ...modelDraft, modelId: model, displayName: model })} className="flex w-full items-center gap-2 rounded-lg border border-[var(--op-border)] px-3 py-2 text-right hover:border-[var(--op-primary)]/35"><BrainCircuit className="size-3.5 text-[var(--op-primary)]" /><span dir="ltr" className="min-w-0 flex-1 truncate text-left text-xs font-mono text-[var(--op-fg)]">{model}</span><ChevronLeft className="size-3 text-[var(--op-muted)]" /></button>)}</div><div className="mt-4 grid gap-2 md:grid-cols-4"><Field label="Model ID" value={modelDraft.modelId} onChange={(v) => setModelDraft({ ...modelDraft, modelId: v })} dir="ltr" /><Field label="نام نمایشی" value={modelDraft.displayName} onChange={(v) => setModelDraft({ ...modelDraft, displayName: v })} /><Field label="هزینه ورودی / ۱M توکن (تومان)" value={modelDraft.inputTomanPer1M} onChange={(v) => setModelDraft({ ...modelDraft, inputTomanPer1M: v })} type="number" dir="ltr" /><Field label="هزینه خروجی / ۱M توکن (تومان)" value={modelDraft.outputTomanPer1M} onChange={(v) => setModelDraft({ ...modelDraft, outputTomanPer1M: v })} type="number" dir="ltr" /></div><div className="mt-3 flex justify-end"><PrimaryButton onClick={addModel} disabled={!modelDraft.modelId.trim()}><Plus className="size-4" /> افزودن به کاتالوگ</PrimaryButton></div></div>}
             </div>
           )}
         </OpsCard>
@@ -359,8 +359,8 @@ function ModelsPanel() {
 function ModelEditor({ model, onClose, onSave, plans }: { model: any; onClose: () => void; onSave: (payload: Record<string, unknown>) => Promise<void>; plans: any[] }) {
   const [name, setName] = useState(model.displayName);
   const [routeKey, setRouteKey] = useState(model.routeKey || "");
-  const [input, setInput] = useState(String(model.inputUsdPer1M ?? 0));
-  const [output, setOutput] = useState(String(model.outputUsdPer1M ?? 0));
+  const [input, setInput] = useState(String(Math.round(Number(model.inputUsdPer1M ?? 0) * Number(model.fxUsdToman ?? 0))));
+  const [output, setOutput] = useState(String(Math.round(Number(model.outputUsdPer1M ?? 0) * Number(model.fxUsdToman ?? 0))));
   const [providerId, setProviderId] = useState(model.systemProviderId || "");
   const [active, setActive] = useState(Boolean(model.active));
   const [trial, setTrial] = useState(Boolean(model.trialDefault));
@@ -369,9 +369,9 @@ function ModelEditor({ model, onClose, onSave, plans }: { model: any; onClose: (
   return <div className="fixed inset-0 z-[100] grid place-items-center bg-black/35 p-4 backdrop-blur-sm">
     <div className="operator-modal w-full max-w-3xl">
       <div className="flex items-start justify-between gap-3 border-b border-[var(--op-border)] p-5"><div><p className="operator-eyebrow">MODEL EDITOR</p><h2 className="text-lg font-black text-[var(--op-fg)]">{name}</h2></div><button onClick={onClose} className="operator-icon-button" aria-label="بستن">×</button></div>
-      <div className="grid gap-3 p-5 md:grid-cols-2"><Field label="نام نمایشی" value={name} onChange={setName}/><Field label="Route Key" value={routeKey} onChange={setRouteKey} dir="ltr"/><Field label="Input USD / 1M" value={input} onChange={setInput} type="number" dir="ltr"/><Field label="Output USD / 1M" value={output} onChange={setOutput} type="number" dir="ltr"/><Field label="System Provider ID" value={providerId} onChange={setProviderId} dir="ltr"/></div>
+      <div className="grid gap-3 p-5 md:grid-cols-2"><Field label="نام نمایشی" value={name} onChange={setName}/><Field label="Route Key" value={routeKey} onChange={setRouteKey} dir="ltr"/><Field label="هزینه ورودی / ۱M توکن (تومان)" value={input} onChange={setInput} type="number" dir="ltr"/><Field label="هزینه خروجی / ۱M توکن (تومان)" value={output} onChange={setOutput} type="number" dir="ltr"/><Field label="System Provider ID" value={providerId} onChange={setProviderId} dir="ltr"/></div>
       <div className="grid gap-2 px-5 pb-5 md:grid-cols-2"><Toggle checked={active} onChange={setActive} label="فعال" /><Toggle checked={trial} onChange={setTrial} label="Trial Default" /><Toggle checked={tools} onChange={setTools} label="Tools" /><Toggle checked={reasoning} onChange={setReasoning} label="Reasoning" /></div>
-      <div className="flex flex-wrap justify-end gap-2 border-t border-[var(--op-border)] p-5"><PrimaryButton variant="outline" onClick={onClose}>انصراف</PrimaryButton><PrimaryButton onClick={() => void onSave({ action:"update_model", id:model.id, displayName:name, routeKey:routeKey || null, inputUsdPer1M:Number(input)||0, outputUsdPer1M:Number(output)||0, systemProviderId:providerId || null, active, trialDefault:trial, tools, reasoning })}>ذخیره مدل</PrimaryButton></div>
+      <div className="flex flex-wrap justify-end gap-2 border-t border-[var(--op-border)] p-5"><PrimaryButton variant="outline" onClick={onClose}>انصراف</PrimaryButton><PrimaryButton onClick={() => void onSave({ action:"update_model", id:model.id, displayName:name, routeKey:routeKey || null, inputTomanPer1M:Number(input)||0, outputTomanPer1M:Number(output)||0, systemProviderId:providerId || null, active, trialDefault:trial, tools, reasoning })}>ذخیره مدل</PrimaryButton></div>
     </div>
   </div>;
 }
