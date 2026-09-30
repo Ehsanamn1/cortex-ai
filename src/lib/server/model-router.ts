@@ -266,6 +266,9 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
 
   const configuredAgentModel = agent?.modelKey?.trim() || "";
   if (configuredAgentModel.startsWith("trained:")) {
+    if (process.env.CORTEX_TRAINING_ENABLED !== "true") {
+      throw Object.assign(new Error("مدل آموزش‌دیده فعلاً غیرفعال است؛ ایجنت را روی یکی از مدل‌های مدیریت‌شده Cortex قرار دهید."), { status: 503, code: "trained_model_disabled" });
+    }
     const adapterId = configuredAgentModel.slice("trained:".length);
     const adapter = await db.modelAdapter.findFirst({
       where: { id: adapterId, agentId, workspaceId, active: true },
