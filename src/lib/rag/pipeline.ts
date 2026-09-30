@@ -179,7 +179,7 @@ export async function answerWithKnowledge(params: {
   const longTermMemory =
     persona.memoryEnabled === false || !conversationId
       ? []
-      : await loadAgentMemory(agentId, 16, conversationId, memorySubjectKey);
+      : await loadAgentMemory(agentId, 16, conversationId, memorySubjectKey, workspaceId);
   const messages: ChatTurn[] = buildRagMessages({
     persona,
     memory: longTermMemory.map((m) => ({ key: m.key, value: m.value })),
