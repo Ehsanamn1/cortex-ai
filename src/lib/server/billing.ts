@@ -30,10 +30,16 @@ export const CREDIT_TOP_UP_PACKAGES = {
 } as const;
 export type CreditTopUpPackageKey = keyof typeof CREDIT_TOP_UP_PACKAGES;
 
-export function defaultCreditMultiplierBps(_qualityTier: string): number {
+export function defaultCreditMultiplierBps(qualityTier: string): number {
   // Cortex target: at least 100% gross margin over the provider cost.
-  // 200 BPS means customer credits are charged at 2x the provider cost basis.
-  return 200;
+  // Higher tiers can carry a larger safety margin, while every tier stays at or above 2x cost.
+  switch (qualityTier) {
+    case "premium": return 400;
+    case "deep": return 800;
+    case "economy":
+    case "balanced":
+    default: return 200;
+  }
 }
 
 export function creditsFromProviderCost(providerCostMicros: number, multiplierBps: number): number {
