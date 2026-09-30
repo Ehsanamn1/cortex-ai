@@ -1,5 +1,2 @@
-import { redirect } from "next/navigation";
-
-export default function ControlCenterPage() {
-  redirect("/admin");
-}
+import { notFound } from "next/navigation";
+export default function LegacyControlCenterRoute() { notFound(); }
