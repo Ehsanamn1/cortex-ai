@@ -275,6 +275,7 @@ function buildNavItems(settings: Record<string, string> | undefined): NavItem[] 
     ...CORTEX_UI_CONFIG.navigation.filter((item) => !uniqueOrder.includes(item.view)),
   ];
   return ordered
+    .filter((item) => item.view !== "workflows")
     .filter((item) => settingEnabled(settings, "nav." + item.view + ".enabled"))
     .map((item) => ({
       ...item,
