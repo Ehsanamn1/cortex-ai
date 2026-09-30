@@ -124,8 +124,7 @@ export function KnowledgeView() {
   return (
     <div className="space-y-7">
       <section className="cortex-panel relative overflow-hidden rounded-xl p-5 sm:p-7">
-        <div className="absolute -end-20 -top-24 size-64 rounded-full bg-primary/10 blur-3xl" />
-        
+
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <p className="cortex-kicker">KNOWLEDGE BASE · پایگاه دانش</p>
