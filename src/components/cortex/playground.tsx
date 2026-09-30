@@ -14,8 +14,6 @@ import {
   ScanSearch,
   Send,
   X,
-  ThumbsUp,
-  ThumbsDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
