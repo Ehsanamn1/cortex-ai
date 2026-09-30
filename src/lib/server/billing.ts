@@ -526,7 +526,7 @@ function calculateManagedCredits(
   );
   if (!managed) return null;
   // Billing price is controlled by the admin-managed Model Catalog + Plan Access.
-  // 100 BPS is provider-cost baseline; 200 BPS is 100% gross margin.
+  // 100 BPS is provider-cost baseline; 200 BPS is 100% markup over cost.
   return creditsFromProviderCost(providerCostMicros, Math.max(1, multiplierBps));
 }
 
@@ -611,7 +611,7 @@ export async function reserveBillingCredits(params: {
         planId: account.planId,
         modelCatalogId: catalog.id,
         enabled: account.plan.key === "free" ? Boolean(catalog.trialEnabled) : Boolean(managedForPlan?.commercialAvailable ?? catalog.commercialAvailable),
-        creditMultiplierBps: Math.max(1, fallbackMultiplier),
+        creditMultiplierBps: Math.max(200, fallbackMultiplier),
       },
     });
   }
