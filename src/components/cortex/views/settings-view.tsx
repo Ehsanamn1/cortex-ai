@@ -361,7 +361,9 @@ export function SettingsView() {
         <AccountSection />
       </section>
 
-      <section aria-labelledby="settings-password" className="space-y-4"><h3 id="settings-password" className="text-base font-semibold text-foreground">امنیت حساب</h3><PasswordSection /></section>\n\n      <section aria-labelledby="settings-workspace" className="space-y-4">
+      <section aria-labelledby="settings-password" className="space-y-4"><h3 id="settings-password" className="text-base font-semibold text-foreground">امنیت حساب</h3><PasswordSection /></section>
+
+      <section aria-labelledby="settings-workspace" className="space-y-4">
         <h3 id="settings-workspace" className="text-base font-semibold text-foreground">
           فضای کاری
         </h3>
