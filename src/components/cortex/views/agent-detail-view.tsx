@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Loader2,
   Activity,
+  BrainCircuit,
   CircleDollarSign,
   Users,
   MessageCircleQuestion,
@@ -137,6 +138,55 @@ function MiniStat({ icon: Icon, value, label, tint }: { icon: typeof FileText; v
   );
 }
 
+function MemoryOverviewCard({ agentId, enabled }: { agentId: string; enabled: boolean }) {
+  const memoryQuery = useQuery({
+    queryKey: ["agent-memory-overview", agentId],
+    queryFn: () => api.getAgentMemory(agentId, { limit: 8 }),
+    enabled,
+    staleTime: 30_000,
+  });
+  const memories = memoryQuery.data?.memories ?? [];
+
+  return (
+    <Card className="cortex-panel rounded-xl">
+      <CardHeader className="border-b border-border/60 pb-4">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <span className="cortex-icon-box"><BrainCircuit className="size-4" /></span>
+          حافظه هوشمند
+        </CardTitle>
+        <CardDescription>
+          حافظهٔ بلندمدت، ترجیحات و زمینهٔ ماندگار ایجنت در پاسخ‌های بعدی استفاده می‌شود.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-4">
+        {!enabled ? (
+          <div className="rounded-xl border border-dashed border-border/70 p-4 text-center text-xs text-muted-foreground">
+            حافظهٔ این ایجنت خاموش است.
+          </div>
+        ) : memoryQuery.isPending ? (
+          <Skeleton className="h-24 rounded-xl" />
+        ) : memories.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/70 p-4 text-center text-xs leading-6 text-muted-foreground">
+            هنوز حافظهٔ عمومی برای این ایجنت ثبت نشده است؛ حافظه در طول گفتگوهای واقعی به‌صورت تدریجی ساخته می‌شود.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {memories.slice(0, 5).map((memory) => (
+              <div key={memory.id} className="rounded-xl border border-border/60 bg-background/35 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate text-[11px] font-semibold">{memory.key}</span>
+                  <span className="shrink-0 text-[9px] text-muted-foreground">{faNum(memory.confidence)}٪ اعتماد</span>
+                </div>
+                <p dir="auto" className="mt-1 line-clamp-2 text-[11px] leading-6 text-muted-foreground">{memory.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function OverviewTab({ agentId }: { agentId: string }) {
   const setAgentTab = useCortexStore((s) => s.setAgentTab);
   const openConversation = useCortexStore((s) => s.openConversation);
@@ -196,6 +246,7 @@ function OverviewTab({ agentId }: { agentId: string }) {
       </div>
 
       <BusinessOnboardingCard agentId={agentId} />
+      <MemoryOverviewCard agentId={agentId} enabled={Boolean(agent?.memoryEnabled)} />
 
       {agent?.instructions?.trim() && (
         <Card className="rounded-xl">
