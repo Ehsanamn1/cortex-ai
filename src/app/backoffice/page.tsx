@@ -1,5 +1,2 @@
-import { redirect } from "next/navigation";
-
-export default function BackofficePage() {
-  redirect("/admin");
-}
+import { notFound } from "next/navigation";
+export default function LegacyBackofficeRoute() { notFound(); }
