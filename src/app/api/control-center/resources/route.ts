@@ -16,7 +16,6 @@ const RESOURCES = new Set([
   "executions",
   "audit",
   "plugins",
-  "training",
 ]);
 
 function limitValue(value: string | null) {
@@ -180,28 +179,6 @@ export async function GET(req: Request) {
           },
         });
         return applyCors(jsonOk({ resource, items: rows }), req.headers.get("origin"));
-      }
-      case "training": {
-        const jobs = await db.trainingJob.findMany({
-          take: limit,
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true, workspaceId: true, agentId: true, status: true, method: true,
-            baseModel: true, sampleCount: true, evalLoss: true, evalScore: true,
-            promoted: true, startedAt: true, completedAt: true, error: true,
-            createdAt: true, updatedAt: true,
-          },
-        });
-        const adapters = await db.modelAdapter.findMany({
-          take: limit,
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true, workspaceId: true, agentId: true, trainingJobId: true,
-            baseModel: true, adapterType: true, version: true, inferenceModelId: true,
-            evalLoss: true, evalScore: true, active: true, createdAt: true, updatedAt: true,
-          },
-        });
-        return applyCors(jsonOk({ resource, jobs, adapters }), req.headers.get("origin"));
       }
       case "plugins": {
         const rows = await db.plugin.findMany({
