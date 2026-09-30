@@ -263,7 +263,15 @@ export interface AgentAnalyticsDto {
   unansweredQuestions: Array<{ question: string; count: number }>;
 }
 
-export interface AnalyticsDto { users:number; bots:number; usage:{events:number;tokens:number;inputTokens:number;outputTokens:number;estimatedCostMicros:number}; trend:Array<{date:string;messages:number;tokens:number}>; topQuestions:Array<{question:string;count:number}>; unanswered:number; unansweredQuestions:Array<{question:string;count:number}> }
+export interface AnalyticsDto {
+  users:number;
+  bots:number;
+  usage:{events:number;tokens:number;inputTokens:number;outputTokens:number;estimatedCostMicros:number;estimatedCostToman:number;usdTomanRate:number};
+  trend:Array<{date:string;messages:number;tokens:number;costToman:number}>;
+  topQuestions:Array<{question:string;count:number}>;
+  unanswered:number;
+  unansweredQuestions:Array<{question:string;count:number}>;
+}
 
 export interface SessionDto {
   user: UserDto;
