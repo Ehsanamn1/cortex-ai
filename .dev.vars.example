@@ -36,7 +36,8 @@ CORTEX_RESEND_API_KEY=""
 CORTEX_EMAIL_FROM="Cortex AI <no-reply@your-domain.com>"
 
 
-# Real model fine-tuning / self-improvement
+# Real model fine-tuning / self-improvement (launch disabled by default)
+CORTEX_TRAINING_ENABLED="false"
 CORTEX_TRAINING_WORKER_URL=""
 CORTEX_TRAINING_WORKER_SECRET=""
 CORTEX_TRAINING_CALLBACK_URL=""
