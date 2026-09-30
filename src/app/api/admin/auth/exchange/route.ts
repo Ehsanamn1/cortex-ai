@@ -4,10 +4,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Backward-compatible endpoint.
- * The old Secret token flow is retired. New clients should use /api/admin/auth/login.
- */
+/** Bootstrap a passwordless Admin session from the private access link. */
 export async function POST(req: Request) {
   try {
     rateLimit(req, "admin-access-exchange", 20, 60_000);
