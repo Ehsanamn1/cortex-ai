@@ -12,3 +12,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+User-agent: *
+Disallow: /ops/
+Disallow: /admin/
+Disallow: /control-center/
+Disallow: /backoffice/
