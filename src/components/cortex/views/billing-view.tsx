@@ -102,7 +102,7 @@ export function BillingView(){
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[430px]">
-            <div className="rounded-xl border border-border/60 bg-background/35 px-3 py-2"><p className="text-[8px] text-muted-foreground">اعتبار باقی‌مانده</p><p className="mt-1 text-xs font-black">{formatCountCompact(data.account.balanceCredits)}</p></div>
+            <div className="rounded-xl border border-border/60 bg-background/35 px-3 py-2"><p className="text-[8px] text-muted-foreground">اعتبار من</p><p className="mt-1 text-xs font-black">{formatCountCompact(data.account.balanceCredits)}</p></div>
             <div className="rounded-xl border border-border/60 bg-background/35 px-3 py-2"><p className="text-[8px] text-muted-foreground">پلن فعلی</p><p className="mt-1 truncate text-xs font-black">{plan.name}</p></div>
             <div className="rounded-xl border border-border/60 bg-background/35 px-3 py-2"><p className="text-[8px] text-muted-foreground">توکن ۳۰ روز</p><p className="mt-1 text-xs font-black">{formatCountCompact(data.usage30Days.tokens)}</p></div>
             <div className="rounded-xl border border-primary/10 bg-primary/[.045] px-3 py-2"><p className="text-[8px] text-muted-foreground">مصرف پلن</p><p className="mt-1 text-xs font-black">{faNum(balancePct)}٪</p></div>
