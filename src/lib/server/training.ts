@@ -10,6 +10,13 @@ const WORKER_URL = process.env.CORTEX_TRAINING_WORKER_URL?.replace(/\/$/, "") ||
 const WORKER_SECRET = process.env.CORTEX_TRAINING_WORKER_SECRET || "";
 const CALLBACK_URL = process.env.CORTEX_TRAINING_CALLBACK_URL || "";
 const CALLBACK_SECRET = process.env.CORTEX_TRAINING_CALLBACK_SECRET || "";
+const TRAINING_ENABLED = process.env.CORTEX_TRAINING_ENABLED === "true";
+
+function assertTrainingEnabled() {
+  if (!TRAINING_ENABLED) {
+    throw Object.assign(new Error("آموزش و فاین‌تیون مدل فعلاً غیرفعال است و به‌زودی فعال می‌شود."), { status: 503, code: "training_disabled" });
+  }
+}
 
 function safeInt(value: unknown, fallback: number, min: number, max: number) {
   const n = Number(value);
@@ -32,6 +39,7 @@ function extractContext(metadata: string | null) {
 }
 
 export async function captureFeedbackExample(params: {
+  assertTrainingEnabled();
   workspaceId: string;
   agentId: string;
   userId: string;
@@ -80,6 +88,7 @@ export async function captureFeedbackExample(params: {
 }
 
 export async function listTrainingExamples(agentId: string, workspaceId: string) {
+  assertTrainingEnabled();
   return db.trainingExample.findMany({
     where: { agentId, workspaceId },
     orderBy: { updatedAt: "desc" },
@@ -117,6 +126,7 @@ function datasetHash(samples: unknown[]) {
 }
 
 export async function startTraining(params: {
+  assertTrainingEnabled();
   workspaceId: string;
   agentId: string;
   method?: "qlora" | "lora" | "full";
@@ -214,6 +224,7 @@ export async function startTraining(params: {
 }
 
 export async function handleTrainingCallback(payload: any) {
+  assertTrainingEnabled();
   const jobId = typeof payload?.jobId === "string" ? payload.jobId : "";
   if (!jobId) throw Object.assign(new Error("شناسه آموزش نامعتبر است."), { status: 400 });
 
@@ -325,6 +336,7 @@ export async function handleTrainingCallback(payload: any) {
 }
 
 export const trainingConfig = {
+  enabled: TRAINING_ENABLED,
   minExamples: MIN_EXAMPLES,
   maxExamples: MAX_EXAMPLES,
   defaultBaseModel: DEFAULT_BASE_MODEL,
