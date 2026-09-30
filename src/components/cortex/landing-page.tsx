@@ -28,7 +28,7 @@ const FEATURES = [
   },
   {
     icon: Bot,
-    title: "Agent Builder",
+    title: "سازنده ایجنت",
     text: "رفتار، لحن، حافظه، ابزار و محدودیت‌های Agent را کنترل کن.",
   },
   {
