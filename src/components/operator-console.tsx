@@ -55,6 +55,10 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 function toman(value: number | null | undefined) {
   return Math.max(0, Math.round(Number(value ?? 0))).toLocaleString("fa-IR") + " تومان";
 }
+function tomanSigned(value: number | null | undefined) {
+  const n = Math.round(Number(value ?? 0));
+  return (n < 0 ? "−" : "") + Math.abs(n).toLocaleString("fa-IR") + " تومان";
+}
 function num(value: number | null | undefined) {
   return Math.round(Number(value ?? 0)).toLocaleString("fa-IR");
 }
@@ -156,7 +160,7 @@ function Overview({ onNavigate }: { onNavigate: (section: Section) => void }) {
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="فروش ثبت‌شده ۳۰ روز" value={toman(revenue)} caption="پرداخت‌های واقعی ثبت‌شده" icon={TrendingUp} tone="green" />
         <MetricCard label="هزینه تأمین AI" value={toman(cost)} caption="بر اساس توکن و نرخ Provider" icon={ServerCog} tone="amber" />
-        <MetricCard label="حاشیه عملیاتی" value={toman(margin)} caption={margin >= 0 ? "مثبت" : "نیازمند بررسی"} icon={Gauge} tone={margin >= 0 ? "blue" : "amber"} />
+        <MetricCard label="حاشیه عملیاتی" value={tomanSigned(margin)} caption={margin >= 0 ? "فروش منهای هزینه تأمین" : "هزینه تأمین از فروش بیشتر است"} icon={Gauge} tone={margin >= 0 ? "blue" : "amber"} />
         <MetricCard label="ارزش پلن‌های فعال" value={toman(booked)} caption={num(data.financial?.activeSubscriptions) + " اشتراک فعال"} icon={WalletCards} tone="violet" />
       </div>
       <div className="grid gap-4 xl:grid-cols-[1.35fr_.65fr]">
@@ -173,7 +177,7 @@ function Overview({ onNavigate }: { onNavigate: (section: Section) => void }) {
                 <YAxis tick={{ fill: "var(--op-muted)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => Number(v).toLocaleString("fa-IR")} />
                 <Tooltip
                   contentStyle={{ background: "var(--op-card)", border: "1px solid var(--op-border)", borderRadius: 12, color: "var(--op-fg)" }}
-                  formatter={(value: any, name: string) => [toman(Number(value)), name === "revenue" ? "فروش" : name === "cost" ? "هزینه" : "حاشیه"]}
+                  formatter={(value: any, name: string) => [tomanSigned(Number(value)), name === "revenue" ? "فروش" : name === "cost" ? "هزینه" : "حاشیه"]}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#356dff" fill="rgba(53,109,255,.10)" strokeWidth={2} />
                 <Line type="monotone" dataKey="cost" stroke="#e0a23c" strokeWidth={2} dot={false} />
@@ -385,7 +389,7 @@ function BillingPanel() {
     try { await fetchJson("/api/control-center/billing",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); toast.success("ذخیره شد."); await qc.invalidateQueries({queryKey:["ops-billing"]}); } catch(e){toast.error((e as Error).message);}
   }
   return <div className="space-y-6">
-    <SectionHeader eyebrow="BILLING CONTROL" title="پلن، اعتبار و سود" description="تمام قیمت‌ها در تومان هستند. نرخ مصرف مدل‌ها بر مبنای هزینه واقعی تأمین و ضریب حداقل ۲.۰۰ محاسبه می‌شود تا سود ناخالص هدف ۱۰۰٪ حفظ شود." />
+    <SectionHeader eyebrow="BILLING CONTROL" title="پلن، اعتبار و سود" description="تمام قیمت‌ها در تومان هستند. قیمت‌گذاری مصرف هر مدل بر مبنای هزینه واقعی تأمین و ضریب حداقل ۲.۰۰ انجام می‌شود؛ یعنی حداقل ۱۰۰٪ مارک‌آپ روی هزینه تأمین قبل از سایر هزینه‌های کسب‌وکار." />
     <div className="grid gap-4 xl:grid-cols-3">{plans.map((plan:any) => {
       const unit = plan.monthlyCredits > 0 ? plan.priceToman / plan.monthlyCredits : 0;
       return <OpsCard key={plan.id}><div className="operator-card-head"><div><p className="operator-eyebrow">PLAN</p><h2 className="operator-card-title">{plan.name}</h2></div><button className="operator-icon-button" onClick={() => setEditingPlan(editingPlan?.id===plan.id?null:plan)}><Pencil className="size-4"/></button></div><div className="grid grid-cols-2 gap-2 p-4"><div className="operator-data-chip"><span>قیمت ماهانه</span><b>{toman(plan.priceToman)}</b></div><div className="operator-data-chip"><span>اعتبار ماهانه</span><b>{num(plan.monthlyCredits)}</b></div><div className="operator-data-chip"><span>ارزش هر اعتبار</span><b>{toman(unit)}</b></div><div className="operator-data-chip"><span>مازاد</span><b>{toman(plan.overageCreditPriceToman)}</b></div></div>{editingPlan?.id===plan.id ? <div className="grid gap-3 border-t border-[var(--op-border)] p-4 md:grid-cols-2"><Field label="نام" value={editingPlan.name} onChange={(v)=>setEditingPlan({...editingPlan,name:v})}/><Field label="قیمت ماهانه تومان" value={String(editingPlan.priceToman)} onChange={(v)=>setEditingPlan({...editingPlan,priceToman:Number(v)||0})} type="number" dir="ltr"/><Field label="اعتبار ماهانه" value={String(editingPlan.monthlyCredits)} onChange={(v)=>setEditingPlan({...editingPlan,monthlyCredits:Number(v)||0})} type="number" dir="ltr"/><Field label="قیمت اعتبار مازاد" value={String(editingPlan.overageCreditPriceToman)} onChange={(v)=>setEditingPlan({...editingPlan,overageCreditPriceToman:Number(v)||0})} type="number" dir="ltr"/><div className="flex gap-2 md:col-span-2"><PrimaryButton onClick={()=>patch({action:"update_plan",id:plan.id,name:editingPlan.name,priceToman:editingPlan.priceToman,monthlyCredits:editingPlan.monthlyCredits,overageCreditPriceToman:editingPlan.overageCreditPriceToman})}>ذخیره پلن</PrimaryButton></div></div>:null}</OpsCard>;
