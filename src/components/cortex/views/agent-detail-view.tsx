@@ -58,6 +58,7 @@ import { TelegramAccessManager, TelegramCustomizer } from "@/components/cortex/v
 const AGENT_TABS: Array<{ value: AgentTab; label: string }> = [
   { value: "overview", label: "نمای کلی" },
   { value: "knowledge", label: "دانش" },
+  { value: "training", label: "آموزش" },
   { value: "telegram", label: "تلگرام" },
   { value: "ai", label: "مدل و هوش مصنوعی" },
   { value: "tools", label: "ابزارها" },
@@ -387,6 +388,79 @@ function BusinessOnboardingCard({ agentId }: { agentId: string }) {
 
 function ChevronRightIcon() {
   return <ArrowRight className="rotate-180" />;
+}
+
+function TrainingTab({ agentId }: { agentId: string }) {
+  const queryClient = useQueryClient();
+  const { data, isPending, isError } = useQuery({
+    queryKey: ["agent-training", agentId],
+    queryFn: () => api.getAgentTraining(agentId),
+    staleTime: 10_000,
+  });
+  const start = useMutation({
+    mutationFn: () => api.startAgentTraining(agentId, {
+      method: "qlora",
+      config: {
+        epochs: 1,
+        learning_rate: 0.0002,
+        batch_size: 1,
+        gradient_accumulation_steps: 8,
+        max_length: 2048,
+      },
+    }),
+    onSuccess: () => {
+      toast.success("آموزش واقعی در صف قرار گرفت.");
+      queryClient.invalidateQueries({ queryKey: ["agent-training", agentId] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const examples = data?.examples ?? [];
+  const approved = examples.filter((x) => x.approved && x.qualityScore >= 4).length;
+  const active = data?.adapters?.find((x) => x.active);
+  const latestJob = data?.jobs?.[0];
+
+  return (
+    <div className="space-y-5">
+      <Card className="cortex-panel rounded-[22px] border-primary/15 bg-primary/[.025]">
+        <CardHeader className="border-b border-border/60 pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <span className="cortex-icon-box"><Sparkles className="size-4" /></span>
+            آموزش واقعی و خودبهبود
+          </CardTitle>
+          <CardDescription className="leading-6">
+            پاسخ‌های تأییدشده، نمونه‌های باکیفیت و زمینهٔ دانش به دیتاست SFT تبدیل می‌شوند؛ سپس LoRA/QLoRA روی GPU آموزش می‌بیند و فقط نسخه‌ای که از گیت ارزیابی عبور کند فعال می‌شود.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 pt-5 sm:grid-cols-3">
+          <div className="rounded-2xl border bg-card p-4"><p className="text-xs text-muted-foreground">نمونه‌های آموزش</p><p className="mt-2 text-2xl font-black">{faNum(approved)}</p><p className="mt-1 text-[10px] text-muted-foreground">تأییدشده</p></div>
+          <div className="rounded-2xl border bg-card p-4"><p className="text-xs text-muted-foreground">نسخه فعال</p><p className="mt-2 text-2xl font-black">{active ? "v" + active.version : "—"}</p><p className="mt-1 text-[10px] text-muted-foreground">{active ? active.adapterType.toUpperCase() : "هنوز آموزش موفقی منتشر نشده"}</p></div>
+          <div className="rounded-2xl border bg-card p-4"><p className="text-xs text-muted-foreground">آخرین آموزش</p><p className="mt-2 text-2xl font-black">{latestJob?.status ? latestJob.status : "—"}</p><p className="mt-1 text-[10px] text-muted-foreground">{latestJob?.evalLoss != null ? "ارزیابی: " + latestJob.evalLoss.toFixed(3) : "بدون نتیجه"}</p></div>
+        </CardContent>
+        <CardContent className="pt-0">
+          <div className="flex flex-col gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/[.04] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-sm font-bold">آموزش وزن‌ها روی GPU انجام می‌شود.</p><p className="mt-1 text-xs leading-6 text-muted-foreground">این فرآیند به یک Training Worker واقعی نیاز دارد؛ صرفاً تغییر prompt یا حافظه نیست.</p></div>
+            <Button onClick={() => start.mutate()} disabled={start.isPending || approved < 8}>
+              {start.isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
+              {start.isPending ? "در حال ارسال…" : approved < 8 ? "حداقل ۸ نمونه لازم است" : "شروع آموزش QLoRA"}
+            </Button>
+          </div>
+          {isPending ? <div className="pt-4 text-sm text-muted-foreground">در حال خواندن وضعیت آموزش…</div> : isError ? <div className="pt-4 text-sm text-destructive">وضعیت آموزش در دسترس نیست.</div> : examples.length > 0 ? (
+            <div className="mt-4 space-y-2">
+              {examples.slice(0, 6).map((example) => (
+                <div key={example.id} className="rounded-xl border border-border/60 bg-background/40 p-3">
+                  <div className="flex items-center justify-between gap-3"><span className="text-[10px] text-muted-foreground">{example.sourceType}</span><span className={"text-[10px] font-bold " + (example.approved ? "text-emerald-500" : "text-muted-foreground")}>{example.approved ? "تأییدشده" : "در صف ارزیابی"}</span></div>
+                  <p className="mt-2 line-clamp-2 text-xs leading-6">{example.prompt}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-border/70 p-4 text-center text-xs leading-6 text-muted-foreground">برای شروع، روی پاسخ‌های خوب ایجنت بازخورد بده تا نمونه‌های واقعی آموزش ساخته شوند.</div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function ToolsTab({ agentId }: { agentId: string }) {
@@ -931,6 +1005,10 @@ export function AgentDetailView() {
         <TabsContent value="telegram" className="mt-6">
           <AgentTelegramTab agentId={agentId} />
         </TabsContent>
+        <TabsContent value="training" className="mt-6">
+          <TrainingTab agentId={agentId} />
+        </TabsContent>
+
         <TabsContent value="ai" className="mt-6">
           <ManagedModelTab agentId={agentId} />
         </TabsContent>
