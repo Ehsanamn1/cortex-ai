@@ -209,6 +209,11 @@ function LoginForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
         {submitting && <Loader2 aria-hidden="true" className="animate-spin" />}
         {submitting ? "در حال ورود..." : "ورود به حساب"}
       </Button>
+      <div className="relative my-4"><div className="border-t border-border/70" /><span className="absolute -top-2.5 inset-x-0 mx-auto w-fit bg-card px-2 text-[10px] text-muted-foreground">یا</span></div>
+      <button type="button" onClick={() => { window.location.href = "/api/auth/google/start"; }} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border/70 bg-background text-xs font-bold transition hover:border-primary/25 hover:bg-accent">
+        <span className="grid size-5 place-items-center rounded-md border border-border bg-card text-[11px] font-black">G</span>
+        ورود با Google
+      </button>
       <ForgotPasswordDialog key={forgotOpen ? "open" : "closed"} open={forgotOpen} onOpenChange={setForgotOpen} defaultEmail={form.getValues("email")} />
     </form>
   );
@@ -285,6 +290,11 @@ function SignupForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
         {submitting && <Loader2 aria-hidden="true" className="animate-spin" />}
         {submitting ? "در حال ساخت حساب..." : "ساخت حساب و شروع"}
       </Button>
+      <div className="relative my-4"><div className="border-t border-border/70" /><span className="absolute -top-2.5 inset-x-0 mx-auto w-fit bg-card px-2 text-[10px] text-muted-foreground">یا</span></div>
+      <button type="button" onClick={() => { window.location.href = "/api/auth/google/start"; }} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border/70 bg-background text-xs font-bold transition hover:border-primary/25 hover:bg-accent">
+        <span className="grid size-5 place-items-center rounded-md border border-border bg-card text-[11px] font-black">G</span>
+        ثبت‌نام با Google
+      </button>
     </form>
   );
 }
