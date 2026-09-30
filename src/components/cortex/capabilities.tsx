@@ -8,7 +8,7 @@ type Capability = { title:string; description:string; icon:typeof BrainCircuit; 
 
 const CAPABILITIES:Capability[]=[
  {title:"ایجنت‌ها",description:"ساخت و مدیریت",icon:Bot,status:"active",view:"agents"},
- {title:"مغز کسب‌وکار",description:"دانش + مصاحبه ۳۰ سؤال",icon:BrainCircuit,status:"active",view:"knowledge"},
+ {title:"مغز کسب‌وکار",description:"دانش + حافظه بلندمدت",icon:BrainCircuit,status:"active",view:"knowledge"},
  {title:"گفتگوها",description:"مکالمات واقعی",icon:MessagesSquare,status:"active",view:"conversations"},
  {title:"تلگرام",description:"اتصال + شخصی‌سازی + کاربران",icon:ShieldCheck,status:"active",view:"telegram"},
  {title:"تحلیل",description:"مصرف + هزینه",icon:BarChart3,status:"active",view:"analytics"},
