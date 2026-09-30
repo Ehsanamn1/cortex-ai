@@ -209,7 +209,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: cddba2278fda0cf565b31f9280a7af1f
           CORTEX_ZARINPAL_SANDBOX: ${{ vars.CORTEX_ZARINPAL_SANDBOX || 'false' }}
-        run: npx wrangler deploy --config dist/server/wrangler.json --var APP_ENV:production --var CORTEX_BILLING_ENFORCE:true --var CORTEX_ZARINPAL_SANDBOX:${CORTEX_ZARINPAL_SANDBOX}
+        run: npx wrangler deploy --config dist/server/wrangler.json --var APP_ENV:production --var CORTEX_BILLING_ENFORCE:true --var CORTEX_TRAINING_ENABLED:false --var CORTEX_ZARINPAL_SANDBOX:${CORTEX_ZARINPAL_SANDBOX}
 
       - name: Smoke test public application routes
         run: |
