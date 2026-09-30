@@ -10,12 +10,10 @@ export function applyCortexUiSettings(settings: Record<string, string>) {
     primary: settings["site.primaryColor"],
     secondary: settings["site.secondaryColor"],
     radius: settings["site.radius"],
-    sidebar: settings["site.sidebarColor"],
   });
   const root = document.documentElement;
   root.style.setProperty("--primary", theme.primary);
   root.style.setProperty("--ring", theme.primary);
   root.style.setProperty("--secondary", theme.secondary);
-  root.style.setProperty("--sidebar", theme.sidebar);
   root.style.setProperty("--radius", theme.radius);
 }
