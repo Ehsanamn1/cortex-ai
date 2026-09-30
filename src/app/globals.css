@@ -1721,3 +1721,33 @@ body {
   border-radius: 10px !important;
   box-shadow: none !important;
 }
+
+.cortex-landing {
+  background: #0b0d0f !important;
+}
+.cortex-landing .rounded-[30px],
+.cortex-landing .rounded-[26px],
+.cortex-landing .rounded-[24px],
+.cortex-landing .rounded-[22px],
+.cortex-landing .rounded-2xl,
+.cortex-landing .rounded-xl {
+  border-radius: 10px !important;
+}
+.cortex-landing .shadow-\[0_40px_100px_rgba\(0\,0\,0\,.35\)\],
+.cortex-landing [class*="shadow-[0_24px"],
+.cortex-landing [class*="shadow-[0_18px"] {
+  box-shadow: none !important;
+}
+.cortex-landing [class*="bg-[radial-gradient"] {
+  display: none !important;
+}
+.cortex-landing [class*="bg-gradient-to"] {
+  background-image: none !important;
+}
+.cortex-landing .cortex-kicker {
+  color: #9aa393 !important;
+}
+.cortex-landing article,
+.cortex-landing section > div[class*="border"] {
+  box-shadow: none;
+}
