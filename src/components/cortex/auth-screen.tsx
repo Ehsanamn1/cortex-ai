@@ -396,6 +396,7 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }
               </Tabs>
             </div>
           </div>
+          </motion.div>
         </div>
       </div>
 
