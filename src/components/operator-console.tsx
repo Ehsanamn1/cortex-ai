@@ -398,10 +398,15 @@ function BillingPanel() {
 function SiteControl() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["ops-site-settings"], queryFn: () => fetchJson<any>("/api/control-center/settings"), staleTime: 10_000 });
-  const [values, setValues] = useState<Record<string, string>>({});
-  useEffect(() => { if (q.data?.settings) setValues(q.data.settings); }, [q.data?.settings]);
+  const [draftValues, setDraftValues] = useState<Record<string, string> | null>(null);
+  const values = draftValues ?? (q.data?.settings ?? {}) as Record<string, string>;
   async function save() {
-    try { await fetchJson("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings:values})}); toast.success("محتوا و تنظیمات سایت ذخیره شد."); await qc.invalidateQueries({queryKey:["ops-site-settings"]}); } catch(e){toast.error((e as Error).message);}
+    try {
+      await fetchJson("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings:values})});
+      setDraftValues(values);
+      toast.success("محتوا و تنظیمات سایت ذخیره شد.");
+      await qc.invalidateQueries({queryKey:["ops-site-settings"]});
+    } catch(e){toast.error((e as Error).message);}
   }
   const groups = [
     ["هویت و Landing", ["site.name","site.description","site.welcomeTitle","site.heroTitle","site.heroSubtitle","site.heroPrimaryCta","site.heroSecondaryCta","site.proofLine"]],
@@ -412,7 +417,7 @@ function SiteControl() {
   ];
   return <div className="space-y-6">
     <SectionHeader eyebrow="SITE CONTROL PLANE" title="محتوا و ظاهر سایت" description="متن‌های فروش، CTA، عنوان‌ها، منوها و feature flagها از همین‌جا کنترل می‌شوند؛ نیازی به تغییر کد برای Copy روزمره نیست." action={<PrimaryButton onClick={save}><Check className="size-4"/> ذخیره همه</PrimaryButton>} />
-    {groups.map(([title, keys]) => <OpsCard key={String(title)}><div className="operator-card-head"><div><p className="operator-eyebrow">EDITABLE</p><h2 className="operator-card-title">{title}</h2></div></div><div className="grid gap-3 p-5 md:grid-cols-2">{(keys as string[]).map((key)=> <Field key={key} label={key} value={values[key] ?? ""} onChange={(v)=>setValues({...values,[key]:v})} dir={key.includes("Color") || key.includes("radius") ? "ltr":"rtl"} />)}</div></OpsCard>)}
+    {groups.map(([title, keys]) => <OpsCard key={String(title)}><div className="operator-card-head"><div><p className="operator-eyebrow">EDITABLE</p><h2 className="operator-card-title">{title}</h2></div></div><div className="grid gap-3 p-5 md:grid-cols-2">{(keys as string[]).map((key)=> <Field key={key} label={key} value={values[key] ?? ""} onChange={(v)=>setDraftValues({...values,[key]:v})} dir={key.includes("Color") || key.includes("radius") ? "ltr":"rtl"} />)}</div></OpsCard>)}
   </div>;
 }
 
@@ -449,12 +454,12 @@ export function OperatorConsole() {
   }, [auth.isError]);
   const [section, setSection] = useState<Section>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() =>
+    typeof window !== "undefined" && localStorage.getItem("cortex-operator-theme") === "dark"
+  );
   useEffect(() => {
-    const saved = localStorage.getItem("cortex-operator-theme");
-    setDark(saved === "dark");
-  }, []);
-  useEffect(() => { localStorage.setItem("cortex-operator-theme", dark ? "dark" : "light"); }, [dark]);
+    localStorage.setItem("cortex-operator-theme", dark ? "dark" : "light");
+  }, [dark]);
 
   const logout = async () => {
     try { await fetchJson("/api/admin/auth/logout", { method: "POST" }); } finally { window.location.assign("/"); }
