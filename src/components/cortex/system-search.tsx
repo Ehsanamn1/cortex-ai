@@ -28,7 +28,11 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
   }, []);
 
   useEffect(() => {
-    if (!open || !workspaceId || query.trim().length < 2) return;
+    if (!open || !workspaceId || query.trim().length < 2) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       if (controller.signal.aborted) return;
@@ -71,9 +75,9 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
         {!compact && <span className="ms-auto hidden rounded-md border border-border/70 bg-background/70 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground sm:inline-flex">⌘K</span>}
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen} title="جست‌وجوی Cortex" description="ایجنت، پایگاه دانش یا گفتگو را پیدا کنید." showCloseButton={false}>
+      <CommandDialog open={open} onOpenChange={(next) => { setOpen(next); if (!next) setQuery(""); }} title="جست‌وجوی Cortex" description="ایجنت، پایگاه دانش یا گفتگو را پیدا کنید." showCloseButton>
         <CommandInput placeholder="نام ایجنت، فایل دانش یا گفتگوی خود را بنویسید…" value={query} onValueChange={setQuery} />
-        <div className="flex items-center justify-between border-b border-border/70 px-4 py-2"><span className="text-[10px] font-bold text-muted-foreground">جست‌وجوی سریع در فضای کاری</span><button type="button" onClick={() => { setOpen(false); setQuery(""); }} className="grid size-7 place-items-center rounded-lg border border-border/70 text-muted-foreground hover:bg-accent" aria-label="بستن جست‌وجو">×</button></div><CommandList className="max-h-[55vh] p-1">
+        <div className="border-b border-border/70 px-4 py-2"><span className="text-[10px] font-bold text-muted-foreground">جست‌وجوی سریع در فضای کاری</span></div><CommandList className="max-h-[55vh] p-1">
           {loading && query.trim().length >= 2 && <div className="px-4 py-8 text-center text-sm text-muted-foreground">در حال جستجو در فضای کاری…</div>}
           {!loading && query.trim().length >= 2 && visibleResults.length === 0 && <CommandEmpty>نتیجه‌ای در فضای کاری فعلی پیدا نشد.</CommandEmpty>}
           {grouped.agents.length > 0 && (
