@@ -1,0 +1,24 @@
+services:
+  cortex-training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      TRAINER_SHARED_SECRET: ${TRAINER_SHARED_SECRET}
+      TRAINING_BASE_MODEL: ${TRAINING_BASE_MODEL:-Qwen/Qwen3-0.6B}
+      TRAINING_ROOT: /models/cortex-training
+      TRAINING_MAX_SAMPLES: ${TRAINING_MAX_SAMPLES:-5000}
+      TRAINING_CALLBACK_URL: ${TRAINING_CALLBACK_URL}
+      TRAINING_CALLBACK_SECRET: ${TRAINING_CALLBACK_SECRET}
+    volumes:
+      - ./models:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
