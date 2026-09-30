@@ -173,13 +173,23 @@ async function ensureKnownModelCatalog() {
 
 async function ensureModel(provider: string, model: string) {
   const canonicalProvider = provider.toLowerCase() === "openrouter" ? "OpenRouter" : provider;
+  const trainingInputRate = Number(process.env.CORTEX_TRAINED_INPUT_USD_PER_1M || "0");
+  const trainingOutputRate = Number(process.env.CORTEX_TRAINED_OUTPUT_USD_PER_1M || "0");
+  const isTrainedProvider = canonicalProvider.toLowerCase() === "cortex training";
+  if (isTrainedProvider && (!Number.isFinite(trainingInputRate) || !Number.isFinite(trainingOutputRate) || trainingInputRate <= 0 || trainingOutputRate <= 0)) {
+    throw Object.assign(new Error("نرخ تأمین مدل آموزش‌دیده در تنظیمات مالی Cortex ثبت نشده است."), { status: 503, code: "trained_model_pricing_unavailable" });
+  }
   const managed = getManagedModelCatalog().find(
     (entry) => entry.provider === canonicalProvider && entry.providerModelId.toLowerCase() === model.toLowerCase(),
   );
   const known = getKnownModelCatalog().find(
     (entry) => entry.provider.toLowerCase() === canonicalProvider.toLowerCase() && entry.modelId.toLowerCase() === model.toLowerCase(),
   );
-  const rate = managed ? getModelRate("OpenRouter", managed.providerModelId) : getModelRate(canonicalProvider, model);
+  const rate = managed
+    ? getModelRate("OpenRouter", managed.providerModelId)
+    : isTrainedProvider
+      ? { inputUsdPer1M: trainingInputRate, outputUsdPer1M: trainingOutputRate, known: true }
+      : getModelRate(canonicalProvider, model);
   const qualityTier = managed?.qualityTier ?? known?.qualityTier ?? "balanced";
   const multiplierBps = defaultCreditMultiplierBps(qualityTier);
   const catalog = await db.modelCatalog.upsert({
