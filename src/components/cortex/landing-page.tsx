@@ -179,7 +179,7 @@ export function LandingPage({ settings = {} }: { settings?: Record<string, strin
           </div>
           <div className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {FEATURES.map((feature, index) => (
-              <article key={feature.title}}} className="rounded-xl border border-border/65 bg-card/70 p-5 shadow-none">
+              <article key={feature.title} className="rounded-xl border border-border/65 bg-card/70 p-5 shadow-none">
                 <span className="grid size-11 place-items-center rounded-2xl border border-primary/15 bg-primary/[.07] text-primary"><feature.icon className="size-5" /></span>
                 <span className="mt-5 block text-[9px] font-bold tracking-[.18em] text-muted-foreground">۰{index + 1}</span>
                 <h3 className="mt-2 text-base font-black">{feature.title}</h3>
