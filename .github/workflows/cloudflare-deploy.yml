@@ -353,6 +353,7 @@ jobs:
               rm -f "$admin_me_tmp" "$admin_page_tmp"
             fi
           fi
+          agent_body="$(jq -nc '{name:"Cortex Smoke Agent",language:"fa",tone:"professional",temperature:0.2,topP:1,maxTokens:256}')"
           smoke_email="cortex-smoke-${GITHUB_RUN_ID}@example.invalid"
           smoke_password="$(openssl rand -hex 18)"
           smoke_response="$(mktemp)"
