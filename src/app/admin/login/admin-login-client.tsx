@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Loader2, LockKeyhole } from "lucide-react";
 
+import { OPERATOR_CONSOLE_PATH } from "@/config/operator";
+
 export function AdminLoginClient() {
   const [username, setUsername] = useState("ehsanam86");
   const [loading, setLoading] = useState(false);
@@ -11,7 +13,7 @@ export function AdminLoginClient() {
   useEffect(() => {
     void fetch("/api/admin/auth/me", { credentials: "include", cache: "no-store" })
       .then((response) => {
-        if (response.ok) window.location.replace("/admin");
+        if (response.ok) window.location.replace(OPERATOR_CONSOLE_PATH);
       })
       .catch(() => {});
   }, []);
