@@ -1,11 +1,8 @@
-import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
-import { assertWorkspaceAccess, requireSession } from "@/lib/server/auth";
+import { requireSession } from "@/lib/server/auth";
 import { loadAgentForSession } from "@/lib/server/access";
-import { encryptSecret } from "@/lib/server/secrets";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { llmManager } from "@/lib/providers/llm/manager";
-import { validateProviderBaseUrl } from "@/lib/providers/llm/provider-url";
 
 export const dynamic = "force-dynamic";
 
