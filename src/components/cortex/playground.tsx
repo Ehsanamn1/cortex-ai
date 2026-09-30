@@ -279,40 +279,13 @@ function MessageBubble({ message, agentId }: { message: MessageDto; agentId: str
       <div className="rounded-2xl rounded-br-sm border bg-muted px-4 py-3">
         <AssistantContent content={message.content} />
         <SourceChips message={message} />
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <FeedbackButtons agentId={message.metadata?.agentId || ""} message={message} />
+        <div className="mt-2 flex items-center justify-end gap-3">
           <span className="text-right text-[10px] text-muted-foreground">
             {formatTimeFa(message.createdAt)}
           </span>
         </div>
       </div>
     </motion.div>
-  );
-}
-
-function FeedbackButtons({ agentId, message }: { agentId: string; message: MessageDto }) {
-  const [sent, setSent] = useState<number | null>(null);
-  if (!agentId || message.id.startsWith("optimistic-")) return null;
-
-  async function send(score: number) {
-    try {
-      await api.submitTrainingFeedback(agentId, message.id, score);
-      setSent(score);
-      toast.success(score >= 4 ? "این پاسخ به مجموعهٔ نمونه‌های آموزشی اضافه شد." : "بازخورد ثبت شد و این پاسخ برای آموزش تأیید نشد.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "ثبت بازخورد ناموفق بود.");
-    }
-  }
-
-  return (
-    <div className="flex items-center gap-1" aria-label="بازخورد پاسخ">
-      <button type="button" onClick={() => void send(5)} aria-label="پاسخ خوب بود" className={cn("grid size-7 place-items-center rounded-lg border transition", sent === 5 ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-500" : "border-border/60 text-muted-foreground hover:border-emerald-400/30 hover:text-emerald-500")}>
-        <ThumbsUp className="size-3.5" />
-      </button>
-      <button type="button" onClick={() => void send(1)} aria-label="پاسخ مناسب نبود" className={cn("grid size-7 place-items-center rounded-lg border transition", sent === 1 ? "border-rose-400/40 bg-rose-400/10 text-rose-500" : "border-border/60 text-muted-foreground hover:border-rose-400/30 hover:text-rose-500")}>
-        <ThumbsDown className="size-3.5" />
-      </button>
-    </div>
   );
 }
 
