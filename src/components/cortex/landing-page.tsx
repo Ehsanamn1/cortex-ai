@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowUpLeft,
@@ -59,8 +58,8 @@ export function LandingPage({ settings = {} }: { settings?: Record<string, strin
   }
 
   return (
-    <main id="top" dir="rtl" className="cortex-landing min-h-dvh overflow-x-clip overflow-y-visible bg-background pb-20 text-foreground sm:pb-0">
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/75 backdrop-blur-xl">
+    <main id="top" dir="rtl" className="cortex-landing min-h-screen overflow-visible bg-background pb-20 text-foreground sm:pb-0">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 sm:bg-background/75 sm:backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <a href="#top" className="shrink-0" aria-label="Cortex AI">
             <CortexLogo markSize={34} />
@@ -106,7 +105,7 @@ export function LandingPage({ settings = {} }: { settings?: Record<string, strin
       <section className="relative overflow-hidden">
         
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-18 pt-14 sm:px-6 lg:grid-cols-[.94fr_1.06fr] lg:px-8 lg:pb-24 lg:pt-20">
-          <motion.div initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .45 }} className="relative">
+          <div}}} className="relative">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/[.06] px-3 py-1.5 text-[10px] font-bold tracking-[.15em] text-primary">
               <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,.85)]" />
               PRIVATE AI WORKSPACE
@@ -127,9 +126,9 @@ export function LandingPage({ settings = {} }: { settings?: Record<string, strin
               <span className="rounded-full border border-border/60 bg-card/50 px-3 py-1.5">مناسب تیم و شرکت</span>
               <span className="basis-full pt-1 text-[10px] text-muted-foreground">{site["site.proofLine"] || "بدون قفل شدن به یک Provider · کنترل متمرکز مدل و هزینه · آماده برای Telegram"}</span>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5, delay: .08 }} className="relative">
+          <div}}} className="relative">
             <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-3">
               <div className="flex items-center justify-between border-b border-border/70 px-3 py-3">
                 <div className="flex items-center gap-2"><CortexMark size={26} /><span className="text-xs font-bold text-foreground">Cortex Workspace</span></div>
@@ -167,7 +166,7 @@ export function LandingPage({ settings = {} }: { settings?: Record<string, strin
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
