@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { handleTrainingCallback } from "@/lib/server/training";
+import { handleTrainingCallback, trainingConfig } from "@/lib/server/training";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  if (!trainingConfig.enabled) return NextResponse.json({ error: "training_disabled" }, { status: 503 });
   const expected = process.env.CORTEX_TRAINING_CALLBACK_SECRET || "";
   if (!expected || req.headers.get("authorization") !== "Bearer " + expected) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
