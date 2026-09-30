@@ -6,23 +6,23 @@ import { Activity, BarChart3, CircleDollarSign, Database, HelpCircle, MessageSqu
 import { api } from "@/lib/cortex-client";
 import { useCortexStore } from "@/components/cortex/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { faNum } from "@/components/cortex/format";
+import { faNum, formatTomanCompact } from "@/components/cortex/format";
 
 function K({title,value,detail,icon:Icon}:{title:string;value:string;detail:string;icon:typeof Activity}){
   return <Card className="cortex-panel rounded-2xl"><CardContent className="p-5"><div className="flex items-start justify-between gap-3"><span className="cortex-icon-box"><Icon className="size-[18px]"/></span><span className="text-[10px] text-muted-foreground">{detail}</span></div><p className="mt-5 text-2xl font-bold">{value}</p><p className="mt-1 text-xs text-muted-foreground">{title}</p></CardContent></Card>;
 }
 
-type TrendPoint = { date: string; messages: number; tokens: number };
+type TrendPoint = { date: string; messages: number; tokens: number; costToman: number };
 
 function TrendLineChart({ trend }:{trend:TrendPoint[]}){
-  const [metric,setMetric]=useState<"messages"|"tokens">("messages");
+  const [metric,setMetric]=useState<"messages"|"tokens"|"costToman">("messages");
   const values=trend.map(v=>v[metric]);
   const max=Math.max(...values,1);
   const width=860, height=300, padX=34, padTop=22, padBottom=34, innerW=width-padX*2, innerH=height-padTop-padBottom;
   const points=values.map((value,i)=>{const x=padX+(i/Math.max(1,values.length-1))*innerW;const y=padTop+(1-value/max)*innerH;return {x,y,value,date:trend[i]?.date??""};});
   const line=points.map((p,i)=>(i===0?"M":"L")+` ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ");
   const area=line+` L ${padX+innerW} ${padTop+innerH} L ${padX} ${padTop+innerH} Z`;
-  return <Card className="cortex-panel rounded-2xl"><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><div><CardTitle className="flex items-center gap-2 text-base"><BarChart3 className="size-4 text-primary"/>روند ۱۴ روزه</CardTitle><p className="mt-1 text-[10px] text-muted-foreground">نمودار واقعی مصرف و تعامل فضای کاری</p></div><div className="flex items-center gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">{(["messages","tokens"] as const).map(item=><button key={item} type="button" onClick={()=>setMetric(item)} className={item===metric?"rounded-md bg-primary/10 px-2.5 py-1.5 text-[10px] font-semibold text-primary":"rounded-md px-2.5 py-1.5 text-[10px] text-muted-foreground hover:text-foreground"}>{item==="messages"?"پیام":"توکن"}</button>)}</div></div></CardHeader><CardContent><div className="relative overflow-hidden rounded-xl border border-border/70 bg-background/40 p-2 sm:p-4"><svg viewBox={`0 0 ${width} ${height}`} className="h-64 w-full overflow-visible text-primary" role="img" aria-label={metric==="messages"?"روند پیام‌های ۱۴ روزه":"روند توکن مصرف‌شده در ۱۴ روز اخیر"}><defs><linearGradient id="cortex-trend-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="currentColor" stopOpacity=".20"/><stop offset="100%" stopColor="currentColor" stopOpacity="0"/></linearGradient></defs>{[0,1,2,3].map(i=><line key={i} x1={padX} x2={padX+innerW} y1={padTop+(i/3)*innerH} y2={padTop+(i/3)*innerH} stroke="currentColor" strokeOpacity=".08" strokeWidth="1"/>) }<path d={area} fill="url(#cortex-trend-fill)"/><path d={line} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>{points.map((p,i)=><g key={p.date}><title>{p.date} · {faNum(p.value)} {metric==="messages"?"پیام":"توکن"}</title><circle cx={p.x} cy={p.y} r={i===points.length-1?5:3.5} fill="currentColor"/><circle cx={p.x} cy={p.y} r={8} fill="currentColor" fillOpacity=".08"/></g>)}{points.filter((_,i)=>i===0||i===points.length-1||i%3===0).map(p=><text key={p.date+"-label"} x={p.x} y={height-8} textAnchor={p===points[0]?"start":p===points[points.length-1]?"end":"middle"} fill="currentColor" fillOpacity=".55" fontSize="11">{p.date.slice(5)}</text>)}</svg></div></CardContent></Card>;
+  return <Card className="cortex-panel rounded-2xl"><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><div><CardTitle className="flex items-center gap-2 text-base"><BarChart3 className="size-4 text-primary"/>روند ۱۴ روزه</CardTitle><p className="mt-1 text-[10px] text-muted-foreground">نمودار واقعی مصرف و تعامل فضای کاری</p></div><div className="flex items-center gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">{(["messages","tokens","costToman"] as const).map(item=><button key={item} type="button" onClick={()=>setMetric(item)} className={item===metric?"rounded-md bg-primary/10 px-2.5 py-1.5 text-[10px] font-semibold text-primary":"rounded-md px-2.5 py-1.5 text-[10px] text-muted-foreground hover:text-foreground"}>{item==="messages"?"پیام":item==="tokens"?"توکن":"هزینه"}</button>)}</div></div></CardHeader><CardContent><div className="relative overflow-hidden rounded-xl border border-border/70 bg-background/40 p-2 sm:p-4"><svg viewBox={`0 0 ${width} ${height}`} className="h-64 w-full overflow-visible text-primary" role="img" aria-label={metric==="messages"?"روند پیام‌های ۱۴ روزه":metric==="costToman"?"روند هزینه تأمین در ۱۴ روز اخیر": "روند توکن مصرف‌شده در ۱۴ روز اخیر"}><defs><linearGradient id="cortex-trend-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="currentColor" stopOpacity=".20"/><stop offset="100%" stopColor="currentColor" stopOpacity="0"/></linearGradient></defs>{[0,1,2,3].map(i=><line key={i} x1={padX} x2={padX+innerW} y1={padTop+(i/3)*innerH} y2={padTop+(i/3)*innerH} stroke="currentColor" strokeOpacity=".08" strokeWidth="1"/>) }<path d={area} fill="url(#cortex-trend-fill)"/><path d={line} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>{points.map((p,i)=><g key={p.date}><title>{p.date} · {metric==="costToman"?formatTomanCompact(p.value):faNum(p.value)} {metric==="messages"?"پیام":metric==="tokens"?"توکن":""}</title><circle cx={p.x} cy={p.y} r={i===points.length-1?5:3.5} fill="currentColor"/><circle cx={p.x} cy={p.y} r={8} fill="currentColor" fillOpacity=".08"/></g>)}{points.filter((_,i)=>i===0||i===points.length-1||i%3===0).map(p=><text key={p.date+"-label"} x={p.x} y={height-8} textAnchor={p===points[0]?"start":p===points[points.length-1]?"end":"middle"} fill="currentColor" fillOpacity=".55" fontSize="11">{p.date.slice(5)}</text>)}</svg></div></CardContent></Card>;
 }
 
 export function AnalyticsView(){
@@ -32,7 +32,7 @@ export function AnalyticsView(){
     if(!data) return [];
     const byDate=new Map(data.trend.map(v=>[v.date,v]));
     const days: TrendPoint[]=[]; const now=new Date();
-    for(let i=13;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);const date=d.toISOString().slice(0,10);days.push(byDate.get(date)??{date,messages:0,tokens:0});}
+    for(let i=13;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);const date=d.toISOString().slice(0,10);days.push(byDate.get(date)??{date,messages:0,tokens:0,costToman:0});}
     return days;
   },[data]);
   if(isPending)return <div className="space-y-5"><div className="h-36 animate-pulse rounded-[28px] bg-muted"/><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({length:4}).map((_,i)=><div key={i} className="h-28 animate-pulse rounded-2xl bg-muted"/>)}</div></div>;
@@ -58,7 +58,7 @@ export function AnalyticsView(){
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <K title="رویداد استفاده" value={faNum(data.usage.events)} detail="کل" icon={Activity}/>
       <K title="توکن مصرف‌شده" value={faNum(data.usage.tokens)} detail={`ورودی ${faNum(data.usage.inputTokens)}`} icon={Sparkles}/>
-      <K title="هزینه ثبت‌شده" value={faNum(data.usage.estimatedCostMicros)} detail="میکرو" icon={CircleDollarSign}/>
+      <K title="هزینه ثبت‌شده" value={formatTomanCompact(data.usage.estimatedCostToman)} detail="تومان" icon={CircleDollarSign}/>
       <K title="پرسش‌های بدون پاسخ کافی" value={faNum(data.unanswered)} detail={faNum(unansweredRate)+"٪ از پرسش‌ها"} icon={HelpCircle}/>
     </section>
 
