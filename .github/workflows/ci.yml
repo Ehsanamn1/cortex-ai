@@ -52,4 +52,6 @@ jobs:
       - run: npm run check:vinext
       - run: npm run typecheck
       - run: npm run lint
+      - name: Validate training worker Python syntax
+        run: python3 -m py_compile training-worker/app.py
       - run: npm run build:vinext
