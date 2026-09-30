@@ -248,7 +248,7 @@ interface NavItem {
 }
 
 const ICONS = {
-  dashboard: Gauge,
+  dashboard: LayoutDashboard,
   workflows: GitBranch,
   agents: Bot,
   knowledge: BookOpen,
