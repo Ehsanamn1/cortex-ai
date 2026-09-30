@@ -13,7 +13,6 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { OPERATOR_CONSOLE_PATH } from "@/config/operator";
 
 type Section = "overview" | "providers" | "models" | "billing" | "site" | "resources" | "telegram" | "security";
 
@@ -444,13 +443,13 @@ function TelegramPanel() {
 }
 
 function SecurityPanel({ onLogout }: { onLogout: () => void }) {
-  return <div className="space-y-6"><SectionHeader eyebrow="SECURITY" title="امنیت و دسترسی" description="ورود مدیر با یک مسیر خصوصی unlisted انجام می‌شود. نام کاربری ثابت است و کلید Secret در URL حذف شده است."/><div className="grid gap-4 lg:grid-cols-2"><OpsCard><div className="space-y-4 p-5"><div className="operator-card-head"><div><p className="operator-eyebrow">OWNER</p><h2 className="operator-card-title">مدیر Cortex</h2></div><ShieldCheck className="size-5 text-emerald-500"/></div><div className="operator-data-chip"><span>نام کاربری</span><b dir="ltr">ehsanam86</b></div><div className="operator-callout"><LockKeyhole className="size-4"/><div><b>مسیر ورود عمومی نیست.</b><small dir="ltr">{OPERATOR_CONSOLE_PATH}</small></div></div><PrimaryButton variant="danger" onClick={onLogout}><LogOut className="size-4"/> خروج از پنل</PrimaryButton></div></OpsCard><OpsCard><div className="p-5"><p className="operator-eyebrow">SESSION</p><h2 className="operator-card-title mt-2">نشست داخلی پنل</h2><p className="mt-2 text-xs leading-6 text-[var(--op-muted)]">برای APIهای حساس یک HttpOnly session کوتاه‌مدت در مرورگر استفاده می‌شود؛ مقدار آن در UI یا URL نمایش داده نمی‌شود.</p></div></OpsCard></div></div>;
+  return <div className="space-y-6"><SectionHeader eyebrow="SECURITY" title="امنیت و دسترسی" description="ورود مدیر با یک مسیر خصوصی unlisted انجام می‌شود. نام کاربری ثابت است و کلید Secret در URL حذف شده است."/><div className="grid gap-4 lg:grid-cols-2"><OpsCard><div className="space-y-4 p-5"><div className="operator-card-head"><div><p className="operator-eyebrow">OWNER</p><h2 className="operator-card-title">مدیر Cortex</h2></div><ShieldCheck className="size-5 text-emerald-500"/></div><div className="operator-data-chip"><span>نام کاربری</span><b dir="ltr">ehsanam86</b></div><div className="operator-callout"><LockKeyhole className="size-4"/><div><b>مسیر ورود عمومی نیست.</b><small>مسیر ورود به‌صورت محیطی و غیرقابل‌حدس تولید می‌شود و در URL ثابت پروژه وجود ندارد.</small></div></div><PrimaryButton variant="danger" onClick={onLogout}><LogOut className="size-4"/> خروج از پنل</PrimaryButton></div></OpsCard><OpsCard><div className="p-5"><p className="operator-eyebrow">SESSION</p><h2 className="operator-card-title mt-2">نشست داخلی پنل</h2><p className="mt-2 text-xs leading-6 text-[var(--op-muted)]">برای APIهای حساس یک HttpOnly session کوتاه‌مدت در مرورگر استفاده می‌شود؛ مقدار آن در UI یا URL نمایش داده نمی‌شود.</p></div></OpsCard></div></div>;
 }
 
 export function OperatorConsole() {
   const auth = useQuery({ queryKey: ["operator-auth"], queryFn: () => fetchJson<{ username: string }>("/api/admin/auth/me"), retry: false, staleTime: 0 });
   useEffect(() => {
-    if (auth.isError) window.location.replace(OPERATOR_CONSOLE_PATH);
+    if (auth.isError) window.location.replace("/");
   }, [auth.isError]);
   const [section, setSection] = useState<Section>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
