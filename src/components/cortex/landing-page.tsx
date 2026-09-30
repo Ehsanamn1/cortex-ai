@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -21,7 +20,6 @@ import {
 } from "lucide-react";
 import { CortexLogo, CortexMark } from "@/components/cortex/logo";
 import { ThemeToggle } from "@/components/cortex/theme-toggle";
-import { api } from "@/lib/cortex-client";
 
 const FEATURES = [
   {
@@ -52,10 +50,9 @@ const PLANS = [
   { name: "Scale", price: "۲۴٬۹۰۰٬۰۰۰", credits: "۱۸۰٬۰۰۰ اعتبار", text: "قدرت واقعی اتوماسیون برای مصرف سنگین", detail: "مدل‌های قوی‌تر + اولویت پاسخ", featured: false },
 ];
 
-export function LandingPage() {
+export function LandingPage({ settings = {} }: { settings?: Record<string, string> }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const siteQuery = useQuery({ queryKey: ["landing-site-config"], queryFn: api.getSiteConfig, staleTime: 60_000 });
-  const site = siteQuery.data?.settings ?? {};
+  const site = settings;
 
   function go(path: "/login" | "/signup") {
     window.location.href = path;
