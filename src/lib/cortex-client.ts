@@ -321,6 +321,51 @@ export interface BillingSnapshotDto {
   invoices: BillingInvoiceDto[];
 }
 
+export interface TrainingExampleDto {
+  id:string;
+  sourceType:string;
+  qualityScore:number;
+  approved:boolean;
+  prompt:string;
+  response:string;
+  context:string|null;
+  messageId:string|null;
+  createdAt:string;
+  updatedAt:string;
+}
+export interface TrainingJobDto {
+  id:string;
+  status:string;
+  method:string;
+  baseModel:string;
+  datasetHash:string;
+  sampleCount:number;
+  workerJobId:string|null;
+  artifactPath:string|null;
+  evalLoss:number|null;
+  evalScore:number|null;
+  promoted:boolean;
+  startedAt:string|null;
+  completedAt:string|null;
+  error:string|null;
+  createdAt:string;
+  updatedAt:string;
+}
+export interface ModelAdapterDto {
+  id:string;
+  trainingJobId:string;
+  baseModel:string;
+  adapterType:string;
+  version:number;
+  artifactUrl:string;
+  inferenceModelId:string;
+  evalLoss:number|null;
+  evalScore:number|null;
+  active:boolean;
+  createdAt:string;
+  updatedAt:string;
+}
+
 export interface ExecutionDto { id:string; workspaceId:string; agentId:string|null; triggerType:string; status:string; input:string|null; output:string|null; error:string|null; startedAt:string; completedAt:string|null; steps:Array<{id:string;seq:number;type:string;name:string;status:string;input:string|null;output:string|null;error:string|null;startedAt:string;completedAt:string|null}>; agent?:{id:string;name:string}|null; }
 
 export interface AgentApiAccessDto { keys:AgentApiKeyDto[]; baseUrl:string; endpoint:string; openAiEndpoint:string }
@@ -635,6 +680,16 @@ export const api = {
   getTelegramUsers(workspaceId?:string){ return request<{users:TelegramUserDto[]}>(`/api/admin/telegram-users${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
   updateTelegramUser(id:string,status:'pending'|'allowed'|'blocked',limits?:Partial<Pick<TelegramUserDto,'dailyMessageLimit'|'monthlyMessageLimit'|'dailyTokenLimit'|'monthlyTokenLimit'>>){ return jsonRequest<{user:TelegramUserDto}>('/api/admin/telegram-users','PATCH',{id,status,...limits}); },
   getAnalytics(workspaceId?:string){ return request<AnalyticsDto & {note?:string}>(`/api/admin/analytics${workspaceId?`?workspaceId=${encodeURIComponent(workspaceId)}`:""}`); },
+  getAgentTraining(agentId:string){
+    return request<{examples:TrainingExampleDto[];jobs:TrainingJobDto[];adapters:ModelAdapterDto[]}>(`/api/agents/${encodeURIComponent(agentId)}/training`);
+  },
+  submitTrainingFeedback(agentId:string,messageId:string,score:number){
+    return jsonRequest<{example:TrainingExampleDto}>(`/api/agents/${encodeURIComponent(agentId)}/training`,"POST",{action:"feedback",messageId,score});
+  },
+  startAgentTraining(agentId:string,options?:{method?:"qlora"|"lora"|"full";baseModel?:string;config?:Record<string,unknown>}){
+    return jsonRequest<{job:TrainingJobDto}>(`/api/agents/${encodeURIComponent(agentId)}/training`,"POST",{action:"start",...(options??{})});
+  },
+
   getBusinessOnboarding(agentId:string){ return request<{session:BusinessOnboardingSessionDto|null;questions:BusinessOnboardingQuestionDto[]}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`); },
   startBusinessOnboarding(agentId:string,mode:"quick"|"full"="full"){ return jsonRequest<{session:BusinessOnboardingSessionDto}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"start",mode}); },
   answerBusinessOnboarding(agentId:string,sessionId:string,answer:string){ return jsonRequest<{session:BusinessOnboardingSessionDto;knowledgeSourceId?:string}>(`/api/agents/${encodeURIComponent(agentId)}/onboarding`,"POST",{action:"answer",sessionId,answer}); },
