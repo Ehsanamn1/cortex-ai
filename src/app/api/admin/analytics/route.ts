@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { applyCors, jsonOk, toErrorResponse } from '@/lib/server/http';
 import { requireSession, assertWorkspaceAccess } from '@/lib/server/auth';
+import { getUsdTomanRate } from '@/lib/server/fx';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,15 +13,34 @@ export async function GET(req: Request) {
     assertWorkspaceAccess(session, workspaceId);
     const agents = await db.agent.findMany({ where: { workspaceId }, select: { id:true, name:true } });
     const agentIds = agents.map(a=>a.id);
-    const [users, bots, usage, recentUsage, unanswered] = await Promise.all([
+    const [users, bots, usage, recentUsage, unanswered, usdTomanRate] = await Promise.all([
       db.telegramUser.count({ where: { bot: { workspaceId } } }),
       db.telegramBot.count({ where: { workspaceId } }),
       db.usageEvent.aggregate({ where: { workspaceId }, _sum: { totalTokens:true, inputTokens:true, outputTokens:true, estimatedCostMicros:true }, _count:{_all:true} }),
       db.usageEvent.findMany({ where: { workspaceId }, select:{createdAt:true,totalTokens:true,channel:true}, orderBy:{createdAt:'desc'}, take:300 }),
-      db.message.findMany({ where:{ conversation:{ agentId:{ in:agentIds } }, role:'assistant' }, select:{conversationId:true,content:true,metadata:true}, orderBy:{createdAt:'desc'}, take:3000 })
+      db.message.findMany({ where:{ conversation:{ agentId:{ in:agentIds } }, role:'assistant' }, select:{conversationId:true,content:true,metadata:true}, orderBy:{createdAt:'desc'}, take:3000 }),
+      getUsdTomanRate(),
     ]);
-    const recent = new Map<string,{date:string;messages:number;tokens:number}>();
-    for (const row of recentUsage) { const date=row.createdAt.toISOString().slice(0,10); const v=recent.get(date)||{date,messages:0,tokens:0}; v.messages+=1; v.tokens+=row.totalTokens; recent.set(date,v); }
+    const recent = new Map<string,{date:string;messages:number;tokens:number;costToman:number}>();
+    for (const row of recentUsage) {
+      const date=row.createdAt.toISOString().slice(0,10);
+      const v=recent.get(date)||{date,messages:0,tokens:0,costToman:0};
+      v.messages+=1;
+      v.tokens+=row.totalTokens;
+      recent.set(date,v);
+    }
+    const costRows = await db.usageEvent.findMany({
+      where: { workspaceId, createdAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) } },
+      select: { createdAt: true, estimatedCostMicros: true },
+      orderBy: { createdAt: "asc" },
+      take: 10000,
+    });
+    for (const row of costRows) {
+      const date=row.createdAt.toISOString().slice(0,10);
+      const v=recent.get(date)||{date,messages:0,tokens:0,costToman:0};
+      v.costToman += Math.round((row.estimatedCostMicros ?? 0) / 1_000_000 * usdTomanRate.usdToman);
+      recent.set(date,v);
+    }
     const questions = new Map<string,number>();
     const userMessages = await db.message.findMany({ where:{ conversation:{agentId:{in:agentIds}}, role:'user' }, select:{conversationId: true, content:true, createdAt:true}, orderBy:{createdAt:'desc'}, take:5000 });
     for (const m of userMessages) { const q=m.content.trim().replace(/\s+/g,' '); if(q) questions.set(q,(questions.get(q)||0)+1); }
@@ -38,6 +58,6 @@ export async function GET(req: Request) {
     const unansweredQuestions=[...unansweredCounts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10).map(([question,count])=>({question,count}));
     const unansweredCount=[...unansweredCounts.values()].reduce((sum,count)=>sum+count,0);
 
-    return applyCors(jsonOk({ users, bots, usage:{events:usage._count._all,tokens:usage._sum.totalTokens??0,inputTokens:usage._sum.inputTokens??0,outputTokens:usage._sum.outputTokens??0,estimatedCostMicros:usage._sum.estimatedCostMicros??0}, trend:[...recent.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-14), topQuestions, unanswered:unansweredCount, unansweredQuestions, note:'پرسش‌های پرتکرار و موارد بدون پاسخ کافی از داده‌های واقعی گفتگوها محاسبه شده‌اند.' }), req.headers.get('origin'));
+    return applyCors(jsonOk({ users, bots, usage:{events:usage._count._all,tokens:usage._sum.totalTokens??0,inputTokens:usage._sum.inputTokens??0,outputTokens:usage._sum.outputTokens??0,estimatedCostMicros:usage._sum.estimatedCostMicros??0,estimatedCostToman:Math.round((usage._sum.estimatedCostMicros??0) / 1_000_000 * usdTomanRate.usdToman),usdTomanRate:usdTomanRate.usdToman}, trend:[...recent.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-14), topQuestions, unanswered:unansweredCount, unansweredQuestions, note:'پرسش‌های پرتکرار و موارد بدون پاسخ کافی از داده‌های واقعی گفتگوها محاسبه شده‌اند.' }), req.headers.get('origin'));
   } catch(e){ return toErrorResponse(e); }
 }
