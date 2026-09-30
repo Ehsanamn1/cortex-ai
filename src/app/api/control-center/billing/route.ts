@@ -126,7 +126,7 @@ export async function POST(req: Request) {
       const routeKey = textValue(body.routeKey, 100)?.toLowerCase() || null;
       const systemProviderId = textValue(body.systemProviderId, 120) || null;
       const boundProvider = systemProviderId
-        ? await db.systemProviderConfig.findUnique({ where: { id: systemProviderId }, select: { id: true, enabled: true, apiKeyEncrypted: true, authMode: true } })
+        ? await db.systemProviderConfig.findUnique({ where: { id: systemProviderId }, select: { id: true, providerName: true, enabled: true, apiKeyEncrypted: true, authMode: true } })
         : null;
       if (systemProviderId && !boundProvider) {
         return applyCors(jsonError("Provider زیرساخت پیدا نشد.", 404), req.headers.get("origin"));
@@ -137,7 +137,8 @@ export async function POST(req: Request) {
       if (routeKey && !/^[a-z0-9][a-z0-9._-]{1,99}$/.test(routeKey)) {
         return applyCors(jsonError("Route Key مدل معتبر نیست.", 400), req.headers.get("origin"));
       }
-      if (!provider || !modelId || !displayName || normalizedInputUsd == null || normalizedOutputUsd == null) {
+      const effectiveProvider = boundProvider?.providerName || provider;
+      if (!effectiveProvider || !modelId || !displayName || normalizedInputUsd == null || normalizedOutputUsd == null) {
         return applyCors(jsonError("اطلاعات مدل معتبر نیست.", 400), req.headers.get("origin"));
       }
       const model = await db.$transaction(async (tx) => {
@@ -147,7 +148,7 @@ export async function POST(req: Request) {
         const model = await tx.modelCatalog.create({
           data: {
             routeKey,
-            provider, modelId, displayName, inputUsdPer1M: normalizedInputUsd, outputUsdPer1M: normalizedOutputUsd,
+            provider: effectiveProvider, modelId, displayName, inputUsdPer1M: normalizedInputUsd, outputUsdPer1M: normalizedOutputUsd,
           contextWindow: intValue(body.contextWindow, 0, 10_000_000) ?? null,
           vision: body.vision === true, tools: body.tools === true, structuredOutput: body.structuredOutput === true,
           reasoning: body.reasoning === true, qualityTier, speedTier,
