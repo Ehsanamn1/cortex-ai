@@ -116,6 +116,11 @@ export async function POST(req: Request) {
       const displayName = textValue(body.displayName, 180);
       const inputUsdPer1M = floatValue(body.inputUsdPer1M);
       const outputUsdPer1M = floatValue(body.outputUsdPer1M);
+      const inputTomanPer1M = floatValue(body.inputTomanPer1M);
+      const outputTomanPer1M = floatValue(body.outputTomanPer1M);
+      const fxNow = await getUsdTomanRate();
+      const normalizedInputUsd = inputTomanPer1M != null ? inputTomanPer1M / Math.max(1, fxNow.usdToman) : inputUsdPer1M;
+      const normalizedOutputUsd = outputTomanPer1M != null ? outputTomanPer1M / Math.max(1, fxNow.usdToman) : outputUsdPer1M;
       const qualityTier = textValue(body.qualityTier, 40) || "balanced";
       const speedTier = textValue(body.speedTier, 40) || "balanced";
       const routeKey = textValue(body.routeKey, 100)?.toLowerCase() || null;
@@ -132,7 +137,7 @@ export async function POST(req: Request) {
       if (routeKey && !/^[a-z0-9][a-z0-9._-]{1,99}$/.test(routeKey)) {
         return applyCors(jsonError("Route Key مدل معتبر نیست.", 400), req.headers.get("origin"));
       }
-      if (!provider || !modelId || !displayName || inputUsdPer1M == null || outputUsdPer1M == null) {
+      if (!provider || !modelId || !displayName || normalizedInputUsd == null || normalizedOutputUsd == null) {
         return applyCors(jsonError("اطلاعات مدل معتبر نیست.", 400), req.headers.get("origin"));
       }
       const model = await db.$transaction(async (tx) => {
@@ -142,7 +147,7 @@ export async function POST(req: Request) {
         const model = await tx.modelCatalog.create({
           data: {
             routeKey,
-            provider, modelId, displayName, inputUsdPer1M, outputUsdPer1M,
+            provider, modelId, displayName, inputUsdPer1M: normalizedInputUsd, outputUsdPer1M: normalizedOutputUsd,
           contextWindow: intValue(body.contextWindow, 0, 10_000_000) ?? null,
           vision: body.vision === true, tools: body.tools === true, structuredOutput: body.structuredOutput === true,
           reasoning: body.reasoning === true, qualityTier, speedTier,
@@ -159,7 +164,7 @@ export async function POST(req: Request) {
           await tx.planModelAccess.upsert({
             where: { planId_modelCatalogId: { planId: free.id, modelCatalogId: model.id } },
             update: { enabled: true },
-            create: { planId: free.id, modelCatalogId: model.id, enabled: true, creditMultiplierBps: 100 },
+            create: { planId: free.id, modelCatalogId: model.id, enabled: true, creditMultiplierBps: 200 },
           });
         }
       }
@@ -219,10 +224,17 @@ export async function PATCH(req: Request) {
       if (body.displayName !== undefined) data.displayName = textValue(body.displayName, 180) || "Unnamed model";
       if (body.qualityTier !== undefined) data.qualityTier = textValue(body.qualityTier, 40) || "balanced";
       if (body.speedTier !== undefined) data.speedTier = textValue(body.speedTier, 40) || "balanced";
-      for (const key of ["inputUsdPer1M","outputUsdPer1M"] as const) if (body[key] !== undefined) {
-        const value = floatValue(body[key]);
-        if (value == null) return applyCors(jsonError("نرخ مدل معتبر نیست.", 400), req.headers.get("origin"));
-        data[key] = value;
+      const fxNow = await getUsdTomanRate();
+      for (const [usdKey, tomanKey] of [["inputUsdPer1M","inputTomanPer1M"],["outputUsdPer1M","outputTomanPer1M"] as const]) {
+        if (body[tomanKey] !== undefined) {
+          const toman = floatValue(body[tomanKey]);
+          if (toman == null) return applyCors(jsonError("نرخ تومانی مدل معتبر نیست.", 400), req.headers.get("origin"));
+          data[usdKey] = toman / Math.max(1, fxNow.usdToman);
+        } else if (body[usdKey] !== undefined) {
+          const value = floatValue(body[usdKey]);
+          if (value == null) return applyCors(jsonError("نرخ مدل معتبر نیست.", 400), req.headers.get("origin"));
+          data[usdKey] = value;
+        }
       }
       if (body.contextWindow !== undefined) {
         const value = intValue(body.contextWindow, 0, 10_000_000);
@@ -262,7 +274,7 @@ export async function PATCH(req: Request) {
       }
       const access = await db.planModelAccess.upsert({
         where: { planId_modelCatalogId: { planId, modelCatalogId } },
-        update: { enabled, creditMultiplierBps: multiplier ?? defaultCreditMultiplierBps("balanced") },
+        update: { enabled, creditMultiplierBps: Math.max(200, multiplier ?? defaultCreditMultiplierBps("balanced")) },
         create: { planId, modelCatalogId, enabled, creditMultiplierBps: multiplier ?? defaultCreditMultiplierBps("balanced") },
       });
       return applyCors(jsonOk({ admin, access }), req.headers.get("origin"));
