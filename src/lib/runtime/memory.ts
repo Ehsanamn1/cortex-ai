@@ -7,12 +7,28 @@ function rankMemory(entry: {
   confidence: number;
   updatedAt: Date;
   lastAccessedAt: Date;
+  type: string;
+  source: string;
 }) {
   const ageHours = Math.max(0, (Date.now() - entry.updatedAt.getTime()) / 3_600_000);
   const accessAgeHours = Math.max(0, (Date.now() - entry.lastAccessedAt.getTime()) / 3_600_000);
-  const recency = Math.max(0, 100 - Math.min(100, ageHours * 2));
-  const access = Math.max(0, 100 - Math.min(100, accessAgeHours));
-  return entry.importance * 0.55 + entry.confidence * 0.25 + recency * 0.15 + access * 0.05;
+  const recency = Math.max(0, 100 - Math.min(100, ageHours * 1.5));
+  const access = Math.max(0, 100 - Math.min(100, accessAgeHours * 0.75));
+  const typeWeight =
+    entry.type === "profile" ? 8 :
+    entry.type === "preference" ? 7 :
+    entry.type === "summary" ? 5 :
+    entry.type === "interaction" ? 1 : 3;
+  const sourceWeight =
+    entry.source === "explicit_user" ? 8 :
+    entry.source === "rolling_context" ? 4 :
+    0;
+  return entry.importance * 0.52
+    + entry.confidence * 0.24
+    + recency * 0.14
+    + access * 0.05
+    + typeWeight
+    + sourceWeight;
 }
 
 export async function loadAgentMemory(
@@ -22,26 +38,42 @@ export async function loadAgentMemory(
   subjectKey?: string | null,
 ) {
   const safeLimit = Math.min(50, Math.max(1, limit));
-  const entries = await db.memoryEntry.findMany({
-    where: conversationId
+  const globalAgentMemory = {
+    agentId,
+    workspaceId: undefined,
+    conversationId: null,
+    scope: "conversation",
+  } as const;
+  const where = conversationId
+    ? {
+        agentId,
+        OR: [
+          { conversationId },
+          { conversationId: null, scope: "conversation", subjectKey: null },
+          ...(subjectKey ? [{ conversationId: null, scope: "user", subjectKey }] : []),
+        ],
+      }
+    : subjectKey
       ? {
           agentId,
           OR: [
-            { conversationId },
-            ...(subjectKey ? [{ conversationId: null, scope: "user", subjectKey }] : []),
+            { conversationId: null, scope: "user", subjectKey },
+            { conversationId: null, scope: "conversation", subjectKey: null },
           ],
         }
-      : subjectKey
-        ? { agentId, conversationId: null, scope: "user", subjectKey }
-        : { agentId, conversationId: null, scope: "conversation" },
-    take: Math.min(50, safeLimit * 3),
+      : globalAgentMemory;
+
+  const entries = await db.memoryEntry.findMany({
+    where,
+    orderBy: { updatedAt: "desc" },
+    take: Math.min(50, safeLimit * 4),
   });
 
   const now = new Date();
   const ranked = entries
     .filter((entry) => !entry.expiresAt || entry.expiresAt > now)
     .filter((entry) => !entry.supersededById)
-    .map((entry) => ({ entry, score: rankMemory(entry) }))
+.map((entry) => ({ entry, score: rankMemory(entry) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, safeLimit);
 
@@ -72,23 +104,31 @@ export async function remember(params: {
 }) {
   const scope = params.scope ?? (params.conversationId ? "conversation" : "user");
   const subjectKey = params.subjectKey ?? null;
-  const id = [params.agentId, scope, subjectKey ?? "global", params.key].join(":");
-  const importance = Math.max(0, Math.min(100, Math.floor(params.importance ?? (params.type === "preference" ? 75 : 60))));
+  const key = params.key.trim().slice(0, 180);
+  const value = params.value.trim().slice(0, 3000);
+  if (!key || !value) return null;
+  const id = [params.agentId, scope, subjectKey ?? "global", key].join(":");
+  const type = params.type ?? "fact";
+  const importance = Math.max(0, Math.min(100, Math.floor(params.importance ?? (type === "preference" ? 75 : 60))));
   const confidence = Math.max(0, Math.min(100, Math.floor(params.confidence ?? 80)));
+  const defaultTtlDays = type === "interaction" ? 21 : type === "summary" ? 90 : null;
+  const expiresAt = params.expiresAt === undefined
+    ? (defaultTtlDays ? new Date(Date.now() + defaultTtlDays * 86_400_000) : null)
+    : params.expiresAt;
 
   return db.memoryEntry.upsert({
     where: { id },
     update: {
-      value: params.value,
+      value,
       conversationId: params.conversationId ?? null,
       scope,
       subjectKey,
-      type: params.type ?? "fact",
-      metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+      type,
+      metadata: params.metadata ? JSON.stringify(params.metadata).slice(0, 6000) : null,
       importance,
       confidence,
       source: params.source ?? "explicit",
-      expiresAt: params.expiresAt ?? null,
+      expiresAt,
       lastAccessedAt: new Date(),
       supersededById: null,
     },
@@ -99,14 +139,14 @@ export async function remember(params: {
       conversationId: params.conversationId ?? null,
       scope,
       subjectKey,
-      key: params.key,
-      value: params.value,
-      type: params.type ?? "fact",
-      metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+      key,
+      value,
+      type,
+      metadata: params.metadata ? JSON.stringify(params.metadata).slice(0, 6000) : null,
       importance,
       confidence,
       source: params.source ?? "explicit",
-      expiresAt: params.expiresAt ?? null,
+      expiresAt,
       lastAccessedAt: new Date(),
     },
   });
