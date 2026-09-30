@@ -8,6 +8,7 @@ import { hashTelegramInviteToken, parseTelegramStartToken } from '@/lib/telegram
 import { getTelegramBotProfile } from '@/lib/telegram/profile';
 import { releaseBillingReservation, reserveBillingForAgentRequest, recordUsageAndCharge } from '@/lib/server/billing';
 import { runAgentExecution } from '@/lib/runtime/engine';
+import { getUsdTomanRate } from '@/lib/server/fx';
 
 const API = 'https://api.telegram.org';
 
@@ -288,8 +289,8 @@ function formatUsage(value: number, limit: number) {
     : used + " توکن";
 }
 
-function formatUsdMicros(value: number) {
-  return '$' + (Math.max(0, value) / 1_000_000).toFixed(4);
+function formatTomanMicros(value: number, usdToman: number) {
+  return Math.round((Math.max(0, value) / 1_000_000) * usdToman).toLocaleString('fa-IR') + ' تومان';
 }
 
 async function sendAccessRequired(token: string, chatId: string | number, profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
@@ -302,7 +303,7 @@ async function sendUsage(token: string, chatId: string | number, telegramUserId:
   const user = await db.telegramUser.findUnique({ where: { id: telegramUserId } });
   if (!user) return;
 
-  const [daily, monthly] = await Promise.all([
+  const [daily, monthly, fx] = await Promise.all([
     db.usageEvent.aggregate({
       where: { telegramUserId: user.id, createdAt: { gte: startOfDay() } },
       _sum: { totalTokens: true, estimatedCostMicros: true },
@@ -313,6 +314,7 @@ async function sendUsage(token: string, chatId: string | number, telegramUserId:
       _sum: { totalTokens: true, estimatedCostMicros: true },
       _count: { _all: true },
     }),
+    getUsdTomanRate(),
   ]);
 
   return sendMessage(
@@ -321,8 +323,8 @@ async function sendUsage(token: string, chatId: string | number, telegramUserId:
     '<b>📊 وضعیت مصرف</b>\n\n' +
       'امروز: <b>' + formatUsage(daily._sum.totalTokens ?? 0, user.dailyTokenLimit) + '</b>\n' +
       'این ماه: <b>' + formatUsage(monthly._sum.totalTokens ?? 0, user.monthlyTokenLimit) + '</b>\n' +
-      'هزینه امروز: <b>' + formatUsdMicros(daily._sum.estimatedCostMicros ?? 0) + '</b>\n' +
-      'هزینه این ماه: <b>' + formatUsdMicros(monthly._sum.estimatedCostMicros ?? 0) + '</b>\n\n' +
+      'هزینه امروز: <b>' + formatTomanMicros(daily._sum.estimatedCostMicros ?? 0, fx.usdToman) + '</b>\n' +
+      'هزینه این ماه: <b>' + formatTomanMicros(monthly._sum.estimatedCostMicros ?? 0, fx.usdToman) + '</b>\n\n' +
       'پیام امروز: ' + Number(daily._count._all).toLocaleString('fa-IR') + '\n' +
       'پیام این ماه: ' + Number(monthly._count._all).toLocaleString('fa-IR'),
     {
