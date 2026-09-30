@@ -30,13 +30,10 @@ export const CREDIT_TOP_UP_PACKAGES = {
 } as const;
 export type CreditTopUpPackageKey = keyof typeof CREDIT_TOP_UP_PACKAGES;
 
-export function defaultCreditMultiplierBps(qualityTier: string): number {
-  switch (qualityTier) {
-    case "economy": return 200;
-    case "premium": return 400;
-    case "deep": return 800;
-    default: return 200;
-  }
+export function defaultCreditMultiplierBps(_qualityTier: string): number {
+  // Cortex target: at least 100% gross margin over the provider cost.
+  // 200 BPS means customer credits are charged at 2x the provider cost basis.
+  return 200;
 }
 
 export function creditsFromProviderCost(providerCostMicros: number, multiplierBps: number): number {
@@ -144,8 +141,13 @@ async function ensureKnownModelCatalog() {
               planId: plan.id,
               modelCatalogId: catalog.id,
               enabled: shouldEnableByDefault,
-              creditMultiplierBps: Math.max(1, fallbackMultiplier),
+              creditMultiplierBps: Math.max(200, fallbackMultiplier),
             },
+          });
+        } else {
+          await db.planModelAccess.update({
+            where: { id: existing.id },
+            data: { creditMultiplierBps: Math.max(200, fallbackMultiplier) },
           });
         }
       }
