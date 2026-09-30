@@ -1614,3 +1614,110 @@ body {
   border-color: #3a4333 !important;
   color: #ecefe6 !important;
 }
+
+
+/* Cortex product identity — anti-template visual layer.
+   The product uses editorial hierarchy, restrained surfaces, and asymmetric rhythm
+   instead of decorative gradients, oversized rounded cards, and dashboard wallpaper. */
+.cortex-dashstack {
+  background: #0b0d0f !important;
+  color: #e7e9e4 !important;
+}
+.cortex-dashstack .cortex-sidebar {
+  background: #0b0d0f !important;
+  border-color: #242925 !important;
+  box-shadow: none !important;
+}
+.cortex-dashstack .cortex-topbar {
+  background: rgba(11,13,15,.96) !important;
+  border-color: #242925 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.cortex-dashstack .cortex-topbar [class*="bg-primary"],
+.cortex-dashstack .cortex-sidebar [class*="bg-primary"] {
+  background: transparent !important;
+}
+.cortex-dashstack .cortex-panel,
+.cortex-dashstack [data-slot="card"] {
+  background: #111416 !important;
+  border: 1px solid #292e2a !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.cortex-dashstack .cortex-panel:hover,
+.cortex-dashstack [data-slot="card"]:hover {
+  border-color: #3a413b !important;
+}
+.cortex-dashstack .cortex-icon-box {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 9px !important;
+  background: #171b18 !important;
+  border-color: #303730 !important;
+  box-shadow: none !important;
+  color: #c2d66a !important;
+}
+.cortex-dashstack .cortex-kicker {
+  color: #87907f !important;
+  letter-spacing: .16em !important;
+}
+.cortex-dashstack .cortex-hero {
+  background: #111416 !important;
+  border: 1px solid #343b35 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.cortex-dashstack .cortex-hero::after,
+.cortex-dashstack .cortex-shell-glow::before,
+.cortex-dashstack .cortex-action::after {
+  display: none !important;
+}
+.cortex-dashstack .rounded-[30px],
+.cortex-dashstack .rounded-[28px],
+.cortex-dashstack .rounded-2xl {
+  border-radius: 12px !important;
+}
+.cortex-dashstack .rounded-xl {
+  border-radius: 9px !important;
+}
+.cortex-dashstack .cortex-action {
+  background: #101314 !important;
+  border-color: #2b302d !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.cortex-dashstack .cortex-action:hover {
+  background: #151917 !important;
+  border-color: #4a5548 !important;
+  transform: translateX(-2px) !important;
+}
+.cortex-dashstack main {
+  background:
+    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(255,255,255,.018) 100%) !important;
+}
+.cortex-dashstack h1,
+.cortex-dashstack h2,
+.cortex-dashstack h3 {
+  letter-spacing: -.025em;
+}
+.cortex-dashstack .cortex-core-orbit,
+.cortex-dashstack .cortex-core-sphere {
+  opacity: .28;
+}
+@media (max-width: 640px) {
+  .cortex-dashstack .cortex-panel,
+  .cortex-dashstack [data-slot="card"] {
+    border-radius: 10px !important;
+  }
+}
+
+/* Operator console is intentionally separate from the customer workspace. */
+.cortex-control-center {
+  background: #0b0d0f !important;
+  color: #e7e9e4 !important;
+}
+.cortex-control-center [data-slot="card"] {
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
