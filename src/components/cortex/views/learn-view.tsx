@@ -23,7 +23,7 @@ export function LearnView() {
         <div className="absolute -start-10 -bottom-24 size-64 rounded-full bg-violet-500/10 blur-3xl" />
         <div className="relative max-w-3xl">
           <div className="flex items-center gap-2 text-primary"><BookOpen className="size-5"/><span className="text-sm font-semibold">آموزش ساده</span></div>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">از صفر تا یک دستیار واقعی.</h2>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">از ایده تا یک ایجنت واقعی.</h2>
           <p className="mt-3 text-sm leading-8 text-muted-foreground">این مسیر برای کاربری طراحی شده که نمی‌خواهد درگیر جزئیات فنی شود. هر مرحله را انجام بده و نتیجه را همان لحظه ببین.</p>
           <Button className="mt-6" onClick={() => setView("agent-new")}><Sparkles/>شروع ساخت اولین ایجنت</Button>
         </div>
