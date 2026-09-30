@@ -39,6 +39,7 @@ class TrainRequest(BaseModel):
     method: str = "qlora"
     samples: list[dict[str, Any]]
     config: dict[str, Any] = {}
+    callback_url: str = ""
 
 class ChatRequest(BaseModel):
     model: str = Field(min_length=1, max_length=180)
@@ -71,12 +72,13 @@ def normalize_samples(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
             out.append({"messages": cleaned})
     return out
 
-def callback(job_id: str, payload: dict[str, Any]) -> None:
-    if not CALLBACK_URL or not CALLBACK_SECRET:
+def callback(callback_url: str, job_id: str, payload: dict[str, Any]) -> None:
+    url = callback_url or CALLBACK_URL
+    if not url or not CALLBACK_SECRET:
         return
     try:
         httpx.post(
-            CALLBACK_URL,
+            url,
             json={"jobId": job_id, **payload},
             headers={"Authorization": f"Bearer {CALLBACK_SECRET}"},
             timeout=20.0,
@@ -187,10 +189,10 @@ def train_job(req: TrainRequest) -> None:
         }
         (output_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2))
         set_status(job_id, status="completed", **metadata, completed_at=time.time())
-        callback(job_id, metadata)
+        callback(req.callback_url, job_id, metadata)
     except Exception as exc:
         set_status(job_id, status="failed", error=str(exc)[:1500], completed_at=time.time())
-        callback(job_id, {"error": str(exc)[:1500]})
+        callback(req.callback_url, job_id, {"error": str(exc)[:1500]})
     finally:
         if trainer is not None:
             del trainer
