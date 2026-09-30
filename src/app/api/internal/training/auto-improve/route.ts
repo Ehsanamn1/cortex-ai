@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { startTraining } from "@/lib/server/training";
+import { startTraining, trainingConfig } from "@/lib/server/training";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  if (!trainingConfig.enabled) return NextResponse.json({ ok: true, status: "disabled" });
   const expected = process.env.CORTEX_AUTO_IMPROVE_SECRET || "";
   if (!expected || req.headers.get("authorization") !== "Bearer " + expected) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
