@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, BarChart3, Bot, BrainCircuit, MessagesSquare, Plug, Settings, ShieldCheck, Sparkles, Workflow } from "lucide-react";
+import { Activity, BarChart3, Bot, BrainCircuit, MessagesSquare, Plug, ShieldCheck, Sparkles, Workflow } from "lucide-react";
 import type { View } from "@/components/cortex/store";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +12,8 @@ const CAPABILITIES:Capability[]=[
  {title:"گفتگوها",description:"مکالمات واقعی",icon:MessagesSquare,status:"active",view:"conversations"},
  {title:"تلگرام",description:"اتصال + شخصی‌سازی + کاربران",icon:ShieldCheck,status:"active",view:"telegram"},
  {title:"تحلیل",description:"مصرف + هزینه",icon:BarChart3,status:"active",view:"analytics"},
- {title:"مدیریت کل",description:"کنترل سیستم و سایت",icon:Settings,status:"active",view:"admin"},
- {title:"Workflow",description:"اتوماسیون",icon:Workflow,status:"soon"},
+
+ {title:"Workflow",description:"در حال آماده‌سازی",icon:Workflow,status:"soon"},
  {title:"اتصال‌ها",description:"CRM و سرویس‌ها",icon:Plug,status:"soon"},
  {title:"فرماندهی AI",description:"چند ایجنت",icon:Sparkles,status:"soon"},
  {title:"شبیه‌ساز",description:"سناریوهای کسب‌وکار",icon:Activity,status:"soon"},
