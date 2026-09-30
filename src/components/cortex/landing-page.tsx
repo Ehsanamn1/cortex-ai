@@ -105,7 +105,7 @@ export function LandingPage({ settings = {} }: { settings?: Record<string, strin
       <section className="relative overflow-hidden">
         
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-18 pt-14 sm:px-6 lg:grid-cols-[.94fr_1.06fr] lg:px-8 lg:pb-24 lg:pt-20">
-          <div}}} className="relative">
+          <div className="relative">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/[.06] px-3 py-1.5 text-[10px] font-bold tracking-[.15em] text-primary">
               <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,.85)]" />
               PRIVATE AI WORKSPACE
@@ -128,7 +128,7 @@ export function LandingPage({ settings = {} }: { settings?: Record<string, strin
             </div>
           </div>
 
-          <div}}} className="relative">
+          <div className="relative">
             <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-3">
               <div className="flex items-center justify-between border-b border-border/70 px-3 py-3">
                 <div className="flex items-center gap-2"><CortexMark size={26} /><span className="text-xs font-bold text-foreground">Cortex Workspace</span></div>
@@ -179,12 +179,12 @@ export function LandingPage({ settings = {} }: { settings?: Record<string, strin
           </div>
           <div className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {FEATURES.map((feature, index) => (
-              <motion.article key={feature.title} whileHover={{ y: -5 }} transition={{ duration: .18 }} className="rounded-xl border border-border/65 bg-card/70 p-5 shadow-none">
+              <article key={feature.title}}} className="rounded-xl border border-border/65 bg-card/70 p-5 shadow-none">
                 <span className="grid size-11 place-items-center rounded-2xl border border-primary/15 bg-primary/[.07] text-primary"><feature.icon className="size-5" /></span>
                 <span className="mt-5 block text-[9px] font-bold tracking-[.18em] text-muted-foreground">۰{index + 1}</span>
                 <h3 className="mt-2 text-base font-black">{feature.title}</h3>
                 <p className="mt-2 text-xs leading-7 text-muted-foreground">{feature.text}</p>
-              </motion.article>
+              </article>
             ))}
           </div>
         </div>
