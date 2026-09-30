@@ -1,2 +1,2 @@
 import { notFound } from "next/navigation";
-export default function LegacyControlCenterRoute() { notFound(); }
+export default function HiddenRoute() { notFound(); }
