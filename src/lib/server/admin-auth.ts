@@ -3,7 +3,8 @@ import { randomBytes } from "./random";
 import { NextResponse } from "next/server";
 
 const COOKIE_NAME = "cortex_admin_session";
-const TTL_SECONDS = 60 * 60 * 12;
+const TTL_SECONDS = 60 * 60 * 24 * 30;
+export const ADMIN_USERNAME = "ehsanam86";
 
 export class AdminConfigError extends Error {
   status = 503;
@@ -17,16 +18,17 @@ function secret(): string {
   const configured = process.env.CORTEX_ADMIN_SESSION_SECRET || process.env.APP_SECRET_KEY;
   if (configured && configured.length >= 32) return configured;
   if ((process.env.NODE_ENV === "production" || process.env.APP_ENV === "production")) {
-    throw new AdminConfigError("Secret نشست مدیریت در محیط تولید تنظیم نشده یا کوتاه‌تر از حد امن است.");
+    throw new AdminConfigError("کلید امن نشست مدیریت در محیط تولید تنظیم نشده یا کوتاه‌تر از حد امن است.");
   }
   const g = globalThis as { __cortexAdminSecret?: string };
   if (!g.__cortexAdminSecret) g.__cortexAdminSecret = Buffer.from(randomBytes(32)).toString("hex");
   return g.__cortexAdminSecret as string;
 }
 
-export function adminCredentials() {
-  throw new AdminConfigError("ورود با نام کاربری و رمز عبور دیگر پشتیبانی نمی‌شود. از لینک خصوصی مدیر استفاده کنید.");
+export function verifyAdminUsername(username: string | null | undefined) {
+  return typeof username === "string" && username.trim() === ADMIN_USERNAME;
 }
+
 function encode(value: string) { return Buffer.from(value).toString("base64url"); }
 
 export function signAdminSession(username: string) {
@@ -46,7 +48,7 @@ export function verifyAdminSession(token: string | null): string | null {
     const b = Buffer.from(expected);
     if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
     const body = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { sub?: string; exp?: number };
-    if (!body.sub || !body.exp || Date.now() / 1000 > body.exp) return null;
+    if (!body.sub || !body.exp || Date.now() / 1000 > body.exp || !verifyAdminUsername(body.sub)) return null;
     return body.sub;
   } catch (error) {
     if (error instanceof AdminConfigError) throw error;
@@ -69,16 +71,6 @@ export function readAdminUsername(req: Request) {
   const part = cookie.split(";").map((x) => x.trim()).find((x) => x.startsWith(COOKIE_NAME + "="));
   if (!part) return null;
   return verifyAdminSession(decodeURIComponent(part.slice(COOKIE_NAME.length + 1)));
-}
-
-export function verifyAdminAccessToken(token: string | null | undefined) {
-  const expected = process.env.CORTEX_ADMIN_ACCESS_TOKEN?.trim();
-  if (!expected || expected.length < 32 || !token) return false;
-  const actual = crypto.createHmac("sha256", secret()).update(token).digest("hex");
-  const target = crypto.createHmac("sha256", secret()).update(expected).digest("hex");
-  const a = Buffer.from(actual);
-  const b = Buffer.from(target);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 export function requireAdmin(req: Request) {

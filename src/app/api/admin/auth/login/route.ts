@@ -4,18 +4,15 @@ import { rateLimit } from "@/lib/server/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Backward-compatible endpoint.
- * The old Secret token flow is retired. New clients should use /api/admin/auth/login.
- */
 export async function POST(req: Request) {
   try {
-    rateLimit(req, "admin-access-exchange", 20, 60_000);
+    rateLimit(req, "admin-username-login", 20, 60_000);
     const body = await req.json().catch(() => ({})) as { username?: unknown };
     const username = typeof body.username === "string" ? body.username.trim() : "";
     if (!verifyAdminUsername(username)) {
-      return applyCors(jsonError("ورود با لینک Secret منسوخ شده است. از نام کاربری مدیر استفاده کنید.", 401), req.headers.get("origin"));
+      return applyCors(jsonError("نام کاربری مدیریت معتبر نیست.", 401), req.headers.get("origin"));
     }
+
     const session = signAdminSession(ADMIN_USERNAME);
     const response = applyCors(
       jsonWithAdminCookie({ ok: true, username: ADMIN_USERNAME }, session),

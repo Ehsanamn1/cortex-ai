@@ -62,7 +62,6 @@ jobs:
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
           APP_SECRET_KEY: ${{ secrets.APP_SECRET_KEY || vars.APP_SECRET_KEY }}
-          CORTEX_ADMIN_ACCESS_TOKEN: ${{ secrets.CORTEX_ADMIN_ACCESS_TOKEN || vars.CORTEX_ADMIN_ACCESS_TOKEN }}
           CORTEX_ADMIN_SESSION_SECRET: ${{ secrets.CORTEX_ADMIN_SESSION_SECRET || vars.CORTEX_ADMIN_SESSION_SECRET }}
           TELEGRAM_INTERNAL_SECRET: ${{ secrets.TELEGRAM_INTERNAL_SECRET || vars.TELEGRAM_INTERNAL_SECRET }}
           CORTEX_ZARINPAL_MERCHANT_ID: ${{ secrets.CORTEX_ZARINPAL_MERCHANT_ID || vars.CORTEX_ZARINPAL_MERCHANT_ID }}
@@ -412,40 +411,35 @@ jobs:
           echo "GET(no-auth) $base/api/billing/topup-request -> HTTP $topup_noauth_status"
           test "$topup_noauth_status" = "401" -o "$topup_noauth_status" = "404"
 
-          if [ -n "$CORTEX_ADMIN_ACCESS_TOKEN" ]; then
-            admin_cookie="$(mktemp)"
-            admin_response="$(mktemp)"
-            admin_body="$(jq -nc --arg token "$CORTEX_ADMIN_ACCESS_TOKEN" '{token:$token}')"
-            admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$admin_body" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/exchange")"
-            echo "POST $base/api/admin/auth/exchange -> HTTP $admin_status"
-            cat "$admin_response" | jq . || cat "$admin_response"
-            test "$admin_status" = "200"
-            check_admin_json() {
-              local path="$1"
-              local expected="$2"
-              local tmp
-              tmp="$(mktemp)"
-              local status
-              status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$tmp" -w "%{http_code}" "$base$path")"
-              echo "GET $base$path (admin) -> HTTP $status"
-              head -c 800 "$tmp" || true
-              echo
-              test "$status" = "$expected"
-              rm -f "$tmp"
-            }
-            check_admin_json "/api/admin/auth/me" "200"
-            check_admin_json "/api/control-center/settings" "200"
-            check_admin_json "/api/control-center/plugins" "200"
-            check_admin_json "/api/control-center/resources?resource=users" "200"
-            check_admin_json "/api/control-center/resources?resource=workspaces" "200"
-            check_admin_json "/api/control-center/resources?resource=agents" "200"
-            check_admin_json "/api/control-center/billing" "200"
-            check_admin_json "/api/control-center/topups" "200"
-            rm -f "$admin_response" "$admin_cookie"
-          else
-            echo "Private admin access token is not configured in cortex1; protected admin route guards were verified above."
-          fi
-
+          admin_cookie="$(mktemp)"
+          admin_response="$(mktemp)"
+          admin_body="$(jq -nc '{username:"ehsanam86"}')"
+          admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$admin_body" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/login")"
+          echo "POST $base/api/admin/auth/login -> HTTP $admin_status"
+          cat "$admin_response" | jq . || cat "$admin_response"
+          test "$admin_status" = "200"
+          check_admin_json() {
+            local path="$1"
+            local expected="$2"
+            local tmp
+            tmp="$(mktemp)"
+            local status
+            status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$tmp" -w "%{http_code}" "$base$path")"
+            echo "GET $base$path (admin) -> HTTP $status"
+            head -c 800 "$tmp" || true
+            echo
+            test "$status" = "$expected"
+            rm -f "$tmp"
+          }
+          check_admin_json "/api/admin/auth/me" "200"
+          check_admin_json "/api/control-center/settings" "200"
+          check_admin_json "/api/control-center/plugins" "200"
+          check_admin_json "/api/control-center/resources?resource=users" "200"
+          check_admin_json "/api/control-center/resources?resource=workspaces" "200"
+          check_admin_json "/api/control-center/resources?resource=agents" "200"
+          check_admin_json "/api/control-center/billing" "200"
+          check_admin_json "/api/control-center/topups" "200"
+          rm -f "$admin_response" "$admin_cookie"
           agent_body="$(jq -nc '{name:"Cortex Smoke Agent",language:"fa",tone:"professional",temperature:0.2,topP:1,maxTokens:256}')"
           agent_response="$(mktemp)"
           agent_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d "$agent_body" -o "$agent_response" -w "%{http_code}" "$base/api/agents")"

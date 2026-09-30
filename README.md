@@ -97,7 +97,7 @@ See `docs/API_ACCESS.md` for the client contract.
 - Knowledge URL ingestion blocks local/private destinations, re-checks redirects and bounds downloads.
 - Provider credentials, Telegram tokens and webhook secrets are encrypted at rest with `APP_SECRET_KEY`.
 - Production sessions require a persistent `APP_SECRET_KEY` of at least 32 characters.
-- The production Control Center is passwordless at the UI layer: the owner enters through a private access-link route backed by `CORTEX_ADMIN_ACCESS_TOKEN`, which exchanges for an HttpOnly admin session. There is no username/password admin login path; the private access-link route is the only operator entry path. Legacy admin username/password variables are not required.
+- The production Control Center uses a dedicated owner-only UI login. The owner enters the fixed username `ehsanam86`; no admin password or Secret access link is required. The browser receives a signed HttpOnly cookie used only to authorize backend admin requests.
 - Chat POST requests are not automatically retried by the frontend/API client; only idempotent GET/HEAD/OPTIONS calls are retried.
 - Usage limits use durable PostgreSQL reservations and transaction-scoped advisory locks so concurrent Worker isolates cannot bypass the same quota.
 
@@ -155,7 +155,7 @@ The codebase is treated as release-ready when:
 
 ## Private Admin Control Center
 
-The owner entry point is `/admin/access/<CORTEX_ADMIN_ACCESS_TOKEN>`. The token is a private deployment secret and is never exposed by the application. The access token is never rendered back into API responses. After exchange, the browser receives only the short-lived HttpOnly admin session cookie.
+Owner login: `/admin/login` — enter the username `ehsanam86` and Cortex opens the private backend control center. The legacy `/admin/access/*` routes now redirect to this login page, so an old or expired access-link cannot block entry anymore.
 
 Inside **AI زیرساخت**, the owner can create/rotate/disable system Providers, set Base URLs and API keys, inspect provider health, attach Model Catalog entries, and select the default Trial model. Plan/model access is controlled separately through the billing matrix.
 
