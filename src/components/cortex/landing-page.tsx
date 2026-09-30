@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 import { CortexLogo, CortexMark } from "@/components/cortex/logo";
 import { ThemeToggle } from "@/components/cortex/theme-toggle";
+import { api } from "@/lib/cortex-client";
 
 const FEATURES = [
   {
@@ -52,6 +54,8 @@ const PLANS = [
 
 export function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const siteQuery = useQuery({ queryKey: ["landing-site-config"], queryFn: api.getSiteConfig, staleTime: 60_000 });
+  const site = siteQuery.data?.settings ?? {};
 
   function go(path: "/login" | "/signup") {
     window.location.href = path;
@@ -111,21 +115,20 @@ export function LandingPage() {
               PRIVATE AI WORKSPACE
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[1.35] tracking-tight sm:text-5xl lg:text-6xl">
-              ایجنت‌های هوش مصنوعی را از
-              <span className="text-primary"> دانش خودتان </span>
-              بسازید.
+              {site["site.heroTitle"] || "دانش کسب‌وکارت را به ایجنت‌های قابل‌اعتماد تبدیل کن."}
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-8 text-muted-foreground sm:text-base">
-              Cortex AI دانش، Agent، Telegram، مصرف مدل و اعتبار را در یک محیط کاری حرفه‌ای برای شرکت‌ها جمع می‌کند.
+              {site["site.heroSubtitle"] || "Cortex دانش، Agent، Telegram و کنترل هزینه را در یک محیط عملیاتی جمع می‌کند؛ برای پاسخ بهتر، تصمیم سریع‌تر و کار کمتر."}
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <button onClick={() => go("/signup")} className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3.5 text-sm font-black text-primary-foreground shadow-none transition hover:-translate-y-1">شروع کنید <ArrowLeft className="size-4" /></button>
-              <a href="#features" className="inline-flex items-center gap-2 rounded-2xl border border-border/70 bg-card/60 px-5 py-3.5 text-sm font-bold transition hover:-translate-y-1 hover:border-primary/20">مشاهده ویژگی‌ها <Play className="size-4" /></a>
+              <button onClick={() => go("/signup")} className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3.5 text-sm font-black text-primary-foreground shadow-none transition hover:-translate-y-1">{site["site.heroPrimaryCta"] || "ساخت اولین ایجنت"} <ArrowLeft className="size-4" /></button>
+              <a href="#features" className="inline-flex items-center gap-2 rounded-2xl border border-border/70 bg-card/60 px-5 py-3.5 text-sm font-bold transition hover:-translate-y-1 hover:border-primary/20">{site["site.heroSecondaryCta"] || "مشاهده قابلیت‌ها"} <Play className="size-4" /></a>
             </div>
             <div className="mt-7 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
               <span className="rounded-full border border-border/60 bg-card/50 px-3 py-1.5">تست قبل از خرید</span>
               <span className="rounded-full border border-border/60 bg-card/50 px-3 py-1.5">کنترل اعتبار و مصرف</span>
               <span className="rounded-full border border-border/60 bg-card/50 px-3 py-1.5">مناسب تیم و شرکت</span>
+              <span className="basis-full pt-1 text-[10px] text-muted-foreground">{site["site.proofLine"] || "بدون قفل شدن به یک Provider · کنترل متمرکز مدل و هزینه · آماده برای Telegram"}</span>
             </div>
           </motion.div>
 
@@ -139,12 +142,12 @@ export function LandingPage() {
                 <div className="space-y-3">
                   <div className="rounded-xl border border-border/70 bg-background/60 p-4">
                     <div className="flex items-center justify-between"><span className="text-[9px] font-bold tracking-[.18em] text-primary">CORTEX AGENT</span><Bot className="size-4 text-blue-300" /></div>
-                    <p className="mt-3 text-lg font-black text-white">پشتیبان فروش</p>
+                    <p className="mt-3 text-lg font-black text-foreground">پشتیبان فروش</p>
                     <p className="mt-1 text-[10px] leading-5 text-muted-foreground">RAG فعال · Telegram متصل · پاسخ با منبع</p>
                     <div className="mt-4 flex gap-2"><span className="rounded-full bg-primary/10 px-2 py-1 text-[8px] text-primary">Knowledge</span><span className="rounded-full bg-secondary/40 px-2 py-1 text-[8px] text-secondary-foreground">Tools</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[8px] text-emerald-500">Ready</span></div>
                   </div>
                   <div className="rounded-xl border border-border/70 bg-background/55 p-4">
-                    <div className="flex items-center justify-between"><span className="text-[9px] text-slate-400">دانش سازمان</span><BookOpen className="size-4 text-secondary" /></div>
+                    <div className="flex items-center justify-between"><span className="text-[9px] text-muted-foreground">دانش سازمان</span><BookOpen className="size-4 text-secondary" /></div>
                     <div className="mt-3 space-y-2">
                       {["راهنمای محصول.pdf", "قوانین فروش و بازگشت", "FAQ شرکت"].map((x) => <div key={x} className="flex items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2"><FileSearch className="size-3.5 text-violet-300" /><span className="truncate text-[10px] text-muted-foreground">{x}</span><Check className="ms-auto size-3 text-emerald-500" /></div>)}
                     </div>
@@ -153,15 +156,15 @@ export function LandingPage() {
                 <div className="space-y-3">
                   <div className="rounded-2xl border border-white/[.07] bg-primary/[.05] p-4">
                     <div className="flex items-center justify-between"><span className="text-[9px] text-slate-400">اعتبار</span><WalletCards className="size-4 text-blue-300" /></div>
-                    <p className="mt-3 text-3xl font-black text-white">۸۶٬۲۴۰</p>
-                    <p className="mt-1 text-[9px] text-slate-400">اعتبار باقی‌مانده</p>
+                    <p className="mt-3 text-3xl font-black text-foreground">۸۶٬۲۴۰</p>
+                    <p className="mt-1 text-[9px] text-muted-foreground">اعتبار باقی‌مانده</p>
                     <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full w-[68%] rounded-full bg-primary" /></div>
                     <p className="mt-2 text-[8px] text-muted-foreground">مصرف این ماه: ۳۲٪</p>
                   </div>
-                  <div className="rounded-2xl border border-white/[.07] bg-white/[.02] p-4">
+                  <div className="rounded-2xl border border-border/70 bg-background/50 p-4">
                     <div className="flex items-center justify-between"><span className="text-[9px] text-slate-400">مصرف مدل‌ها</span><MessageSquare className="size-4 text-emerald-300" /></div>
                     <div className="mt-3 space-y-3">
-                      {[["DeepSeek", "۴۱٪", "41%"], ["GPT-5.6", "۳۴٪", "34%"], ["Gemini", "۲۵٪", "25%"]].map(([x, label, width]) => <div key={x}><div className="flex justify-between text-[9px] text-slate-400"><span>{x}</span><span>{label}</span></div><div className="mt-1 h-1.5 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-400" style={{ width }} /></div></div>)}
+                      {[["DeepSeek", "۴۱٪", "41%"], ["GPT-5.6", "۳۴٪", "34%"], ["Gemini", "۲۵٪", "25%"]].map(([x, label, width]) => <div key={x}><div className="flex justify-between text-[9px] text-slate-400"><span>{x}</span><span>{label}</span></div><div className="mt-1 h-1.5 rounded-full bg-white/10"><div className="h-full rounded-full bg-primary" style={{ width }} /></div></div>)}
                     </div>
                   </div>
                 </div>
