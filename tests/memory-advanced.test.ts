@@ -5,8 +5,9 @@ describe("advanced explicit memory extraction", () => {
   test("extracts safe explicit profile facts and preferences", () => {
     const result = extractExplicitMemories("اسم من احسان است. شغلم طراح محصول است و ترجیح میدم پاسخ‌ها کوتاه و مستقیم باشند.");
     expect(result).toEqual(expect.arrayContaining([
-      expect.objectContaining({ key: "profile.name", value: "احسان است" }),
-      expect.objectContaining({ key: "profile.role", value: "طراح محصول است و ترجیح میدم پاسخ‌ها کوتاه و مستقیم باشند" }),
+      expect.objectContaining({ key: "profile.name", value: "احسان" }),
+      expect.objectContaining({ key: "profile.role", value: "طراح محصول" }),
+      expect.objectContaining({ key: "preference.response_style", value: "پاسخ‌ها کوتاه و مستقیم باشند" }),
     ]));
   });
 
