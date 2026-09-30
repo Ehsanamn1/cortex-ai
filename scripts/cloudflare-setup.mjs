@@ -67,6 +67,9 @@ async function main() {
     await promptSecret(rl, "APP_SECRET_KEY");
     await promptSecret(rl, "CORTEX_ADMIN_ACCESS_TOKEN");
     await promptSecret(rl, "CORTEX_ADMIN_SESSION_SECRET");
+    await promptSecret(rl, "GOOGLE_CLIENT_ID", false);
+    await promptSecret(rl, "GOOGLE_CLIENT_SECRET", false);
+    await promptSecret(rl, "GOOGLE_REDIRECT_URI", false);
     await promptSecret(rl, "R2_ACCOUNT_ID");
     await putSecret("R2_BUCKET_NAME", bucketName);
     await promptSecret(rl, "R2_ACCESS_KEY_ID");
