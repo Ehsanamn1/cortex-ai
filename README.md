@@ -142,20 +142,15 @@ The setup script creates/validates the `cortex-ai-knowledge` R2 bucket, collects
 
 ## Release definition for this MVP
 
-The codebase is treated as release-ready when:
+A demo release is considered ready when the working application is deployed on Cloudflare, the target workspace has a real LLM provider configured, knowledge ingestion/retrieval works, and the core authenticated smoke journey passes.
 
-1. CI is green on the release commit.
-2. The Cloudflare deployment job completes successfully, including runtime secret verification.
-3. The post-deploy authenticated smoke tests pass.
-4. At least one real LLM provider is configured for the workspace that will be used.
-5. R2 browser upload + knowledge processing succeeds on the target Worker.
-6. Telegram credentials/webhook configuration are present when Telegram is enabled.
+Model fine-tuning is intentionally disabled in the current release and is presented as a **coming soon** capability. The current self-improvement layer is runtime memory/context management, not live weight updates.
 
 
 
 ## Private Admin Control Center
 
-Owner login: `/admin/login` — enter the username `ehsanam86` and Cortex opens the private backend control center. The legacy `/admin/access/*` routes now redirect to this login page, so an old or expired access-link cannot block entry anymore.
+The production control center uses a private operator entry flow backed by server-side access credentials and an HttpOnly session. Public legacy admin entry points are disabled.
 
 Inside **AI زیرساخت**, the owner can create/rotate/disable system Providers, set Base URLs and API keys, inspect provider health, attach Model Catalog entries, and select the default Trial model. Plan/model access is controlled separately through the billing matrix.
 
