@@ -103,7 +103,7 @@ export function LandingPage() {
       )}
 
       <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(59,130,255,.15),transparent_25%),radial-gradient(circle_at_82%_22%,rgba(139,92,246,.12),transparent_24%)]" />
+        
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-18 pt-14 sm:px-6 lg:grid-cols-[.94fr_1.06fr] lg:px-8 lg:pb-24 lg:pt-20">
           <motion.div initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .45 }} className="relative">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/[.06] px-3 py-1.5 text-[10px] font-bold tracking-[.15em] text-primary">
@@ -112,14 +112,14 @@ export function LandingPage() {
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[1.35] tracking-tight sm:text-5xl lg:text-6xl">
               ایجنت‌های هوش مصنوعی را از
-              <span className="bg-gradient-to-l from-primary via-blue-400 to-violet-400 bg-clip-text text-transparent"> دانش خودتان </span>
+              <span className="text-primary"> دانش خودتان </span>
               بسازید.
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-8 text-muted-foreground sm:text-base">
               Cortex AI دانش، Agent، Telegram، مصرف مدل و اعتبار را در یک محیط کاری حرفه‌ای برای شرکت‌ها جمع می‌کند.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <button onClick={() => go("/signup")} className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3.5 text-sm font-black text-primary-foreground shadow-[0_14px_40px_rgba(59,130,255,.25)] transition hover:-translate-y-1">شروع کنید <ArrowLeft className="size-4" /></button>
+              <button onClick={() => go("/signup")} className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3.5 text-sm font-black text-primary-foreground shadow-none transition hover:-translate-y-1">شروع کنید <ArrowLeft className="size-4" /></button>
               <a href="#features" className="inline-flex items-center gap-2 rounded-2xl border border-border/70 bg-card/60 px-5 py-3.5 text-sm font-bold transition hover:-translate-y-1 hover:border-primary/20">مشاهده ویژگی‌ها <Play className="size-4" /></a>
             </div>
             <div className="mt-7 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
@@ -130,34 +130,33 @@ export function LandingPage() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5, delay: .08 }} className="relative">
-            <div className="absolute -inset-5 rounded-[38px] bg-primary/[.08] blur-3xl" />
-            <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#09101a] p-3 shadow-[0_40px_100px_rgba(0,0,0,.35)]">
-              <div className="flex items-center justify-between border-b border-white/[.06] px-3 py-3">
-                <div className="flex items-center gap-2"><CortexMark size={26} /><span className="text-xs font-bold text-white">Cortex Workspace</span></div>
-                <span className="rounded-full border border-emerald-400/15 bg-emerald-400/10 px-2 py-1 text-[8px] font-bold text-emerald-300">CONNECTED</span>
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-3">
+              <div className="flex items-center justify-between border-b border-border/70 px-3 py-3">
+                <div className="flex items-center gap-2"><CortexMark size={26} /><span className="text-xs font-bold text-foreground">Cortex Workspace</span></div>
+                <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[8px] font-bold text-emerald-500">CONNECTED</span>
               </div>
               <div className="grid gap-3 p-3 sm:grid-cols-[1.1fr_.9fr]">
                 <div className="space-y-3">
-                  <div className="rounded-2xl border border-white/[.07] bg-white/[.025] p-4">
-                    <div className="flex items-center justify-between"><span className="text-[9px] font-bold tracking-[.18em] text-blue-300">CORTEX AGENT</span><Bot className="size-4 text-blue-300" /></div>
+                  <div className="rounded-xl border border-border/70 bg-background/60 p-4">
+                    <div className="flex items-center justify-between"><span className="text-[9px] font-bold tracking-[.18em] text-primary">CORTEX AGENT</span><Bot className="size-4 text-blue-300" /></div>
                     <p className="mt-3 text-lg font-black text-white">پشتیبان فروش</p>
-                    <p className="mt-1 text-[10px] leading-5 text-slate-400">RAG فعال · Telegram متصل · پاسخ با منبع</p>
-                    <div className="mt-4 flex gap-2"><span className="rounded-full bg-blue-400/10 px-2 py-1 text-[8px] text-blue-200">Knowledge</span><span className="rounded-full bg-violet-400/10 px-2 py-1 text-[8px] text-violet-200">Tools</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[8px] text-emerald-200">Ready</span></div>
+                    <p className="mt-1 text-[10px] leading-5 text-muted-foreground">RAG فعال · Telegram متصل · پاسخ با منبع</p>
+                    <div className="mt-4 flex gap-2"><span className="rounded-full bg-primary/10 px-2 py-1 text-[8px] text-primary">Knowledge</span><span className="rounded-full bg-secondary/40 px-2 py-1 text-[8px] text-secondary-foreground">Tools</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[8px] text-emerald-500">Ready</span></div>
                   </div>
-                  <div className="rounded-2xl border border-white/[.07] bg-white/[.02] p-4">
-                    <div className="flex items-center justify-between"><span className="text-[9px] text-slate-400">دانش سازمان</span><BookOpen className="size-4 text-violet-300" /></div>
+                  <div className="rounded-xl border border-border/70 bg-background/55 p-4">
+                    <div className="flex items-center justify-between"><span className="text-[9px] text-slate-400">دانش سازمان</span><BookOpen className="size-4 text-secondary" /></div>
                     <div className="mt-3 space-y-2">
-                      {["راهنمای محصول.pdf", "قوانین فروش و بازگشت", "FAQ شرکت"].map((x) => <div key={x} className="flex items-center gap-2 rounded-xl border border-white/[.05] bg-white/[.018] px-3 py-2"><FileSearch className="size-3.5 text-violet-300" /><span className="truncate text-[10px] text-slate-300">{x}</span><Check className="ms-auto size-3 text-emerald-300" /></div>)}
+                      {["راهنمای محصول.pdf", "قوانین فروش و بازگشت", "FAQ شرکت"].map((x) => <div key={x} className="flex items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2"><FileSearch className="size-3.5 text-violet-300" /><span className="truncate text-[10px] text-muted-foreground">{x}</span><Check className="ms-auto size-3 text-emerald-500" /></div>)}
                     </div>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <div className="rounded-2xl border border-white/[.07] bg-gradient-to-br from-blue-400/[.12] to-violet-400/[.08] p-4">
+                  <div className="rounded-2xl border border-white/[.07] bg-primary/[.05] p-4">
                     <div className="flex items-center justify-between"><span className="text-[9px] text-slate-400">اعتبار</span><WalletCards className="size-4 text-blue-300" /></div>
                     <p className="mt-3 text-3xl font-black text-white">۸۶٬۲۴۰</p>
                     <p className="mt-1 text-[9px] text-slate-400">اعتبار باقی‌مانده</p>
-                    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-[68%] rounded-full bg-gradient-to-r from-blue-400 to-violet-400" /></div>
-                    <p className="mt-2 text-[8px] text-slate-500">مصرف این ماه: ۳۲٪</p>
+                    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full w-[68%] rounded-full bg-primary" /></div>
+                    <p className="mt-2 text-[8px] text-muted-foreground">مصرف این ماه: ۳۲٪</p>
                   </div>
                   <div className="rounded-2xl border border-white/[.07] bg-white/[.02] p-4">
                     <div className="flex items-center justify-between"><span className="text-[9px] text-slate-400">مصرف مدل‌ها</span><MessageSquare className="size-4 text-emerald-300" /></div>
@@ -181,7 +180,7 @@ export function LandingPage() {
           </div>
           <div className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {FEATURES.map((feature, index) => (
-              <motion.article key={feature.title} whileHover={{ y: -5 }} transition={{ duration: .18 }} className="rounded-[22px] border border-border/65 bg-card/70 p-5 shadow-[0_18px_50px_rgba(15,23,42,.06)]">
+              <motion.article key={feature.title} whileHover={{ y: -5 }} transition={{ duration: .18 }} className="rounded-xl border border-border/65 bg-card/70 p-5 shadow-none">
                 <span className="grid size-11 place-items-center rounded-2xl border border-primary/15 bg-primary/[.07] text-primary"><feature.icon className="size-5" /></span>
                 <span className="mt-5 block text-[9px] font-bold tracking-[.18em] text-muted-foreground">۰{index + 1}</span>
                 <h3 className="mt-2 text-base font-black">{feature.title}</h3>
@@ -226,7 +225,7 @@ export function LandingPage() {
           </div>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {PLANS.map((plan) => (
-              <article key={plan.name} className={plan.featured ? "relative overflow-hidden rounded-[26px] border border-primary/30 bg-primary/[.07] p-6 shadow-[0_24px_70px_rgba(59,130,255,.12)]" : "rounded-[26px] border border-border/65 bg-card/70 p-6"}>
+              <article key={plan.name} className={plan.featured ? "relative overflow-hidden rounded-xl border border-primary/30 bg-primary/[.07] p-6 shadow-none" : "rounded-[26px] border border-border/65 bg-card/70 p-6"}>
                 {plan.featured && <span className="absolute end-4 top-4 rounded-full bg-primary px-2.5 py-1 text-[8px] font-bold text-primary-foreground">پیشنهاد تیمی</span>}
                 <h3 className="text-lg font-black">{plan.name}</h3>
                 <p className="mt-1 text-xs text-muted-foreground">{plan.text}</p>
@@ -249,7 +248,7 @@ export function LandingPage() {
       <section>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="grid gap-4 lg:grid-cols-3">
-            <div className="rounded-[24px] border border-border/65 bg-card/65 p-5">
+            <div className="rounded-xl border border-border/65 bg-card/65 p-5">
               <ShieldCheck className="size-5 text-emerald-400" />
               <h3 className="mt-4 text-sm font-black">کنترل داده و دسترسی</h3>
               <p className="mt-2 text-xs leading-6 text-muted-foreground">فضای کاری، Agent و مصرف هر شرکت از یکدیگر جدا می‌ماند.</p>
@@ -260,7 +259,7 @@ export function LandingPage() {
               <p className="mt-2 text-xs leading-6 text-muted-foreground">مشتری می‌بیند چه مدلی چقدر مصرف کرده و چه مقدار اعتبار باقی مانده است.</p>
             </div>
             <div className="rounded-[24px] border border-border/65 bg-card/65 p-5">
-              <Sparkles className="size-5 text-violet-400" />
+              <Sparkles className="size-5 text-primary" />
               <h3 className="mt-4 text-sm font-black">ساخته‌شده برای رشد</h3>
               <p className="mt-2 text-xs leading-6 text-muted-foreground">از تست یک Agent تا سناریوی چند Bot و مصرف سازمانی مسیر رشد مشخص است.</p>
             </div>
