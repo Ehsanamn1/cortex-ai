@@ -61,3 +61,8 @@ The existing Neon PostgreSQL database remains the production database and is use
 Webhook mode requires a public `APP_PUBLIC_URL`. Polling mode uses the internal polling route and should be invoked by a trusted scheduler.
 
 Cloudflare Workers currently support the Node `crypto` APIs Cortex uses, including `scryptSync`; Workers also expose Web Crypto. citeturn176292search0turn176292search9
+
+## Google sign-in
+
+Set the Worker secrets/variables `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and optionally `GOOGLE_REDIRECT_URI`.
+The authorized redirect URI in Google Cloud must exactly match the callback URL, normally `https://<your-worker-host>/api/auth/google/callback`.
