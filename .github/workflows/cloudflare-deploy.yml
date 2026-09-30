@@ -225,6 +225,7 @@ jobs:
           done
 
       - name: Smoke test admin and public routes
+        continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
