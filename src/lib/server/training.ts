@@ -147,11 +147,17 @@ export async function startTraining(params: {
   });
   if (running) return running;
 
-  const lastPromoted = await db.trainingJob.findFirst({
-    where: { agentId: params.agentId, workspaceId: params.workspaceId, promoted: true },
+  const lastAttempt = await db.trainingJob.findFirst({
+    where: { agentId: params.agentId, workspaceId: params.workspaceId },
     orderBy: { createdAt: "desc" },
   });
-  if (lastPromoted?.datasetHash === hash) return lastPromoted;
+  if (lastAttempt?.datasetHash === hash) {
+    if (lastAttempt.status === "queued" || lastAttempt.status === "running") return lastAttempt;
+    if (lastAttempt.promoted) return lastAttempt;
+    if (lastAttempt.status === "rejected" && Date.now() - lastAttempt.createdAt.getTime() < 24 * 60 * 60 * 1000) {
+      return lastAttempt;
+    }
+  }
 
   const job = await db.trainingJob.create({
     data: {
