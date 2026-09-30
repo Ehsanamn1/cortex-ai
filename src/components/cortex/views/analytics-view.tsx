@@ -42,7 +42,7 @@ export function AnalyticsView(){
   const unansweredRate=totalQuestions?Math.min(100,Math.round((data.unanswered/Math.max(totalQuestions,1))*100)):0;
   const totalMessages=trend.reduce((sum,x)=>sum+x.messages,0);
   const averageDailyMessages=Math.round(totalMessages/Math.max(1,trend.length));
-  const busiestDay=trend.reduce((best,current)=>current.messages>best.messages?current:best,trend[0]??{date:"—",messages:0,tokens:0});
+  const busiestDay=trend.reduce((best,current)=>current.messages>best.messages?current:best,trend[0]??{date:"—",messages:0,tokens:0,costToman:0});
   const coverageScore=Math.max(0,100-unansweredRate);
   const topQuestionShare=totalQuestions&&data.topQuestions[0]?Math.min(100,Math.round((data.topQuestions[0].count/totalQuestions)*100)):0;
 
