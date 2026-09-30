@@ -172,7 +172,7 @@ function BillingPanel({ section }: { section: Section }) {
     <ModelCreate providers={q.data.systemProviders ?? []} onSave={(body) => create.mutate({ action: "create_model", body })}/>
     <div className="grid gap-3">{(q.data.models ?? []).map((model: any) => <Card key={model.id} className="border-border">
     <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
-      <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="truncate text-sm font-semibold">{model.displayName}</p>{model.trialDefault && <span className="rounded-full bg-[#e9f4c6] px-2 py-1 text-[9px] font-bold text-[#506422]">Trial Default</span>}{model.systemProvider?.displayName && <span className="rounded-full border px-2 py-1 text-[9px] text-muted-foreground">{model.systemProvider.displayName}</span>}</div><p className="mt-1 text-[11px] text-muted-foreground">{model.provider} · <code>{model.modelId}</code></p></div>
+      <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="truncate text-sm font-semibold">{model.displayName}</p>{model.trialDefault && <span className="rounded-full bg-[#e8f0ff] px-2 py-1 text-[9px] font-bold text-[#36558f]">Trial Default</span>}{model.systemProvider?.displayName && <span className="rounded-full border px-2 py-1 text-[9px] text-muted-foreground">{model.systemProvider.displayName}</span>}</div><p className="mt-1 text-[11px] text-muted-foreground">{model.provider} · <code>{model.modelId}</code></p></div>
       <div className="grid grid-cols-2 gap-2 text-[10px] sm:grid-cols-4 lg:w-[440px]"><span>Input <b>{"$" + model.inputUsdPer1M}</b></span><span>Output <b>{"$" + model.outputUsdPer1M}</b></span><span>Tier <b>{model.qualityTier}</b></span><span>Active <b>{model.active?"Yes":"No"}</b></span></div>
       <Button size="sm" variant="ghost" onClick={() => setEditingModel(editingModel === model.id ? null : model.id)}><Pencil className="size-4"/></Button>
       {editingModel === model.id && <div className="w-full lg:basis-full"><ModelEditor model={model} providers={q.data.systemProviders ?? []} onSave={(body) => patch.mutate({action:"update_model",id:model.id,body})}/></div>}
@@ -295,26 +295,26 @@ function ControlCenterRuntime() {
   if(session.isPending) return <div className="min-h-screen bg-[#f6f7fb] p-8"><div className="mx-auto max-w-7xl rounded-xl bg-white p-12 text-center">در حال آماده‌سازی پیشخوان…</div></div>;
   if(session.isError) return <AdminLogin />;
   const groups=[...new Set(SECTIONS.map(x=>x.group))]; const m=summary.data?.metrics??{}; const activeSection=SECTIONS.find(x=>x.id===section)!;
-  return <div className="cortex-control-center min-h-screen bg-[#0d110d] text-[#e8eadf]" dir="rtl"><div className="flex min-h-screen">
+  return <div className="cortex-control-center min-h-screen bg-[#0b1016] text-[#e7edf5]" dir="rtl"><div className="flex min-h-screen">
     <aside className="hidden w-[258px] shrink-0 border-l border-[#263021] bg-[#111611] lg:flex lg:flex-col">
-      <div className="border-b border-[#293324] px-5 py-6">
-        <p className="text-[9px] font-bold tracking-[.26em] text-[#b9d95d]">CORTEX / OPERATOR</p>
-        <div className="mt-2 text-xl font-black tracking-tight text-[#eff1e7]">پیشخوان عملیات</div>
-        <p className="mt-2 max-w-[190px] text-[10px] leading-6 text-[#7e8877]">محیط خصوصی مالک سیستم برای کنترل مدل‌ها، منابع، پلن‌ها، اعتبار و عملیات.</p>
+      <div className="border-b border-[#252f3c] px-5 py-6">
+        <p className="text-[9px] font-bold tracking-[.26em] text-[#74a0ff]">CORTEX / OPERATOR</p>
+        <div className="mt-2 text-xl font-black tracking-tight text-[#eef3f8]">پیشخوان عملیات</div>
+        <p className="mt-2 max-w-[190px] text-[10px] leading-6 text-[#78879a]">محیط خصوصی مالک سیستم برای کنترل مدل‌ها، منابع، پلن‌ها، اعتبار و عملیات.</p>
       </div>
-      <nav className="flex-1 overflow-y-auto px-3 py-4">{groups.map(group=><div key={group} className="mb-6"><p className="px-2 pb-2 text-[8px] font-bold tracking-[.24em] text-[#606b5b]">{group.toUpperCase()}</p><div className="space-y-1">{SECTIONS.filter(s=>s.group===group).map(s=><button key={s.id} type="button" onClick={()=>{setSection(s.id);setSearch("");}} className={cn("group relative flex w-full items-center gap-2 border px-3 py-2.5 text-xs font-semibold transition",section===s.id?"border-[#b9d95d]/30 bg-[#b9d95d]/10 text-[#d5eb8f]":"border-transparent text-[#96a08f] hover:border-[#293324] hover:bg-[#171c16] hover:text-[#e5e8dd]")}><span className={cn("absolute start-0 top-1/2 h-5 w-[2px] -translate-y-1/2 transition",section===s.id?"bg-[#b9d95d]":"bg-transparent")}/><s.icon className="size-4 shrink-0"/><span>{s.label}</span></button>)}</div></div>)}</nav>
-      <div className="border-t border-[#293324] p-4"><div className="flex items-center gap-2 border border-[#303a2c] bg-[#171c16] p-2.5"><span className="flex size-8 items-center justify-center bg-[#b9d95d] text-[10px] font-black text-[#1b210f]">CX</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-[#dfe4d7]">مالک سیستم</p><p className="text-[9px] text-[#687362]">Private operator</p></div><Button variant="ghost" size="icon" className="text-[#8e9a86] hover:bg-[#20271d] hover:text-white" onClick={()=>logout.mutate()}><LogOut className="size-4"/></Button></div></div>
+      <nav className="flex-1 overflow-y-auto px-3 py-4">{groups.map(group=><div key={group} className="mb-6"><p className="px-2 pb-2 text-[8px] font-bold tracking-[.24em] text-[#6e7d90]">{group.toUpperCase()}</p><div className="space-y-1">{SECTIONS.filter(s=>s.group===group).map(s=><button key={s.id} type="button" onClick={()=>{setSection(s.id);setSearch("");}} className={cn("group relative flex w-full items-center gap-2 border px-3 py-2.5 text-xs font-semibold transition",section===s.id?"border-[#74a0ff]/30 bg-[#74a0ff]/10 text-[#b7ccff]":"border-transparent text-[#94a2b4] hover:border-[#252f3c] hover:bg-[#151d27] hover:text-[#dce5ef]")}><span className={cn("absolute start-0 top-1/2 h-5 w-[2px] -translate-y-1/2 transition",section===s.id?"bg-[#74a0ff]":"bg-transparent")}/><s.icon className="size-4 shrink-0"/><span>{s.label}</span></button>)}</div></div>)}</nav>
+      <div className="border-t border-[#252f3c] p-4"><div className="flex items-center gap-2 border border-[#27323f] bg-[#151d27] p-2.5"><span className="flex size-8 items-center justify-center bg-[#74a0ff] text-[10px] font-black text-[#1b210f]">CX</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-[#dfe4d7]">مالک سیستم</p><p className="text-[9px] text-[#75859a]">Private operator</p></div><Button variant="ghost" size="icon" className="text-[#8797aa] hover:bg-[#1b2532] hover:text-white" onClick={()=>logout.mutate()}><LogOut className="size-4"/></Button></div></div>
     </aside>
     <div className="min-w-0 flex-1">
       <header className="sticky top-0 z-30 border-b border-[#263021] bg-[#0f130f]/95 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 py-4 lg:px-7">
-          <div className="min-w-0 flex-1"><p className="text-[8px] font-bold tracking-[.26em] text-[#839078]">OPERATOR CONSOLE</p><h1 className="mt-1 truncate text-xl font-black text-[#eef0e6]">{activeSection.label}</h1></div>
-          <div className="hidden w-[280px] items-center gap-2 border border-[#2d3829] bg-[#141914] px-3 py-2 md:flex"><Search className="size-4 text-[#6f7a69]"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs text-[#e8eadf] shadow-none placeholder:text-[#66705f] focus-visible:ring-0" placeholder="جستجو در سیستم…"/></div>
-          <Button variant="outline" size="icon" className="border-[#32402c] bg-[#151a15] text-[#aab3a3] hover:bg-[#20271d] hover:text-white" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button>
+          <div className="min-w-0 flex-1"><p className="text-[8px] font-bold tracking-[.26em] text-[#8595a8]">OPERATOR CONSOLE</p><h1 className="mt-1 truncate text-xl font-black text-[#eef0e6]">{activeSection.label}</h1></div>
+          <div className="hidden w-[280px] items-center gap-2 border border-[#2d3829] bg-[#111820] px-3 py-2 md:flex"><Search className="size-4 text-[#73849a]"/><Input value={search} onChange={e=>setSearch(e.target.value)} className="h-5 border-0 bg-transparent p-0 text-xs text-[#e7edf5] shadow-none placeholder:text-[#718096] focus-visible:ring-0" placeholder="جستجو در سیستم…"/></div>
+          <Button variant="outline" size="icon" className="border-[#32402c] bg-[#151a15] text-[#aab3a3] hover:bg-[#1b2532] hover:text-white" onClick={()=>{qc.invalidateQueries();toast.success("داده‌ها تازه شد")}}><RefreshCw className="size-4"/></Button>
         </div>
       </header>
       <div className="flex gap-1 overflow-x-auto border-b border-[#263021] bg-[#111611] px-3 py-2 lg:hidden">
-        {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap border px-3 py-2 text-[10px] font-semibold transition",section===s.id?"border-[#b9d95d]/30 bg-[#b9d95d]/10 text-[#d5eb8f]":"border-transparent text-[#8f9a88]")}>{s.label}</button>)}
+        {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap border px-3 py-2 text-[10px] font-semibold transition",section===s.id?"border-[#74a0ff]/30 bg-[#74a0ff]/10 text-[#b7ccff]":"border-transparent text-[#9ba9ba]")}>{s.label}</button>)}
       </div>
       <main className="mx-auto max-w-[1460px] space-y-6 p-4 lg:p-8">
         {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:section==="systemProviders"?<SystemProvidersPanel/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>} 
@@ -409,39 +409,39 @@ function SystemProvidersPanel() {
 
   return <div className="space-y-5">
     <section className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
-      <Card className={cn("overflow-hidden border-[#37422f] bg-[#141914] text-[#e9eadf]", trial?.ready && "border-[#b7d65c]/55")}>
-        <CardHeader className="border-b border-[#2a3324]">
+      <Card className={cn("overflow-hidden border-[#303c4c] bg-[#111820] text-[#e7edf5]", trial?.ready && "border-[#6d94ff]/55")}>
+        <CardHeader className="border-b border-[#26303d]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-[9px] font-bold tracking-[.22em] text-[#b8d85b]">TRIAL ROUTE</p>
-              <CardTitle className="mt-1 text-base text-[#f0f1e8]">مسیر پیش‌فرض نسخه آزمایشی</CardTitle>
-              <p className="mt-1 text-[10px] leading-5 text-[#929b8c]">تمام حساب‌های بدون پلن از این Model و Provider تغذیه می‌شوند. اعتبار مصرفی از کیف پول پلن «{trial?.planName ?? "آزمایشی"}» کم می‌شود.</p>
+              <p className="text-[9px] font-bold tracking-[.22em] text-[#74a0ff]">TRIAL ROUTE</p>
+              <CardTitle className="mt-1 text-base text-[#eef3f8]">مسیر پیش‌فرض نسخه آزمایشی</CardTitle>
+              <p className="mt-1 text-[10px] leading-5 text-[#8a98aa]">تمام حساب‌های بدون پلن از این Model و Provider تغذیه می‌شوند. اعتبار مصرفی از کیف پول پلن «{trial?.planName ?? "آزمایشی"}» کم می‌شود.</p>
             </div>
             <span className={cn("border px-2.5 py-1 text-[9px] font-bold", trial?.ready ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" : "border-amber-400/20 bg-amber-400/10 text-amber-200")}>{trial?.ready ? "READY" : "NEEDS CONFIG"}</span>
           </div>
         </CardHeader>
         <CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
           <div className="space-y-2">
-            <label className="text-[10px] font-semibold text-[#aeb7a6]">Provider منبع Trial</label>
-            <select className="h-10 w-full border border-[#394533] bg-[#0f120e] px-3 text-xs text-[#ecefe6] outline-none focus:border-[#b8d85b]" value={activeProviderId} onChange={e=>setTrialProviderId(e.target.value)}>
+            <label className="text-[10px] font-semibold text-[#a7b5c8]">Provider منبع Trial</label>
+            <select className="h-10 w-full border border-[#303c4c] bg-[#0b1016] px-3 text-xs text-[#ecefe6] outline-none focus:border-[#74a0ff]" value={activeProviderId} onChange={e=>setTrialProviderId(e.target.value)}>
               <option value="">انتخاب Provider</option>
               {providers.map((p:any)=><option key={p.id} value={p.id}>{p.displayName} · {p.providerName}</option>)}
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-semibold text-[#aeb7a6]">مدل پیش‌فرض Trial</label>
-            <select className="h-10 w-full border border-[#394533] bg-[#0f120e] px-3 text-xs text-[#ecefe6] outline-none focus:border-[#b8d85b]" value={activeModelId} onChange={e=>setTrialModelId(e.target.value)}>
+            <label className="text-[10px] font-semibold text-[#a7b5c8]">مدل پیش‌فرض Trial</label>
+            <select className="h-10 w-full border border-[#303c4c] bg-[#0b1016] px-3 text-xs text-[#ecefe6] outline-none focus:border-[#74a0ff]" value={activeModelId} onChange={e=>setTrialModelId(e.target.value)}>
               <option value="">انتخاب مدل</option>
               {models.map((m:any)=><option key={m.id} value={m.id}>{m.displayName} · {m.provider}</option>)}
             </select>
           </div>
-          <Button className="h-10 border border-[#b8d85b] bg-[#b8d85b] px-4 text-[#17200e] hover:bg-[#c7e36b]" disabled={save.isPending || catalogQ.isPending || !activeProviderId || !activeModelId} onClick={()=>save.mutate({mode:"configure_trial",body:{providerId:activeProviderId,modelCatalogId:activeModelId}})}>
+          <Button className="h-10 border border-[#74a0ff] bg-[#74a0ff] px-4 text-[#17200e] hover:bg-[#c7e36b]" disabled={save.isPending || catalogQ.isPending || !activeProviderId || !activeModelId} onClick={()=>save.mutate({mode:"configure_trial",body:{providerId:activeProviderId,modelCatalogId:activeModelId}})}>
             {save.isPending ? "در حال اتصال…" : "قفل‌کردن مسیر Trial"}
           </Button>
-          <div className="md:col-span-3 grid gap-2 sm:grid-cols-3 border-t border-[#2a3324] pt-3">
-            <div><p className="text-[9px] text-[#7f897a]">اعتبار شروع</p><p className="mt-1 text-sm font-black text-[#f1f3e9]">{Number(trial?.credits ?? 0).toLocaleString("fa-IR")} credit</p></div>
-            <div><p className="text-[9px] text-[#7f897a]">Provider فعال</p><p className="mt-1 truncate text-xs text-[#d3d8ca]">{trial?.provider?.displayName ?? "—"}</p></div>
-            <div><p className="text-[9px] text-[#7f897a]">Model فعال</p><p className="mt-1 truncate text-xs text-[#d3d8ca]">{trial?.model?.displayName ?? "—"}</p></div>
+          <div className="md:col-span-3 grid gap-2 sm:grid-cols-3 border-t border-[#26303d] pt-3">
+            <div><p className="text-[9px] text-[#75869a]">اعتبار شروع</p><p className="mt-1 text-sm font-black text-[#f1f3e9]">{Number(trial?.credits ?? 0).toLocaleString("fa-IR")} credit</p></div>
+            <div><p className="text-[9px] text-[#75869a]">Provider فعال</p><p className="mt-1 truncate text-xs text-[#d3d8ca]">{trial?.provider?.displayName ?? "—"}</p></div>
+            <div><p className="text-[9px] text-[#75869a]">Model فعال</p><p className="mt-1 truncate text-xs text-[#d3d8ca]">{trial?.model?.displayName ?? "—"}</p></div>
           </div>
         </CardContent>
       </Card>
@@ -449,20 +449,20 @@ function SystemProvidersPanel() {
       <Card className="border-[#d6ddce] bg-[#f7f9f3]">
         <CardHeader><CardTitle className="text-sm text-[#1b2218]">قرارداد داخلی Cortex</CardTitle><p className="text-[10px] leading-5 text-[#646d60]">کاربر فقط نام مدل Cortex را می‌بیند؛ کلید و Base URL فقط اینجا ذخیره و سمت سرور مصرف می‌شوند.</p></CardHeader>
         <CardContent className="space-y-2 text-[10px] leading-6 text-[#556052]">
-          <div className="border-l-2 border-[#b8d85b] pl-3">Provider Registry → Model Catalog → Plan Access → Runtime → Billing</div>
-          <div className="border-l-2 border-[#b8d85b] pl-3">Trial route همیشه یک Provider و یک Model صریح دارد.</div>
-          <div className="border-l-2 border-[#b8d85b] pl-3">با تغییر Provider/Model، اتصال، دسترسی Free و Default بودن در یک تراکنش تنظیم می‌شوند.</div>
+          <div className="border-l-2 border-[#74a0ff] pl-3">Provider Registry → Model Catalog → Plan Access → Runtime → Billing</div>
+          <div className="border-l-2 border-[#74a0ff] pl-3">Trial route همیشه یک Provider و یک Model صریح دارد.</div>
+          <div className="border-l-2 border-[#74a0ff] pl-3">با تغییر Provider/Model، اتصال، دسترسی Free و Default بودن در یک تراکنش تنظیم می‌شوند.</div>
         </CardContent>
       </Card>
     </section>
 
     <section className="grid gap-3">
-      {providers.map((provider) => <Card key={provider.id} className={cn("border-[#2c3527] bg-[#151a14] text-[#e9eadf]", provider.isTrialProvider && "border-[#b8d85b]/50 shadow-[0_14px_42px_rgba(128,154,50,.10)]")}>
+      {providers.map((provider) => <Card key={provider.id} className={cn("border-[#283340] bg-[#151a14] text-[#e7edf5]", provider.isTrialProvider && "border-[#74a0ff]/50 shadow-[0_14px_42px_rgba(128,154,50,.10)]")}>
         <CardContent className="p-4">
           {editing === provider.id
             ? <ProviderEditor initial={provider} onSave={(body) => save.mutate({ mode: "update", body: { ...body, id: provider.id } })} pending={save.isPending} />
             : <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-                <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-black">{provider.displayName}</p>{provider.isTrialProvider && <span className="border border-[#b8d85b]/25 bg-[#b8d85b]/10 px-2 py-1 text-[9px] font-bold text-[#c5e46d]">Trial source</span>}{provider.enabled ? <span className="text-[9px] text-emerald-300">فعال</span> : <span className="text-[9px] text-rose-300">غیرفعال</span>}</div><p className="mt-1 text-[10px] text-[#9aa492]">{provider.providerName} · {provider.protocol} · <span dir="ltr">{provider.baseUrl}</span></p><p className="mt-1 text-[10px] text-[#778274]">{provider.configured ? "کلید تنظیم شده" : "بدون API Key"} · {provider.modelsCount ?? 0} مدل متصل</p></div>
+                <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-black">{provider.displayName}</p>{provider.isTrialProvider && <span className="border border-[#74a0ff]/25 bg-[#74a0ff]/10 px-2 py-1 text-[9px] font-bold text-[#91b2ff]">Trial source</span>}{provider.enabled ? <span className="text-[9px] text-emerald-300">فعال</span> : <span className="text-[9px] text-rose-300">غیرفعال</span>}</div><p className="mt-1 text-[10px] text-[#92a2b4]">{provider.providerName} · {provider.protocol} · <span dir="ltr">{provider.baseUrl}</span></p><p className="mt-1 text-[10px] text-[#74849a]">{provider.configured ? "کلید تنظیم شده" : "بدون API Key"} · {provider.modelsCount ?? 0} مدل متصل</p></div>
                 <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => provider.testModelId && save.mutate({ mode: "test", body: { id: provider.id, modelId: provider.testModelId } })} disabled={save.isPending || !provider.testModelId}><Gauge className="size-3.5"/>{provider.testModelId ? "تست اتصال" : "بدون مدل"}</Button><Button size="sm" variant="outline" onClick={() => setEditing(provider.id)}><Pencil className="size-3.5"/>ویرایش</Button></div>
               </div>}
         </CardContent>
@@ -510,10 +510,10 @@ function SettingsPanel() {
 }
 
 function AdminLogin() {
-  return <div className="grid min-h-screen place-items-center bg-[#0d110d] p-5" dir="rtl">
-    <section className="w-full max-w-xl border border-[#313b2d] bg-[#141914] p-7 text-[#e9ece1] shadow-[0_28px_90px_rgba(0,0,0,.35)]">
-      <div className="flex items-start gap-4"><span className="grid size-12 place-items-center border border-[#b9d95d]/30 bg-[#b9d95d]/10 text-[#c7e86a]"><KeyRound className="size-5"/></span><div><p className="text-[8px] font-bold tracking-[.28em] text-[#87947c]">PRIVATE ENTRY</p><h1 className="mt-2 text-2xl font-black">این پیشخوان عمومی نیست.</h1><p className="mt-2 text-xs leading-7 text-[#8f9a89]">ورود فقط از لینک اختصاصی مدیر انجام می‌شود؛ نام کاربری و رمز عبور در این مسیر وجود ندارد.</p></div></div>
-      <div className="mt-6 border-t border-[#293324] pt-4 text-[10px] leading-6 text-[#697464]">برای دسترسی، لینک خصوصی را باز کن تا یک نشست HttpOnly کوتاه‌مدت ساخته شود.</div>
+  return <div className="grid min-h-screen place-items-center bg-[#0b1016] p-5" dir="rtl">
+    <section className="w-full max-w-xl border border-[#2b3746] bg-[#111820] p-7 text-[#e8edf4] shadow-[0_28px_90px_rgba(0,0,0,.35)]">
+      <div className="flex items-start gap-4"><span className="grid size-12 place-items-center border border-[#74a0ff]/30 bg-[#74a0ff]/10 text-[#91b2ff]"><KeyRound className="size-5"/></span><div><p className="text-[8px] font-bold tracking-[.28em] text-[#87947c]">PRIVATE ENTRY</p><h1 className="mt-2 text-2xl font-black">این پیشخوان عمومی نیست.</h1><p className="mt-2 text-xs leading-7 text-[#8f9a89]">ورود فقط از لینک اختصاصی مدیر انجام می‌شود؛ نام کاربری و رمز عبور در این مسیر وجود ندارد.</p></div></div>
+      <div className="mt-6 border-t border-[#252f3c] pt-4 text-[10px] leading-6 text-[#697464]">برای دسترسی، لینک خصوصی را باز کن تا یک نشست HttpOnly کوتاه‌مدت ساخته شود.</div>
     </section>
   </div>;
 }
