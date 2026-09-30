@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 import {
   Activity, ArrowUpLeft, BarChart3, CheckCircle2, ChevronDown, CircleDollarSign, Clock3, CreditCard, FileText, Gauge,
   Info, Layers3, Plus, ShieldCheck, WalletCards, Sparkles,
@@ -80,11 +79,7 @@ export function BillingView(){
       </div>
     </section>}
 
-    <motion.section
-      initial={{ opacity: 0, y: 10, scale: .99 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: .28, ease: "easeOut" }}
-      className="cortex-wallet-quick relative overflow-hidden rounded-[22px] border border-primary/15 bg-primary/[.035] p-3.5 sm:p-4"
+    <section className="cortex-wallet-quick relative overflow-hidden rounded-[22px] border border-primary/15 bg-primary/[.035] p-3.5 sm:p-4"
     >
       <span aria-hidden="true" className="cortex-wallet-quick-glow absolute -end-12 -top-16 size-44 rounded-full bg-primary/10 blur-3xl" />
       <div className="relative">
@@ -115,13 +110,13 @@ export function BillingView(){
           <button type="button" onClick={() => jumpTo("cortex-usage-analytics")} className="cortex-wallet-quick-btn"><BarChart3 className="size-3.5"/>تحلیل مصرف</button>
         </div>
       </div>
-    </motion.section>
+    </section>
 
     <section className="cortex-wallet-card rounded-[28px] p-5 sm:p-7">
       <div className="grid items-center gap-5 lg:grid-cols-[1fr_auto]">
         <div>
           <div className="flex flex-wrap items-center gap-2"><span className="cortex-kicker">CORTEX WALLET</span><Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">{plan.name}</Badge></div>
-          <h1 className="mt-3 text-2xl font-black sm:text-3xl">اعتبار، مصرف و شارژ</h1>
+          <h1 className="mt-3 text-2xl font-black sm:text-3xl">اعتبار، مصرف و شارژ من</h1>
           <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">موجودی، مصرف واقعی، درخواست شارژ و صورتحساب همین فضای کاری را یکجا ببین.</p>
           <div className="mt-6 flex flex-wrap items-end gap-x-10 gap-y-4">
             <div><p className="text-[10px] text-muted-foreground">موجودی فعلی</p><p className="mt-1 text-4xl font-black">{formatCountCompact(data.account.balanceCredits)}</p><p className="mt-1 text-[10px] text-muted-foreground">اعتبار</p></div>
