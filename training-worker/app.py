@@ -2,6 +2,7 @@ import json
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ job_lock = threading.Lock()
 jobs: dict[str, dict[str, Any]] = {}
 model_lock = threading.Lock()
 loaded_models: dict[str, tuple[Any, Any]] = {}
+executor = ThreadPoolExecutor(max_workers=1)
 
 class ChatMessage(BaseModel):
     role: str
@@ -91,9 +93,6 @@ def train_job(req: TrainRequest) -> None:
     model = None
     try:
         with job_lock:
-            if any(j.get("status") == "running" for j in jobs.values()):
-                set_status(job_id, status="queued", error="worker busy")
-                return
             set_status(job_id, status="running", started_at=time.time(), base_model=base_model)
 
         samples = normalize_samples(req.samples)
@@ -251,7 +250,7 @@ def start_train(req: TrainRequest, background_tasks: BackgroundTasks, authorizat
     if req.job_id in jobs:
         return {"job_id": req.job_id, "status": jobs[req.job_id].get("status", "unknown")}
     jobs[req.job_id] = {"status": "queued", "created_at": time.time()}
-    background_tasks.add_task(train_job, req)
+    executor.submit(train_job, req)
     return {"job_id": req.job_id, "status": "queued", "base_model": req.base_model or DEFAULT_BASE_MODEL}
 
 @app.get("/v1/train/{job_id}")
