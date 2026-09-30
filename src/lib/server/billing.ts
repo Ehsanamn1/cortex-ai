@@ -104,17 +104,7 @@ async function ensurePlanCatalog() {
     for (const plan of DEFAULT_BILLING_PLANS) {
       await db.plan.upsert({
         where: { key: plan.key },
-        update: {
-          name: plan.name,
-          description: plan.description,
-          priceToman: plan.priceToman,
-          currency: "TOMAN",
-          monthlyCredits: plan.monthlyCredits,
-          overageCreditPriceToman: plan.overageCreditPriceToman,
-          overageEnabled: plan.overageEnabled,
-          active: true,
-          sortOrder: plan.sortOrder,
-        },
+        update: {},
         create: {
           key: plan.key,
           name: plan.name,
@@ -187,15 +177,9 @@ async function ensureModel(provider: string, model: string) {
   const multiplierBps = defaultCreditMultiplierBps(qualityTier);
   const catalog = await db.modelCatalog.upsert({
     where: { provider_modelId: { provider: canonicalProvider, modelId: model } },
-    update: {
-      routeKey: managed?.key ?? null,
-      displayName: managed?.displayName ?? known?.displayName ?? model,
-      inputUsdPer1M: rate.inputUsdPer1M,
-      outputUsdPer1M: rate.outputUsdPer1M,
-      qualityTier,
-      speedTier: managed?.speedTier ?? known?.speedTier ?? "balanced",
-      commercialAvailable: rate.known,
-    },
+    // Existing catalog entries are admin-owned. Runtime resolution must never
+    // silently overwrite price, display name, route, or plan-facing metadata.
+    update: {},
     create: {
       provider: canonicalProvider,
       modelId: model,
