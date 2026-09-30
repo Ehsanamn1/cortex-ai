@@ -323,39 +323,35 @@ jobs:
           admin_cookie="$(mktemp)"
           admin_response="$(mktemp)"
           admin_token="${CORTEX_ADMIN_ACCESS_TOKEN:-}"
-          test -n "$admin_token" || { echo "CORTEX_ADMIN_ACCESS_TOKEN is required for the private admin smoke test"; exit 1; }
-          admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$(jq -nc --arg token "$admin_token" '{token:$token}')" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/exchange")"
-          echo "POST private admin exchange -> HTTP $admin_status"
-          if [ "$admin_status" = "429" ]; then
-            echo "Cloudflare edge rate limited the private admin smoke."
-            EDGE_RATE_LIMITED=1
-            exit 0
-          fi
-          test "$admin_status" = "200"
-          dashboard_path="$(jq -r ".dashboardPath // empty" "$admin_response")"
-          test -n "$dashboard_path"
-          case "$dashboard_path" in
-            /ops/*/console) ;;
-            *) echo "Unexpected private operator path shape"; exit 1 ;;
-          esac
-          admin_me_tmp="$(mktemp)"
-          admin_me_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_me_tmp" -w "%{http_code}" "$base/api/admin/auth/me")"
-          echo "GET /api/admin/auth/me with private admin session -> HTTP $admin_me_status"
-          test "$admin_me_status" = "200"
-          admin_page_tmp="$(mktemp)"
-          admin_page_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_page_tmp" -w "%{http_code}" "$base$dashboard_path")"
-          echo "GET private operator dashboard -> HTTP $admin_page_status"
-          if [ "$admin_page_status" = "429" ]; then
-            echo "Cloudflare edge rate limited the private operator dashboard check."
-            EDGE_RATE_LIMITED=1
-            rm -f "$admin_me_tmp" "$admin_page_tmp"
-            exit 0
-          fi
-          test "$admin_page_status" = "200"
-          rm -f "$admin_me_tmp" "$admin_page_tmp"
-          if [ "${EDGE_RATE_LIMITED:-0}" = "1" ]; then
-            echo "Stopping live route smoke: Cloudflare edge is temporarily rate-limiting this runner."
-            exit 0
+          if [ -z "$admin_token" ]; then
+            echo "CORTEX_ADMIN_ACCESS_TOKEN is not configured in cortex1; private admin exchange smoke is skipped, while the unauthenticated admin API check above remains active."
+          else
+            admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$(jq -nc --arg token "$admin_token" '{token:$token}')" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/exchange")"
+            echo "POST private admin exchange -> HTTP $admin_status"
+            if [ "$admin_status" = "429" ]; then
+              echo "Cloudflare edge rate limited the private admin smoke; continuing public smoke."
+            else
+              test "$admin_status" = "200"
+              dashboard_path="$(jq -r ".dashboardPath // empty" "$admin_response")"
+              test -n "$dashboard_path"
+              case "$dashboard_path" in
+                /ops/*/console) ;;
+                *) echo "Unexpected private operator path shape"; exit 1 ;;
+              esac
+              admin_me_tmp="$(mktemp)"
+              admin_me_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_me_tmp" -w "%{http_code}" "$base/api/admin/auth/me")"
+              echo "GET /api/admin/auth/me with private admin session -> HTTP $admin_me_status"
+              test "$admin_me_status" = "200"
+              admin_page_tmp="$(mktemp)"
+              admin_page_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_page_tmp" -w "%{http_code}" "$base$dashboard_path")"
+              echo "GET private operator dashboard -> HTTP $admin_page_status"
+              if [ "$admin_page_status" = "429" ]; then
+                echo "Cloudflare edge rate limited the private operator dashboard check; continuing public smoke."
+              else
+                test "$admin_page_status" = "200"
+              fi
+              rm -f "$admin_me_tmp" "$admin_page_tmp"
+            fi
           fi
           smoke_email="cortex-smoke-${GITHUB_RUN_ID}@example.invalid"
           smoke_password="$(openssl rand -hex 18)"
