@@ -1,6 +1,6 @@
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireSession, assertWorkspaceAccess } from "@/lib/server/auth";
-import { captureFeedbackExample, listTrainingExamples, startTraining } from "@/lib/server/training";
+import { captureFeedbackExample, listTrainingExamples, startTraining, trainingConfig } from "@/lib/server/training";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +8,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, { params }: Params) {
   try {
+    if (!trainingConfig.enabled) return applyCors(jsonError("آموزش و فاین‌تیون مدل فعلاً غیرفعال است و به‌زودی فعال می‌شود.", 503), req.headers.get("origin"));
     const session = await requireSession(req);
     const agentId = (await params).id;
     const agent = await db.agent.findUnique({ where: { id: agentId }, select: { id: true, workspaceId: true } });
