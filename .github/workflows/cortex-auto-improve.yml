@@ -11,7 +11,6 @@ concurrency:
 
 jobs:
   improve:
-    if: ${{ secrets.CORTEX_AUTO_IMPROVE_SECRET != '' && secrets.CORTEX_PUBLIC_URL != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger guarded auto-improvement
@@ -20,6 +19,10 @@ jobs:
           CORTEX_AUTO_IMPROVE_SECRET: ${{ secrets.CORTEX_AUTO_IMPROVE_SECRET }}
         run: |
           set -euo pipefail
+          if [ -z "${CORTEX_PUBLIC_URL:-}" ] || [ -z "${CORTEX_AUTO_IMPROVE_SECRET:-}" ]; then
+            echo "Auto-improvement secrets are not configured; skipping safely."
+            exit 0
+          fi
           curl -fsS --retry 3 --retry-delay 5 --max-time 60 \
             -X POST \
             -H "Authorization: Bearer ${CORTEX_AUTO_IMPROVE_SECRET}" \
