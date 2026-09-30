@@ -46,8 +46,6 @@ The Cloudflare Worker needs:
 ```text
 DATABASE_URL
 APP_SECRET_KEY
-CORTEX_ADMIN_USERNAME
-CORTEX_ADMIN_PASSWORD
 R2_ACCOUNT_ID
 R2_BUCKET_NAME
 R2_ACCESS_KEY_ID
@@ -79,7 +77,7 @@ Keep application secrets in Cloudflare Worker Secrets or the protected GitHub En
 
 ## AI provider
 
-New deployments can configure upstream AI providers centrally from **Admin → AI زیرساخت**. Define the Provider name, protocol, Base URL and API key once, then attach models to that Provider from the Model Catalog. Customer Agents select the Cortex model/route only; credentials stay encrypted server-side. One model can be marked as the Trial Default so newly created Trial workspaces use it automatically until their 1,000 credits are exhausted. Legacy environment/provider fallback remains only for backward compatibility.
+New deployments can configure upstream AI providers centrally from **Admin → AI زیرساخت**. Define the Provider name, protocol, Base URL and API key once, then attach models to that Provider from the Model Catalog. Customer Agents select the Cortex model/route only; credentials stay encrypted server-side. One model can be marked as the Trial Default so newly created Trial workspaces use it automatically until their 1,000 credits are exhausted. Upstream credentials are resolved only through the private Admin Provider Registry.
 
 The lexical embedding engine is real deterministic retrieval, not a mock. For neural embeddings, configure `OPENAI_API_KEY` and the desired embeddings model.
 
@@ -99,7 +97,7 @@ See `docs/API_ACCESS.md` for the client contract.
 - Knowledge URL ingestion blocks local/private destinations, re-checks redirects and bounds downloads.
 - Provider credentials, Telegram tokens and webhook secrets are encrypted at rest with `APP_SECRET_KEY`.
 - Production sessions require a persistent `APP_SECRET_KEY` of at least 32 characters.
-- The production Control Center is passwordless at the UI layer: the owner enters through a private access-link route backed by `CORTEX_ADMIN_ACCESS_TOKEN`, which exchanges for an HttpOnly admin session. Legacy username/password remains only as a compatibility API path.
+- The production Control Center is passwordless at the UI layer: the owner enters through a private access-link route backed by `CORTEX_ADMIN_ACCESS_TOKEN`, which exchanges for an HttpOnly admin session. There is no username/password admin login path; the private access-link route is the only operator entry path.
 - Chat POST requests are not automatically retried by the frontend/API client; only idempotent GET/HEAD/OPTIONS calls are retried.
 - Usage limits use durable PostgreSQL reservations and transaction-scoped advisory locks so concurrent Worker isolates cannot bypass the same quota.
 
