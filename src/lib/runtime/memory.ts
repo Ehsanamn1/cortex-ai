@@ -197,17 +197,17 @@ export function extractExplicitMemories(text: string): Array<{ key: string; valu
   if (!input) return [];
 
   const patterns: Array<{ key: string; type: string; regex: RegExp }> = [
-    { key: "profile.name", type: "profile", regex: /(?:اسم من|منو? صدا کن|my name is|call me)\s+([^،,.!?\n]{1,60})/iu },
-    { key: "profile.role", type: "profile", regex: /(?:شغلم|من یک|من یه|I am a|I work as)\s+([^،,.!?\n]{2,80})/iu },
-    { key: "profile.company", type: "profile", regex: /(?:شرکت(?:م| من)|محل کارم|my company is|I work at)\s+([^،,.!?\n]{2,100})/iu },
+    { key: "profile.name", type: "profile", regex: /(?:اسم من|منو? صدا کن|my name is|call me)\s+([^،,.!?\n]{1,60}?)(?=\s*(?:است|هستم|باشه|باشد|\.|،|,|!|$))/iu },
+    { key: "profile.role", type: "profile", regex: /(?:شغلم|کارم)\s*(?:این(?:ه| است)|اینکه)?\s*([^،,.!?\n]{2,80}?)(?=\s*(?:است|هستم|می‌کنم|میکنم|باشد|\.|،|,|!|$))|(?:I am a|I work as)\s+([^،,.!?\n]{2,80})/iu },
+    { key: "profile.company", type: "profile", regex: /(?:شرکت(?:م| من)|محل کارم|my company is|I work at)\s+([^،,.!?\n]{2,100}?)(?=\s*(?:است|هستم|باشد|\.|،|,|!|$))/iu },
     { key: "preference.topic", type: "preference", regex: /(?:علاقه دارم به|علاقه‌مندم به|دوست دارم درباره|i (?:like|love|prefer))\s+([^.!?\n]{2,120})/iu },
-    { key: "preference.response_style", type: "preference", regex: /(?:ترجیح میدم|ترجیح می‌دهم|ترجیح من اینه|please (?:keep|make) (?:your )?(?:answers|responses))\s+([^.!?\n]{2,140})/iu },
+    { key: "preference.response_style", type: "preference", regex: /(?:ترجیح میدم|ترجیح می‌دهم|ترجیح من اینه|لطفاً همیشه|لطفا همیشه|please (?:keep|make) (?:your )?(?:answers|responses))\s+([^.!?\n]{2,140})/iu },
   ];
 
   const out: Array<{ key: string; value: string; type: string }> = [];
   for (const pattern of patterns) {
     const match = input.match(pattern.regex);
-    const value = match?.[1]?.trim().replace(/^[:：-]\s*/, "");
+    const value = (match?.[1] ?? match?.[2])?.trim().replace(/^[:：-]\s*/, "");
     if (value && value.length >= 2) {
       out.push({ key: pattern.key, value: value.slice(0, 240), type: pattern.type });
     }
