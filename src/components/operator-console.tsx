@@ -342,7 +342,7 @@ function ModelsPanel() {
         const inputToman = provider?.enabled ? Number(model.inputUsdPer1M || 0) * Number(q.data.fx?.usdToman ?? 0) : 0;
         const outputToman = provider?.enabled ? Number(model.outputUsdPer1M || 0) * Number(q.data.fx?.usdToman ?? 0) : 0;
         return (
-          <button type="button" key={model.id} onClick={() => setSelected(model)} className="operator-model-card text-right">
+          <button type="button" key={model.id} onClick={() => setSelected({ ...model, fxUsdToman: q.data.fx?.usdToman ?? 0 })} className="operator-model-card text-right">
             <div className="flex items-start gap-3"><span className="operator-model-mark"><BrainCircuit className="size-4" /></span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><b className="truncate text-sm text-[var(--op-fg)]">{model.displayName}</b>{model.trialDefault ? <span className="operator-badge operator-badge-blue">Trial</span> : null}</div><p className="mt-1 truncate text-[10px] text-[var(--op-muted)]">{model.systemProvider?.displayName || model.provider}</p><p dir="ltr" className="mt-2 truncate text-[11px] font-mono text-[var(--op-fg)]">{model.modelId}</p></div></div>
             <div className="mt-4 grid grid-cols-2 gap-2"><div className="operator-data-chip"><span>ورودی</span><b>{inputToman ? toman(inputToman * 1) : "تعریف نشده"}</b></div><div className="operator-data-chip"><span>خروجی</span><b>{outputToman ? toman(outputToman * 1) : "تعریف نشده"}</b></div></div>
             <div className="mt-3 flex items-center justify-between text-[10px] text-[var(--op-muted)]"><span>{model.active ? "فعال" : "خاموش"}</span><span>{model.tools ? "Tools" : "No tools"} · {model.reasoning ? "Reasoning" : "Standard"}</span></div>
