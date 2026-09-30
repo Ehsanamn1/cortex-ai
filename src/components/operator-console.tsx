@@ -445,6 +445,10 @@ function SecurityPanel({ onLogout }: { onLogout: () => void }) {
 
 export function OperatorConsole() {
   const router = useRouter();
+  const auth = useQuery({ queryKey: ["operator-auth"], queryFn: () => fetchJson<{ username: string }>("/api/admin/auth/me"), retry: false, staleTime: 0 });
+  useEffect(() => {
+    if (auth.isError) window.location.replace(OPERATOR_CONSOLE_PATH);
+  }, [auth.isError]);
   const [section, setSection] = useState<Section>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dark, setDark] = useState(false);
@@ -465,6 +469,8 @@ export function OperatorConsole() {
     : section === "resources" ? <ResourcesPanel />
     : section === "telegram" ? <TelegramPanel />
     : <SecurityPanel onLogout={logout} />;
+
+  if (auth.isPending || auth.isError) return <div className={"operator-console min-h-screen " + (dark ? "operator-dark" : "operator-light")} dir="rtl"><div className="operator-loading min-h-screen rounded-none border-0">در حال بررسی دسترسی امن پنل…</div></div>;
 
   return (
     <div className={"operator-console min-h-screen " + (dark ? "operator-dark" : "operator-light")} dir="rtl">
