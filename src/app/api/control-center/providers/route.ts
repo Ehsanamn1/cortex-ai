@@ -198,6 +198,42 @@ export async function POST(req: Request) {
       }), req.headers.get("origin"));
     }
 
+    if (action === "test") {
+      const providerId = textValue(body.providerId, 120);
+      const modelId = textValue(body.modelId, 180);
+      if (!providerId) return applyCors(jsonError("شناسه Provider الزامی است.", 400), req.headers.get("origin"));
+      const provider = await db.systemProviderConfig.findUnique({ where: { id: providerId } });
+      if (!provider) return applyCors(jsonError("Provider پیدا نشد.", 404), req.headers.get("origin"));
+      const selectedModel = modelId || (await db.modelCatalog.findFirst({ where: { systemProviderId: providerId, active: true }, orderBy: { updatedAt: "desc" }, select: { modelId: true } }))?.modelId;
+      if (!selectedModel) return applyCors(jsonError("برای تست، حداقل یک Model ID وارد کن.", 400), req.headers.get("origin"));
+      const runtime = buildSystemProviderForModel(provider, selectedModel);
+      if (!runtime.isConfigured()) return applyCors(jsonError("Provider هنوز API Key یا تنظیمات احراز هویت لازم را ندارد.", 400), req.headers.get("origin"));
+      const health = await runtime.healthCheck();
+      await db.systemProviderConfig.update({ where: { id: providerId }, data: { lastHealthStatus: health.ok ? "healthy" : "error", lastHealthError: health.ok ? null : health.error, lastHealthAt: new Date() } });
+      return applyCors(jsonOk({ provider: publicProvider(provider, selectedModel), modelId: selectedModel, health }), req.headers.get("origin"));
+    }
+
+    if (action === "discover_models") {
+      const providerId = textValue(body.providerId, 120);
+      if (!providerId) return applyCors(jsonError("شناسه Provider الزامی است.", 400), req.headers.get("origin"));
+      const provider = await db.systemProviderConfig.findUnique({ where: { id: providerId } });
+      if (!provider) return applyCors(jsonError("Provider پیدا نشد.", 404), req.headers.get("origin"));
+      if (provider.protocol !== "openai-compatible" && provider.protocol !== "openrouter") {
+        return applyCors(jsonOk({ supported: false, models: [], note: "کشف خودکار مدل برای این Protocol فعال نیست؛ Model ID را دستی وارد کن." }), req.headers.get("origin"));
+      }
+      const headers: Record<string, string> = { accept: "application/json" };
+      const apiKey = provider.apiKeyEncrypted ? decryptSecret(provider.apiKeyEncrypted) : "";
+      if (apiKey && provider.authMode === "bearer") headers.authorization = "Bearer " + apiKey;
+      if (apiKey && provider.authMode === "x-api-key") headers["x-api-key"] = apiKey;
+      const endpoint = provider.baseUrl.replace(/\/$/, "") + "/models";
+      const started = Date.now();
+      const response = await fetch(endpoint, { headers, cache: "no-store" });
+      if (!response.ok) return applyCors(jsonError("کشف مدل‌ها از Provider با HTTP " + response.status + " متوقف شد.", 502), req.headers.get("origin"));
+      const payload = await response.json() as { data?: Array<{ id?: string; name?: string }> };
+      const models = (payload.data ?? []).map((item) => String(item.id || item.name || "").trim()).filter(Boolean).slice(0, 500);
+      return applyCors(jsonOk({ supported: true, models, endpoint, latencyMs: Date.now() - started }), req.headers.get("origin"));
+    }
+
     if (action === "create") {
       const config = validateConfig(body);
       const apiKey = textValue(body.apiKey, 4000);
