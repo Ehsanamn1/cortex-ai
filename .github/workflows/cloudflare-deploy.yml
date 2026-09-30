@@ -441,18 +441,11 @@ jobs:
           echo "GET(no-auth) $base/api/billing/topup-request -> HTTP $topup_noauth_status"
           test "$topup_noauth_status" = "401" -o "$topup_noauth_status" = "404"
 
-          admin_cookie="$(mktemp)"
-          admin_response="$(mktemp)"
-          admin_body="$(jq -nc '{username:"ehsanam86"}')"
-          admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$admin_body" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/login")"
-          echo "POST $base/api/admin/auth/login -> HTTP $admin_status"
-          cat "$admin_response" | jq . || cat "$admin_response"
-          test "$admin_status" = "200"
+          # Continue using the Secret-backed admin session created above.
           check_admin_json() {
             local path="$1"
             local expected="$2"
-            local tmp
-            tmp="$(mktemp)"
+            local tmp="$(mktemp)"
             local status
             status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$tmp" -w "%{http_code}" "$base$path")"
             echo "GET $base$path (admin) -> HTTP $status"
@@ -469,7 +462,7 @@ jobs:
           check_admin_json "/api/control-center/resources?resource=agents" "200"
           check_admin_json "/api/control-center/billing" "200"
           check_admin_json "/api/control-center/topups" "200"
-          rm -f "$admin_response" "$admin_cookie"
+          rm -f "$admin_response"
           agent_body="$(jq -nc '{name:"Cortex Smoke Agent",language:"fa",tone:"professional",temperature:0.2,topP:1,maxTokens:256}')"
           agent_response="$(mktemp)"
           agent_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d "$agent_body" -o "$agent_response" -w "%{http_code}" "$base/api/agents")"
