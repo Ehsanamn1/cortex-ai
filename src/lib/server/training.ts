@@ -147,6 +147,12 @@ export async function startTraining(params: {
   });
   if (running) return running;
 
+  const lastPromoted = await db.trainingJob.findFirst({
+    where: { agentId: params.agentId, workspaceId: params.workspaceId, promoted: true },
+    orderBy: { createdAt: "desc" },
+  });
+  if (lastPromoted?.datasetHash === hash) return lastPromoted;
+
   const job = await db.trainingJob.create({
     data: {
       workspaceId: params.workspaceId,
