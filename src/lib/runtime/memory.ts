@@ -74,6 +74,17 @@ export async function loadAgentMemory(
   });
 
   const now = new Date();
+
+  // Lightweight maintenance runs on the normal recall path so expired
+  // short-lived memory cannot accumulate indefinitely.
+  void db.memoryEntry.deleteMany({
+    where: {
+      agentId,
+      ...tenant,
+      expiresAt: { lte: now },
+    },
+  }).catch(() => undefined);
+
   const ranked = entries
     .filter((entry) => !entry.expiresAt || entry.expiresAt > now)
     .filter((entry) => !entry.supersededById)
