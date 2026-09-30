@@ -11,6 +11,7 @@ import {
   LogOut,
   Plus,
   ShieldCheck,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -152,6 +153,48 @@ function AccountSection() {
         </Button>
       </CardContent>
       <SignOutConfirm open={confirmOpen} onOpenChange={setConfirmOpen} onConfirm={() => void signOutNow()} />
+    </Card>
+  );
+}
+
+function PasswordSection() {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function save() {
+    if (newPassword.length < 8) return toast.error("رمز جدید باید حداقل ۸ کاراکتر باشد.");
+    setPending(true);
+    try {
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(body.error || "تغییر رمز انجام نشد.");
+      setCurrentPassword("");
+      setNewPassword("");
+      toast.success("رمز عبور با موفقیت تغییر کرد.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تغییر رمز انجام نشد.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <Card className="rounded-xl">
+      <CardHeader className="border-b [.border-b]:pb-4">
+        <CardTitle className="flex items-center gap-2 text-base"><KeyRound className="size-4 text-primary" /> امنیت حساب</CardTitle>
+        <CardDescription>رمز عبور را هر زمان خواستی از همین‌جا تغییر بده.</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4 pt-4 sm:grid-cols-2">
+        <div><Label>رمز فعلی</Label><Input className="mt-2" type="password" dir="ltr" value={currentPassword} onChange={(e)=>setCurrentPassword(e.target.value)} autoComplete="current-password" /></div>
+        <div><Label>رمز جدید</Label><Input className="mt-2" type="password" dir="ltr" value={newPassword} onChange={(e)=>setNewPassword(e.target.value)} autoComplete="new-password" /></div>
+        <div className="sm:col-span-2 flex justify-end"><Button disabled={pending || !currentPassword || !newPassword} onClick={save}>{pending ? "در حال ذخیره…" : "تغییر رمز عبور"}</Button></div>
+      </CardContent>
     </Card>
   );
 }
@@ -318,7 +361,7 @@ export function SettingsView() {
         <AccountSection />
       </section>
 
-      <section aria-labelledby="settings-workspace" className="space-y-4">
+      <section aria-labelledby="settings-password" className="space-y-4"><h3 id="settings-password" className="text-base font-semibold text-foreground">امنیت حساب</h3><PasswordSection /></section>\n\n      <section aria-labelledby="settings-workspace" className="space-y-4">
         <h3 id="settings-workspace" className="text-base font-semibold text-foreground">
           فضای کاری
         </h3>
