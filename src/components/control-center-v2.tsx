@@ -253,7 +253,24 @@ function ModelCreate({providers,onSave}:{providers:any[];onSave:(body:any)=>void
 
 function PlanEditor({plan,onSave}:{plan:any;onSave:(body:any)=>void}) {
   const [v,setV]=useState({...plan});
-  return <div className="grid gap-3 sm:grid-cols-2"><Input value={v.name} onChange={e=>setV({...v,name:e.target.value})} placeholder="نام"/><Input type="number" value={v.priceToman} onChange={e=>setV({...v,priceToman:e.target.value})} placeholder="قیمت"/><Input type="number" value={v.monthlyCredits} onChange={e=>setV({...v,monthlyCredits:e.target.value})} placeholder="اعتبار"/><Input type="number" value={v.overageCreditPriceToman} onChange={e=>setV({...v,overageCreditPriceToman:e.target.value})} placeholder="Overage"/><Button onClick={()=>onSave({name:v.name,priceToman:Number(v.priceToman),monthlyCredits:Number(v.monthlyCredits),overageCreditPriceToman:Number(v.overageCreditPriceToman)})}><Save/>ذخیره</Button></div>;
+  return <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <Input value={v.name} onChange={e=>setV({...v,name:e.target.value})} placeholder="نام"/>
+    <Input type="number" value={v.priceToman} onChange={e=>setV({...v,priceToman:e.target.value})} placeholder="قیمت تومان"/>
+    <Input type="number" value={v.monthlyCredits} onChange={e=>setV({...v,monthlyCredits:e.target.value})} placeholder="اعتبار ماهانه"/>
+    <Input type="number" value={v.overageCreditPriceToman} onChange={e=>setV({...v,overageCreditPriceToman:e.target.value})} placeholder="قیمت هر اعتبار مازاد"/>
+    <Input type="number" value={v.sortOrder ?? 0} onChange={e=>setV({...v,sortOrder:e.target.value})} placeholder="ترتیب"/>
+    <div className="flex items-center justify-between rounded-xl border border-border bg-background p-3"><span className="text-xs font-semibold">فعال</span><Switch checked={v.active !== false} onCheckedChange={x=>setV({...v,active:x})}/></div>
+    <div className="flex items-center justify-between rounded-xl border border-border bg-background p-3"><span className="text-xs font-semibold">مصرف مازاد</span><Switch checked={Boolean(v.overageEnabled)} onCheckedChange={x=>setV({...v,overageEnabled:x})}/></div>
+    <Button className="sm:col-span-2 lg:col-span-3 sm:w-fit" onClick={()=>onSave({
+      name:v.name,
+      priceToman:Number(v.priceToman),
+      monthlyCredits:Number(v.monthlyCredits),
+      overageCreditPriceToman:Number(v.overageCreditPriceToman),
+      sortOrder:Number(v.sortOrder ?? 0),
+      active:Boolean(v.active),
+      overageEnabled:Boolean(v.overageEnabled),
+    })}><Save/>ذخیره پلن</Button>
+  </div>;
 }
 
 function ModelEditor({model,providers,onSave}:{model:any;providers:any[];onSave:(body:any)=>void}) {
