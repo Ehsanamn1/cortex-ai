@@ -1,4 +1,5 @@
 name: Deploy Cortex AI to Cloudflare Workers
+# Release trigger: keep Cloudflare deployment attached to every main commit.
 
 concurrency:
   group: cortex-${{ github.workflow }}-${{ github.ref }}
