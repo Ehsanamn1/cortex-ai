@@ -629,7 +629,7 @@ export async function reserveBillingCredits(params: {
       reservationId: null,
       estimatedCredits,
       providerCostMicros,
-      creditMultiplierBps: managed ? 100 : multiplierBps,
+      creditMultiplierBps: multiplierBps,
       enforcementEnabled: false,
     };
   }
