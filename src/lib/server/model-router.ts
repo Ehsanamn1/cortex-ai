@@ -1,4 +1,3 @@
-import { OpenRouterProvider } from "@/lib/providers/llm/openrouter";
 import { db } from "@/lib/db";
 import { getModelRate, type KnownModelCatalogEntry } from "@/lib/server/pricing";
 import type { LLMProvider } from "@/lib/providers/llm/types";
@@ -248,10 +247,9 @@ async function resolveProviderFromCatalog(
   });
   if (byProvider) return buildSystemProviderForModel(byProvider, model.modelId);
 
-  // Backward-compatible OpenRouter environment fallback. New production
-  // installations should use the admin-managed provider registry instead.
-  const legacy = model.provider.toLowerCase() === "openrouter" ? new OpenRouterProvider({ model: model.modelId }) : null;
-  return legacy?.isConfigured() ? legacy : null;
+  // Upstream credentials are owned exclusively by the admin-managed
+  // Provider Registry. Runtime code never falls back to public env credentials.
+  return null;
 }
 
 export async function resolveManagedModelForAgent(agentId: string, workspaceId: string): Promise<{
@@ -287,13 +285,10 @@ export async function resolveManagedModelForAgent(agentId: string, workspaceId: 
         { status: 503, code: "trial_route_unconfigured" },
       );
     }
-    const fallback = findManagedModel(agent?.modelKey) ?? getManagedModelCatalog()[0];
-    const envProvider = new OpenRouterProvider({ model: fallback.providerModelId });
-    const provider = envProvider.isConfigured() ? envProvider : null;
-    if (!provider) {
-      throw Object.assign(new Error("هیچ Provider مدیریتی برای این مدل فعال نیست."), { status: 503, code: "managed_provider_unavailable" });
-    }
-    return { model: fallback, provider, planKey: account.plan.key };
+    throw Object.assign(
+      new Error("مدل انتخابی در کاتالوگ مدیریت‌شده Cortex پیدا نشد یا برای این پلن پیکربندی نشده است."),
+      { status: 503, code: "model_route_unavailable" },
+    );
   }
 
   const access = await db.planModelAccess.findUnique({
