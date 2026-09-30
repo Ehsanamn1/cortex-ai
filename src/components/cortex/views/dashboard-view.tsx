@@ -55,7 +55,7 @@ function DashboardOnboarding({
 
   return (
     <motion.section initial={{ opacity: 0, y: -8, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-card/70 p-5 shadow-none sm:p-6">
-      <div className="absolute -start-20 -top-24 size-56 rounded-full bg-primary/10 blur-3xl" />
+
       <div className="relative">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -244,8 +244,7 @@ export function DashboardView() {
           transition={{ duration: .42, ease: "easeOut" }}
           className={cn("relative overflow-hidden rounded-[30px] border p-4 shadow-none sm:p-6 lg:p-7", lowBalance ? "border-amber-400/25 bg-amber-400/[.045]" : "border-primary/20 bg-primary/[.045]")}
         >
-          <div className="absolute -end-20 -top-24 size-72 rounded-full bg-primary/10 blur-3xl animate-pulse" />
-          <div className="absolute -start-24 -bottom-28 size-64 rounded-full bg-primary/5 blur-3xl" />
+
           <div className="relative grid gap-6 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
