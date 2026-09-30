@@ -3,7 +3,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import { FileSearch, GraduationCap, Loader2, LockKeyhole, MailCheck, MessagesSquare, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -396,7 +395,7 @@ export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }
                 </TabsContent>
               </Tabs>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
