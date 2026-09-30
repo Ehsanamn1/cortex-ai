@@ -86,7 +86,6 @@ jobs:
           put_secret POSTGRES_PRISMA_URL "$POSTGRES_PRISMA_URL"
           put_secret POSTGRES_URL "$POSTGRES_URL"
           put_secret APP_SECRET_KEY "$APP_SECRET_KEY"
-          put_secret CORTEX_ADMIN_ACCESS_TOKEN "$CORTEX_ADMIN_ACCESS_TOKEN"
           put_secret CORTEX_ADMIN_SESSION_SECRET "$CORTEX_ADMIN_SESSION_SECRET"
           put_secret TELEGRAM_INTERNAL_SECRET "$TELEGRAM_INTERNAL_SECRET"
           put_secret CORTEX_ZARINPAL_MERCHANT_ID "$CORTEX_ZARINPAL_MERCHANT_ID"
@@ -229,7 +228,6 @@ jobs:
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
           CORTEX_ADMIN_SESSION_SECRET: ${{ secrets.CORTEX_ADMIN_SESSION_SECRET || vars.CORTEX_ADMIN_SESSION_SECRET }}
-          CORTEX_ADMIN_ACCESS_TOKEN: ${{ secrets.CORTEX_ADMIN_ACCESS_TOKEN || vars.CORTEX_ADMIN_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           base="https://cortex-ai.dengxiao445.workers.dev"
