@@ -4,8 +4,6 @@ import { NextResponse } from "next/server";
 
 const COOKIE_NAME = "cortex_admin_session";
 const TTL_SECONDS = 60 * 60 * 12;
-const TEST_USERNAME = "ehsan86";
-const TEST_PASSWORD = "ehsanam86";
 
 export class AdminConfigError extends Error {
   status = 503;
@@ -27,25 +25,8 @@ function secret(): string {
 }
 
 export function adminCredentials() {
-  const username = process.env.CORTEX_ADMIN_USERNAME?.trim();
-  const password = process.env.CORTEX_ADMIN_PASSWORD;
-  const production = process.env.NODE_ENV === "production" || process.env.APP_ENV === "production";
-  const test = process.env.NODE_ENV === "test" || process.env.APP_ENV === "test";
-  if (production && (!username || !password)) {
-    throw new AdminConfigError("اطلاعات ورود مدیر در محیط تولید تنظیم نشده است.");
-  }
-  if (test) {
-    return {
-      username: username || TEST_USERNAME,
-      password: password || TEST_PASSWORD,
-    };
-  }
-  if (!username || !password) {
-    throw new AdminConfigError("اطلاعات ورود مدیر باید با CORTEX_ADMIN_USERNAME و CORTEX_ADMIN_PASSWORD تنظیم شود.");
-  }
-  return { username, password };
+  throw new AdminConfigError("ورود با نام کاربری و رمز عبور دیگر پشتیبانی نمی‌شود. از لینک خصوصی مدیر استفاده کنید.");
 }
-
 function encode(value: string) { return Buffer.from(value).toString("base64url"); }
 
 export function signAdminSession(username: string) {

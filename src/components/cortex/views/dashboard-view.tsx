@@ -186,8 +186,8 @@ function DashboardLaunchpad({
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between gap-3">
-        <div><p className="cortex-kicker">EXECUTION PATH</p><h2 className="mt-1 text-lg font-black">مسیرهای اصلی اجرا</h2></div>
-        <span className="hidden text-[10px] text-muted-foreground sm:inline">ساخت، اتصال، دانش و انتشار در یک نما</span>
+        <div><p className="cortex-kicker">EXECUTION PATH</p><h2 className="mt-1 text-lg font-black">کارهای اصلی</h2></div>
+        <span className="hidden text-[10px] text-muted-foreground sm:inline">ساخت، دانش، انتشار و تحلیل</span>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => {
@@ -217,7 +217,7 @@ function DashboardSystemPulse({ stats, activity }: { stats: DashboardStatsDto; a
   ];
   return (
     <Card className="cortex-panel h-full rounded-2xl">
-      <CardHeader><p className="cortex-kicker">SYSTEM PULSE</p><CardTitle className="mt-2 text-base">نبض عملیاتی Cortex</CardTitle></CardHeader>
+      <CardHeader><p className="cortex-kicker">SYSTEM PULSE</p><CardTitle className="mt-2 text-base">وضعیت اجرا</CardTitle></CardHeader>
       <CardContent className="space-y-2 p-4 pt-0">
         <div className="grid grid-cols-2 gap-2">{signals.map((signal) => <HealthPill key={signal.label} ready={signal.ready} label={signal.label} detail={signal.detail} />)}</div>
         <div className="mt-2 rounded-2xl border border-border/60 bg-background/35 p-4">
@@ -298,12 +298,12 @@ export function DashboardView() {
           <div className="relative grid gap-6 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="cortex-kicker">CORTEX WALLET</span>
+                <span className="cortex-kicker">ACCOUNT / USAGE</span>
                 <motion.span animate={{ y: [0, -2, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }} className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-black text-primary">{plan?.name ?? "پلن"}</motion.span>
                 <span className="rounded-full border border-border/70 bg-background/45 px-2.5 py-1 text-[9px] text-muted-foreground">اعتبار امن و کنترل‌شده</span>
               </div>
-              <h2 className="mt-3 text-2xl font-black sm:text-3xl">وضعیت اعتبار و مصرف هوش</h2>
-              <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">موجودی، سطح مدل‌ها و مصرف را در یک نمای زنده ببین و بدون خارج‌شدن از داشبورد به پلن و مدل دسترسی پیدا کن.</p>
+              <h2 className="mt-3 text-2xl font-black sm:text-3xl">وضعیت حساب و مصرف</h2>
+              <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">اعتبار، مصرف و دسترسی مدل‌ها را از همین صفحه پیگیری کن.</p>
               <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div className="rounded-2xl border border-border/60 bg-background/35 p-3"><p className="text-[9px] text-muted-foreground">اعتبار فعلی</p><p className="mt-1 text-lg font-black">{faNum(balance)}</p></div>
                 <div className="rounded-2xl border border-border/60 bg-background/35 p-3"><p className="text-[9px] text-muted-foreground">پلن</p><p className="mt-1 truncate text-sm font-black">{plan?.name ?? "—"}</p></div>
@@ -320,7 +320,20 @@ export function DashboardView() {
                 {lowBalance && <Button size="sm" variant="outline" onClick={() => setView("billing")}>شارژ سریع</Button>}
               </div>
             </div>
-            <div className="relative min-h-[210px] sm:min-h-[250px]"><CortexCore /></div>
+            <div className="relative min-h-[210px] sm:min-h-[250px]">
+              <div className="h-full border-s border-border/70 ps-6">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <span className="cortex-kicker">ACCOUNT RECORD</span>
+                  <span className={cn("text-[9px] font-bold", lowBalance ? "text-amber-400" : "text-emerald-400")}>{lowBalance ? "LOW BALANCE" : "ACTIVE"}</span>
+                </div>
+                <div className="divide-y divide-border/50">
+                  <div className="flex items-baseline justify-between gap-4 py-4"><span className="text-xs text-muted-foreground">موجودی</span><strong className="text-3xl tracking-tight">{faNum(balance)}</strong></div>
+                  <div className="flex items-center justify-between gap-4 py-3"><span className="text-xs text-muted-foreground">مدل قابل استفاده</span><span className="text-xs font-bold">{recentAgentId ? "بر اساس پلن" : "پس از ساخت Agent"}</span></div>
+                  <div className="flex items-center justify-between gap-4 py-3"><span className="text-xs text-muted-foreground">مصرف امروز</span><span className="text-xs font-bold">{faNum(stats.todayTokens ?? 0)} توکن</span></div>
+                  <div className="flex items-center justify-between gap-4 py-3"><span className="text-xs text-muted-foreground">دوره اعتبار</span><span className="text-xs font-bold">{faNum(monthlyCredits)} اعتبار</span></div>
+                </div>
+              </div>
+            </div>
           </div>
         </motion.section>
       )}
