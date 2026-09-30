@@ -23,7 +23,6 @@ export const CORTEX_UI_CONFIG = {
     { view: "conversations" as CortexView, label: "گفتگوها", mobile: false },
     { view: "telegram" as CortexView, label: "تلگرام", mobile: false },
     { view: "analytics" as CortexView, label: "تحلیل", mobile: false },
-    { view: "workflows" as CortexView, label: "گردش‌کارها", mobile: false },
   ],
   copy: {
     welcomeTitle: "هوش کسب‌وکار را از یک داشبورد کنترل کن.",

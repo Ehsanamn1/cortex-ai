@@ -6,6 +6,7 @@ type CacheEntry = { at: number; points: CachedPoint[] };
 
 const CACHE_TTL_MS = 30_000;
 const MAX_CACHE_POINTS = 8_000;
+const SCAN_BATCH_SIZE = 750;
 const agentCache = new Map<string, CacheEntry>();
 
 /**
@@ -79,20 +80,59 @@ export class LocalVectorStore implements VectorStore {
   }
 
   async search(agentId: string, queryVector: number[], topK: number): Promise<SearchResult[]> {
-    const points = await this.loadPoints(agentId);
+    const limit = Math.max(1, topK);
+    const cached = agentCache.get(agentId);
+    if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+      return this.rankPoints(cached.points, queryVector, limit);
+    }
+
+    const total = await db.vectorPoint.count({ where: { agentId } });
+    if (total <= MAX_CACHE_POINTS) {
+      const points = await this.loadPoints(agentId);
+      return this.rankPoints(points, queryVector, limit);
+    }
+
+    const ranked: SearchResult[] = [];
+    let lastId: string | null = null;
+    while (true) {
+      const rows = await db.vectorPoint.findMany({
+        where: lastId ? { agentId, id: { gt: lastId } } : { agentId },
+        orderBy: { id: "asc" },
+        take: SCAN_BATCH_SIZE,
+        select: { id: true, vector: true, payload: true },
+      });
+      if (rows.length === 0) break;
+
+      for (const row of rows) {
+        try {
+          const vector = JSON.parse(row.vector) as number[];
+          const payload = JSON.parse(row.payload) as UpsertPoint["payload"];
+          if (!Array.isArray(vector) || vector.length === 0) continue;
+          if (payload.workspaceId === undefined || payload.sourceId === undefined) continue;
+          ranked.push({ id: row.id, score: cosineSimilarity(queryVector, vector), payload });
+        } catch {}
+      }
+
+      ranked.sort((a, b) => b.score - a.score);
+      if (ranked.length > limit * 4) ranked.splice(limit * 4);
+      lastId = rows.at(-1)?.id ?? null;
+      if (rows.length < SCAN_BATCH_SIZE) break;
+    }
+
+    ranked.sort((a, b) => b.score - a.score);
+    return ranked.slice(0, limit);
+  }
+
+  private rankPoints(points: CachedPoint[], queryVector: number[], limit: number): SearchResult[] {
     const ranked: SearchResult[] = [];
     for (const point of points) {
       const payload = point.payload;
       if (payload.workspaceId !== undefined && payload.sourceId !== undefined) {
-        ranked.push({
-          id: point.id,
-          score: cosineSimilarity(queryVector, point.vector),
-          payload,
-        });
+        ranked.push({ id: point.id, score: cosineSimilarity(queryVector, point.vector), payload });
       }
     }
     ranked.sort((a, b) => b.score - a.score);
-    return ranked.slice(0, Math.max(1, topK));
+    return ranked.slice(0, limit);
   }
 
   async deleteByAgent(agentId: string): Promise<void> {

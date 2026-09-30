@@ -1380,3 +1380,62 @@ html:not(.dark) .cortex-dashstack [data-slot="card"] { color: var(--card-foregro
   --tw-gradient-from: var(--primary) !important;
   --tw-gradient-to: transparent !important;
 }
+
+
+/* Cortex final visual system: semantic surfaces and restrained motion. */
+.cortex-dashstack .cortex-panel,
+.cortex-dashstack [data-slot="card"] {
+  background: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 1px 2px rgba(15,23,42,.04) !important;
+}
+.cortex-dashstack [class*="border-white/"],
+.cortex-dashstack [class*="border-gray-"],
+.cortex-dashstack [class*="border-slate-"] {
+  border-color: color-mix(in srgb, var(--border) 92%, transparent) !important;
+}
+.cortex-dashstack [class*="bg-white/"],
+.cortex-dashstack [class*="bg-black/"] {
+  background-color: color-mix(in srgb, var(--card) 94%, var(--background)) !important;
+  background-image: none !important;
+}
+.cortex-dashstack .cortex-sidebar,
+.cortex-dashstack .cortex-topbar {
+  background-image: none !important;
+}
+.cortex-dashstack .cortex-icon-box {
+  background: var(--secondary) !important;
+  border-color: var(--border) !important;
+  color: var(--primary) !important;
+  box-shadow: none !important;
+}
+.cortex-dashstack .cortex-kicker {
+  color: var(--muted-foreground) !important;
+}
+.cortex-control-center {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+.cortex-control-center [data-slot="card"] {
+  background: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+}
+.cortex-landing {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+.cortex-landing [class*="bg-violet-"],
+.cortex-landing [class*="bg-purple-"] {
+  background-image: none !important;
+}
+.cortex-landing [class*="shadow-"] {
+  box-shadow: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cortex-dashstack * {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

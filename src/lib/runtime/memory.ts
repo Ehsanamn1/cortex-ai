@@ -171,6 +171,39 @@ export function extractExplicitMemories(text: string): Array<{ key: string; valu
   return out;
 }
 
+export async function rememberConversationContext(params: {
+  workspaceId: string;
+  agentId: string;
+  conversationId: string;
+  history: Array<{ role: "user" | "assistant"; content: string }>;
+  latestUser: string;
+  latestAssistant: string;
+}) {
+  const turns = [
+    ...params.history.slice(-6),
+    { role: "user" as const, content: params.latestUser },
+    { role: "assistant" as const, content: params.latestAssistant },
+  ]
+    .filter((turn) => turn.content.trim())
+    .map((turn) => (turn.role === "user" ? "کاربر: " : "ایجنت: ") + turn.content.trim().slice(0, 900))
+    .join("\n")
+    .slice(-6000);
+
+  if (!turns) return;
+  return remember({
+    workspaceId: params.workspaceId,
+    agentId: params.agentId,
+    conversationId: params.conversationId,
+    scope: "conversation",
+    key: "conversation:" + params.conversationId + ":context",
+    value: turns,
+    type: "summary",
+    importance: 88,
+    confidence: 92,
+    source: "rolling_context",
+  });
+}
+
 export async function rememberExplicitUserFacts(params: {
   workspaceId: string;
   agentId: string;

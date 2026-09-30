@@ -3,7 +3,7 @@ import { llmManager } from "@/lib/providers/llm/manager";
 import type { ChatTurn } from "@/lib/providers/llm/types";
 import { answerWithKnowledge } from "@/lib/rag/pipeline";
 import type { RetrievedChunk } from "@/lib/rag/prompt";
-import { loadAgentMemory, remember, rememberExplicitUserFacts } from "./memory";
+import { loadAgentMemory, remember, rememberConversationContext, rememberExplicitUserFacts } from "./memory";
 import { executeTool, listAgentTools } from "./tools";
 import type { AgentRuntimeInput } from "./types";
 
@@ -120,6 +120,19 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
           return { stored: true };
         }).catch(() => undefined);
       }
+    }
+
+    if (agent.memoryEnabled && input.conversationId) {
+      await rememberConversationContext({
+        workspaceId: input.workspaceId,
+        agentId: agent.id,
+        conversationId: input.conversationId,
+        history,
+        latestUser: input.input,
+        latestAssistant: finalContent,
+      }).catch((error) => {
+        console.warn("[cortex][memory] rolling context skipped:", error instanceof Error ? error.message : error);
+      });
     }
 
     if (execution) {

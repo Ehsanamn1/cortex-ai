@@ -123,9 +123,8 @@ export function KnowledgeView() {
 
   return (
     <div className="space-y-7">
-      <section className="cortex-panel relative overflow-hidden rounded-[28px] p-5 sm:p-7">
-        <div className="absolute -end-20 -top-24 size-64 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -start-16 -bottom-20 size-56 rounded-full bg-violet-500/10 blur-3xl" />
+      <section className="cortex-panel relative overflow-hidden rounded-xl p-5 sm:p-7">
+
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <p className="cortex-kicker">KNOWLEDGE BASE · پایگاه دانش</p>
@@ -135,9 +134,9 @@ export function KnowledgeView() {
           <Button onClick={() => setAddOpen(true)} disabled={agents.length === 0}><Plus />افزودن منبع</Button>
         </div>
         <div className="relative mt-6 grid gap-2 sm:grid-cols-3">
-          <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3"><span className="flex size-9 items-center justify-center rounded-lg border bg-primary/10 text-primary"><Database className="size-4"/></span><div><p className="text-xs font-medium">آپلود فایل</p><p className="mt-0.5 text-[10px] text-muted-foreground">سقف و مسیر انتقال از تنظیمات سیستم می‌آید</p></div></div>
-          <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3"><span className="flex size-9 items-center justify-center rounded-lg border bg-violet-400/10 text-violet-300"><Zap className="size-4"/></span><div><p className="text-xs font-medium">پردازش خودکار</p><p className="mt-0.5 text-[10px] text-muted-foreground">استخراج و ایندکس پس از دریافت</p></div></div>
-          <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3"><span className="flex size-9 items-center justify-center rounded-lg border bg-emerald-400/10 text-emerald-300"><ShieldCheck className="size-4"/></span><div><p className="text-xs font-medium">اسکوپ‌شده برای هر ایجنت</p><p className="mt-0.5 text-[10px] text-muted-foreground">دانش بین فضاها قاطی نمی‌شود</p></div></div>
+          <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/20 p-3"><span className="flex size-9 items-center justify-center rounded-lg border bg-primary/10 text-primary"><Database className="size-4"/></span><div><p className="text-xs font-medium">آپلود فایل</p><p className="mt-0.5 text-[10px] text-muted-foreground">سقف و مسیر انتقال از تنظیمات سیستم می‌آید</p></div></div>
+          <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3"><span className="flex size-9 items-center justify-center rounded-lg border bg-secondary text-secondary-foreground"><Zap className="size-4"/></span><div><p className="text-xs font-medium">پردازش خودکار</p><p className="mt-0.5 text-[10px] text-muted-foreground">استخراج و ایندکس پس از دریافت</p></div></div>
+          <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3"><span className="flex size-9 items-center justify-center rounded-lg border bg-secondary text-secondary-foreground"><ShieldCheck className="size-4"/></span><div><p className="text-xs font-medium">اسکوپ‌شده برای هر ایجنت</p><p className="mt-0.5 text-[10px] text-muted-foreground">دانش بین فضاها قاطی نمی‌شود</p></div></div>
         </div>
       </section>
 

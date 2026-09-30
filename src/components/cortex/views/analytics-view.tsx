@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, BarChart3, CircleDollarSign, Database, HelpCircle, MessageSquare, Send, Sparkles, Users } from "lucide-react";
 import { api } from "@/lib/cortex-client";
@@ -13,6 +13,17 @@ function K({title,value,detail,icon:Icon}:{title:string;value:string;detail:stri
 }
 
 type TrendPoint = { date: string; messages: number; tokens: number };
+
+function TrendLineChart({ trend }:{trend:TrendPoint[]}){
+  const [metric,setMetric]=useState<"messages"|"tokens">("messages");
+  const values=trend.map(v=>v[metric]);
+  const max=Math.max(...values,1);
+  const width=860, height=300, padX=34, padTop=22, padBottom=34, innerW=width-padX*2, innerH=height-padTop-padBottom;
+  const points=values.map((value,i)=>{const x=padX+(i/Math.max(1,values.length-1))*innerW;const y=padTop+(1-value/max)*innerH;return {x,y,value,date:trend[i]?.date??""};});
+  const line=points.map((p,i)=>(i===0?"M":"L")+` ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ");
+  const area=line+` L ${padX+innerW} ${padTop+innerH} L ${padX} ${padTop+innerH} Z`;
+  return <Card className="cortex-panel rounded-2xl"><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><div><CardTitle className="flex items-center gap-2 text-base"><BarChart3 className="size-4 text-primary"/>روند ۱۴ روزه</CardTitle><p className="mt-1 text-[10px] text-muted-foreground">نمودار واقعی مصرف و تعامل فضای کاری</p></div><div className="flex items-center gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">{(["messages","tokens"] as const).map(item=><button key={item} type="button" onClick={()=>setMetric(item)} className={item===metric?"rounded-md bg-primary/10 px-2.5 py-1.5 text-[10px] font-semibold text-primary":"rounded-md px-2.5 py-1.5 text-[10px] text-muted-foreground hover:text-foreground"}>{item==="messages"?"پیام":"توکن"}</button>)}</div></div></CardHeader><CardContent><div className="relative overflow-hidden rounded-xl border border-border/70 bg-background/40 p-2 sm:p-4"><svg viewBox={`0 0 ${width} ${height}`} className="h-64 w-full overflow-visible text-primary" role="img" aria-label={metric==="messages"?"روند پیام‌های ۱۴ روزه":"روند توکن مصرف‌شده در ۱۴ روز اخیر"}><defs><linearGradient id="cortex-trend-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="currentColor" stopOpacity=".20"/><stop offset="100%" stopColor="currentColor" stopOpacity="0"/></linearGradient></defs>{[0,1,2,3].map(i=><line key={i} x1={padX} x2={padX+innerW} y1={padTop+(i/3)*innerH} y2={padTop+(i/3)*innerH} stroke="currentColor" strokeOpacity=".08" strokeWidth="1"/>) }<path d={area} fill="url(#cortex-trend-fill)"/><path d={line} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>{points.map((p,i)=><g key={p.date}><title>{p.date} · {faNum(p.value)} {metric==="messages"?"پیام":"توکن"}</title><circle cx={p.x} cy={p.y} r={i===points.length-1?5:3.5} fill="currentColor"/><circle cx={p.x} cy={p.y} r={8} fill="currentColor" fillOpacity=".08"/></g>)}{points.filter((_,i)=>i===0||i===points.length-1||i%3===0).map(p=><text key={p.date+"-label"} x={p.x} y={height-8} textAnchor={p===points[0]?"start":p===points[points.length-1]?"end":"middle"} fill="currentColor" fillOpacity=".55" fontSize="11">{p.date.slice(5)}</text>)}</svg></div></CardContent></Card>;
+}
 
 export function AnalyticsView(){
   const ws=useCortexStore(s=>s.activeWorkspaceId);
@@ -29,7 +40,6 @@ export function AnalyticsView(){
 
   const totalQuestions=data.topQuestions.reduce((n,q)=>n+q.count,0);
   const unansweredRate=totalQuestions?Math.min(100,Math.round((data.unanswered/Math.max(totalQuestions,1))*100)):0;
-  const maxMessages=Math.max(...trend.map(x=>x.messages),1);
   const totalMessages=trend.reduce((sum,x)=>sum+x.messages,0);
   const averageDailyMessages=Math.round(totalMessages/Math.max(1,trend.length));
   const busiestDay=trend.reduce((best,current)=>current.messages>best.messages?current:best,trend[0]??{date:"—",messages:0,tokens:0});
@@ -38,8 +48,7 @@ export function AnalyticsView(){
 
   return <div className="space-y-7">
     <section className="cortex-panel relative overflow-hidden rounded-[28px] p-6 sm:p-8">
-      <div className="absolute -end-20 -top-28 size-72 rounded-full bg-primary/10 blur-3xl"/>
-      <div className="absolute -start-10 -bottom-28 size-64 rounded-full bg-violet-500/10 blur-3xl"/>
+
       <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div><p className="cortex-kicker">هوش و بینش</p><h2 className="mt-3 text-3xl font-bold sm:text-4xl">آنچه واقعاً در سیستم اتفاق می‌افتد.</h2><p className="mt-3 max-w-2xl text-sm leading-8 text-muted-foreground">این صفحه از پیام‌ها، رویدادهای مصرف و داده‌های واقعی فضای کاری ساخته می‌شود؛ نه داده آزمایشی.</p></div>
         <div className="rounded-2xl border border-emerald-400/15 bg-emerald-400/10 px-4 py-3 text-xs text-emerald-300"><span className="font-semibold">زنده</span><span className="mx-2 text-emerald-300/40">•</span>محاسبه بر اساس داده‌های فعلی</div>
@@ -57,7 +66,7 @@ export function AnalyticsView(){
       <Card className="cortex-panel rounded-2xl overflow-hidden"><CardContent className="p-5">
         <div className="flex items-center justify-between"><span className="cortex-icon-box"><Sparkles className="size-[18px]"/></span><span className="text-[10px] text-muted-foreground">پوشش دانشی</span></div>
         <div className="mt-5 flex items-end justify-between gap-3"><p className="text-3xl font-black">{faNum(coverageScore)}٪</p><p className="text-xs text-muted-foreground">بر اساس پرسش‌های ثبت‌شده</p></div>
-        <div className="mt-3 h-2 rounded-full bg-muted"><div className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400" style={{width:coverageScore+"%"}} /></div>
+        <div className="mt-3 h-2 rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{width:coverageScore+"%"}} /></div>
       </CardContent></Card>
       <Card className="cortex-panel rounded-2xl"><CardContent className="p-5">
         <div className="flex items-center justify-between"><span className="cortex-icon-box"><Activity className="size-[18px]"/></span><span className="text-[10px] text-muted-foreground">ریتم تعامل</span></div>
@@ -73,18 +82,18 @@ export function AnalyticsView(){
     </section>
 
     <section className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
-      <Card className="cortex-panel rounded-2xl"><CardHeader><div className="flex items-center justify-between gap-3"><CardTitle className="flex items-center gap-2 text-base"><BarChart3 className="size-4 text-primary"/>روند ۱۴ روزه</CardTitle><span className="text-[10px] text-muted-foreground">پیام‌ها و فعالیت</span></div></CardHeader><CardContent><div className="flex h-64 items-end gap-1.5">{trend.map(v=><div key={v.date} className="flex min-w-0 flex-1 flex-col items-center gap-2"><div className="flex h-48 w-full items-end"><div title={faNum(v.messages)+" پیام"} className="mx-auto w-full max-w-9 rounded-t-xl bg-gradient-to-t from-primary/35 to-primary transition-all" style={{height:(Math.max(8,(v.messages/maxMessages)*100))+"%"}}/></div><span className="text-[9px] text-muted-foreground">{v.date.slice(5)}</span></div>)}</div></CardContent></Card>
+      <TrendLineChart trend={trend} />
 
       <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">کانال‌های فعال</CardTitle></CardHeader><CardContent className="space-y-3">
-        <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-white/[.02] p-4"><div className="flex items-center gap-3"><Users className="size-4 text-primary"/><span className="text-sm">کاربران تلگرام</span></div><span className="text-lg font-bold">{faNum(data.users)}</span></div>
+        <div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/35 p-4"><div className="flex items-center gap-3"><Users className="size-4 text-primary"/><span className="text-sm">کاربران تلگرام</span></div><span className="text-lg font-bold">{faNum(data.users)}</span></div>
         <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-white/[.02] p-4"><div className="flex items-center gap-3"><Send className="size-4 text-secondary"/><span className="text-sm">ربات‌های تلگرام</span></div><span className="text-lg font-bold">{faNum(data.bots)}</span></div>
         <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-white/[.02] p-4"><div className="flex items-center gap-3"><MessageSquare className="size-4 text-emerald-400"/><span className="text-sm">پرسش‌های پرتکرار</span></div><span className="text-lg font-bold">{faNum(totalQuestions)}</span></div>
       </CardContent></Card>
     </section>
 
     <section className="grid gap-5 xl:grid-cols-2">
-      <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">پرسش‌های پرتکرار</CardTitle></CardHeader><CardContent>{data.topQuestions.length===0?<p className="py-10 text-center text-sm text-muted-foreground">هنوز داده‌ای ثبت نشده است.</p>:<div className="space-y-2">{data.topQuestions.map((q,i)=><div key={q.question} className="flex items-start gap-3 rounded-xl border border-white/[.06] p-3"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs text-primary">{faNum(i+1)}</span><div className="min-w-0 flex-1"><p className="text-sm leading-6">{q.question}</p><p className="mt-1 text-[11px] text-muted-foreground">{faNum(q.count)} بار</p></div></div>)}</div>}</CardContent></Card>
-      <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Database className="size-4 text-violet-300"/>جاهایی که دانش کم می‌آورد</CardTitle></CardHeader><CardContent>{data.unansweredQuestions.length===0?<p className="py-10 text-center text-sm text-muted-foreground">فعلاً موردی ثبت نشده است.</p>:<div className="space-y-2">{data.unansweredQuestions.map((q)=> <div key={q.question} className="rounded-xl border border-amber-400/10 bg-amber-400/[.025] p-3"><p className="text-sm leading-6">{q.question}</p><p className="mt-1 text-[11px] text-amber-300/80">{faNum(q.count)} بار بدون پوشش کافی</p></div>)}</div>}</CardContent></Card>
+      <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="text-base">پرسش‌های پرتکرار</CardTitle></CardHeader><CardContent>{data.topQuestions.length===0?<p className="py-10 text-center text-sm text-muted-foreground">هنوز داده‌ای ثبت نشده است.</p>:<div className="space-y-2">{data.topQuestions.map((q,i)=><div key={q.question} className="flex items-start gap-3 rounded-xl border border-border/60 p-3"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs text-primary">{faNum(i+1)}</span><div className="min-w-0 flex-1"><p className="text-sm leading-6">{q.question}</p><p className="mt-1 text-[11px] text-muted-foreground">{faNum(q.count)} بار</p></div></div>)}</div>}</CardContent></Card>
+      <Card className="cortex-panel rounded-2xl"><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Database className="size-4 text-primary"/>جاهایی که دانش کم می‌آورد</CardTitle></CardHeader><CardContent>{data.unansweredQuestions.length===0?<p className="py-10 text-center text-sm text-muted-foreground">فعلاً موردی ثبت نشده است.</p>:<div className="space-y-2">{data.unansweredQuestions.map((q)=> <div key={q.question} className="rounded-xl border border-amber-400/10 bg-amber-400/[.025] p-3"><p className="text-sm leading-6">{q.question}</p><p className="mt-1 text-[11px] text-amber-300/80">{faNum(q.count)} بار بدون پوشش کافی</p></div>)}</div>}</CardContent></Card>
     </section>
 
     <div className="flex items-center gap-2 text-[11px] text-muted-foreground"><Sparkles className="size-3.5 text-primary"/>{data.note}</div>

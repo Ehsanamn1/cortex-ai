@@ -211,7 +211,7 @@ export async function requestContact(token: string, chatId: string | number) {
   return sendMessage(
     token,
     chatId,
-    '<b>🔐 یک مرحله امنیتی</b>\n\nبرای شناسایی و فعال‌سازی حساب، شماره موبایل خودتان را با دکمه زیر ارسال کنید.\n\nاگر برای این شماره قانون دسترسی اختصاصی ثبت شده باشد، همان قوانین اعمال می‌شوند؛ در غیر این صورت دسترسی پایه فعال خواهد شد.',
+    '<b>🔐 یک مرحله امنیتی</b>\n\nبرای شناسایی و فعال‌سازی حساب، شماره موبایل خودتان را با دکمه زیر ارسال کنید.\n\nاگر شماره شما قبلاً در پنل مدیر مجاز شده باشد، دسترسی همان لحظه فعال می‌شود؛ در غیر این صورت حساب شما در انتظار تأیید می‌ماند.',
     {
       parse_mode: 'HTML',
       reply_markup: {
@@ -227,15 +227,17 @@ export async function requestContact(token: string, chatId: string | number) {
 }
 
 function buttonMarkup(profile: Awaited<ReturnType<typeof getTelegramBotProfile>>) {
-  return {
-    inline_keyboard: [
-      [
-        { text: profile.newChatButtonText, callback_data: 'new_chat' },
-        { text: profile.helpButtonText, callback_data: 'help' },
-      ],
-      ...(profile.usageButtonText ? [[{ text: profile.usageButtonText, callback_data: 'usage' }]] : []),
-    ],
-  };
+  const reserved = new Set(["start", "newchat", "help", "usage"]);
+  const custom = profile.commands
+    .filter((item) => !reserved.has(item.command))
+    .slice(0, 8)
+    .map((item) => ({ text: "◻️ " + item.description.slice(0, 42), callback_data: "cmd:" + item.command }));
+  const rows: Array<Array<{ text: string; callback_data: string }>> = [
+    [{ text: profile.newChatButtonText, callback_data: "new_chat" }, { text: profile.helpButtonText, callback_data: "help" }],
+  ];
+  if (profile.usageButtonText) rows.push([{ text: profile.usageButtonText, callback_data: "usage" }]);
+  for (let i = 0; i < custom.length; i += 2) rows.push(custom.slice(i, i + 2));
+  return { inline_keyboard: rows };
 }
 
 function pickThinkingMessage(profile: Awaited<ReturnType<typeof getTelegramBotProfile>>, index = 0) {
@@ -386,6 +388,14 @@ export async function processTelegramUpdate(botId: string, update: any) {
       await sendMessage(token, chatId, profile.newChatText, {
         reply_markup: buttonMarkup(profile),
       });
+    } else if (data.startsWith("cmd:")) {
+      const command = data.slice(4).replace(/[^a-z0-9_]/gi, "").slice(0, 32);
+      const configured = profile.commands.some((item) => item.command === command);
+      if (configured) {
+        await processTelegramUpdate(botId, {
+          message: { chat: { id: chatId }, from: callback.from, text: "/" + command },
+        });
+      }
     }
     return;
   }
@@ -495,15 +505,14 @@ export async function processTelegramUpdate(botId: string, update: any) {
       user.monthlyTokenLimit = invite.monthlyTokenLimit;
       contactActivated = true;
     } else {
-      // Sharing the user's own Telegram contact is enough to activate basic access.
-      // The allowlist remains an optional mechanism for per-user limits / explicit blocking.
+      // Contact sharing alone never grants access. The owner-managed allowlist is
+      // the source of truth; unknown numbers stay pending until approved/invited.
       await db.telegramUser.update({
         where: { id: user.id },
-        data: { phoneNumber: contactPhone, status: 'allowed' },
+        data: { phoneNumber: contactPhone, status: 'pending' },
       });
       user.phoneNumber = contactPhone;
-      user.status = 'allowed';
-      contactActivated = true;
+      user.status = 'pending';
     }
   }
 

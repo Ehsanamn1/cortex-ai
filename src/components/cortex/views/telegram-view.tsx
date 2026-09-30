@@ -22,9 +22,9 @@ import { faNum } from "@/components/cortex/format";
 type BotSection = "connection" | "access" | "customizer";
 
 function statusMeta(status: string) {
-  if (status === "connected") return { label: "متصل", className: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300", icon: CheckCircle2 };
+  if (status === "connected") return { label: "متصل", className: "border-emerald-400/20 bg-emerald-400/10 text-emerald-500", icon: CheckCircle2 };
   if (status === "error") return { label: "خطا", className: "border-destructive/20 bg-destructive/10 text-destructive", icon: XCircle };
-  return { label: "آماده اتصال", className: "border-amber-400/20 bg-amber-400/10 text-amber-200", icon: Wifi };
+  return { label: "آماده اتصال", className: "border-amber-400/20 bg-amber-400/10 text-amber-600", icon: Wifi };
 }
 
 export function TelegramView() {
@@ -82,8 +82,7 @@ export function TelegramView() {
   return (
     <div className="space-y-7">
       <section className="cortex-panel relative overflow-hidden rounded-[28px] p-5 sm:p-7">
-        <div className="absolute -end-20 -top-24 size-64 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -start-16 -bottom-20 size-56 rounded-full bg-emerald-400/10 blur-3xl" />
+
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="cortex-kicker">TELEGRAM CHANNEL</p>
@@ -245,7 +244,7 @@ function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
-          <Card id={`telegram-bot-connection-${bot.id}`} className={cn("border-white/[.06] bg-white/[.02]", section === "connection" ? "block" : "hidden")}>
+          <Card id={`telegram-bot-connection-${bot.id}`} className={cn("border-border/60 bg-background/35", section === "connection" ? "block" : "hidden")}>
             <CardHeader><CardTitle className="text-sm">تنظیمات ربات</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label>نام نمایشی</Label><Input value={name} onChange={(event) => setName(event.target.value)} /></div>
@@ -255,7 +254,7 @@ function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }
                 <Button className="flex-1" disabled={update.isPending || !name.trim() || !agentId} onClick={() => update.mutate()}><Pencil />{update.isPending ? "در حال ذخیره…" : "ذخیره تنظیمات"}</Button>
                 <Button variant="outline" className="flex-1" disabled={reconnect.isPending} onClick={() => reconnect.mutate()}>{reconnect.isPending ? <RefreshCw className="animate-spin" /> : <Wifi />}{reconnect.isPending ? "در حال تست…" : "تست و اتصال مجدد"}</Button>
               </div>
-              <div className="rounded-xl border border-white/[.06] bg-black/10 p-3">
+              <div className="rounded-xl border border-border/60 bg-background/35 p-3">
                 <p className="text-[11px] font-medium">Webhook endpoint</p>
                 <div className="mt-2 flex items-center gap-2"><Input dir="ltr" readOnly value={webhookUrl} className="min-w-0 text-left text-[11px]" /><Button size="icon" variant="outline" onClick={copyWebhook} aria-label="کپی آدرس Webhook"><Copy /></Button></div>
                 <p className="mt-2 text-[10px] leading-5 text-muted-foreground">توکن مخفی هرگز در این URL قرار نمی‌گیرد؛ اعتبارسنجی با secret header انجام می‌شود.</p>
@@ -263,14 +262,14 @@ function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }
             </CardContent>
           </Card>
 
-          <Card className={cn("border-white/[.06] bg-white/[.02]", section === "access" ? "block" : "hidden")}>
+          <Card className={cn("border-border/60 bg-white/[.02]", section === "access" ? "block" : "hidden")}>
             <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary" />دسترسی و کاربران</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-xl border border-emerald-400/15 bg-emerald-400/[.06] p-4">
                 <p className="flex items-center gap-2 text-sm font-semibold text-emerald-200"><ShieldCheck className="size-4" />دسترسی مدیریت‌شده فعال است</p>
-                <p className="mt-1 text-xs leading-6 text-muted-foreground">کاربر می‌تواند شماره خودش را مستقیماً از تلگرام ارسال کند و دسترسی پایه بگیرد. شماره‌های ثبت‌شده در این بخش برای محدودیت‌های اختصاصی، مدیریت دستی و لینک ورود یک‌بارمصرف استفاده می‌شوند.</p>
+                <p className="mt-1 text-xs leading-6 text-muted-foreground">اشتراک‌گذاری شماره به‌تنهایی دسترسی نمی‌دهد. فقط شماره‌هایی که مدیر در همین بخش مجاز کرده است وارد حالت فعال می‌شوند؛ سایر کاربران تا تأیید مدیر در وضعیت «در انتظار» می‌مانند. برای هر کاربر می‌توان سقف پیام و توکن و لینک ورود یک‌بارمصرف را مدیریت کرد.</p>
               </div>
-              <div className="border-t border-white/[.06] pt-4">
+              <div className="border-t border-border/60 pt-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div><p className="flex items-center gap-2 text-xs font-semibold"><BarChart3 className="size-4 text-primary" />مرکز مانیتورینگ مصرف و فعالیت</p><p className="mt-1 text-[10px] text-muted-foreground">مصرف امروز/ماه، کاربران پرمصرف و نزدیک‌شدن به سقف‌ها را همین‌جا ببین.</p></div>
                   <span className="shrink-0 rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[9px] text-primary">{faNum(botUsers.length)} کاربر</span>
@@ -289,7 +288,7 @@ function BotDetail({ bot, agents, initialSection, onClose, onUpdated, onDelete }
                   {usersQuery.isLoading ? <p className="rounded-xl border border-dashed p-4 text-center text-[11px] text-muted-foreground">در حال بارگذاری کاربران…</p> : visibleBotUsers.map((user) => (
                     <TelegramUserMonitorCard key={user.id} botId={bot.id} user={user} onChanged={() => void usersQuery.refetch()} />
                   ))}
-                  {visibleBotUsers.length === 0 && <p className="rounded-xl border border-dashed border-white/[.08] p-4 text-center text-[11px] text-muted-foreground">کاربری با این فیلتر پیدا نشد.</p>}
+                  {visibleBotUsers.length === 0 && <p className="rounded-xl border border-dashed border-border/60 p-4 text-center text-[11px] text-muted-foreground">کاربری با این فیلتر پیدا نشد.</p>}
                 </div>
               </div>
             </CardContent>
@@ -591,8 +590,22 @@ function TelegramCustomizerForm({
         <div className="space-y-2"><Label>URL بنر خوش‌آمد (اختیاری)</Label><Input dir="ltr" value={banner} onChange={(e) => setBanner(e.target.value)} placeholder="https://..." /></div>
         <div className="space-y-2 md:col-span-2"><Label>Commands و منوی ربات (هر خط: command=description)</Label><Textarea value={commands} onChange={(e) => setCommands(e.target.value)} rows={4} placeholder="/start=شروع\n/help=راهنما\n/newchat=گفتگوی جدید" /></div>
         <div className="space-y-2 md:col-span-2"><Label>پیام‌های وضعیت کار (هر خط یک پیام)</Label><Textarea value={thinking} onChange={(e) => setThinking(e.target.value)} rows={3} /></div>
-        <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش وضعیت فکر/کار</p><p className="mt-1 text-[10px] text-muted-foreground">پیام مرحله‌ای قبل از پاسخ نمایش داده شود.</p></div><Switch checked={showThinking} onCheckedChange={setShowThinking} /></div>
+        <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-background/35 p-3"><div><p className="text-xs font-medium">نمایش وضعیت فکر/کار</p><p className="mt-1 text-[10px] text-muted-foreground">پیام مرحله‌ای قبل از پاسخ نمایش داده شود.</p></div><Switch checked={showThinking} onCheckedChange={setShowThinking} /></div>
         <div className="flex items-center justify-between rounded-xl border border-white/[.06] bg-black/10 p-3"><div><p className="text-xs font-medium">نمایش بنر خوش‌آمد</p><p className="mt-1 text-[10px] text-muted-foreground">در /start، بنر https ارسال شود.</p></div><Switch checked={showBanner} onCheckedChange={setShowBanner} /></div>
+        <div className="md:col-span-2 rounded-xl border border-border/70 bg-background/40 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold">پیش‌نمایش منوی ربات</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">همین دکمه‌ها بعد از Sync روی پیام‌های ربات دیده می‌شوند.</p>
+            </div>
+            <span className="rounded-md border border-border/60 bg-muted/30 px-2 py-1 text-[9px] text-muted-foreground">LIVE PREVIEW</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[newChatButton, helpButton, ...(usageButton.trim() ? [usageButton] : []), ...commands.split("\n").map((line) => line.split("=")[1]?.trim() || "").filter(Boolean)].slice(0, 11).map((label, index) => (
+              <div key={index} className="rounded-lg border border-border/60 bg-card px-3 py-2 text-center text-[10px] font-semibold text-foreground">{label}</div>
+            ))}
+          </div>
+        </div>
         <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row">
           <Button className="sm:flex-1" disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "در حال ذخیره و همگام‌سازی…" : "ذخیره و همگام‌سازی"}</Button>
           <Button className="sm:flex-1" variant="outline" disabled={sync.isPending} onClick={() => sync.mutate()}>{sync.isPending ? "در حال همگام‌سازی…" : "همگام‌سازی مجدد با Telegram"}</Button>
