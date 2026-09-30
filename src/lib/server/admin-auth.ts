@@ -6,7 +6,6 @@ import { NextResponse } from "next/server";
 const COOKIE_NAME = "cortex_admin_session";
 const TTL_SECONDS = 60 * 60 * 24 * 30;
 export const ADMIN_USERNAME = "ehsanam86";
-// Intentionally unlinked operator route. Change this constant only when rotating the private console path.
 export const ADMIN_CONSOLE_PATH = OPERATOR_CONSOLE_PATH;
 
 export class AdminConfigError extends Error {
@@ -30,6 +29,23 @@ function secret(): string {
 
 export function verifyAdminUsername(username: string | null | undefined) {
   return typeof username === "string" && username.trim() === ADMIN_USERNAME;
+}
+
+export function verifyAdminAccessToken(token: string | null | undefined) {
+  const configured = process.env.CORTEX_ADMIN_ACCESS_TOKEN?.trim();
+  if (!configured || configured.length < 24) throw new AdminConfigError("CORTEX_ADMIN_ACCESS_TOKEN در محیط اجرا تنظیم نشده است.");
+  if (typeof token !== "string" || token.length !== configured.length) return false;
+  const a = Buffer.from(token);
+  const b = Buffer.from(configured);
+  return crypto.timingSafeEqual(a, b);
+}
+
+export function operatorRouteKeyFromAccessToken(token: string) {
+  return crypto.createHmac("sha256", secret()).update("cortex-operator-route:" + token).digest("base64url").slice(0, 32);
+}
+
+export function operatorDashboardPath(token: string) {
+  return "/ops/" + operatorRouteKeyFromAccessToken(token) + "/console";
 }
 
 function encode(value: string) { return Buffer.from(value).toString("base64url"); }
