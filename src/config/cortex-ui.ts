@@ -7,10 +7,10 @@ export const CORTEX_UI_CONFIG = {
     authBadge: "INTELLIGENCE OS",
   },
   theme: {
-    primary: "#3B82FF",
-    secondary: "#8B5CF6",
+    primary: "#356DFF",
+    secondary: "#60708A",
     radius: "0.75rem",
-    sidebar: "#0A0D13",
+    sidebar: "#0F141B",
   },
   limits: {
     maxKnowledgeUploadMb: 20,
@@ -39,17 +39,37 @@ export type CortexThemeSettings = {
   sidebar: string;
 };
 
+const CORTEX_PRIMARY_PALETTE = new Set([
+  "#356DFF",
+  "#6D94FF",
+  "#244FC0",
+]);
+
+const CORTEX_SECONDARY_PALETTE = new Set([
+  "#60708A",
+  "#8CA0B8",
+  "#33465C",
+]);
+
 export function isSafeHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
+export function isCortexPrimaryColor(value: string): boolean {
+  return CORTEX_PRIMARY_PALETTE.has(value.toUpperCase());
+}
+
+export function isCortexSecondaryColor(value: string): boolean {
+  return CORTEX_SECONDARY_PALETTE.has(value.toUpperCase());
 }
 
 export function normalizeThemeSettings(
   input: Partial<Record<keyof CortexThemeSettings, string>>,
 ): CortexThemeSettings {
-  const primary = input.primary && isSafeHexColor(input.primary)
+  const primary = input.primary && isCortexPrimaryColor(input.primary)
     ? input.primary
     : CORTEX_UI_CONFIG.theme.primary;
-  const secondary = input.secondary && isSafeHexColor(input.secondary)
+  const secondary = input.secondary && isCortexSecondaryColor(input.secondary)
     ? input.secondary
     : CORTEX_UI_CONFIG.theme.secondary;
   const sidebar = input.sidebar && isSafeHexColor(input.sidebar)

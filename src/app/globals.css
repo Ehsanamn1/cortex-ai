@@ -52,10 +52,10 @@
   --card-foreground: #1f2937;
   --popover: #ffffff;
   --popover-foreground: #1f2937;
-  --primary: #4880ff;
+  --primary: #356dff;
   --primary-foreground: #ffffff;
-  --secondary: #eef2ff;
-  --secondary-foreground: #334155;
+  --secondary: #edf2f8;
+  --secondary-foreground: #33465c;
   --muted: #f3f4f6;
   --muted-foreground: #6b7280;
   --accent: #f4f6fa;
@@ -63,21 +63,21 @@
   --destructive: #e05260;
   --border: #e6e9ef;
   --input: #e1e5ec;
-  --ring: #4880ff;
-  --chart-1: #4880ff;
+  --ring: #356dff;
+  --chart-1: #356dff;
   --chart-2: #6f5ce7;
   --chart-3: #22a06b;
   --chart-4: #e6a23c;
   --chart-5: #e05260;
   --sidebar: #ffffff;
   --sidebar-foreground: #1f2937;
-  --sidebar-primary: #4880ff;
+  --sidebar-primary: #356dff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef3ff;
-  --sidebar-accent-foreground: #2f62d6;
+  --sidebar-accent: #edf2ff;
+  --sidebar-accent-foreground: #244fae;
   --sidebar-border: #e6e9ef;
-  --sidebar-ring: #4880ff;
-  --surface-glow: rgba(72, 128, 255, 0.08);
+  --sidebar-ring: #356dff;
+  --surface-glow: rgba(53, 109, 255, 0.08);
   --surface-2: #f7f8fb;
 }
 
@@ -89,9 +89,9 @@
   --card-foreground: #eef2ff;
   --popover: #0b1017;
   --popover-foreground: #eef2ff;
-  --primary: #5b8cff;
+  --primary: #6d94ff;
   --primary-foreground: #ffffff;
-  --secondary: #151c28;
+  --secondary: #141c27;
   --secondary-foreground: #dce5f2;
   --muted: #111823;
   --muted-foreground: #93a0b2;
@@ -100,21 +100,21 @@
   --destructive: #ef6573;
   --border: #202a38;
   --input: #263244;
-  --ring: #5b8cff;
-  --chart-1: #5b8cff;
-  --chart-2: #8b5cf6;
+  --ring: #6d94ff;
+  --chart-1: #6d94ff;
+  --chart-2: #60708A;
   --chart-3: #34d399;
   --chart-4: #fbbf24;
   --chart-5: #ef6573;
   --sidebar: #090d13;
   --sidebar-foreground: #eef2ff;
-  --sidebar-primary: #5b8cff;
+  --sidebar-primary: #6d94ff;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #151d29;
   --sidebar-accent-foreground: #dbeafe;
   --sidebar-border: #202a38;
-  --sidebar-ring: #5b8cff;
-  --surface-glow: rgba(91, 140, 255, 0.12);
+  --sidebar-ring: #6d94ff;
+  --surface-glow: rgba(109, 148, 255, 0.12);
   --surface-2: #0d121a;
 }
 
@@ -134,10 +134,7 @@
     font-family: var(--font-vazirmatn), "Vazir", "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    background-image:
-      radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
-      radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%);
-    background-attachment: scroll;
+    background-image: none;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: auto;
@@ -509,54 +506,6 @@ body {
   --surface-2: #0f151d;
 }
 html.dark { color-scheme: dark; }
-html.dark body {
-  background: #070a0f !important;
-  background-image:
-    radial-gradient(circle at 90% -10%, rgba(59,130,246,.11), transparent 28%),
-    radial-gradient(circle at 8% 92%, rgba(139,92,246,.09), transparent 24%) !important;
-  color: var(--foreground) !important;
-}
-html.dark .cortex-dashstack {
-  background: #070a0f !important;
-  color: #eef2ff !important;
-}
-html.dark .cortex-dashstack .cortex-sidebar {
-  background:
-    radial-gradient(circle at 18% 4%, rgba(91,140,255,.10), transparent 23%),
-    linear-gradient(180deg, rgba(9,13,19,.98), rgba(6,9,13,.97)) !important;
-  border-color: #1b2634 !important;
-  box-shadow: 10px 0 40px rgba(0,0,0,.22) !important;
-}
-html.dark .cortex-dashstack .cortex-topbar {
-  background: rgba(7,10,15,.78) !important;
-  border-color: #1a2532 !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 12px 40px rgba(0,0,0,.16) !important;
-}
-html.dark .cortex-dashstack .cortex-panel,
-html.dark .cortex-dashstack [data-slot="card"] {
-  background: linear-gradient(145deg, rgba(15,21,29,.95), rgba(9,13,18,.94)) !important;
-  color: var(--card-foreground) !important;
-  border-color: rgba(148,163,184,.11) !important;
-  box-shadow: 0 20px 65px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.025) !important;
-}
-html.dark .cortex-dashstack .cortex-action {
-  background: rgba(13,18,25,.76) !important;
-  border-color: rgba(148,163,184,.10) !important;
-}
-html.dark .cortex-dashstack .cortex-action:hover {
-  background: rgba(22,31,43,.9) !important;
-  border-color: rgba(91,140,255,.34) !important;
-  box-shadow: 0 14px 36px rgba(0,0,0,.16) !important;
-}
-html.dark .cortex-dashstack .cortex-search-trigger {
-  background: rgba(16,22,30,.78) !important;
-  border-color: rgba(148,163,184,.12) !important;
-}
-html.dark .cortex-dashstack .cortex-search-trigger:hover {
-  border-color: rgba(91,140,255,.36) !important;
-  box-shadow: 0 0 0 1px rgba(91,140,255,.08), 0 10px 24px rgba(0,0,0,.15) !important;
-}
-
 /* Animated 3D theme toggle */
 .cortex-theme-toggle {
   position: relative;
@@ -1192,131 +1141,6 @@ html:not(.dark) .cortex-auth aside {
 }
 
 /* One lightweight 3D Cortex core. CSS-only motion keeps CPU/GPU cost low. */
-.cortex-core-v2 {
-  position: relative;
-  width: clamp(230px, 34vw, 330px);
-  aspect-ratio: 1;
-  margin-inline: auto;
-  display: grid;
-  place-items: center;
-  perspective: 900px;
-  transform-style: preserve-3d;
-  contain: layout paint;
-}
-.cortex-core-v2-haze {
-  position: absolute;
-  inset: 18%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(91,140,255,.17), transparent 68%);
-  filter: blur(16px);
-  animation: cortex-core-haze 5.5s ease-in-out infinite;
-}
-.cortex-core-v2-ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid rgba(91,140,255,.19);
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-.cortex-core-v2-ring-1 { inset: 9%; transform: rotateX(67deg) rotateZ(12deg); animation: cortex-core-r1 14s linear infinite; }
-.cortex-core-v2-ring-2 { inset: 15%; border-color: rgba(139,92,246,.18); transform: rotateY(64deg) rotateZ(-18deg); animation: cortex-core-r2 18s linear infinite reverse; }
-.cortex-core-v2-ring-3 { inset: 20%; border-style: dashed; border-color: rgba(148,163,184,.12); transform: rotateX(42deg) rotateY(25deg); animation: cortex-core-r3 11s linear infinite; }
-.cortex-core-v2-node {
-  position: absolute;
-  width: 7px; height: 7px;
-  margin: -3.5px;
-  border-radius: 50%;
-  background: #d9e7ff;
-  box-shadow: 0 0 16px rgba(91,140,255,.9);
-  animation: cortex-core-node 3.6s ease-in-out infinite;
-}
-.cortex-core-v2-orb {
-  position: relative;
-  width: 43%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 30% 24%, rgba(255,255,255,.78), transparent 10%),
-    radial-gradient(circle at 53% 42%, rgba(91,140,255,.96), transparent 38%),
-    radial-gradient(circle at 73% 70%, rgba(139,92,246,.94), transparent 52%),
-    #07101c;
-  border: 1px solid rgba(255,255,255,.10);
-  box-shadow:
-    0 0 85px rgba(91,140,255,.28),
-    inset -18px -18px 34px rgba(0,0,0,.36),
-    inset 12px 12px 26px rgba(255,255,255,.06);
-  animation: cortex-core-orb 5s ease-in-out infinite;
-  transform: translateZ(16px);
-}
-.cortex-core-v2-orb-shine {
-  position: absolute;
-  width: 35%; height: 35%;
-  right: 16%; top: 14%;
-  border-radius: 50%;
-  background: rgba(255,255,255,.18);
-  filter: blur(7px);
-}
-.cortex-core-v2-orb-grid {
-  position: absolute;
-  inset: 9%;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,.13);
-  transform: rotateX(68deg);
-}
-.cortex-core-v2-orb-dot {
-  position: absolute;
-  width: 9px; height: 9px;
-  left: 30%; bottom: 25%;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 18px rgba(255,255,255,.75), 0 0 30px rgba(91,140,255,.55);
-}
-.cortex-core-v2-caption {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  text-align: center;
-}
-.cortex-core-v2-caption p { margin: 0; color: var(--primary); font-size: 10px; font-weight: 800; letter-spacing: .28em; }
-.cortex-core-v2-caption span { display:block; margin-top: 5px; color: #90a0b4; font-size: 11px; }
-html:not(.dark) .cortex-core-v2-haze { background: radial-gradient(circle, rgba(91,140,255,.13), transparent 70%); }
-html:not(.dark) .cortex-core-v2-ring { border-color: rgba(63,111,229,.18); }
-html:not(.dark) .cortex-core-v2-ring-2 { border-color: rgba(124,91,229,.16); }
-html:not(.dark) .cortex-core-v2-ring-3 { border-color: rgba(100,116,139,.16); }
-html:not(.dark) .cortex-core-v2-node { background: #ffffff; box-shadow: 0 0 13px rgba(91,140,255,.40); }
-html:not(.dark) .cortex-core-v2-orb {
-  background:
-    radial-gradient(circle at 30% 24%, rgba(255,255,255,.98), transparent 10%),
-    radial-gradient(circle at 53% 42%, rgba(91,140,255,.76), transparent 38%),
-    radial-gradient(circle at 73% 70%, rgba(139,92,246,.60), transparent 52%),
-    #edf3fb;
-  border-color: rgba(63,111,229,.16);
-  box-shadow: 0 0 70px rgba(91,140,255,.14), inset -16px -17px 30px rgba(88,108,138,.12), inset 12px 12px 24px rgba(255,255,255,.9);
-}
-html:not(.dark) .cortex-core-v2-caption span { color: #5f6d80; }
-@keyframes cortex-core-r1 { to { transform: rotateX(67deg) rotateZ(372deg); } }
-@keyframes cortex-core-r2 { to { transform: rotateY(64deg) rotateZ(-378deg); } }
-@keyframes cortex-core-r3 { to { transform: rotateX(42deg) rotateY(25deg) rotateZ(360deg); } }
-@keyframes cortex-core-node { 0%,100% { transform: scale(.7); opacity:.45; } 50% { transform: scale(1.35); opacity:1; } }
-@keyframes cortex-core-orb { 0%,100% { transform: translateZ(16px) scale(1); } 50% { transform: translateZ(22px) scale(1.035); } }
-@keyframes cortex-core-haze { 0%,100% { opacity:.55; transform: scale(.95); } 50% { opacity:.95; transform: scale(1.04); } }
-@media (prefers-reduced-motion: reduce) {
-  .cortex-core-v2 * { animation: none !important; }
-}
-
-/* Final override: document/body background follows the active theme, including during hydration. */
-html.dark body {
-  background-color: #070a0f !important;
-  background-image:
-    radial-gradient(circle at 90% -10%, rgba(59,130,255,.10), transparent 26%),
-    radial-gradient(circle at 5% 90%, rgba(139,92,246,.08), transparent 24%) !important;
-  color: #eef2ff !important;
-}
-html:not(.dark) body {
-  background-color: #f6f7fb !important;
-  background-image: none !important;
-  color: #1f2937 !important;
-}
 .cortex-auth-submit {
   transform: translate3d(0,0,0);
   box-shadow: 0 12px 0 rgba(31,64,145,.28), 0 18px 34px rgba(59,130,246,.18), inset 0 1px 0 rgba(255,255,255,.22);
@@ -1409,262 +1233,49 @@ html:not(.dark) .cortex-dashstack [data-slot="card"] { color: var(--card-foregro
 }
 
 
-/* Cortex independent visual language: editorial instrument panel, not template-SaaS. */
-:root {
-  --background: #efece2;
-  --foreground: #171b17;
-  --card: #f9f7f0;
-  --card-foreground: #171b17;
-  --popover: #fbfaf5;
-  --popover-foreground: #171b17;
-  --primary: #8cab3e;
-  --primary-foreground: #13170d;
-  --secondary: #e6e3d8;
-  --secondary-foreground: #273025;
-  --muted: #e6e3da;
-  --muted-foreground: #687065;
-  --accent: #dedbd0;
-  --accent-foreground: #171b17;
-  --border: #d5d1c4;
-  --input: #ccc8ba;
-  --ring: #8cab3e;
-  --sidebar: #151914;
-  --sidebar-foreground: #e8ebe2;
-  --sidebar-primary: #a7c75b;
-  --sidebar-primary-foreground: #11140d;
-  --sidebar-accent: #22281e;
-  --sidebar-accent-foreground: #dbe8b7;
-  --sidebar-border: #2a3026;
-  --sidebar-ring: #8cab3e;
-}
-
-body {
-  background-image: none !important;
-}
-
+/* Cortex product identity — restrained, theme-aware, and intentionally product-first. */
 .cortex-dashstack {
-  background: #efece2 !important;
-}
-
-.cortex-dashstack .cortex-panel,
-.cortex-dashstack [data-slot="card"] {
-  border-radius: 14px !important;
-  border-color: #d5d1c4 !important;
-  background: #f9f7f0 !important;
-  box-shadow: 0 1px 0 rgba(23,27,23,.035), 0 10px 28px rgba(23,27,23,.045) !important;
-}
-
-.cortex-dashstack .cortex-hero {
-  border-radius: 18px !important;
-  border: 1px solid #cec9ba !important;
-  background: #fbfaf5 !important;
-  box-shadow: 0 1px 0 rgba(23,27,23,.04), 0 18px 48px rgba(23,27,23,.06) !important;
-}
-
-.cortex-dashstack .cortex-action {
-  border-radius: 12px !important;
-  background: #f9f7f0 !important;
-  border-color: #d2cec2 !important;
-  box-shadow: none !important;
-}
-
-.cortex-dashstack .cortex-action::after {
-  display: none !important;
-}
-
-.cortex-dashstack .cortex-icon-box {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px !important;
-  border-color: #c8d6a4 !important;
-  background: #edf4d9 !important;
-  color: #5f7d26 !important;
-  box-shadow: none !important;
-}
-
-.cortex-dashstack .cortex-kicker {
-  color: #5e6e49 !important;
-  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace !important;
-  letter-spacing: .16em !important;
-}
-
-.cortex-dashstack .cortex-status-line {
-  background: #b9c49f !important;
-  height: 1px !important;
-}
-
-.cortex-dashstack .rounded-2xl,
-.cortex-dashstack .rounded-\[30px\],
-.cortex-dashstack .rounded-\[28px\] {
-  border-radius: 14px !important;
-}
-
-.cortex-dashstack button {
-  border-radius: 10px !important;
-}
-
-.cortex-dashstack input,
-.cortex-dashstack textarea,
-.cortex-dashstack select {
-  border-radius: 9px !important;
-  background: #fbfaf5 !important;
-}
-
-.cortex-dashstack section {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 260px;
-}
-
-.cortex-control-center {
-  background: #141712 !important;
-  color: #eef0e7 !important;
-}
-
-.cortex-control-center header,
-.cortex-control-center nav,
-.cortex-control-center [data-slot="card"] {
-  border-color: #31372d !important;
-}
-
-.cortex-control-center [data-slot="card"] {
-  background: #1a1f17 !important;
-  border-radius: 12px !important;
-  box-shadow: none !important;
-}
-
-.cortex-control-center button {
-  border-radius: 9px !important;
-}
-
-.cortex-control-center input,
-.cortex-control-center textarea,
-.cortex-control-center select {
-  border-radius: 8px !important;
-}
-
-@media (max-width: 640px) {
-  .cortex-dashstack .cortex-panel,
-  .cortex-dashstack [data-slot="card"] {
-    border-radius: 12px !important;
-  }
-  .cortex-dashstack .cortex-hero {
-    border-radius: 14px !important;
-  }
-  .cortex-dashstack section {
-    contain-intrinsic-size: 0 220px;
-  }
-}
-
-
-/* Cortex dark theme restoration for anti-template palette. */
-.dark {
-  --background: #11140f;
-  --foreground: #ecefe6;
-  --card: #171b14;
-  --card-foreground: #ecefe6;
-  --popover: #151912;
-  --popover-foreground: #ecefe6;
-  --primary: #a5c958;
-  --primary-foreground: #10130c;
-  --secondary: #24291f;
-  --secondary-foreground: #dde5cd;
-  --muted: #1c2119;
-  --muted-foreground: #9ba496;
-  --accent: #252c20;
-  --accent-foreground: #edf0e7;
-  --border: #343b2f;
-  --input: #343b2f;
-  --ring: #a5c958;
-  --sidebar: #10130e;
-  --sidebar-foreground: #e7ebdf;
-  --sidebar-primary: #a5c958;
-  --sidebar-primary-foreground: #10130c;
-  --sidebar-accent: #20261a;
-  --sidebar-accent-foreground: #dae8b8;
-  --sidebar-border: #2f372b;
-  --sidebar-ring: #a5c958;
-}
-
-.dark body {
-  background-image: none !important;
-}
-
-.dark .cortex-dashstack {
-  background: #11140f !important;
-  color: #ecefe6 !important;
-}
-
-.dark .cortex-dashstack .cortex-panel,
-.dark .cortex-dashstack [data-slot="card"] {
-  border-color: #343b2f !important;
-  background: #171b14 !important;
-  color: #ecefe6 !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,.025), 0 12px 32px rgba(0,0,0,.20) !important;
-}
-
-.dark .cortex-dashstack .cortex-hero {
-  border-color: #3a4333 !important;
-  background: #1a1f17 !important;
-}
-
-.dark .cortex-dashstack input,
-.dark .cortex-dashstack textarea,
-.dark .cortex-dashstack select {
-  background: #131711 !important;
-  border-color: #3a4333 !important;
-  color: #ecefe6 !important;
-}
-
-
-/* Cortex product identity — anti-template visual layer.
-   The product uses editorial hierarchy, restrained surfaces, and asymmetric rhythm
-   instead of decorative gradients, oversized rounded cards, and dashboard wallpaper. */
-.cortex-dashstack {
-  background: #0b0d0f !important;
-  color: #e7e9e4 !important;
+  background: var(--background) !important;
+  color: var(--foreground) !important;
 }
 .cortex-dashstack .cortex-sidebar {
-  background: #0b0d0f !important;
-  border-color: #242925 !important;
+  background: var(--sidebar) !important;
+  border-color: var(--sidebar-border) !important;
   box-shadow: none !important;
 }
 .cortex-dashstack .cortex-topbar {
-  background: rgba(11,13,15,.96) !important;
-  border-color: #242925 !important;
+  background: color-mix(in srgb, var(--background) 94%, transparent) !important;
+  border-color: var(--border) !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
 }
-.cortex-dashstack .cortex-topbar [class*="bg-primary"],
-.cortex-dashstack .cortex-sidebar [class*="bg-primary"] {
-  background: transparent !important;
-}
 .cortex-dashstack .cortex-panel,
 .cortex-dashstack [data-slot="card"] {
-  background: #111416 !important;
-  border: 1px solid #292e2a !important;
+  background: var(--card) !important;
+  border-color: var(--border) !important;
   border-radius: 12px !important;
   box-shadow: none !important;
 }
 .cortex-dashstack .cortex-panel:hover,
 .cortex-dashstack [data-slot="card"]:hover {
-  border-color: #3a413b !important;
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border)) !important;
 }
 .cortex-dashstack .cortex-icon-box {
   width: 38px !important;
   height: 38px !important;
   border-radius: 9px !important;
-  background: #171b18 !important;
-  border-color: #303730 !important;
+  background: var(--secondary) !important;
+  border-color: var(--border) !important;
   box-shadow: none !important;
-  color: #c2d66a !important;
+  color: var(--primary) !important;
 }
 .cortex-dashstack .cortex-kicker {
-  color: #87907f !important;
+  color: var(--muted-foreground) !important;
   letter-spacing: .16em !important;
 }
 .cortex-dashstack .cortex-hero {
-  background: #111416 !important;
-  border: 1px solid #343b35 !important;
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 12px !important;
   box-shadow: none !important;
 }
@@ -1682,28 +1293,47 @@ body {
   border-radius: 9px !important;
 }
 .cortex-dashstack .cortex-action {
-  background: #101314 !important;
-  border-color: #2b302d !important;
+  background: var(--card) !important;
+  border-color: var(--border) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 .cortex-dashstack .cortex-action:hover {
-  background: #151917 !important;
-  border-color: #4a5548 !important;
+  background: var(--accent) !important;
+  border-color: color-mix(in srgb, var(--primary) 24%, var(--border)) !important;
   transform: translateX(-2px) !important;
-}
-.cortex-dashstack main {
-  background:
-    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(255,255,255,.018) 100%) !important;
 }
 .cortex-dashstack h1,
 .cortex-dashstack h2,
 .cortex-dashstack h3 {
   letter-spacing: -.025em;
 }
-.cortex-dashstack .cortex-core-orbit,
-.cortex-dashstack .cortex-core-sphere {
-  opacity: .28;
+
+/* Operator console: deliberately darker than the customer workspace, but never olive/gold. */
+.cortex-control-center {
+  background: #0b1016 !important;
+  color: #e8edf4 !important;
+}
+.cortex-control-center [data-slot="card"] {
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+/* Landing: use the same Cortex palette in both themes. */
+.cortex-landing {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+.cortex-landing [class*="bg-[radial-gradient"] {
+  display: none !important;
+}
+.cortex-landing [class*="bg-gradient-to-l"],
+.cortex-landing [class*="bg-gradient-to-r"],
+.cortex-landing [class*="bg-gradient-to-br"] {
+  background-image: none !important;
+}
+.cortex-landing .cortex-kicker {
+  color: var(--muted-foreground) !important;
 }
 @media (max-width: 640px) {
   .cortex-dashstack .cortex-panel,
@@ -1712,42 +1342,41 @@ body {
   }
 }
 
-/* Operator console is intentionally separate from the customer workspace. */
-.cortex-control-center {
-  background: #0b0d0f !important;
-  color: #e7e9e4 !important;
+.cortex-landing [class*="bg-[#09101a]"] {
+  background: var(--card) !important;
 }
-.cortex-control-center [data-slot="card"] {
-  border-radius: 10px !important;
-  box-shadow: none !important;
+.cortex-landing [class*="bg-white/"] {
+  background-color: color-mix(in srgb, var(--foreground) 4%, transparent) !important;
 }
-
-.cortex-landing {
-  background: #0b0d0f !important;
+.cortex-landing [class*="border-white/"] {
+  border-color: var(--border) !important;
 }
-.cortex-landing .rounded-[30px],
-.cortex-landing .rounded-[26px],
-.cortex-landing .rounded-[24px],
-.cortex-landing .rounded-[22px],
-.cortex-landing .rounded-2xl,
-.cortex-landing .rounded-xl {
-  border-radius: 10px !important;
+.cortex-landing [class*="text-white"] {
+  color: var(--foreground) !important;
 }
-.cortex-landing .shadow-\[0_40px_100px_rgba\(0\,0\,0\,.35\)\],
-.cortex-landing [class*="shadow-[0_24px"],
-.cortex-landing [class*="shadow-[0_18px"] {
-  box-shadow: none !important;
+.cortex-landing [class*="text-slate-"] {
+  color: var(--muted-foreground) !important;
 }
-.cortex-landing [class*="bg-[radial-gradient"] {
-  display: none !important;
+.cortex-landing [class*="text-blue-"] {
+  color: var(--primary) !important;
 }
-.cortex-landing [class*="bg-gradient-to"] {
-  background-image: none !important;
+.cortex-landing [class*="text-violet-"] {
+  color: var(--primary) !important;
 }
-.cortex-landing .cortex-kicker {
-  color: #9aa393 !important;
+.cortex-landing [class*="text-emerald-"] {
+  color: #2f8f68 !important;
 }
-.cortex-landing article,
-.cortex-landing section > div[class*="border"] {
-  box-shadow: none;
+.cortex-landing [class*="bg-blue-"] {
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+}
+.cortex-landing [class*="bg-violet-"] {
+  background-color: color-mix(in srgb, var(--primary) 8%, transparent) !important;
+}
+.cortex-landing [class*="bg-emerald-"] {
+  background-color: rgba(47,143,104,.10) !important;
+}
+.cortex-landing [class*="from-blue-"],
+.cortex-landing [class*="to-violet-"] {
+  --tw-gradient-from: var(--primary) !important;
+  --tw-gradient-to: transparent !important;
 }
