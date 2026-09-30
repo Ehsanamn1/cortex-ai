@@ -7,10 +7,10 @@ export const CORTEX_UI_CONFIG = {
     authBadge: "INTELLIGENCE OS",
   },
   theme: {
-    primary: "#3B82FF",
-    secondary: "#8B5CF6",
+    primary: "#356DFF",
+    secondary: "#60708A",
     radius: "0.75rem",
-    sidebar: "#0A0D13",
+    sidebar: "#0F141B",
   },
   limits: {
     maxKnowledgeUploadMb: 20,
