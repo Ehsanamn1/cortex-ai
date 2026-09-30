@@ -5,5 +5,5 @@ export const revalidate = 0;
 
 export default async function PrivateAdminAccessPage({ params }: { params: Promise<{ accessToken: string }> }) {
   const { accessToken } = await params;
-  return <AdminAccessClient token={decodeURIComponent(accessToken)} />;
+  return <AdminAccessClient token={accessToken} />;
 }
