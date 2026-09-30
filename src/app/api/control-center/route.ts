@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { applyCors, jsonOk, toErrorResponse } from "@/lib/server/http";
 import { requireAdmin } from "@/lib/server/admin-auth";
+import { getUsdTomanRate } from "@/lib/server/fx";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export async function GET(req: Request) {
   try {
     const admin = requireAdmin(req);
     const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [users, workspaces, agents, knowledge, conversations, messages, bots, providers, events, logs, recentAgents, recentUsers, recentConversations, usage30, usageModels, billingAccounts, activeSubscriptions, billedCredits30, bookedPlanValue] = await Promise.all([
+    const [users, workspaces, agents, knowledge, conversations, messages, bots, providers, events, logs, recentAgents, recentUsers, recentConversations, usage30, usageModels, billingAccounts, activeSubscriptions, billedCredits30, bookedPlanValue, usdTomanRate, dailyRevenueRows, dailyProviderCostRows] = await Promise.all([
       db.user.count(),
       db.workspace.count(),
       db.agent.count(),
@@ -28,6 +29,9 @@ export async function GET(req: Request) {
       db.subscription.count({ where: { status: "active" } }),
       db.billingCharge.aggregate({ where: { createdAt: { gte: since30 }, status: { in: ["captured", "captured_debt"] } }, _sum: { chargedCredits: true, providerCostMicros: true } }),
       db.subscription.findMany({ where: { status: "active", plan: { priceToman: { gt: 0 } } }, select: { plan: { select: { priceToman: true } } } }).then(rows => rows.reduce((sum, row) => sum + row.plan.priceToman, 0)),
+      getUsdTomanRate(),
+      db.$queryRawUnsafe<Array<{ day: Date; revenue: bigint }>>("SELECT date_trunc('day', \"createdAt\") AS day, COALESCE(SUM(\"amountToman\"), 0)::bigint AS revenue FROM \"CreditTopUpRequest\" WHERE \"paidAt\" IS NOT NULL AND \"createdAt\" >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY 1 ASC"),
+      db.$queryRawUnsafe<Array<{ day: Date; costMicros: bigint }>>("SELECT date_trunc('day', \"createdAt\") AS day, COALESCE(SUM(\"providerCostMicros\"), 0)::bigint AS \"costMicros\" FROM \"BillingCharge\" WHERE \"status\" IN ('captured', 'captured_debt') AND \"createdAt\" >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY 1 ASC"),
     ]);
 
     return applyCors(jsonOk({
@@ -53,14 +57,21 @@ export async function GET(req: Request) {
       financial: {
         billingAccounts,
         activeSubscriptions,
+        usdTomanRate: usdTomanRate.usdToman,
+        usdTomanRateSource: usdTomanRate.source,
         last30Days: {
           creditsConsumed: billedCredits30._sum.chargedCredits ?? 0,
           providerCostMicros: billedCredits30._sum.providerCostMicros ?? 0,
+          providerCostToman: Math.round((billedCredits30._sum.providerCostMicros ?? 0) / 1_000_000 * usdTomanRate.usdToman),
           bookedMonthlyPlanValueToman: bookedPlanValue,
-          cashRevenueToman: null,
-          grossMarginToman: null,
+          cashRevenueToman: 0,
+          grossMarginToman: 0,
         },
-        note: "درآمد نقدی و حاشیه سود نهایی تا اتصال درگاه پرداخت و settlement مالی قابل محاسبه نیستند.",
+        daily: {
+          revenue: dailyRevenueRows.map((row) => ({ day: row.day.toISOString(), revenueToman: Number(row.revenue) })),
+          providerCost: dailyProviderCostRows.map((row) => ({ day: row.day.toISOString(), costToman: Math.round(Number(row.costMicros) / 1_000_000 * usdTomanRate.usdToman) })),
+        },
+        note: "درآمد نمودار از پرداخت‌های ثبت‌شده اعتبار است؛ هزینه تأمین مدل از BillingCharge محاسبه می‌شود و نرخ ارز منبع در همان پاسخ ثبت شده است.",
       },
     }), req.headers.get("origin"));
   } catch (e) {
