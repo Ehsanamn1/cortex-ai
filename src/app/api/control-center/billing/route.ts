@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/server/http";
 import { requireAdmin } from "@/lib/server/admin-auth";
 import { defaultCreditMultiplierBps } from "@/lib/server/billing";
+import { getUsdTomanRate } from "@/lib/server/fx";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ function textValue(value: unknown, max = 200) {
 export async function GET(req: Request) {
   try {
     requireAdmin(req);
-    const [plans, models, systemProviders, accounts, invoices, recentCharges] = await Promise.all([
+    const [plans, models, systemProviders, accounts, invoices, recentCharges, fx] = await Promise.all([
       db.plan.findMany({
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
         include: {
@@ -68,9 +69,11 @@ export async function GET(req: Request) {
           workspace: { select: { name: true } },
         },
       }),
+      getUsdTomanRate(),
     ]);
 
     return applyCors(jsonOk({
+      fx,
       plans,
       models,
       systemProviders,
