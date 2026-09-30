@@ -300,7 +300,7 @@ function SignupForm({ onAuthenticated }: { onAuthenticated?: () => void }) {
 }
 
 export function AuthScreen({ defaultTab = "login", onAuthenticated, bootNotice }: { defaultTab?: "login" | "signup"; onAuthenticated?: () => void; bootNotice?: string }) {
-  const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1 });
+  const siteConfig = useQuery({ queryKey: ["site-config"], queryFn: api.getSiteConfig, staleTime: 60_000, retry: 1, enabled: typeof window !== "undefined" });
   const settings = siteConfig.data?.settings;
   useEffect(() => {
     if (settings) applyCortexUiSettings(settings);
