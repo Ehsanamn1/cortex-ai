@@ -38,7 +38,7 @@ export async function runAgentExecution(input: AgentRuntimeInput) {
   if (!resolved.provider) throw Object.assign(new Error("سرویس‌دهنده هوش مصنوعی برای این ایجنت پیکربندی نشده است. از تب «هوش مصنوعی» ایجنت استفاده کنید."), { status: 503 });
 
   const tools = await listAgentTools(agent.id);
-  const memories = agent.memoryEnabled ? await loadAgentMemory(agent.id, 12, input.conversationId, input.memorySubjectKey) : [];
+  const memories = agent.memoryEnabled ? await loadAgentMemory(agent.id, 12, input.conversationId, input.memorySubjectKey, input.workspaceId) : [];
   const system = [agent.systemPrompt, agent.instructions, agent.persona, "نام ایجنت: " + agent.name,
     tools.length ? "اگر ابزار لازم است فقط JSON معتبر با type=tool_call برگردان. ابزارهای مجاز: " + tools.map(t => t.key + ": " + t.description + " schema=" + t.inputSchema).join(" | ") : "",
     memories.length ? "Memory:\n" + memories.map(m => m.key + ": " + m.value).join("\n") : ""].filter(Boolean).join("\n\n");
