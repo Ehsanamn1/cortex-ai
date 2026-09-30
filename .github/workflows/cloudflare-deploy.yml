@@ -215,18 +215,11 @@ jobs:
             echo "GET $base$path -> HTTP $status"
             head -c 500 "$tmp" || true
             echo
-            case "$path" in
-              *)
-                if [ "$status" = "200" ]; then
-                  :
-                elif [ "$status" = "429" ]; then
-                  echo "Cloudflare edge rate limited the public smoke request."
-                else
-                  echo "Unexpected public smoke status: $status"
-                  exit 1
-                fi
-                ;;
-            esac
+            if [ "$path" = "/admin" ]; then
+              test "$status" = "404" || test "$status" = "429"
+            else
+              test "$status" = "200" || test "$status" = "429"
+            fi
             rm -f "$tmp"
           done
 
