@@ -65,8 +65,7 @@ async function main() {
     console.log("\nEnter the runtime secrets. They are sent directly to Cloudflare and are not written to Git.\n");
     await promptSecret(rl, "DATABASE_URL");
     await promptSecret(rl, "APP_SECRET_KEY");
-    await promptSecret(rl, "CORTEX_ADMIN_USERNAME");
-    await promptSecret(rl, "CORTEX_ADMIN_PASSWORD");
+    await promptSecret(rl, "CORTEX_ADMIN_ACCESS_TOKEN");
     await promptSecret(rl, "CORTEX_ADMIN_SESSION_SECRET");
     await promptSecret(rl, "R2_ACCOUNT_ID");
     await putSecret("R2_BUCKET_NAME", bucketName);
