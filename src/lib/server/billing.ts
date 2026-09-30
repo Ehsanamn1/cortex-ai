@@ -31,10 +31,13 @@ export const CREDIT_TOP_UP_PACKAGES = {
 export type CreditTopUpPackageKey = keyof typeof CREDIT_TOP_UP_PACKAGES;
 
 export function defaultCreditMultiplierBps(qualityTier: string): number {
+  // Cortex target: at least 100% gross margin over the provider cost.
+  // Higher tiers can carry a larger safety margin, while every tier stays at or above 2x cost.
   switch (qualityTier) {
-    case "economy": return 200;
     case "premium": return 400;
     case "deep": return 800;
+    case "economy":
+    case "balanced":
     default: return 200;
   }
 }
@@ -144,8 +147,13 @@ async function ensureKnownModelCatalog() {
               planId: plan.id,
               modelCatalogId: catalog.id,
               enabled: shouldEnableByDefault,
-              creditMultiplierBps: Math.max(1, fallbackMultiplier),
+              creditMultiplierBps: Math.max(200, fallbackMultiplier),
             },
+          });
+        } else {
+          await db.planModelAccess.update({
+            where: { id: existing.id },
+            data: { creditMultiplierBps: Math.max(200, fallbackMultiplier) },
           });
         }
       }

@@ -12,8 +12,8 @@ const vazirmatn = Vazirmatn({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0b0f14",
-  colorScheme: "light dark",
+  themeColor: "#f6f7fb",
+  colorScheme: "light",
 };
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var k="cortex-theme-v2",t=localStorage.getItem(k);document.documentElement.classList.toggle("dark",t!=="light");document.documentElement.dataset.theme=t==="light"?"light":"dark";document.documentElement.style.colorScheme=t==="light"?"light":"dark"}catch(e){document.documentElement.classList.add("dark")}})();`,
+            __html: `(function(){try{var k="cortex-theme-v2",t=localStorage.getItem(k),d=t==="dark";document.documentElement.classList.toggle("dark",d);document.documentElement.dataset.theme=d?"dark":"light";document.documentElement.style.colorScheme=d?"dark":"light"}catch(e){document.documentElement.classList.remove("dark");document.documentElement.dataset.theme="light";document.documentElement.style.colorScheme="light"}})();`,
           }}
         />
       </head>

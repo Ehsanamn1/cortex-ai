@@ -20,6 +20,8 @@ import {
   GraduationCap,
   GitBranch,
   WalletCards,
+  Gauge,
+  Send,
 } from "lucide-react";
 
 import { api } from "@/lib/cortex-client";
@@ -246,12 +248,12 @@ interface NavItem {
 }
 
 const ICONS = {
-  dashboard: LayoutDashboard,
+  dashboard: Gauge,
   workflows: GitBranch,
   agents: Bot,
   knowledge: BookOpen,
   conversations: MessagesSquare,
-  telegram: ShieldCheck,
+  telegram: Send,
   analytics: BarChart3,
   admin: ShieldCheck,
   learn: GraduationCap,
@@ -371,7 +373,7 @@ function BottomNav({ items }: { items: NavItem[] }) {
               )}>
                 <item.icon aria-hidden="true" className="size-[18px]" />
               </span>
-              <span>{item.view === "dashboard" ? "داشبورد" : item.view === "billing" ? "پلن و اعتبار" : item.view === "agents" ? "ایجنت‌ها" : "تلگرام"}</span>
+              <span>{item.view === "dashboard" ? "نمای کلی" : item.view === "billing" ? "پلن و اعتبار" : item.view === "agents" ? "ایجنت‌ها" : "تلگرام"}</span>
             </button>
           );
         })}
@@ -397,7 +399,7 @@ function usePageTitle(siteName?: string): string {
 
   switch (view) {
     case "dashboard":
-      return "داشبورد";
+      return "نمای کلی";
     case "agents":
       return "ایجنت‌ها";
     case "agent-new":
@@ -407,7 +409,7 @@ function usePageTitle(siteName?: string): string {
     case "agent-edit":
       return "ویرایش ایجنت";
     case "knowledge":
-      return "دانش";
+      return "پایگاه دانش";
     case "conversations":
       return "گفتگوها";
     case "settings":
@@ -522,7 +524,7 @@ export function AppShell() {
             </span>
           </div>
 
-          <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><Bot className="size-4" /></span><div className="min-w-0"><p className="truncate text-[9px] font-bold tracking-[.18em] text-primary/75">CORTEX WORKSPACE</p><h1 className="truncate text-lg font-bold text-foreground">{title}</h1></div></div>
+          <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"><Gauge className="size-4" /></span><div className="min-w-0"><p className="truncate text-[9px] font-bold tracking-[.18em] text-primary/75">CORTEX WORKSPACE</p><h1 className="truncate text-lg font-bold text-foreground">{title}</h1></div></div>
 
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <SystemSearch triggerClassName="cortex-search-trigger hidden min-w-[220px] items-center gap-2 rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-xs text-muted-foreground xl:flex" />

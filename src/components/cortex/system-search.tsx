@@ -71,9 +71,9 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
         {!compact && <span className="ms-auto hidden rounded-md border border-border/70 bg-background/70 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground sm:inline-flex">⌘K</span>}
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen} title="جستجو در Cortex" description="ایجنت، دانش یا گفتگو را پیدا کنید.">
+      <CommandDialog open={open} onOpenChange={setOpen} title="جست‌وجوی Cortex" description="ایجنت، پایگاه دانش یا گفتگو را پیدا کنید." showCloseButton={false}>
         <CommandInput placeholder="نام ایجنت، فایل دانش یا گفتگوی خود را بنویسید…" value={query} onValueChange={setQuery} />
-        <CommandList className="max-h-[55vh] p-1">
+        <div className="flex items-center justify-between border-b border-border/70 px-4 py-2"><span className="text-[10px] font-bold text-muted-foreground">جست‌وجوی سریع در فضای کاری</span><button type="button" onClick={() => { setOpen(false); setQuery(""); }} className="grid size-7 place-items-center rounded-lg border border-border/70 text-muted-foreground hover:bg-accent" aria-label="بستن جست‌وجو">×</button></div><CommandList className="max-h-[55vh] p-1">
           {loading && query.trim().length >= 2 && <div className="px-4 py-8 text-center text-sm text-muted-foreground">در حال جستجو در فضای کاری…</div>}
           {!loading && query.trim().length >= 2 && visibleResults.length === 0 && <CommandEmpty>نتیجه‌ای در فضای کاری فعلی پیدا نشد.</CommandEmpty>}
           {grouped.agents.length > 0 && (
@@ -86,7 +86,7 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
             </CommandGroup>
           )}
           {grouped.knowledge.length > 0 && (
-            <CommandGroup heading="مغز شرکت">
+            <CommandGroup heading="پایگاه دانش">
               {grouped.knowledge.map((item) => (
                 <CommandItem key={item.type+item.id} value={item.title} onSelect={() => select(item)}>
                   <BrainCircuit className="text-violet-400" /><span className="min-w-0 flex-1 truncate">{item.title}</span><CommandShortcut>{item.subtitle}</CommandShortcut>
@@ -107,7 +107,7 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
             <div className="grid gap-2 p-4 sm:grid-cols-3">
               {[
                 ["ایجنت", "ساخت و تنظیم ایجنت‌ها", Bot],
-                ["مغز شرکت", "منابع دانش و RAG", FileText],
+                ["پایگاه دانش", "منابع دانش و RAG", FileText],
                 ["گفتگو", "مکالمه‌های اخیر", MessageSquare],
               ].map(([title, description, Icon]) => (
                 <div key={String(title)} className="rounded-2xl border border-border/70 bg-muted/30 p-3">
