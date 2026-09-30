@@ -1736,3 +1736,42 @@ body {
     border-radius: 10px !important;
   }
 }
+
+.cortex-landing [class*="bg-[#09101a]"] {
+  background: var(--card) !important;
+}
+.cortex-landing [class*="bg-white/"] {
+  background-color: color-mix(in srgb, var(--foreground) 4%, transparent) !important;
+}
+.cortex-landing [class*="border-white/"] {
+  border-color: var(--border) !important;
+}
+.cortex-landing [class*="text-white"] {
+  color: var(--foreground) !important;
+}
+.cortex-landing [class*="text-slate-"] {
+  color: var(--muted-foreground) !important;
+}
+.cortex-landing [class*="text-blue-"] {
+  color: var(--primary) !important;
+}
+.cortex-landing [class*="text-violet-"] {
+  color: var(--primary) !important;
+}
+.cortex-landing [class*="text-emerald-"] {
+  color: #2f8f68 !important;
+}
+.cortex-landing [class*="bg-blue-"] {
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+}
+.cortex-landing [class*="bg-violet-"] {
+  background-color: color-mix(in srgb, var(--primary) 8%, transparent) !important;
+}
+.cortex-landing [class*="bg-emerald-"] {
+  background-color: rgba(47,143,104,.10) !important;
+}
+.cortex-landing [class*="from-blue-"],
+.cortex-landing [class*="to-violet-"] {
+  --tw-gradient-from: var(--primary) !important;
+  --tw-gradient-to: transparent !important;
+}
