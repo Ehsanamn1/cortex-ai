@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { OPERATOR_CONSOLE_PATH } from "@/config/operator";
 import { randomBytes } from "./random";
 import { NextResponse } from "next/server";
 
@@ -6,7 +7,7 @@ const COOKIE_NAME = "cortex_admin_session";
 const TTL_SECONDS = 60 * 60 * 24 * 30;
 export const ADMIN_USERNAME = "ehsanam86";
 // Intentionally unlinked operator route. Change this constant only when rotating the private console path.
-export const ADMIN_CONSOLE_PATH = "/ops/cx-7vK3m9Qp2Lx8R4tN6yH5cW1dZ0aB";
+export const ADMIN_CONSOLE_PATH = OPERATOR_CONSOLE_PATH;
 
 export class AdminConfigError extends Error {
   status = 503;
