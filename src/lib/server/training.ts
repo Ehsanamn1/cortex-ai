@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { db } from "@/lib/db";
+import { encryptSecret } from "@/lib/server/secrets";
 
 const MIN_EXAMPLES = Number(process.env.CORTEX_TRAINING_MIN_EXAMPLES ?? 8);
 const MAX_EXAMPLES = Number(process.env.CORTEX_TRAINING_MAX_EXAMPLES ?? 2000);
@@ -243,6 +244,32 @@ export async function handleTrainingCallback(payload: any) {
     });
 
     if (!passed) return nextJob;
+
+    if (WORKER_URL && WORKER_SECRET) {
+      await tx.systemProviderConfig.upsert({
+        where: { key: "cortex-trained" },
+        update: {
+          displayName: "Cortex Trained Models",
+          providerName: "Cortex Training",
+          protocol: "openai-compatible",
+          authMode: "bearer",
+          baseUrl: WORKER_URL + "/v1",
+          apiKeyEncrypted: encryptSecret(WORKER_SECRET),
+          enabled: true,
+        },
+        create: {
+          key: "cortex-trained",
+          displayName: "Cortex Trained Models",
+          providerName: "Cortex Training",
+          protocol: "openai-compatible",
+          authMode: "bearer",
+          baseUrl: WORKER_URL + "/v1",
+          apiKeyEncrypted: encryptSecret(WORKER_SECRET),
+          enabled: true,
+          isTrialProvider: false,
+        },
+      });
+    }
 
     const latest = await tx.modelAdapter.findFirst({
       where: { agentId: job.agentId, workspaceId: job.workspaceId },
