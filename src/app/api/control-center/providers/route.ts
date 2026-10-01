@@ -3,7 +3,7 @@ import { applyCors, jsonError, jsonOk, readJson, toErrorResponse } from "@/lib/s
 import { requireAdmin } from "@/lib/server/admin-auth";
 import { decryptSecret, encryptSecret } from "@/lib/server/secrets";
 import { buildSystemProviderForModel } from "@/lib/server/system-provider";
-import { validateProviderBaseUrl } from "@/lib/providers/llm/provider-url";
+import { assertPublicProviderBaseUrl, validateProviderBaseUrl } from "@/lib/providers/llm/provider-url";
 
 export const dynamic = "force-dynamic";
 
@@ -225,17 +225,7 @@ export async function POST(req: Request) {
       const apiKey = provider.apiKeyEncrypted ? decryptSecret(provider.apiKeyEncrypted) : "";
       if (apiKey && provider.authMode === "bearer") headers.authorization = "Bearer " + apiKey;
       if (apiKey && provider.authMode === "x-api-key") headers["x-api-key"] = apiKey;
-      const base = await (async () => {
-        const url = validateProviderBaseUrl(provider.baseUrl);
-        if (process.env.APP_ENV === "production" || process.env.NODE_ENV === "production") {
-          const host = url.hostname.toLowerCase().replace(/\.$/, "");
-          if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host) && !host.includes(":")) {
-            // The runtime generation path performs the stricter public-resolution check.
-            // Model discovery is read-only but must still reject malformed/private base URLs.
-          }
-        }
-        return url;
-      })();
+      const base = await assertPublicProviderBaseUrl(provider.baseUrl);
       const endpoint = base.toString().replace(/\/$/, "") + "/models";
       const started = Date.now();
       let response: Response;
