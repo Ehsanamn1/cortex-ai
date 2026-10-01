@@ -39,7 +39,7 @@ vi.mock("@/lib/server/secrets", () => ({
   encryptSecret: vi.fn((value: string) => "enc:" + value),
   decryptSecret: vi.fn((value: string) => value.replace(/^enc:/, "")),
 }));
-vi.mock("@/lib/providers/llm/provider-url", () => ({ validateProviderBaseUrl: vi.fn() }));
+vi.mock("@/lib/providers/llm/provider-url", () => ({ validateProviderBaseUrl: vi.fn(), assertPublicProviderBaseUrl: vi.fn(async (value: string) => new URL(value)) }));
 vi.mock("@/lib/server/system-provider", () => ({
   buildSystemProviderForModel: vi.fn(() => ({
     isConfigured: vi.fn(() => true),
@@ -122,7 +122,8 @@ describe("Admin Provider Registry", () => {
       data: expect.objectContaining({ systemProviderId: "provider-1", trialEnabled: true, trialDefault: true }),
     }));
     expect(tx.planModelAccess.upsert).toHaveBeenCalledWith(expect.objectContaining({
-      create: expect.objectContaining({ planId: "free-1", modelCatalogId: "model-1", enabled: true }),
+      create: expect.objectContaining({ planId: "free-1", modelCatalogId: "model-1", enabled: true, creditMultiplierBps: 200 }),
+      update: expect.objectContaining({ enabled: true, creditMultiplierBps: 200 }),
     }));
   });
 
