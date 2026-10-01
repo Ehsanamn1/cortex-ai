@@ -150,7 +150,7 @@ Model fine-tuning is intentionally disabled in the current release and is presen
 
 ## Private Admin Control Center
 
-The production control center uses a private operator entry flow backed by a signed HttpOnly session. Public legacy admin entry points are disabled, while `/admin/login` is the supported username-only entry point and the resulting operator dashboard remains on an unguessable `/ops/<routeKey>/console` path.
+The production control center uses a private operator entry flow backed by a signed HttpOnly session. Public legacy admin entry points are disabled, while `/admin/login` is the supported username-only entry point and the resulting operator dashboard is served from the authenticated `/admin/console` route.
 
 Inside **AI زیرساخت**, the owner can create/rotate/disable system Providers, set Base URLs and API keys, inspect provider health, attach Model Catalog entries, and select the default Trial model. Plan/model access is controlled separately through the billing matrix.
 
