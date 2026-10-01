@@ -381,7 +381,6 @@ jobs:
             exit 0
           fi
 
-          admin_cookie="$(mktemp)"
           admin_response="$(mktemp)"
           admin_token="${CORTEX_ADMIN_ACCESS_TOKEN:-}"
           if [ -z "$admin_token" ]; then
@@ -413,6 +412,7 @@ jobs:
                 test "$admin_page_status" = "200"
               fi
               rm -f "$admin_me_tmp" "$admin_page_tmp"
+              admin_cookie="$private_admin_cookie"
             fi
           fi
           agent_body="$(jq -nc '{name:"Cortex Smoke Agent",language:"fa",tone:"professional",temperature:0.2,topP:1,maxTokens:256}')"
