@@ -5,6 +5,7 @@ import {
   type GenerateResult,
   type LLMProvider,
 } from "./types";
+import { assertPublicProviderBaseUrl, validateProviderBaseUrl } from "./provider-url";
 
 /**
  * OpenRouter provider — real, standard OpenAI-compatible REST.
@@ -34,7 +35,13 @@ export class OpenRouterProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return Boolean(this.apiKey());
+    if (!this.apiKey()) return false;
+    try {
+      validateProviderBaseUrl(this.baseUrl());
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   model(): string | null {
@@ -46,7 +53,8 @@ export class OpenRouterProvider implements LLMProvider {
     if (!key) throw new ProviderNotConfiguredError(this.name);
     const model = this.model()!;
     try {
-      const res = await fetch(`${this.baseUrl()}/chat/completions`, {
+      const base = await assertPublicProviderBaseUrl(this.baseUrl());
+      const res = await fetch(`${base.toString().replace(/\/$/, "")}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${key}`,
