@@ -520,6 +520,7 @@ jobs:
           else
             echo "Skipping authenticated admin API assertions because username-only admin login was rate-limited on the edge."
           fi
+          agent_response="$(mktemp)"
           agent_status_tmp="$(mktemp)"
           agent_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d "$agent_body" "$base/api/agents" -w "\nCORTEX_HTTP_STATUS:%{http_code}" > "$agent_status_tmp")"
           agent_status="$(sed -n 's/^CORTEX_HTTP_STATUS://p' "$agent_status_tmp" | tail -n 1)"
