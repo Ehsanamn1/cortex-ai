@@ -63,6 +63,7 @@ jobs:
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
           APP_SECRET_KEY: ${{ secrets.APP_SECRET_KEY || vars.APP_SECRET_KEY }}
+          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
           CORTEX_ADMIN_SESSION_SECRET: ${{ secrets.CORTEX_ADMIN_SESSION_SECRET || vars.CORTEX_ADMIN_SESSION_SECRET }}
           TELEGRAM_INTERNAL_SECRET: ${{ secrets.TELEGRAM_INTERNAL_SECRET || vars.TELEGRAM_INTERNAL_SECRET }}
           CORTEX_ZARINPAL_MERCHANT_ID: ${{ secrets.CORTEX_ZARINPAL_MERCHANT_ID || vars.CORTEX_ZARINPAL_MERCHANT_ID }}
@@ -102,6 +103,7 @@ jobs:
           put_secret POSTGRES_PRISMA_URL "$POSTGRES_PRISMA_URL"
           put_secret POSTGRES_URL "$POSTGRES_URL"
           put_secret APP_SECRET_KEY "$APP_SECRET_KEY"
+          put_secret CORTEX_ADMIN_PASSWORD "$CORTEX_ADMIN_PASSWORD"
           put_secret CORTEX_ADMIN_SESSION_SECRET "$CORTEX_ADMIN_SESSION_SECRET"
           put_secret TELEGRAM_INTERNAL_SECRET "$TELEGRAM_INTERNAL_SECRET"
           put_secret CORTEX_ZARINPAL_MERCHANT_ID "$CORTEX_ZARINPAL_MERCHANT_ID"
@@ -333,6 +335,7 @@ jobs:
             exit 0
           fi
           check_status "$base/admin" "404"
+          check_status "$base/admin/login" "200"
           if [ "${EDGE_RATE_LIMITED:-0}" = "1" ]; then
             echo "Stopping live route smoke: Cloudflare edge is temporarily rate-limiting this runner."
             exit 0
