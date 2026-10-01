@@ -2,9 +2,8 @@ import { applyCors, jsonError, toErrorResponse } from "@/lib/server/http";
 import {
   ADMIN_USERNAME,
   jsonWithAdminCookie,
-  operatorDashboardPathFromAdminSecret,
+  operatorDashboardPathFromSessionSecret,
   signAdminSession,
-  verifyAdminPassword,
   verifyAdminUsername,
 } from "@/lib/server/admin-auth";
 import { rateLimit } from "@/lib/server/rate-limit";
@@ -13,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    rateLimit(req, "admin-password-login", 10, 60_000);
+    rateLimit(req, "admin-username-login", 10, 60_000);
 
     const origin = req.headers.get("origin");
     if (origin) {
@@ -23,12 +22,10 @@ export async function POST(req: Request) {
       }
     }
 
-    const body = await req.json().catch(() => ({})) as { username?: unknown; password?: unknown };
+    const body = await req.json().catch(() => ({})) as { username?: unknown };
     const username = typeof body.username === "string" ? body.username.trim() : "";
-    const password = typeof body.password === "string" ? body.password : "";
-
-    if (!verifyAdminUsername(username) || !verifyAdminPassword(password)) {
-      return applyCors(jsonError("نام کاربری یا رمز عبور نادرست است.", 401), origin);
+    if (!verifyAdminUsername(username)) {
+      return applyCors(jsonError("نام کاربری مدیر نادرست است.", 401), origin);
     }
 
     const session = signAdminSession(ADMIN_USERNAME);
@@ -36,7 +33,7 @@ export async function POST(req: Request) {
       jsonWithAdminCookie({
         ok: true,
         username: ADMIN_USERNAME,
-        dashboardPath: operatorDashboardPathFromAdminSecret(),
+        dashboardPath: operatorDashboardPathFromSessionSecret(),
       }, session),
       origin,
     );

@@ -63,7 +63,6 @@ jobs:
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL || vars.POSTGRES_URL }}
           APP_SECRET_KEY: ${{ secrets.APP_SECRET_KEY || vars.APP_SECRET_KEY }}
-          CORTEX_ADMIN_PASSWORD: ${{ secrets.CORTEX_ADMIN_PASSWORD || vars.CORTEX_ADMIN_PASSWORD }}
           CORTEX_ADMIN_SESSION_SECRET: ${{ secrets.CORTEX_ADMIN_SESSION_SECRET || vars.CORTEX_ADMIN_SESSION_SECRET }}
           TELEGRAM_INTERNAL_SECRET: ${{ secrets.TELEGRAM_INTERNAL_SECRET || vars.TELEGRAM_INTERNAL_SECRET }}
           CORTEX_ZARINPAL_MERCHANT_ID: ${{ secrets.CORTEX_ZARINPAL_MERCHANT_ID || vars.CORTEX_ZARINPAL_MERCHANT_ID }}
@@ -103,7 +102,6 @@ jobs:
           put_secret POSTGRES_PRISMA_URL "$POSTGRES_PRISMA_URL"
           put_secret POSTGRES_URL "$POSTGRES_URL"
           put_secret APP_SECRET_KEY "$APP_SECRET_KEY"
-          put_secret CORTEX_ADMIN_PASSWORD "$CORTEX_ADMIN_PASSWORD"
           put_secret CORTEX_ADMIN_SESSION_SECRET "$CORTEX_ADMIN_SESSION_SECRET"
           put_secret TELEGRAM_INTERNAL_SECRET "$TELEGRAM_INTERNAL_SECRET"
           put_secret CORTEX_ZARINPAL_MERCHANT_ID "$CORTEX_ZARINPAL_MERCHANT_ID"
@@ -271,9 +269,10 @@ jobs:
           knowledge_file=""
           admin_cookie=""
           admin_response=""
+          admin_username_response=""
           cleanup_smoke() {
             set +e
-            rm -f "$smoke_response" "$session_response" "$smoke_cookie" "$api_key_response" "$api_chat_response" "$openai_response" "$agent_response" "$knowledge_response" "$knowledge_file" "$admin_response" "$admin_cookie"
+            rm -f "$smoke_response" "$session_response" "$smoke_cookie" "$api_key_response" "$api_chat_response" "$openai_response" "$agent_response" "$knowledge_response" "$knowledge_file" "$admin_response" "$admin_username_response" "$admin_cookie"
             db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
             if [ -n "$db_url" ] && [ -n "${smoke_user_id:-}" ]; then
               [[ "$smoke_user_id" =~ ^[A-Za-z0-9]+$ ]] && printf 'DELETE FROM "User" WHERE "id" = %s;' "'$smoke_user_id'" | npx prisma db execute --url "$db_url" --stdin >/dev/null 2>&1 || true
@@ -342,6 +341,36 @@ jobs:
             exit 0
           fi
           check_json "$base/api/admin/auth/me" "401"
+          admin_cookie="$(mktemp)"
+          admin_username_response="$(mktemp)"
+          admin_username_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d '{"username":"ehsanam86"}' -c "$admin_cookie" -o "$admin_username_response" -w "%{http_code}" "$base/api/admin/auth/login")"
+          echo "POST username-only admin login -> HTTP $admin_username_status"
+          if [ "$admin_username_status" = "429" ]; then
+            echo "Cloudflare edge rate limited the username-only admin smoke; continuing."
+          else
+            test "$admin_username_status" = "200"
+            jq -e '.ok == true and .username == "ehsanam86"' "$admin_username_response" >/dev/null
+            username_dashboard_path="$(jq -r '.dashboardPath // empty' "$admin_username_response")"
+            test -n "$username_dashboard_path"
+            case "$username_dashboard_path" in
+              /ops/*/console) ;;
+              *) echo "Unexpected username-only operator path shape"; exit 1 ;;
+            esac
+            admin_username_me_tmp="$(mktemp)"
+            admin_username_me_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_username_me_tmp" -w "%{http_code}" "$base/api/admin/auth/me")"
+            echo "GET /api/admin/auth/me after username-only login -> HTTP $admin_username_me_status"
+            test "$admin_username_me_status" = "200"
+            rm -f "$admin_username_me_tmp"
+            admin_username_page_tmp="$(mktemp)"
+            admin_username_page_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_username_page_tmp" -w "%{http_code}" "$base$username_dashboard_path")"
+            echo "GET username-only operator dashboard -> HTTP $admin_username_page_status"
+            if [ "$admin_username_page_status" = "429" ]; then
+              echo "Cloudflare edge rate limited the username-only dashboard check; continuing."
+            else
+              test "$admin_username_page_status" = "200"
+            fi
+            rm -f "$admin_username_page_tmp"
+          fi
           if [ "${EDGE_RATE_LIMITED:-0}" = "1" ]; then
             echo "Stopping live route smoke: Cloudflare edge is temporarily rate-limiting this runner."
             exit 0
@@ -351,7 +380,7 @@ jobs:
           admin_response="$(mktemp)"
           admin_token="${CORTEX_ADMIN_ACCESS_TOKEN:-}"
           if [ -z "$admin_token" ]; then
-            echo "CORTEX_ADMIN_ACCESS_TOKEN is not configured in cortex1; private admin exchange smoke is skipped, while the unauthenticated admin API check above remains active."
+            echo "CORTEX_ADMIN_ACCESS_TOKEN is not configured in cortex1; private-token exchange smoke is skipped, while username-only admin login remains tested above."
           else
             admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$(jq -nc --arg token "$admin_token" '{token:$token}')" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/exchange")"
             echo "POST private admin exchange -> HTTP $admin_status"
@@ -466,7 +495,7 @@ jobs:
           echo "GET(no-auth) $base/api/billing/topup-request -> HTTP $topup_noauth_status"
           test "$topup_noauth_status" = "401" -o "$topup_noauth_status" = "404"
 
-          # Continue using the Secret-backed admin session created above.
+          # Continue using the admin session created by the username-only login or private exchange above.
           check_admin_json() {
             local path="$1"
             local expected="$2"
@@ -479,7 +508,7 @@ jobs:
             test "$status" = "$expected"
             rm -f "$tmp"
           }
-          if [ -n "$admin_token" ]; then
+          if [ -s "${admin_cookie:-}" ]; then
             check_admin_json "/api/admin/auth/me" "200"
             check_admin_json "/api/control-center/settings" "200"
             check_admin_json "/api/control-center/plugins" "200"
@@ -489,7 +518,7 @@ jobs:
             check_admin_json "/api/control-center/billing" "200"
             check_admin_json "/api/control-center/topups" "200"
           else
-            echo "Skipping authenticated private-admin API assertions because CORTEX_ADMIN_ACCESS_TOKEN is not configured in cortex1."
+            echo "Skipping authenticated admin API assertions because username-only admin login was rate-limited on the edge."
           fi
           agent_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$smoke_cookie" -H "Content-Type: application/json" -d "$agent_body" -o "$agent_response" -w "%{http_code}" "$base/api/agents")"
           echo "POST $base/api/agents -> HTTP $agent_status"

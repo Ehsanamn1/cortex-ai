@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Loader2, LockKeyhole, ShieldCheck } from "lucide-react";
+import { Loader2, LogIn, ShieldCheck } from "lucide-react";
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("ehsanam86");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -19,7 +18,7 @@ export default function AdminLoginPage() {
         credentials: "include",
         cache: "no-store",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username }),
       });
       const body = await response.json().catch(() => ({})) as {
         error?: string;
@@ -53,7 +52,7 @@ export default function AdminLoginPage() {
         </div>
 
         <p className="mt-6 text-sm leading-7 text-muted-foreground">
-          این مسیر فقط برای مدیر محصول است. پس از ورود، یک نشست HttpOnly امن روی همین دستگاه ساخته می‌شود.
+          برای ورود فقط نام کاربری مدیر را وارد کن. پس از ورود، یک نشست HttpOnly روی همین دستگاه ساخته می‌شود.
         </p>
 
         <form onSubmit={submit} className="mt-7 space-y-4">
@@ -69,17 +68,6 @@ export default function AdminLoginPage() {
             />
           </label>
 
-          <label className="block">
-            <span className="mb-2 block text-xs font-bold">رمز عبور</span>
-            <input
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              type="password"
-              autoComplete="current-password"
-              dir="ltr"
-              className="h-12 w-full rounded-xl border border-border bg-background px-4 text-sm outline-none transition focus:border-primary"
-            />
-          </label>
 
           {error ? (
             <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-xs leading-6 text-rose-600">
@@ -89,16 +77,16 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            disabled={busy || !username.trim() || !password}
+            disabled={busy || !username.trim()}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-black text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <LockKeyhole className="size-4" />}
-            {busy ? "در حال ورود…" : "ورود امن به پنل"}
+            {busy ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+            {busy ? "در حال ورود…" : "ورود به پنل"}
           </button>
         </form>
 
         <p className="mt-5 text-center text-[10px] leading-5 text-muted-foreground">
-          آدرس اصلی <span dir="ltr">/admin</span> عمداً عمومی نیست؛ ورود از همین مسیر خصوصی انجام می‌شود.
+          ورود مدیر با نام کاربری مالک انجام می‌شود و خود <span dir="ltr">/admin</span> همچنان عمداً عمومی نیست.
         </p>
       </section>
     </main>
