@@ -175,7 +175,7 @@ export async function POST(req: Request) {
           await tx.planModelAccess.upsert({
             where: { planId_modelCatalogId: { planId: free.id, modelCatalogId } },
             update: { enabled: true, creditMultiplierBps: 200 },
-            create: { planId: free.id, modelCatalogId, enabled: true, creditMultiplierBps: 100 },
+            create: { planId: free.id, modelCatalogId, enabled: true, creditMultiplierBps: 200 },
           });
         }
         return trialModel;
