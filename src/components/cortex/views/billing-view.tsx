@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import {
   Activity, ArrowUpLeft, BarChart3, CheckCircle2, ChevronDown, CircleDollarSign, Clock3, CreditCard, FileText, Gauge,
   Info, Layers3, Plus, ShieldCheck, WalletCards, Sparkles,
