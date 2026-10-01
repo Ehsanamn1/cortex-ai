@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { QueryProvider } from "@/components/query-provider";
 
 const vazirmatn = Vazirmatn({
   variable: "--font-vazirmatn",
@@ -39,7 +40,9 @@ export default function RootLayout({
         />
       </head>
       <body className={vazirmatn.variable + " antialiased bg-background text-foreground"}>
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
         <Toaster position="top-center" dir="rtl" richColors />
       </body>
     </html>
