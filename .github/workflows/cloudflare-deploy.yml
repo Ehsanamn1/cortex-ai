@@ -267,11 +267,12 @@ jobs:
           knowledge_response=""
           knowledge_file=""
           admin_cookie=""
+          private_admin_cookie=""
           admin_response=""
           admin_username_response=""
           cleanup_smoke() {
             set +e
-            rm -f "$smoke_response" "$session_response" "$smoke_cookie" "$api_key_response" "$api_chat_response" "$openai_response" "$agent_response" "$knowledge_response" "$knowledge_file" "$admin_response" "$admin_username_response" "$admin_cookie"
+            rm -f "$smoke_response" "$session_response" "$smoke_cookie" "$api_key_response" "$api_chat_response" "$openai_response" "$agent_response" "$knowledge_response" "$knowledge_file" "$admin_response" "$admin_username_response" "$admin_cookie" "$private_admin_cookie"
             db_url="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
             if [ -n "$db_url" ] && [ -n "${smoke_user_id:-}" ]; then
               [[ "$smoke_user_id" =~ ^[A-Za-z0-9]+$ ]] && printf 'DELETE FROM "User" WHERE "id" = %s;' "'$smoke_user_id'" | npx prisma db execute --url "$db_url" --stdin >/dev/null 2>&1 || true
@@ -386,7 +387,8 @@ jobs:
           if [ -z "$admin_token" ]; then
             echo "CORTEX_ADMIN_ACCESS_TOKEN is not configured in cortex1; private-token exchange smoke is skipped, while username-only admin login remains tested above."
           else
-            admin_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -H "Content-Type: application/json" -d "$(jq -nc --arg token "$admin_token" '{token:$token}')" -c "$admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/exchange")"
+            private_admin_cookie="$(mktemp)"
+            admin_status="$(curl -sS --retry 5 --retry-delay 2 --max-time 30 -H "Content-Type: application/json" -d "$(jq -nc --arg token "$admin_token" '{token:$token}')" -c "$private_admin_cookie" -o "$admin_response" -w "%{http_code}" "$base/api/admin/auth/exchange")"
             echo "POST private admin exchange -> HTTP $admin_status"
             if [ "$admin_status" = "429" ]; then
               echo "Cloudflare edge rate limited the private admin smoke; continuing public smoke."
