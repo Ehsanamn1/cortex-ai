@@ -97,7 +97,7 @@ See `docs/API_ACCESS.md` for the client contract.
 - Knowledge URL ingestion blocks local/private destinations, re-checks redirects and bounds downloads.
 - Provider credentials, Telegram tokens and webhook secrets are encrypted at rest with `APP_SECRET_KEY`.
 - Production sessions require a persistent `APP_SECRET_KEY` of at least 32 characters.
-- The production Control Center uses a dedicated owner-only UI login. The owner enters the fixed username `ehsanam86`; no admin password or Secret access link is required. The browser receives a signed HttpOnly cookie used only to authorize backend admin requests.
+- The production Control Center uses a dedicated owner-only UI login at `/admin/login`. The owner enters the fixed username `ehsanam86` and the password from the Worker Secret `CORTEX_ADMIN_PASSWORD`; the browser receives a signed HttpOnly cookie used only to authorize backend admin requests.
 - Chat POST requests are not automatically retried by the frontend/API client; only idempotent GET/HEAD/OPTIONS calls are retried.
 - Usage limits use durable PostgreSQL reservations and transaction-scoped advisory locks so concurrent Worker isolates cannot bypass the same quota.
 
@@ -150,7 +150,7 @@ Model fine-tuning is intentionally disabled in the current release and is presen
 
 ## Private Admin Control Center
 
-The production control center uses a private operator entry flow backed by server-side access credentials and an HttpOnly session. Public legacy admin entry points are disabled.
+The production control center uses a private operator entry flow backed by server-side access credentials and an HttpOnly session. Public legacy admin entry points are disabled, while `/admin/login` is the supported password entry point and the resulting operator dashboard remains on an unguessable `/ops/<routeKey>/console` path.
 
 Inside **AI زیرساخت**, the owner can create/rotate/disable system Providers, set Base URLs and API keys, inspect provider health, attach Model Catalog entries, and select the default Trial model. Plan/model access is controlled separately through the billing matrix.
 
