@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { OperatorConsole } from "@/components/operator-console";
+import OperatorConsoleHost from "@/components/operator-console-host";
 import { operatorDashboardPath, operatorDashboardPathFromSessionSecret } from "@/lib/server/admin-auth";
 
 export const dynamic = "force-dynamic";
@@ -20,5 +20,5 @@ export default async function PrivateOperatorConsolePage({ params }: { params: P
   if (!matchesAccessTokenPath && !matchesUsernameLoginPath) {
     notFound();
   }
-  return <OperatorConsole />;
+  return <OperatorConsoleHost />;
 }
