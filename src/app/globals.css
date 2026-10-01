@@ -1613,3 +1613,52 @@ html[dir="rtl"] [contenteditable="true"]:not([dir="ltr"]) {
 html[dir="rtl"] .operator-input:not([dir="ltr"]) {
   text-align: right;
 }
+
+
+/* ===== Premium operator control center ===== */
+.cortex-control-center {
+  background: #080c12 !important;
+  color: #e7edf5 !important;
+  min-height: 100dvh;
+}
+.cortex-control-center main {
+  background: #080c12 !important;
+}
+.cortex-control-center header {
+  background: rgba(11, 16, 23, 0.94) !important;
+  border-color: #202b39 !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.02), 0 12px 34px rgba(0,0,0,.18) !important;
+}
+.cortex-control-center [data-slot="card"] {
+  background: #0f151d !important;
+  border-color: #202b39 !important;
+  color: #e7edf5 !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.16) !important;
+}
+.cortex-control-center [data-slot="card"] [data-slot="card-title"] {
+  color: #eef3f8 !important;
+}
+.cortex-control-center [data-slot="card"] .text-muted-foreground {
+  color: #8c99aa !important;
+}
+.cortex-control-center input,
+.cortex-control-center textarea,
+.cortex-control-center [data-slot="select-trigger"],
+.cortex-control-center select {
+  background: #0b1119 !important;
+  border-color: #283545 !important;
+  color: #edf2f8 !important;
+}
+.cortex-control-center input::placeholder,
+.cortex-control-center textarea::placeholder {
+  color: #667589 !important;
+}
+.cortex-control-center table thead {
+  background: rgba(255,255,255,.025) !important;
+}
+.cortex-control-center table tbody tr:hover {
+  background: rgba(116,160,255,.045) !important;
+}
+@media (max-width: 1023px) {
+  .cortex-control-center main { padding-bottom: 84px !important; }
+}
