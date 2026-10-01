@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OperatorConsole } from "@/components/operator-console";
-import { operatorDashboardPath } from "@/lib/server/admin-auth";
+import { operatorDashboardPath, operatorDashboardPathFromAdminSecret } from "@/lib/server/admin-auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,8 +13,11 @@ export const metadata: Metadata = {
 
 export default async function PrivateOperatorConsolePage({ params }: { params: Promise<{ routeKey: string }> }) {
   const { routeKey } = await params;
+  const expectedPath = "/ops/" + routeKey + "/console";
   const configured = process.env.CORTEX_ADMIN_ACCESS_TOKEN?.trim();
-  if (!configured || operatorDashboardPath(configured) !== "/ops/" + routeKey + "/console") {
+  const matchesAccessTokenPath = Boolean(configured && operatorDashboardPath(configured) === expectedPath);
+  const matchesPasswordLoginPath = operatorDashboardPathFromAdminSecret() === expectedPath;
+  if (!matchesAccessTokenPath && !matchesPasswordLoginPath) {
     notFound();
   }
   return <OperatorConsole />;
