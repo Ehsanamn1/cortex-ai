@@ -16,7 +16,6 @@ The environment must provide:
 CLOUDFLARE_API_TOKEN
 CLOUDFLARE_ACCOUNT_ID
 DATABASE_URL
-CORTEX_ADMIN_USERNAME
 CORTEX_ADMIN_PASSWORD
 R2_ACCOUNT_ID
 R2_BUCKET_NAME
@@ -107,7 +106,8 @@ The setup helper creates the `cortex-ai-knowledge` bucket if necessary and promp
 
 The deploy workflow exercises:
 
-- public `/control-center` and `/admin` pages;
+- public `/control-center` and intentionally unlisted `/admin` page;
+- `/admin/login` password login and private operator dashboard exchange;
 - unauthenticated admin protection;
 - signup and persistent session;
 - workspace/agent/dashboard/provider/Telegram/admin/analytics routes;
