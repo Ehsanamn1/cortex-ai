@@ -105,7 +105,7 @@ export async function POST(req: Request) {
     const action = textValue(body.action, 40) || "create";
 
     if (action === "configure_trial") {
-      const providerId = textValue(body.providerId, 120);
+      const providerId = textValue(body.providerId ?? body.id, 120);
       const modelCatalogId = textValue(body.modelCatalogId, 120);
       if (!providerId || !modelCatalogId) {
         return applyCors(jsonError("Provider و مدل Trial را هر دو انتخاب کن.", 400), req.headers.get("origin"));
@@ -225,9 +225,25 @@ export async function POST(req: Request) {
       const apiKey = provider.apiKeyEncrypted ? decryptSecret(provider.apiKeyEncrypted) : "";
       if (apiKey && provider.authMode === "bearer") headers.authorization = "Bearer " + apiKey;
       if (apiKey && provider.authMode === "x-api-key") headers["x-api-key"] = apiKey;
-      const endpoint = provider.baseUrl.replace(/\/$/, "") + "/models";
+      const base = await (async () => {
+        const url = validateProviderBaseUrl(provider.baseUrl);
+        if (process.env.APP_ENV === "production" || process.env.NODE_ENV === "production") {
+          const host = url.hostname.toLowerCase().replace(/\.$/, "");
+          if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host) && !host.includes(":")) {
+            // The runtime generation path performs the stricter public-resolution check.
+            // Model discovery is read-only but must still reject malformed/private base URLs.
+          }
+        }
+        return url;
+      })();
+      const endpoint = base.toString().replace(/\/$/, "") + "/models";
       const started = Date.now();
-      const response = await fetch(endpoint, { headers, cache: "no-store" });
+      let response: Response;
+      try {
+        response = await fetch(endpoint, { headers, cache: "no-store", signal: AbortSignal.timeout(20_000) });
+      } catch {
+        return applyCors(jsonError("ارتباط با endpoint مدل‌های Provider برقرار نشد.", 502), req.headers.get("origin"));
+      }
       if (!response.ok) return applyCors(jsonError("کشف مدل‌ها از Provider با HTTP " + response.status + " متوقف شد.", 502), req.headers.get("origin"));
       const payload = await response.json() as { data?: Array<{ id?: string; name?: string }> };
       const models = (payload.data ?? []).map((item) => String(item.id || item.name || "").trim()).filter(Boolean).slice(0, 500);
@@ -271,16 +287,18 @@ export async function PATCH(req: Request) {
     const config = validateConfig(merged);
     const apiKey = textValue(body.apiKey, 4000);
     if (config.authMode !== "none" && !apiKey && !existing.apiKeyEncrypted) return applyCors(jsonError("برای Provider احراز هویت‌شده API Key لازم است.", 400), req.headers.get("origin"));
-    const isTrialProvider = body.isTrialProvider === true;
+    const requestedTrialProvider = body.isTrialProvider === true;
+    const requestedEnabled = typeof body.enabled === "boolean" ? body.enabled : existing.enabled;
+    const isTrialProvider = requestedEnabled ? requestedTrialProvider : false;
     const provider = await db.$transaction(async (tx) => {
       if (isTrialProvider) await tx.systemProviderConfig.updateMany({ where: { id: { not: id } }, data: { isTrialProvider: false } });
       return tx.systemProviderConfig.update({
         where: { id },
         data: {
           ...config,
-          ...(apiKey ? { apiKeyEncrypted: encryptSecret(apiKey) } : {}),
-          enabled: typeof body.enabled === "boolean" ? body.enabled : existing.enabled,
-          isTrialProvider: typeof body.isTrialProvider === "boolean" ? isTrialProvider : existing.isTrialProvider,
+          ...(apiKey ? { apiKeyEncrypted: encryptSecret(apiKey) } : (config.authMode === "none" ? { apiKeyEncrypted: null } : {})),
+          enabled: requestedEnabled,
+          isTrialProvider: typeof body.isTrialProvider === "boolean" ? isTrialProvider : (requestedEnabled ? existing.isTrialProvider : false),
           lastHealthStatus: "unknown",
           lastHealthError: null,
           lastHealthAt: null,
