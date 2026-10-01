@@ -1662,3 +1662,13 @@ html[dir="rtl"] .operator-input:not([dir="ltr"]) {
 @media (max-width: 1023px) {
   .cortex-control-center main { padding-bottom: 84px !important; }
 }
+
+/* Preserve the dedicated light contract card inside the dark operator console. */
+.cortex-control-center [class*="bg-[#f7f9f3]"] {
+  background: #f7f9f3 !important;
+  color: #1b2218 !important;
+  border-color: #d6ddce !important;
+}
+.cortex-control-center [class*="bg-[#f7f9f3]"] .text-[#1b2218] { color: #1b2218 !important; }
+.cortex-control-center [class*="bg-[#f7f9f3]"] .text-[#646d60],
+.cortex-control-center [class*="bg-[#f7f9f3]"] .text-[#556052] { color: #556052 !important; }
