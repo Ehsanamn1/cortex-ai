@@ -500,8 +500,8 @@ function SystemProvidersPanel() {
       const result = await jsonFetch<any>("/api/control-center/providers", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: { action: "test", providerId: provider.id, modelId: modelDraft.modelId.trim() || provider.testModelId || "" },
-      } as any);
+        body: JSON.stringify({ action: "test", providerId: provider.id, modelId: modelDraft.modelId.trim() || provider.testModelId || "" }),
+      });
       if (result.health?.ok) toast.success("اتصال سالم است · " + Number(result.health.latencyMs ?? 0).toLocaleString("fa-IR") + "ms");
       else toast.error(result.health?.error || "اتصال سالم نبود.");
       await qc.invalidateQueries({ queryKey: ["cc-system-providers"] });
@@ -515,7 +515,7 @@ function SystemProvidersPanel() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "discover_models", providerId: editing.id }),
-      } as any);
+      });
       setDiscovered(result.models ?? []);
       toast.success(Number(result.models?.length ?? 0).toLocaleString("fa-IR") + " مدل پیدا شد.");
     } catch (e) { toast.error((e as Error).message); }
