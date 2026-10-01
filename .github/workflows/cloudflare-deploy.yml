@@ -352,10 +352,7 @@ jobs:
             jq -e '.ok == true and .username == "ehsanam86"' "$admin_username_response" >/dev/null
             username_dashboard_path="$(jq -r '.dashboardPath // empty' "$admin_username_response")"
             test -n "$username_dashboard_path"
-            case "$username_dashboard_path" in
-              /ops/*/console) ;;
-              *) echo "Unexpected username-only operator path shape"; exit 1 ;;
-            esac
+            test "$username_dashboard_path" = "/admin/console" || { echo "Unexpected username-only operator path: $username_dashboard_path"; exit 1; }
             admin_username_me_tmp="$(mktemp)"
             admin_username_me_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_username_me_tmp" -w "%{http_code}" "$base/api/admin/auth/me")"
             echo "GET /api/admin/auth/me after username-only login -> HTTP $admin_username_me_status"
@@ -395,10 +392,7 @@ jobs:
               test "$admin_status" = "200"
               dashboard_path="$(jq -r ".dashboardPath // empty" "$admin_response")"
               test -n "$dashboard_path"
-              case "$dashboard_path" in
-                /ops/*/console) ;;
-                *) echo "Unexpected private operator path shape"; exit 1 ;;
-              esac
+              test "$dashboard_path" = "/admin/console" || { echo "Unexpected private operator path: $dashboard_path"; exit 1; }
               admin_me_tmp="$(mktemp)"
               admin_me_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_me_tmp" -w "%{http_code}" "$base/api/admin/auth/me")"
               echo "GET /api/admin/auth/me with private admin session -> HTTP $admin_me_status"
