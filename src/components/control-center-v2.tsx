@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Activity, Bot, Boxes, CheckCircle2, CircleX, Clock3, CreditCard, Database, FileText, Gauge, History, LayoutDashboard,
-  LogOut, MessageSquare, Pencil, Power, RefreshCw, Save, Search, Send, Settings2,
-  Users, WalletCards, Workflow, Server, KeyRound
+  Activity, Bot, Boxes, BrainCircuit, Check, CheckCircle2, CircleX, Clock3, CreditCard, Database, FileText, Gauge, History, LayoutDashboard,
+  ListFilter, LogOut, MessageSquare, Pencil, Plus, Power, RefreshCw, Save, Search, Send, ServerCog, Settings2,
+  Sparkles, Users, WalletCards, Workflow, Server, KeyRound, CloudCog
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import { OperationsCenter } from "@/components/operations-center";
 
 type Section =
   | "overview" | "users" | "workspaces" | "agents" | "knowledge" | "conversations"
-  | "telegram" | "operations" | "workflows" | "executions" | "audit" | "plugins"
+  | "telegram" | "operations" | "site" | "workflows" | "executions" | "audit" | "plugins" | "security"
   | "plans" | "models" | "accounts" | "charges" | "invoices" | "topups" | "systemProviders" | "settings";
 
 const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof LayoutDashboard }> = [
@@ -29,6 +29,8 @@ const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof 
   { id: "conversations", label: "گفتگوها", group: "AI", icon: MessageSquare },
   { id: "telegram", label: "بات‌های تلگرام", group: "اتصال‌ها", icon: Send },
   { id: "operations", label: "عملیات Telegram و دانش", group: "اتصال‌ها", icon: Activity },
+  { id: "site", label: "محتوا و ظاهر سایت", group: "سیستم", icon: Sparkles },
+  { id: "security", label: "امنیت و دسترسی", group: "سیستم", icon: KeyRound },
   { id: "systemProviders", label: "منابع مدل", group: "زیرساخت", icon: Server },
   { id: "workflows", label: "Workflowها", group: "عملیات", icon: Workflow },
   { id: "executions", label: "Executionها", group: "عملیات", icon: Activity },
@@ -336,7 +338,7 @@ function ControlCenterRuntime() {
         {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap border px-3 py-2 text-[10px] font-semibold transition",section===s.id?"border-[#74a0ff]/30 bg-[#74a0ff]/10 text-[#b7ccff]":"border-transparent text-[#9ba9ba]")}>{s.label}</button>)}
       </div>
       <main className="mx-auto max-w-[1460px] space-y-6 p-4 lg:p-8">
-        {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:section==="systemProviders"?<SystemProvidersPanel/>:section==="operations"?<OperationsCenter/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>} 
+        {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SiteControlPanel/>:section==="site"?<SiteControlPanel/>:section==="security"?<SecurityPanel onLogout={()=>logout.mutate()}/>:section==="systemProviders"?<SystemProvidersPanel/>:section==="operations"?<OperationsCenter/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>} 
       </main>
     </div>
   </div></div>;
@@ -374,165 +376,320 @@ function AccessRow({model,enabled,multiplier,onSave}:{model:any;enabled:boolean;
 }
 function SystemProvidersPanel() {
   const qc = useQueryClient();
-  const q = useQuery({
+  const providersQ = useQuery({
     queryKey: ["cc-system-providers"],
     queryFn: () => jsonFetch<{ providers: any[]; trial: any }>("/api/control-center/providers"),
     staleTime: 5_000,
   });
-  const catalogQ = useQuery({
-    queryKey: ["cc-trial-catalog"],
+  const billingQ = useQuery({
+    queryKey: ["cc-billing"],
     queryFn: () => jsonFetch<any>("/api/control-center/billing"),
     staleTime: 10_000,
   });
-  const [editing, setEditing] = useState<string | null>(null);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [form, setForm] = useState({
+    key: "", displayName: "", providerName: "", protocol: "openai-compatible",
+    authMode: "bearer", baseUrl: "https://api.openai.com/v1", apiKey: "",
+    enabled: true, isTrialProvider: false,
+  });
+  const [discovered, setDiscovered] = useState<string[]>([]);
+  const [modelDraft, setModelDraft] = useState({ modelId: "", displayName: "", inputTomanPer1M: "0", outputTomanPer1M: "0" });
   const [trialProviderId, setTrialProviderId] = useState("");
   const [trialModelId, setTrialModelId] = useState("");
 
-  const save = useMutation({
-    mutationFn: async ({ mode, body }: { mode: "create" | "update" | "test" | "configure_trial"; body: Record<string, unknown> }) => {
-      const response = await fetch("/api/control-center/providers", {
-        method: mode === "update" ? "PATCH" : "POST",
+  const providerAction = useMutation({
+    mutationFn: async (args: { method: "POST" | "PATCH" | "DELETE"; body?: Record<string, unknown>; id?: string }) => {
+      const response = await fetch(args.method === "DELETE" && args.id
+        ? "/api/control-center/providers?id=" + encodeURIComponent(args.id)
+        : "/api/control-center/providers", {
+        method: args.method,
         credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(mode === "update" ? body : { ...body, action: mode }),
+        headers: args.method === "DELETE" ? undefined : { "content-type": "application/json" },
+        body: args.method === "DELETE" ? undefined : JSON.stringify(args.body ?? {}),
       });
-      const payload = await response.json().catch(() => ({})) as {
-        data?: unknown;
-        error?: { message?: string } | string;
-        message?: string;
-      };
-      if (!response.ok) {
-        const errorMessage = typeof payload.error === "string" ? payload.error : payload.error?.message;
-        throw new Error(errorMessage || payload.message || "عملیات Provider ناموفق بود.");
-      }
+      const payload = await response.json().catch(() => ({})) as any;
+      if (!response.ok) throw new Error(typeof payload.error === "string" ? payload.error : payload.error?.message || payload.message || "عملیات Provider ناموفق بود.");
       return payload.data ?? payload;
     },
-    onSuccess: (_, vars) => {
-      void qc.invalidateQueries({ queryKey: ["cc-system-providers"] });
-      void qc.invalidateQueries({ queryKey: ["cc-billing"] });
-      if (vars.mode === "test") toast.success("تست اتصال انجام شد.");
-      else if (vars.mode === "configure_trial") toast.success("مسیر Trial ذخیره و تست شد.");
+    onSuccess: async (_data, vars) => {
+      await qc.invalidateQueries({ queryKey: ["cc-system-providers"] });
+      await qc.invalidateQueries({ queryKey: ["cc-billing"] });
+      if (vars.method === "DELETE") toast.success("Provider حذف شد.");
       else toast.success("Provider ذخیره شد.");
+      setEditing(null);
+      setDiscovered([]);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (q.isPending) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">در حال بارگذاری زیرساخت…</CardContent></Card>;
-  if (q.isError) return <Card className="border-destructive/20"><CardContent className="p-8 text-center text-sm text-destructive">{q.error.message}</CardContent></Card>;
+  const trialAction = useMutation({
+    mutationFn: ({ providerId, modelCatalogId }: { providerId: string; modelCatalogId: string }) =>
+      jsonFetch("/api/control-center/providers", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "configure_trial", providerId, modelCatalogId }),
+      }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["cc-system-providers"] });
+      await qc.invalidateQueries({ queryKey: ["cc-billing"] });
+      toast.success("مسیر Trial تست و فعال شد.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
-  const providers = q.data?.providers ?? [];
-  const models = catalogQ.data?.models ?? [];
-  const trial = q.data?.trial;
+  const modelCreate = useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      jsonFetch("/api/control-center/billing", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "create_model", ...body }),
+      }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["cc-billing"] });
+      await qc.invalidateQueries({ queryKey: ["cc-system-providers"] });
+      toast.success("مدل به Model Catalog اضافه شد.");
+      setModelDraft({ modelId: "", displayName: "", inputTomanPer1M: "0", outputTomanPer1M: "0" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const openNew = () => {
+    setEditing(null);
+    setDiscovered([]);
+    setModelDraft({ modelId: "", displayName: "", inputTomanPer1M: "0", outputTomanPer1M: "0" });
+    setForm({ key: "", displayName: "", providerName: "", protocol: "openai-compatible", authMode: "bearer", baseUrl: "https://api.openai.com/v1", apiKey: "", enabled: true, isTrialProvider: false });
+  };
+
+  const openEdit = (provider: any) => {
+    setEditing(provider);
+    setDiscovered([]);
+    setModelDraft({ modelId: provider.testModelId ?? "", displayName: provider.testModelId ?? "", inputTomanPer1M: "0", outputTomanPer1M: "0" });
+    setForm({
+      key: provider.key ?? "",
+      displayName: provider.displayName ?? "",
+      providerName: provider.providerName ?? "",
+      protocol: provider.protocol ?? "openai-compatible",
+      authMode: provider.authMode ?? "bearer",
+      baseUrl: provider.baseUrl ?? "",
+      apiKey: "",
+      enabled: provider.enabled !== false,
+      isTrialProvider: provider.isTrialProvider === true,
+    });
+  };
+
+  const changeProtocol = (protocol: string) => {
+    const defaults: Record<string, { baseUrl: string; authMode: string; providerName: string }> = {
+      "openai-compatible": { baseUrl: "https://api.openai.com/v1", authMode: "bearer", providerName: "OpenAI Compatible" },
+      "openrouter": { baseUrl: "https://openrouter.ai/api/v1", authMode: "bearer", providerName: "OpenRouter" },
+      "anthropic": { baseUrl: "https://api.anthropic.com", authMode: "x-api-key", providerName: "Anthropic" },
+      "gemini": { baseUrl: "https://generativelanguage.googleapis.com", authMode: "x-api-key", providerName: "Google Gemini" },
+    };
+    const d = defaults[protocol] ?? defaults["openai-compatible"];
+    setForm((v) => ({ ...v, protocol, baseUrl: v.baseUrl && v.baseUrl !== "https://api.openai.com/v1" && v.baseUrl !== "https://openrouter.ai/api/v1" && v.baseUrl !== "https://api.anthropic.com" && v.baseUrl !== "https://generativelanguage.googleapis.com" ? v.baseUrl : d.baseUrl, authMode: d.authMode, providerName: v.providerName || d.providerName }));
+  };
+
+  const save = () => {
+    const body = { ...form, ...(editing ? { id: editing.id } : {}) };
+    providerAction.mutate({ method: editing ? "PATCH" : "POST", body });
+  };
+
+  const testProvider = async () => {
+    const provider = editing;
+    if (!provider) return toast.error("ابتدا Provider را ذخیره و انتخاب کن.");
+    try {
+      const result = await jsonFetch<any>("/api/control-center/providers", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: { action: "test", providerId: provider.id, modelId: modelDraft.modelId.trim() || provider.testModelId || "" },
+      } as any);
+      if (result.health?.ok) toast.success("اتصال سالم است · " + Number(result.health.latencyMs ?? 0).toLocaleString("fa-IR") + "ms");
+      else toast.error(result.health?.error || "اتصال سالم نبود.");
+      await qc.invalidateQueries({ queryKey: ["cc-system-providers"] });
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const discoverModels = async () => {
+    if (!editing) return toast.error("ابتدا Provider را ذخیره و انتخاب کن.");
+    try {
+      const result = await jsonFetch<any>("/api/control-center/providers", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "discover_models", providerId: editing.id }),
+      } as any);
+      setDiscovered(result.models ?? []);
+      toast.success(Number(result.models?.length ?? 0).toLocaleString("fa-IR") + " مدل پیدا شد.");
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  if (providersQ.isPending || billingQ.isPending) {
+    return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">در حال بارگذاری Provider Registry…</CardContent></Card>;
+  }
+  if (providersQ.isError) return <Card className="border-destructive/20"><CardContent className="p-8 text-center text-sm text-destructive">{providersQ.error.message}</CardContent></Card>;
+
+  const providers = providersQ.data?.providers ?? [];
+  const models = billingQ.data?.models ?? [];
+  const trial = providersQ.data?.trial;
   const activeProviderId = trialProviderId || trial?.provider?.id || providers.find((p: any) => p.isTrialProvider)?.id || "";
   const activeModelId = trialModelId || trial?.model?.id || models.find((m: any) => m.trialDefault)?.id || "";
 
-  return <div className="space-y-5">
-    <section className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
-      <Card className={cn("overflow-hidden border-[#303c4c] bg-[#111820] text-[#e7edf5]", trial?.ready && "border-[#6d94ff]/55")}>
-        <CardHeader className="border-b border-[#26303d]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-[9px] font-bold tracking-[.22em] text-[#74a0ff]">TRIAL ROUTE</p>
-              <CardTitle className="mt-1 text-base text-[#eef3f8]">مسیر پیش‌فرض نسخه آزمایشی</CardTitle>
-              <p className="mt-1 text-[10px] leading-5 text-[#8a98aa]">تمام حساب‌های بدون پلن از این Model و Provider تغذیه می‌شوند. اعتبار مصرفی از کیف پول پلن «{trial?.planName ?? "آزمایشی"}» کم می‌شود.</p>
+  return <div className="space-y-6">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p className="text-[10px] font-black tracking-[.18em] text-primary">MODEL INFRASTRUCTURE</p>
+        <h2 className="mt-2 text-2xl font-black tracking-tight">Provider Registry</h2>
+        <p className="mt-2 max-w-3xl text-xs leading-6 text-muted-foreground">Provider واقعی را ثبت کن، Health آن را تست کن، مدل‌های قابل دریافت را کشف کن و مدل را مستقیم وارد Runtime Catalog کن.</p>
+      </div>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={() => { void qc.invalidateQueries({ queryKey: ["cc-system-providers"] }); void qc.invalidateQueries({ queryKey: ["cc-billing"] }); }}>
+          <RefreshCw className="size-4" /> تازه‌سازی
+        </Button>
+        <Button onClick={openNew}><Plus className="size-4" /> Provider جدید</Button>
+      </div>
+    </div>
+
+    <Card className="overflow-hidden border-[#263345] bg-[#0f151d] text-[#e7edf5]">
+      <CardHeader className="border-b border-[#263345]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[9px] font-black tracking-[.22em] text-primary">TRIAL ROUTE</p>
+            <CardTitle className="mt-1 text-base text-[#eef3f8]">مسیر واقعی نسخه آزمایشی</CardTitle>
+            <p className="mt-1 text-[10px] leading-5 text-[#8c99aa]">Trial فقط وقتی آماده است که Provider فعال، کلید معتبر، Model فعال و Health واقعی داشته باشد.</p>
+          </div>
+          <span className={"rounded-full border px-2.5 py-1 text-[9px] font-bold " + (trial?.ready ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" : "border-amber-400/20 bg-amber-400/10 text-amber-200")}>{trial?.ready ? "READY" : "NEEDS CONFIG"}</span>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+        <label className="space-y-2">
+          <span className="block text-[10px] font-semibold text-[#a7b5c8]">Provider Trial</span>
+          <select className="h-10 w-full rounded-xl border border-[#303c4c] bg-[#0b1016] px-3 text-xs text-[#ecefe6] outline-none focus:border-primary" value={activeProviderId} onChange={e => setTrialProviderId(e.target.value)}>
+            <option value="">انتخاب Provider</option>
+            {providers.map((p: any) => <option key={p.id} value={p.id}>{p.displayName} · {p.providerName}</option>)}
+          </select>
+        </label>
+        <label className="space-y-2">
+          <span className="block text-[10px] font-semibold text-[#a7b5c8]">Model Trial</span>
+          <select className="h-10 w-full rounded-xl border border-[#303c4c] bg-[#0b1016] px-3 text-xs text-[#ecefe6] outline-none focus:border-primary" value={activeModelId} onChange={e => setTrialModelId(e.target.value)}>
+            <option value="">انتخاب Model</option>
+            {models.filter((m: any) => m.active).map((m: any) => <option key={m.id} value={m.id}>{m.displayName} · {m.provider}</option>)}
+          </select>
+        </label>
+        <Button disabled={trialAction.isPending || !activeProviderId || !activeModelId} onClick={() => trialAction.mutate({ providerId: activeProviderId, modelCatalogId: activeModelId })}>
+          {trialAction.isPending ? "در حال بررسی اتصال…" : "تست و فعال‌سازی Trial"}
+        </Button>
+      </CardContent>
+    </Card>
+
+    <div className="grid gap-4 xl:grid-cols-[.72fr_1.28fr]">
+      <div className="space-y-3">
+        {providers.length === 0 ? <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Providerای ثبت نشده. از «Provider جدید» شروع کن.</CardContent></Card> : providers.map((provider: any) => (
+          <Card key={provider.id} className={cn("cursor-pointer border-border transition", editing?.id === provider.id && "border-primary/50 shadow-lg")} onClick={() => openEdit(provider)}>
+            <CardContent className="flex items-start gap-3 p-4">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><ServerCog className="size-5" /></span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2"><p className="truncate text-sm font-black">{provider.displayName}</p>{provider.isTrialProvider && <span className="rounded-full bg-primary/10 px-2 py-1 text-[9px] font-bold text-primary">Trial</span>}</div>
+                <p className="mt-1 text-[10px] text-muted-foreground">{provider.providerName} · {provider.protocol}</p>
+                <p dir="ltr" className="mt-1 truncate text-[10px] text-muted-foreground">{provider.baseUrl}</p>
+                <div className="mt-2 flex flex-wrap gap-2 text-[9px]">
+                  <span className="rounded-full border px-2 py-1">{provider.configured ? "API Key ✓" : "API Key ندارد"}</span>
+                  <span className="rounded-full border px-2 py-1">{Number(provider.modelsCount ?? 0).toLocaleString("fa-IR")} مدل</span>
+                  <span className={"rounded-full border px-2 py-1 " + (provider.lastHealthStatus === "healthy" ? "border-emerald-400/20 text-emerald-500" : provider.lastHealthStatus === "error" ? "border-rose-400/20 text-rose-500" : "")}>{provider.lastHealthStatus || "تست نشده"}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="min-w-0 border-border">
+        {!editing ? <CardContent className="grid min-h-[460px] place-items-center p-10 text-center">
+          <div><CloudCog className="mx-auto size-12 text-primary" /><h3 className="mt-4 text-lg font-black">مرکز Providerها</h3><p className="mt-2 max-w-md text-xs leading-6 text-muted-foreground">Provider جدید بساز یا یکی را انتخاب کن. کلید ذخیره‌شده هرگز در UI نمایش داده نمی‌شود.</p></div>
+        </CardContent> : <CardContent className="space-y-5 p-5">
+          <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-[9px] font-black tracking-[.2em] text-primary">CONNECTION</p><h3 className="mt-1 text-base font-black">{form.displayName || "Provider جدید"}</h3></div>
+            <div className="flex flex-wrap gap-3"><label className="flex items-center gap-2 text-xs"><Switch checked={form.enabled} onCheckedChange={x => setForm(v => ({ ...v, enabled: x, isTrialProvider: x ? v.isTrialProvider : false }))} /> فعال</label><label className="flex items-center gap-2 text-xs"><Switch checked={form.isTrialProvider} onCheckedChange={x => setForm(v => ({ ...v, isTrialProvider: x }))} /> Trial Provider</label></div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <Input placeholder="نام نمایشی؛ مثال DeepSeek Production" value={form.displayName} onChange={e=>setForm(v=>({...v,displayName:e.target.value}))}/>
+            <Input placeholder="کلید داخلی؛ مثال deepseek-prod" dir="ltr" disabled={Boolean(editing)} value={form.key} onChange={e=>setForm(v=>({...v,key:e.target.value}))}/>
+            <Input placeholder="Provider Name" value={form.providerName} onChange={e=>setForm(v=>({...v,providerName:e.target.value}))}/>
+            <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={form.protocol} onChange={e=>changeProtocol(e.target.value)}>
+              <option value="openai-compatible">OpenAI Compatible</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+            <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={form.authMode} onChange={e=>setForm(v=>({...v,authMode:e.target.value}))} disabled={form.protocol==="anthropic"||form.protocol==="gemini"}>
+              <option value="bearer">Bearer</option>
+              <option value="x-api-key">X-API-Key</option>
+              <option value="none">بدون کلید</option>
+            </select>
+            <Input dir="ltr" placeholder="https://api.example.com/v1" value={form.baseUrl} onChange={e=>setForm(v=>({...v,baseUrl:e.target.value}))}/>
+            <Input className="md:col-span-2" dir="ltr" type="password" autoComplete="off" placeholder={editing ? "برای حفظ API Key فعلی خالی بگذار" : "API Key"} value={form.apiKey} onChange={e=>setForm(v=>({...v,apiKey:e.target.value}))}/>
+          </div>
+
+          <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+            <div className="flex items-start gap-3"><KeyRound className="mt-0.5 size-4 text-primary"/><div><p className="text-xs font-black">Secret امن</p><p className="mt-1 text-[10px] leading-6 text-muted-foreground">API Key در DB رمزنگاری می‌شود و مقدار ذخیره‌شده به UI برنمی‌گردد. برای تغییرش فقط کلید جدید را وارد کن.</p></div></div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={providerAction.isPending || !form.key || !form.displayName || !form.providerName || !form.baseUrl || (form.authMode !== "none" && !form.apiKey && !editing)} onClick={save}><Save className="size-4"/> ذخیره Provider</Button>
+            {editing && <Button variant="outline" onClick={() => void testProvider()} disabled={providerAction.isPending}><Gauge className="size-4"/> تست اتصال</Button>}
+            {editing && (form.protocol === "openai-compatible" || form.protocol === "openrouter") && <Button variant="outline" onClick={() => void discoverModels()} disabled={providerAction.isPending}><ListFilter className="size-4"/> کشف مدل‌ها</Button>}
+            {editing && <Button variant="outline" className="text-rose-500" onClick={() => { if (window.confirm("این Provider حذف شود؟ فقط Provider بدون مدل قابل حذف است.")) providerAction.mutate({ method: "DELETE", id: editing.id }); }}>حذف</Button>}
+          </div>
+
+          {editing && (form.protocol === "openai-compatible" || form.protocol === "openrouter") ? <div className="rounded-2xl border border-border bg-muted/20 p-4">
+            <div className="flex items-center justify-between gap-3"><div><p className="text-[9px] font-black tracking-[.2em] text-primary">MODEL DISCOVERY</p><p className="mt-1 text-sm font-black">مدل‌های قابل دریافت</p></div><span className="text-[10px] text-muted-foreground">{Number(discovered.length).toLocaleString("fa-IR")} مدل</span></div>
+            {!discovered.length ? <p className="mt-3 text-xs leading-6 text-muted-foreground">روی «کشف مدل‌ها» بزن. اگر Provider endpoint مدل‌ها نداشته باشد، Model ID را دستی وارد کن.</p> : <div className="mt-3 max-h-52 space-y-1 overflow-auto">{discovered.map(id => <button key={id} type="button" onClick={() => setModelDraft(v => ({ ...v, modelId: id, displayName: id }))} className="flex w-full items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-right hover:border-primary/40"><BrainCircuit className="size-4 text-primary"/><span dir="ltr" className="min-w-0 flex-1 truncate text-left font-mono text-xs">{id}</span></button>)}</div>}
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <Input dir="ltr" placeholder="Model ID" value={modelDraft.modelId} onChange={e=>setModelDraft(v=>({...v,modelId:e.target.value}))}/>
+              <Input placeholder="نام نمایشی مدل" value={modelDraft.displayName} onChange={e=>setModelDraft(v=>({...v,displayName:e.target.value}))}/>
+              <Input type="number" dir="ltr" placeholder="هزینه ورودی / ۱M تومان" value={modelDraft.inputTomanPer1M} onChange={e=>setModelDraft(v=>({...v,inputTomanPer1M:e.target.value}))}/>
+              <Input type="number" dir="ltr" placeholder="هزینه خروجی / ۱M تومان" value={modelDraft.outputTomanPer1M} onChange={e=>setModelDraft(v=>({...v,outputTomanPer1M:e.target.value}))}/>
             </div>
-            <span className={cn("border px-2.5 py-1 text-[9px] font-bold", trial?.ready ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" : "border-amber-400/20 bg-amber-400/10 text-amber-200")}>{trial?.ready ? "READY" : "NEEDS CONFIG"}</span>
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
-          <div className="space-y-2">
-            <label className="text-[10px] font-semibold text-[#a7b5c8]">Provider منبع Trial</label>
-            <select className="h-10 w-full border border-[#303c4c] bg-[#0b1016] px-3 text-xs text-[#ecefe6] outline-none focus:border-[#74a0ff]" value={activeProviderId} onChange={e=>setTrialProviderId(e.target.value)}>
-              <option value="">انتخاب Provider</option>
-              {providers.map((p:any)=><option key={p.id} value={p.id}>{p.displayName} · {p.providerName}</option>)}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-semibold text-[#a7b5c8]">مدل پیش‌فرض Trial</label>
-            <select className="h-10 w-full border border-[#303c4c] bg-[#0b1016] px-3 text-xs text-[#ecefe6] outline-none focus:border-[#74a0ff]" value={activeModelId} onChange={e=>setTrialModelId(e.target.value)}>
-              <option value="">انتخاب مدل</option>
-              {models.map((m:any)=><option key={m.id} value={m.id}>{m.displayName} · {m.provider}</option>)}
-            </select>
-          </div>
-          <Button className="h-10 border border-[#74a0ff] bg-[#74a0ff] px-4 text-[#17200e] hover:bg-[#c7e36b]" disabled={save.isPending || catalogQ.isPending || !activeProviderId || !activeModelId} onClick={()=>save.mutate({mode:"configure_trial",body:{providerId:activeProviderId,modelCatalogId:activeModelId}})}>
-            {save.isPending ? "در حال اتصال…" : "قفل‌کردن مسیر Trial"}
-          </Button>
-          <div className="md:col-span-3 grid gap-2 sm:grid-cols-3 border-t border-[#26303d] pt-3">
-            <div><p className="text-[9px] text-[#75869a]">اعتبار شروع</p><p className="mt-1 text-sm font-black text-[#f1f3e9]">{Number(trial?.credits ?? 0).toLocaleString("fa-IR")} credit</p></div>
-            <div><p className="text-[9px] text-[#75869a]">Provider فعال</p><p className="mt-1 truncate text-xs text-[#d3d8ca]">{trial?.provider?.displayName ?? "—"}</p></div>
-            <div><p className="text-[9px] text-[#75869a]">Model فعال</p><p className="mt-1 truncate text-xs text-[#d3d8ca]">{trial?.model?.displayName ?? "—"}</p></div>
-          </div>
-        </CardContent>
+            <div className="mt-3 flex justify-end"><Button onClick={()=>modelCreate.mutate({ provider: form.providerName, modelId: modelDraft.modelId.trim(), displayName: modelDraft.displayName.trim() || modelDraft.modelId.trim(), inputTomanPer1M: Number(modelDraft.inputTomanPer1M)||0, outputTomanPer1M: Number(modelDraft.outputTomanPer1M)||0, systemProviderId: editing.id, active: true, commercialAvailable: true, trialEnabled: false, trialDefault: false, vision: false, tools: true, reasoning: false })} disabled={modelCreate.isPending || !modelDraft.modelId.trim()}><Plus className="size-4"/> افزودن مدل به Catalog</Button></div>
+          </div> : null}
+        </CardContent>}
       </Card>
-
-      <Card className="border-[#d6ddce] bg-[#f7f9f3]">
-        <CardHeader><CardTitle className="text-sm text-[#1b2218]">قرارداد داخلی Cortex</CardTitle><p className="text-[10px] leading-5 text-[#646d60]">کاربر فقط نام مدل Cortex را می‌بیند؛ کلید و Base URL فقط اینجا ذخیره و سمت سرور مصرف می‌شوند.</p></CardHeader>
-        <CardContent className="space-y-2 text-[10px] leading-6 text-[#556052]">
-          <div className="border-l-2 border-[#74a0ff] pl-3">Provider Registry → Model Catalog → Plan Access → Runtime → Billing</div>
-          <div className="border-l-2 border-[#74a0ff] pl-3">Trial route همیشه یک Provider و یک Model صریح دارد.</div>
-          <div className="border-l-2 border-[#74a0ff] pl-3">با تغییر Provider/Model، اتصال، دسترسی Free و Default بودن در یک تراکنش تنظیم می‌شوند.</div>
-        </CardContent>
-      </Card>
-    </section>
-
-    <section className="grid gap-3">
-      {providers.map((provider) => <Card key={provider.id} className={cn("border-[#283340] bg-[#151a14] text-[#e7edf5]", provider.isTrialProvider && "border-[#74a0ff]/50 shadow-[0_14px_42px_rgba(128,154,50,.10)]")}>
-        <CardContent className="p-4">
-          {editing === provider.id
-            ? <ProviderEditor initial={provider} onSave={(body) => save.mutate({ mode: "update", body: { ...body, id: provider.id } })} pending={save.isPending} />
-            : <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-                <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-black">{provider.displayName}</p>{provider.isTrialProvider && <span className="border border-[#74a0ff]/25 bg-[#74a0ff]/10 px-2 py-1 text-[9px] font-bold text-[#91b2ff]">Trial source</span>}{provider.enabled ? <span className="text-[9px] text-emerald-300">فعال</span> : <span className="text-[9px] text-rose-300">غیرفعال</span>}</div><p className="mt-1 text-[10px] text-[#92a2b4]">{provider.providerName} · {provider.protocol} · <span dir="ltr">{provider.baseUrl}</span></p><p className="mt-1 text-[10px] text-[#74849a]">{provider.configured ? "کلید تنظیم شده" : "بدون API Key"} · {provider.modelsCount ?? 0} مدل متصل</p></div>
-                <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => provider.testModelId && save.mutate({ mode: "test", body: { id: provider.id, modelId: provider.testModelId } })} disabled={save.isPending || !provider.testModelId}><Gauge className="size-3.5"/>{provider.testModelId ? "تست اتصال" : "بدون مدل"}</Button><Button size="sm" variant="outline" onClick={() => setEditing(provider.id)}><Pencil className="size-3.5"/>ویرایش</Button></div>
-              </div>}
-        </CardContent>
-      </Card>)}
-      {!providers.length && <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">هنوز Provider ثبت نشده است.</CardContent></Card>}
-    </section>
+    </div>
   </div>;
 }
 
-function ProviderEditor({ initial, onSave, pending }: { initial?: any; onSave: (body: Record<string, unknown>) => void; pending: boolean }) {
-  const [v, setV] = useState({
-    key: initial?.key ?? "primary",
-    displayName: initial?.displayName ?? "",
-    providerName: initial?.providerName ?? "OpenAI",
-    protocol: initial?.protocol ?? "openai-compatible",
-    authMode: initial?.authMode ?? "bearer",
-    baseUrl: initial?.baseUrl ?? "https://api.openai.com/v1",
-    apiKey: "",
-    enabled: initial?.enabled ?? true,
-    isTrialProvider: initial?.isTrialProvider ?? false,
-  });
-  const set = (k: string, value: unknown) => setV((x) => ({ ...x, [k]: value }));
-  return <div className="grid gap-3 sm:grid-cols-2">
-    <Input value={v.key} onChange={e=>set("key",e.target.value)} placeholder="کلید داخلی مثل primary"/>
-    <Input value={v.displayName} onChange={e=>set("displayName",e.target.value)} placeholder="نام نمایشی"/>
-    <Input value={v.providerName} onChange={e=>set("providerName",e.target.value)} placeholder="نام Provider"/>
-    <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={v.protocol} onChange={e=>set("protocol",e.target.value)}><option value="openai-compatible">OpenAI-compatible</option><option value="openrouter">OpenRouter</option><option value="anthropic">Anthropic</option><option value="gemini">Gemini</option></select>
-    <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={v.authMode} onChange={e=>set("authMode",e.target.value)}><option value="bearer">Bearer</option><option value="x-api-key">x-api-key</option><option value="none">بدون کلید</option></select>
-    <Input dir="ltr" value={v.baseUrl} onChange={e=>set("baseUrl",e.target.value)} placeholder="https://provider.example/v1"/>
-    <Input className="sm:col-span-2" dir="ltr" type="password" value={v.apiKey} onChange={e=>set("apiKey",e.target.value)} placeholder={initial ? "برای نگه‌داشتن کلید فعلی خالی بگذار" : "API Key"} autoComplete="off"/>
-    <div className="flex items-center justify-between rounded-xl border bg-background p-3"><div><p className="text-xs font-semibold">فعال</p><p className="text-[10px] text-muted-foreground">برای Route شدن مدل‌ها در دسترس باشد.</p></div><Switch checked={v.enabled} onCheckedChange={x=>set("enabled",x)}/></div>
-    <div className="flex items-center justify-between rounded-xl border bg-background p-3"><div><p className="text-xs font-semibold">Provider مخصوص Trial</p><p className="text-[10px] text-muted-foreground">در هر لحظه فقط یک Provider Trial پیش‌فرض است.</p></div><Switch checked={v.isTrialProvider} onCheckedChange={x=>set("isTrialProvider",x)}/></div>
-    <div className="sm:col-span-2"><Button className="w-full sm:w-auto" disabled={pending || !v.key || !v.displayName || !v.providerName || !v.baseUrl || (v.authMode!=="none" && !v.apiKey && !initial)} onClick={()=>onSave({...v})}>{pending ? "در حال ذخیره…" : initial ? "ذخیره Provider" : "ثبت Provider سراسری"}</Button></div>
+function SiteControlPanel() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["cc-site-control"], queryFn: () => jsonFetch<{ settings: Record<string, string> }>("/api/control-center/settings"), staleTime: 10_000 });
+  const [draft, setDraft] = useState<Record<string, string> | null>(null);
+  if (q.isPending) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">در حال بارگذاری کنترل سایت…</CardContent></Card>;
+  if (q.isError) return <Card><CardContent className="p-8 text-center text-sm text-destructive">{q.error.message}</CardContent></Card>;
+  const values = { ...(q.data?.settings ?? {}), ...(draft ?? {}) };
+  const groups: Array<[string,string[]]> = [
+    ["هویت و Landing", ["site.name","site.description","site.welcomeTitle","site.heroTitle","site.heroSubtitle","site.heroPrimaryCta","site.heroSecondaryCta","site.proofLine"]],
+    ["احراز هویت", ["site.authTitle","site.authDescription","site.supportEmail"]],
+    ["ظاهر", ["site.primaryColor","site.secondaryColor","site.radius","site.sidebarColor"]],
+  ];
+  const save = async () => {
+    try {
+      await jsonFetch("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings:values})});
+      await qc.invalidateQueries({queryKey:["cc-site-control"]});
+      toast.success("تنظیمات سایت ذخیره شد.");
+      setDraft(null);
+    } catch(e) { toast.error((e as Error).message); }
+  };
+  return <div className="space-y-5">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] font-black tracking-[.18em] text-primary">SITE CONTROL PLANE</p><h2 className="mt-2 text-2xl font-black">محتوا و ظاهر سایت</h2><p className="mt-2 max-w-3xl text-xs leading-6 text-muted-foreground">Copy، CTA، عنوان‌ها و رنگ‌های اصلی محصول از اینجا بدون تغییر کد قابل مدیریت‌اند.</p></div><Button onClick={save} disabled={!draft}><Save className="size-4"/> ذخیره تغییرات</Button></div>
+    {groups.map(([title,keys])=><Card key={title}><CardHeader className="border-b"><CardTitle className="text-sm">{title}</CardTitle></CardHeader><CardContent className="grid gap-3 p-4 md:grid-cols-2">{keys.map(key=><label key={key} className="space-y-2"><span className="text-[10px] font-bold text-muted-foreground">{key}</span><Input dir={key.includes("Color")||key.includes("radius")||key.includes("Email")?"ltr":"rtl"} value={values[key] ?? ""} onChange={e=>setDraft({...values,[key]:e.target.value})}/></label>)}</CardContent></Card>)}
   </div>;
 }
 
-function SettingsPanel() {
-  const q=useQuery({queryKey:["cc-settings"],queryFn:()=>jsonFetch<{settings:Record<string,string>}>("/api/control-center/settings")});
-  const qc=useQueryClient(); const [draft,setDraft]=useState<Record<string,string>>({});
-  const save=useMutation({mutationFn:()=>jsonFetch("/api/control-center/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings:{...(q.data?.settings??{}),...draft}})}),onSuccess:()=>{qc.invalidateQueries({queryKey:["cc-settings"]});toast.success("تنظیمات ذخیره شد")},onError:(e:Error)=>toast.error(e.message)});
-  if(q.isPending) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">در حال بارگذاری تنظیمات…</CardContent></Card>;
-  const s={...(q.data?.settings??{}),...draft};
-  const fields=[["site.name","نام محصول"],["site.welcomeTitle","عنوان خوش‌آمدگویی"],["site.description","توضیحات"],["site.supportEmail","ایمیل پشتیبانی"],["site.authTitle","عنوان ورود"],["site.authDescription","توضیحات ورود"],["site.primaryColor","رنگ برند اصلی Cortex"],["site.secondaryColor","رنگ همراه Cortex"],["site.navOrder","ترتیب منو"]];
-  return <Card className="border-border"><CardHeader><CardTitle className="text-sm">تنظیمات محصول و رابط کاربری</CardTitle><p className="text-[10px] text-muted-foreground">همان SiteSetting فعلی؛ بدون hard-code کردن مقدارهای عملیاتی.</p></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">{fields.map(([k,l])=><div key={k}><label className="text-xs font-medium">{l}</label><Input className="mt-2" dir={k.includes("Color")||k.includes("Email")?"ltr":"rtl"} value={s[k]??""} onChange={e=>setDraft({...draft,[k]:e.target.value})}/></div>)}<div className="md:col-span-2 flex justify-end"><Button onClick={()=>save.mutate()} disabled={save.isPending}><Save/>ذخیره تنظیمات</Button></div></CardContent></Card>;
-}
-
-function AdminLogin() {
-  return <div className="grid min-h-screen place-items-center bg-[#0b1016] p-5" dir="rtl">
-    <section className="w-full max-w-xl border border-[#2b3746] bg-[#111820] p-7 text-[#e8edf4] shadow-[0_28px_90px_rgba(0,0,0,.35)]">
-      <div className="flex items-start gap-4"><span className="grid size-12 place-items-center border border-[#74a0ff]/30 bg-[#74a0ff]/10 text-[#91b2ff]"><KeyRound className="size-5"/></span><div><p className="text-[8px] font-bold tracking-[.28em] text-[#87947c]">PRIVATE ENTRY</p><h1 className="mt-2 text-2xl font-black">این پیشخوان عمومی نیست.</h1><p className="mt-2 text-xs leading-7 text-[#8f9a89]">ورود فقط از لینک اختصاصی مدیر انجام می‌شود؛ نام کاربری و رمز عبور در این مسیر وجود ندارد.</p></div></div>
-      <div className="mt-6 border-t border-[#252f3c] pt-4 text-[10px] leading-6 text-[#697464]">برای دسترسی، لینک خصوصی را باز کن تا یک نشست HttpOnly کوتاه‌مدت ساخته شود.</div>
-    </section>
+function SecurityPanel({ onLogout }: { onLogout: () => void }) {
+  return <div className="space-y-5">
+    <div><p className="text-[10px] font-black tracking-[.18em] text-primary">SECURITY</p><h2 className="mt-2 text-2xl font-black">امنیت و دسترسی</h2><p className="mt-2 max-w-3xl text-xs leading-6 text-muted-foreground">اطلاعات نشست و مسیرهای ورود مدیر را از همین پنل بررسی کن.</p></div>
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card><CardHeader><CardTitle className="text-sm">مدیر اصلی</CardTitle></CardHeader><CardContent className="space-y-3 text-xs"><div className="flex items-center justify-between rounded-xl border p-3"><span className="text-muted-foreground">نام کاربری</span><b dir="ltr">ehsanam86</b></div><div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-3 text-[10px] leading-6 text-muted-foreground">احراز هویت با Session کوکی HttpOnly انجام می‌شود و Secret در URL یا UI نمایش داده نمی‌شود.</div><Button variant="destructive" onClick={onLogout}><LogOut className="size-4"/> خروج از پنل</Button></CardContent></Card>
+      <Card><CardHeader><CardTitle className="text-sm">مسیرهای مدیریت</CardTitle></CardHeader><CardContent className="space-y-2 text-xs"><div className="flex justify-between rounded-xl border p-3"><span>/admin/login</span><span className="text-muted-foreground">ورود</span></div><div className="flex justify-between rounded-xl border p-3"><span>/admin/console</span><span className="text-emerald-500">فعال</span></div><div className="flex justify-between rounded-xl border p-3"><span>/ops/[routeKey]</span><span className="text-muted-foreground">مسیر قدیمی</span></div></CardContent></Card>
+    </div>
   </div>;
 }
+
+
