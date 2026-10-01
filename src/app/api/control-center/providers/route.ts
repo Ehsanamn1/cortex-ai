@@ -199,7 +199,7 @@ export async function POST(req: Request) {
     }
 
     if (action === "test") {
-      const providerId = textValue(body.providerId, 120);
+      const providerId = textValue(body.providerId ?? body.id, 120);
       const modelId = textValue(body.modelId, 180);
       if (!providerId) return applyCors(jsonError("شناسه Provider الزامی است.", 400), req.headers.get("origin"));
       const provider = await db.systemProviderConfig.findUnique({ where: { id: providerId } });
