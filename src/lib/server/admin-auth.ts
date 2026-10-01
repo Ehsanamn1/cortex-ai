@@ -30,6 +30,25 @@ export function verifyAdminUsername(username: string | null | undefined) {
   return typeof username === "string" && username.trim() === ADMIN_USERNAME;
 }
 
+function verifyConfiguredSecret(value: string, configured: string | undefined, missingMessage: string) {
+  const expected = configured?.trim() || "";
+  if (!expected || expected.length < 12) {
+    if (process.env.NODE_ENV === "production" || process.env.APP_ENV === "production") {
+      throw new AdminConfigError(missingMessage);
+    }
+    return false;
+  }
+  const actual = Buffer.from(value);
+  const expectedBytes = Buffer.from(expected);
+  return actual.length === expectedBytes.length && crypto.timingSafeEqual(actual, expectedBytes);
+}
+
+export function verifyAdminPassword(password: string | null | undefined) {
+  return typeof password === "string"
+    ? verifyConfiguredSecret(password, process.env.CORTEX_ADMIN_PASSWORD, "رمز عبور پنل مدیریت در محیط تولید تنظیم نشده است.")
+    : false;
+}
+
 export function verifyAdminAccessToken(token: string | null | undefined) {
   const configured = process.env.CORTEX_ADMIN_ACCESS_TOKEN?.trim();
   if (!configured || configured.length < 24) throw new AdminConfigError("CORTEX_ADMIN_ACCESS_TOKEN در محیط اجرا تنظیم نشده است.");
@@ -45,6 +64,14 @@ export function operatorRouteKeyFromAccessToken(token: string) {
 
 export function operatorDashboardPath(token: string) {
   return "/ops/" + operatorRouteKeyFromAccessToken(token) + "/console";
+}
+
+export function operatorRouteKeyFromAdminSecret() {
+  return crypto.createHmac("sha256", secret()).update("cortex-operator-login-route").digest("base64url").slice(0, 32);
+}
+
+export function operatorDashboardPathFromAdminSecret() {
+  return "/ops/" + operatorRouteKeyFromAdminSecret() + "/console";
 }
 
 function encode(value: string) { return Buffer.from(value).toString("base64url"); }
