@@ -25,7 +25,7 @@ describe("admin authentication", () => {
     const body = await response.json() as { ok?: boolean; username?: string; dashboardPath?: string };
     expect(body.ok).toBe(true);
     expect(body.username).toBe("ehsanam86");
-    expect(body.dashboardPath).toMatch(/^\/ops\/[^/]+\/console$/);
+    expect(body.dashboardPath).toBe("/admin/console");
   });
 
   it("rejects non-owner usernames without requiring a password", async () => {
