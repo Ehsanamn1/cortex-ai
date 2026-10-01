@@ -336,6 +336,7 @@ jobs:
           fi
           check_status "$base/admin" "404"
           check_status "$base/admin/login" "200"
+          check_status "$base/ops/cx-7vK3m9Qp2Lx8R4tN6yH5cW1dZ0aB/login" "200"
           if [ "${EDGE_RATE_LIMITED:-0}" = "1" ]; then
             echo "Stopping live route smoke: Cloudflare edge is temporarily rate-limiting this runner."
             exit 0
