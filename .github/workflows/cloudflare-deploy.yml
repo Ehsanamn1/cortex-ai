@@ -247,7 +247,6 @@ jobs:
           done
 
       - name: Smoke test admin and public routes
-        continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
           POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL || vars.POSTGRES_PRISMA_URL }}
@@ -367,7 +366,12 @@ jobs:
             if [ "$admin_username_page_status" = "429" ]; then
               echo "Cloudflare edge rate limited the username-only dashboard check; continuing."
             else
-              test "$admin_username_page_status" = "200"
+              if [ "$admin_username_page_status" != "200" ]; then
+                echo "Username-only operator dashboard returned HTTP $admin_username_page_status"
+                head -c 4000 "$admin_username_page_tmp" || true
+                echo
+                exit 1
+              fi
             fi
             rm -f "$admin_username_page_tmp"
           fi
