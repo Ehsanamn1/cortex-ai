@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import React from "react";
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { CircleAlert } from "lucide-react";
 
 const OperatorConsole = dynamic(
