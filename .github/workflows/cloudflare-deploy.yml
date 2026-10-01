@@ -394,11 +394,11 @@ jobs:
               test -n "$dashboard_path"
               test "$dashboard_path" = "/admin/console" || { echo "Unexpected private operator path: $dashboard_path"; exit 1; }
               admin_me_tmp="$(mktemp)"
-              admin_me_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_me_tmp" -w "%{http_code}" "$base/api/admin/auth/me")"
+              admin_me_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$private_admin_cookie" -o "$admin_me_tmp" -w "%{http_code}" "$base/api/admin/auth/me")"
               echo "GET /api/admin/auth/me with private admin session -> HTTP $admin_me_status"
               test "$admin_me_status" = "200"
               admin_page_tmp="$(mktemp)"
-              admin_page_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$admin_cookie" -o "$admin_page_tmp" -w "%{http_code}" "$base$dashboard_path")"
+              admin_page_status="$(curl -sS --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 -b "$private_admin_cookie" -o "$admin_page_tmp" -w "%{http_code}" "$base$dashboard_path")"
               echo "GET private operator dashboard -> HTTP $admin_page_status"
               if [ "$admin_page_status" = "429" ]; then
                 echo "Cloudflare edge rate limited the private operator dashboard check; continuing public smoke."
