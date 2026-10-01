@@ -13,10 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { OperationsCenter } from "@/components/operations-center";
 
 type Section =
   | "overview" | "users" | "workspaces" | "agents" | "knowledge" | "conversations"
-  | "telegram" | "workflows" | "executions" | "audit" | "plugins"
+  | "telegram" | "operations" | "workflows" | "executions" | "audit" | "plugins"
   | "plans" | "models" | "accounts" | "charges" | "invoices" | "topups" | "systemProviders" | "settings";
 
 const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof LayoutDashboard }> = [
@@ -27,6 +28,7 @@ const SECTIONS: Array<{ id: Section; label: string; group: string; icon: typeof 
   { id: "knowledge", label: "دانش", group: "AI", icon: Database },
   { id: "conversations", label: "گفتگوها", group: "AI", icon: MessageSquare },
   { id: "telegram", label: "بات‌های تلگرام", group: "اتصال‌ها", icon: Send },
+  { id: "operations", label: "عملیات Telegram و دانش", group: "اتصال‌ها", icon: Activity },
   { id: "systemProviders", label: "منابع مدل", group: "زیرساخت", icon: Server },
   { id: "workflows", label: "Workflowها", group: "عملیات", icon: Workflow },
   { id: "executions", label: "Executionها", group: "عملیات", icon: Activity },
@@ -310,7 +312,7 @@ function ControlCenterRuntime() {
   const summary=useQuery<any>({queryKey:["cc-summary"],queryFn:()=>jsonFetch("/api/control-center"),enabled:session.isSuccess,staleTime:10_000});
   const logout=useMutation({mutationFn:()=>fetch("/api/admin/auth/logout",{method:"POST"}),onSuccess:()=>{qc.clear();window.location.reload();}});
   if(session.isPending) return <div className="min-h-screen bg-[#f6f7fb] p-8"><div className="mx-auto max-w-7xl rounded-xl bg-white p-12 text-center">در حال آماده‌سازی پیشخوان…</div></div>;
-  if(session.isError) return <AdminLogin />;
+  if(session.isError) return <div className="grid min-h-screen place-items-center bg-[#0b1016] p-6" dir="rtl"><section className="w-full max-w-lg border border-[#2b3746] bg-[#111820] p-8 text-center text-[#e8edf4] shadow-[0_28px_90px_rgba(0,0,0,.35)]"><div className="mx-auto grid size-12 place-items-center bg-[#74a0ff]/10 text-[#91b2ff]"><KeyRound className="size-5" /></div><h1 className="mt-4 text-lg font-black">نشست مدیریت معتبر نیست</h1><p className="mt-2 text-xs leading-6 text-[#8f9a89]">نشست پنل منقضی یا نامعتبر شده است. برای ادامه دوباره وارد پنل شو.</p><Button className="mt-5" onClick={()=>window.location.assign("/admin/login")}>ورود مجدد</Button></section></div>;
   const groups=[...new Set(SECTIONS.map(x=>x.group))]; const m=summary.data?.metrics??{}; const activeSection=SECTIONS.find(x=>x.id===section)!;
   return <div className="cortex-control-center min-h-screen bg-[#0b1016] text-[#e7edf5]" dir="rtl"><div className="flex min-h-screen">
     <aside className="hidden w-[258px] shrink-0 border-l border-[#263021] bg-[#111611] lg:flex lg:flex-col">
@@ -334,7 +336,7 @@ function ControlCenterRuntime() {
         {SECTIONS.map(s=><button key={s.id} type="button" onClick={()=>setSection(s.id)} className={cn("whitespace-nowrap border px-3 py-2 text-[10px] font-semibold transition",section===s.id?"border-[#74a0ff]/30 bg-[#74a0ff]/10 text-[#b7ccff]":"border-transparent text-[#9ba9ba]")}>{s.label}</button>)}
       </div>
       <main className="mx-auto max-w-[1460px] space-y-6 p-4 lg:p-8">
-        {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:section==="systemProviders"?<SystemProvidersPanel/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>} 
+        {section==="overview"?<Overview summary={summary.data}/>:section==="settings"?<SettingsPanel/>:section==="systemProviders"?<SystemProvidersPanel/>:section==="operations"?<OperationsCenter/>:["plans","models","accounts","charges","invoices","topups"].includes(section)?<BillingPanel section={section}/>:<DataTable section={section} search={search}/>} 
       </main>
     </div>
   </div></div>;
