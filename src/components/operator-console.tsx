@@ -451,7 +451,25 @@ function SecurityPanel({ onLogout }: { onLogout: () => void }) {
 }
 
 export function OperatorConsole() {
-  const auth = useQuery({ queryKey: ["operator-auth"], queryFn: () => fetchJson<{ username: string }>("/api/admin/auth/me"), retry: false, staleTime: 0 });
+  const auth = useQuery({
+    queryKey: ["operator-auth"],
+    queryFn: async () => {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 10_000);
+      try {
+        return await fetchJson<{ username: string }>("/api/admin/auth/me", { signal: controller.signal });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw new Error("بررسی نشست پنل بیش از حد طول کشید. اتصال شبکه را بررسی کن و دوباره تلاش کن.");
+        }
+        throw error;
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    },
+    retry: false,
+    staleTime: 0,
+  });
   useEffect(() => {
     if (auth.isError) window.location.replace("/");
   }, [auth.isError]);
@@ -476,7 +494,22 @@ export function OperatorConsole() {
     : section === "telegram" ? <TelegramPanel />
     : <SecurityPanel onLogout={logout} />;
 
-  if (auth.isPending || auth.isError) return <div className={"operator-console min-h-screen " + (dark ? "operator-dark" : "operator-light")} dir="rtl"><div className="operator-loading min-h-screen rounded-none border-0">در حال بررسی دسترسی امن پنل…</div></div>;
+  if (auth.isPending) return <div className={"operator-console min-h-screen " + (dark ? "operator-dark" : "operator-light")} dir="rtl"><div className="operator-loading min-h-screen rounded-none border-0">در حال بررسی دسترسی امن پنل…</div></div>;
+  if (auth.isError) return (
+    <div className={"operator-console min-h-screen " + (dark ? "operator-dark" : "operator-light")} dir="rtl">
+      <div className="grid min-h-screen place-items-center p-6">
+        <section className="w-full max-w-md rounded-3xl border border-[var(--op-border)] bg-[var(--op-card)] p-7 text-center shadow-xl">
+          <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-rose-500/10 text-rose-500"><CircleAlert className="size-6" /></div>
+          <h1 className="mt-4 text-lg font-black text-[var(--op-fg)]">نشست پنل بررسی نشد</h1>
+          <p className="mt-2 text-xs leading-6 text-[var(--op-muted)]">{(auth.error as Error).message}</p>
+          <div className="mt-5 flex justify-center gap-2">
+            <PrimaryButton onClick={() => void auth.refetch()}>تلاش دوباره</PrimaryButton>
+            <PrimaryButton variant="outline" onClick={() => window.location.assign("/admin/login")}>ورود مجدد</PrimaryButton>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 
   return (
     <div className={"operator-console min-h-screen " + (dark ? "operator-dark" : "operator-light")} dir="rtl">
