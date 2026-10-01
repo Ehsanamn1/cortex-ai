@@ -29,8 +29,6 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
 
   useEffect(() => {
     if (!open || !workspaceId || query.trim().length < 2) {
-      setResults([]);
-      setLoading(false);
       return;
     }
     const controller = new AbortController();
@@ -52,7 +50,9 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
     };
   }, [open, query, workspaceId]);
 
-  const visibleResults = open && query.trim().length >= 2 && workspaceId ? results : [];
+  const hasSearchQuery = open && Boolean(workspaceId) && query.trim().length >= 2;
+  const visibleResults = hasSearchQuery ? results : [];
+  const visibleLoading = hasSearchQuery && loading;
   const grouped = useMemo(() => ({
     agents: visibleResults.filter((x) => x.type === "agent"),
     knowledge: visibleResults.filter((x) => x.type === "knowledge"),
@@ -78,8 +78,8 @@ export function SystemSearch({ triggerClassName, compact = false }: { triggerCla
       <CommandDialog open={open} onOpenChange={(next) => { setOpen(next); if (!next) setQuery(""); }} title="جست‌وجوی Cortex" description="ایجنت، پایگاه دانش یا گفتگو را پیدا کنید." showCloseButton>
         <CommandInput placeholder="نام ایجنت، فایل دانش یا گفتگوی خود را بنویسید…" value={query} onValueChange={setQuery} />
         <div className="border-b border-border/70 px-4 py-2"><span className="text-[10px] font-bold text-muted-foreground">جست‌وجوی سریع در فضای کاری</span></div><CommandList className="max-h-[55vh] p-1">
-          {loading && query.trim().length >= 2 && <div className="px-4 py-8 text-center text-sm text-muted-foreground">در حال جستجو در فضای کاری…</div>}
-          {!loading && query.trim().length >= 2 && visibleResults.length === 0 && <CommandEmpty>نتیجه‌ای در فضای کاری فعلی پیدا نشد.</CommandEmpty>}
+          {visibleLoading && <div className="px-4 py-8 text-center text-sm text-muted-foreground">در حال جستجو در فضای کاری…</div>}
+          {!visibleLoading && hasSearchQuery && visibleResults.length === 0 && <CommandEmpty>نتیجه‌ای در فضای کاری فعلی پیدا نشد.</CommandEmpty>}
           {grouped.agents.length > 0 && (
             <CommandGroup heading="ایجنت‌ها">
               {grouped.agents.map((item) => (
