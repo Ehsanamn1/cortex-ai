@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Loader2, LockKeyhole, ShieldCheck } from "lucide-react";
 
 export default function AdminLoginPage() {
