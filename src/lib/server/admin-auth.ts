@@ -52,7 +52,9 @@ export function operatorRouteKeyFromAdminSecret() {
 }
 
 export function operatorDashboardPathFromSessionSecret() {
-  return "/ops/" + operatorRouteKeyFromAdminSecret() + "/console";
+  // Keep the owner console on a stable static route so Vinext/Cloudflare never
+  // needs to SSR a dynamic admin page or execute crypto while rendering it.
+  return "/admin/console";
 }
 
 function encode(value: string) { return Buffer.from(value).toString("base64url"); }
